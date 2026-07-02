@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
+import { profiles } from "@/db/schema";
 import { db } from "@/lib/db";
 import { getProfile, upsertProfile } from "./queries";
 
@@ -31,6 +32,26 @@ describe("profile upsert", () => {
     expect(profile?.twitterHandle).toBe("kuro_vgc");
     expect(profile?.blueskyHandle).toBeNull();
     expect(profile?.origin).toBe("Bayern");
+    expect(profile?.role).toBe("player");
+    expect(profile?.roleSyncedAt).toBeNull();
+  });
+
+  it("settings upsert never touches the role columns", async () => {
+    const syncedAt = new Date("2026-07-02T10:00:00Z");
+    await db
+      .update(profiles)
+      .set({ role: "admin", roleSyncedAt: syncedAt })
+      .where(eq(profiles.userId, userId));
+
+    await upsertProfile(userId, {
+      twitterHandle: "kuro_vgc",
+      blueskyHandle: null,
+      origin: "Bayern",
+    });
+
+    const profile = await getProfile(userId);
+    expect(profile?.role).toBe("admin");
+    expect(profile?.roleSyncedAt).toEqual(syncedAt);
   });
 
   it("updates on second save and bumps updated_at", async () => {

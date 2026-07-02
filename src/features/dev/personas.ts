@@ -1,6 +1,8 @@
 // Test personas for local development: auth users with metadata shapes a
 // single real Discord account cannot produce. Used by /dev/login.
 
+import type { Role } from "@/features/roles/roles";
+
 export type PersonaId = "voll" | "kein-avatar" | "langer-name" | "leer";
 
 export type Persona = {
@@ -8,6 +10,9 @@ export type Persona = {
   label: string;
   description: string;
   userMetadata: Record<string, unknown>;
+  // Written directly to the profile row on /dev/login — personas have fake
+  // Discord ids, so their roles cannot come from a real guild lookup.
+  role: Role;
 };
 
 // Discord's public default avatar — a real, always-available image URL.
@@ -26,6 +31,7 @@ export const PERSONAS: readonly Persona[] = [
       name: "testerino",
       provider_id: "100000000000000001",
     },
+    role: "admin",
   },
   {
     id: "kein-avatar",
@@ -37,6 +43,7 @@ export const PERSONAS: readonly Persona[] = [
       name: "ohne_avatar",
       provider_id: "100000000000000002",
     },
+    role: "staff",
   },
   {
     id: "langer-name",
@@ -52,12 +59,14 @@ export const PERSONAS: readonly Persona[] = [
       name: "annegret",
       provider_id: "100000000000000003",
     },
+    role: "dev",
   },
   {
     id: "leer",
     label: "Leer",
     description: "Leere Metadaten — alle Fallbacks gleichzeitig",
     userMetadata: {},
+    role: "player",
   },
 ];
 

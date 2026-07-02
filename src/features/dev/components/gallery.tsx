@@ -6,7 +6,12 @@ import { SaveIndicator } from "@/features/profile/components/settings-form";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
 
-const IDENTITIES: { label: string; identity: DiscordIdentity }[] = [
+// Role labels cover all four role badge variants across the specimens.
+const IDENTITIES: {
+  label: string;
+  identity: DiscordIdentity;
+  roleLabel: string;
+}[] = [
   {
     label: "Avatar + Name",
     identity: {
@@ -14,10 +19,12 @@ const IDENTITIES: { label: string; identity: DiscordIdentity }[] = [
       displayName: "Testerino",
       avatarUrl: AVATAR_URL,
     },
+    roleLabel: "Admin",
   },
   {
     label: "Ohne Avatar",
     identity: { discordId: "2", displayName: "Ohne Avatar", avatarUrl: null },
+    roleLabel: "Staff",
   },
   {
     label: "Langer Name",
@@ -26,10 +33,12 @@ const IDENTITIES: { label: string; identity: DiscordIdentity }[] = [
       displayName: "Blaubeerkuchenbäckermeisterin Annegret III.",
       avatarUrl: AVATAR_URL,
     },
+    roleLabel: "Dev",
   },
   {
     label: "Leere Metadaten",
     identity: { discordId: null, displayName: null, avatarUrl: null },
+    roleLabel: "Spieler",
   },
 ];
 
@@ -55,11 +64,11 @@ export function Gallery() {
     <div className="flex flex-col gap-10">
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">ProfileHeader</h2>
-        {IDENTITIES.map(({ label, identity }) => (
+        {IDENTITIES.map(({ label, identity, roleLabel }) => (
           <Specimen key={label} label={label}>
             {/* max-w mirrors the /profil column so truncation is visible */}
             <div className="max-w-xl">
-              <ProfileHeader identity={identity} />
+              <ProfileHeader identity={identity} roleLabel={roleLabel} />
             </div>
           </Specimen>
         ))}

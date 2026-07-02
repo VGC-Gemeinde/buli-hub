@@ -33,26 +33,20 @@ describe("personas", () => {
   });
 
   it("kein-avatar has no avatar keys at all", () => {
-    const meta = personaToAdminPayload(
-      mustGet("kein-avatar"),
-    ).user_metadata;
+    const meta = personaToAdminPayload(mustGet("kein-avatar")).user_metadata;
     expect(meta).not.toHaveProperty("avatar_url");
     expect(meta).not.toHaveProperty("picture");
   });
 
   it("langer-name is long enough to force truncation", () => {
-    const meta = personaToAdminPayload(
-      mustGet("langer-name"),
-    ).user_metadata;
+    const meta = personaToAdminPayload(mustGet("langer-name")).user_metadata;
     const globalName = (meta.custom_claims as Record<string, string>)
       .global_name;
     expect(globalName.length).toBeGreaterThan(35);
   });
 
   it("leer has empty metadata", () => {
-    expect(personaToAdminPayload(mustGet("leer")).user_metadata).toEqual(
-      {},
-    );
+    expect(personaToAdminPayload(mustGet("leer")).user_metadata).toEqual({});
   });
 
   it("returns null for unknown personas", () => {

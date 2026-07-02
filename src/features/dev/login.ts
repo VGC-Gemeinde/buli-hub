@@ -1,8 +1,9 @@
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { sql } from "drizzle-orm";
+import { profiles } from "@/db/schema";
 import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
-import { getPersona, personaToAdminPayload } from "./personas";
+import { getPersona, type Persona, personaToAdminPayload } from "./personas";
 
 export type DevLoginResult = { ok: true } | { ok: false; error: string };
 
@@ -70,5 +71,28 @@ export async function loginAsPersona(
     return { ok: false, error: verifyError.message };
   }
 
+  await pinPersonaRole(payload.email, persona.role);
+
   return { ok: true };
+}
+
+// Personas have fake Discord ids, so their roles cannot come from a real
+// guild lookup — write the role directly and date the sync far into the
+// future so getRole's TTL revalidation never overwrites it.
+async function pinPersonaRole(email: string, role: Persona["role"]) {
+  const rows = await db.execute<{ id: string }>(
+    sql`select id from auth.users where email = ${email}`,
+  );
+  const userId = rows[0]?.id;
+  if (!userId) {
+    return;
+  }
+  const farFuture = new Date("2100-01-01T00:00:00Z");
+  await db
+    .insert(profiles)
+    .values({ userId, role, roleSyncedAt: farFuture })
+    .onConflictDoUpdate({
+      target: profiles.userId,
+      set: { role, roleSyncedAt: farFuture },
+    });
 }

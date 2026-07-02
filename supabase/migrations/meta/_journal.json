@@ -15,6 +15,20 @@
       "when": 1782977272662,
       "tag": "20260702072753_profiles_auth_fk_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782983568428,
+      "tag": "20260702091248_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782983569088,
+      "tag": "20260702091249_roles_column_grants",
+      "breakpoints": true
     }
   ]
 }

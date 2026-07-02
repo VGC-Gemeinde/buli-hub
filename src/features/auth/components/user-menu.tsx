@@ -52,7 +52,10 @@ export function UserMenu({
         </DropdownMenuItem>
         {isStaff ? (
           <DropdownMenuItem asChild className="font-medium">
-            <Link href="/staff">Staff-Bereich</Link>
+            <Link href="/staff" className="flex items-center justify-between">
+              Staff-Bereich
+              <div className="h-[7px] w-3.5 -skew-x-[18deg] bg-brand-orange" />
+            </Link>
           </DropdownMenuItem>
         ) : null}
         <form action={signOut}>

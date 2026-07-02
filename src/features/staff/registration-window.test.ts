@@ -43,13 +43,13 @@ describe("registrationState", () => {
 
 describe("matchesConfirmationPhrase", () => {
   it("accepts the exact phrase, trimmed", () => {
-    expect(matchesConfirmationPhrase("Anmeldung öffnen")).toBe(true);
-    expect(matchesConfirmationPhrase("  Anmeldung öffnen  ")).toBe(true);
+    expect(matchesConfirmationPhrase("Saison 1")).toBe(true);
+    expect(matchesConfirmationPhrase("  Saison 1  ")).toBe(true);
   });
 
   it("rejects anything else", () => {
-    expect(matchesConfirmationPhrase("anmeldung öffnen")).toBe(false);
-    expect(matchesConfirmationPhrase("Anmeldung offen")).toBe(false);
+    expect(matchesConfirmationPhrase("saison 1")).toBe(false);
+    expect(matchesConfirmationPhrase("Saison")).toBe(false);
     expect(matchesConfirmationPhrase("")).toBe(false);
   });
 });
@@ -60,7 +60,7 @@ describe("openRegistrationSchema", () => {
   it("accepts a future date with the right confirmation", () => {
     const result = schema.safeParse({
       closesAt: "2026-07-09T12:00:00Z",
-      confirmation: "Anmeldung öffnen",
+      confirmation: "Saison 1",
     });
     expect(result.success).toBe(true);
   });
@@ -68,7 +68,7 @@ describe("openRegistrationSchema", () => {
   it("rejects a past date", () => {
     const result = schema.safeParse({
       closesAt: "2026-07-01T12:00:00Z",
-      confirmation: "Anmeldung öffnen",
+      confirmation: "Saison 1",
     });
     expect(result.success).toBe(false);
   });
@@ -84,7 +84,7 @@ describe("openRegistrationSchema", () => {
   it("rejects an invalid date", () => {
     const result = schema.safeParse({
       closesAt: "not-a-date",
-      confirmation: "Anmeldung öffnen",
+      confirmation: "Saison 1",
     });
     expect(result.success).toBe(false);
   });

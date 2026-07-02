@@ -22,8 +22,13 @@ export function registrationState(
   return window.closesAt.getTime() > now.getTime() ? "open" : "closed";
 }
 
-// The phrase staff must type to confirm opening the registration.
-export const OPEN_CONFIRMATION_PHRASE = "Anmeldung öffnen";
+// The next season. Hardcoded until a seasons feature models it; the system
+// knows the season, staff only open its registration.
+export const SEASON_NAME = "Saison 1";
+
+// The phrase staff must type to confirm opening the registration — the season
+// name, so it names what is being opened instead of echoing the button label.
+export const OPEN_CONFIRMATION_PHRASE = SEASON_NAME;
 
 export function matchesConfirmationPhrase(input: string): boolean {
   return input.trim() === OPEN_CONFIRMATION_PHRASE;

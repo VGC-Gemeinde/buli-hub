@@ -4,7 +4,10 @@ import type { DiscordIdentity } from "@/features/auth/identity";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
-import { RegistrationStatus } from "@/features/staff/components/registration-status";
+import {
+  PlayerGrid,
+  SeasonCard,
+} from "@/features/staff/components/registration-status";
 import type { RegistrationState } from "@/features/staff/registration-window";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
@@ -128,7 +131,7 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Staff: Anmeldungs-Status</h2>
+        <h2 className="text-2xl">Staff: Saison-Karte</h2>
         {(
           [
             ["not_started", null],
@@ -137,14 +140,29 @@ export function Gallery() {
           ] as [RegistrationState, Date | null][]
         ).map(([state, closesAt]) => (
           <Specimen key={state} label={state}>
-            <RegistrationStatus
+            <SeasonCard
               state={state}
               registrationUrl="http://localhost:3000/anmeldung"
               closesAt={closesAt}
-              players={[]}
             />
           </Specimen>
         ))}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Staff: Anmeldungs-Grid</h2>
+        <Specimen label="leer">
+          <PlayerGrid players={[]} />
+        </Specimen>
+        <Specimen label="mit Spielern">
+          <PlayerGrid
+            players={[
+              { id: "1", name: "Testerino", avatarUrl: AVATAR_URL },
+              { id: "2", name: "annegret" },
+              { id: "3", name: "Blaubeerkuchen" },
+            ]}
+          />
+        </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">

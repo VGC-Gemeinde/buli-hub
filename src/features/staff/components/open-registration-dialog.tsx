@@ -4,90 +4,108 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { openRegistration } from "../actions";
-import {
-  matchesConfirmationPhrase,
-  OPEN_CONFIRMATION_PHRASE,
-} from "../registration-window";
+import { matchesConfirmationPhrase, SEASON_NAME } from "../registration-window";
 
-export function OpenRegistrationDialog() {
-  const [open, setOpen] = useState(false);
-  const [closesAt, setClosesAt] = useState("");
+// Confirm-only: the end date is chosen on the card (OpenRegistrationForm) and
+// passed in here as a datetime-local string. The dialog only confirms.
+export function OpenRegistrationDialog({
+  open,
+  onOpenChange,
+  closesAtLocal,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  closesAtLocal: string;
+}) {
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const canSubmit =
-    closesAt !== "" && matchesConfirmationPhrase(confirmation) && !pending;
+  const closesAtLabel = closesAtLocal
+    ? new Intl.DateTimeFormat("de-DE", {
+        dateStyle: "long",
+        timeStyle: "short",
+      }).format(new Date(closesAtLocal))
+    : "";
+
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      setConfirmation("");
+      setError(null);
+    }
+    onOpenChange(next);
+  }
 
   async function submit() {
     setPending(true);
     setError(null);
-    // datetime-local yields wall-clock without a zone; treat it as local.
     const result = await openRegistration({
-      closesAt: new Date(closesAt).toISOString(),
+      closesAt: new Date(closesAtLocal).toISOString(),
       confirmation,
     });
     setPending(false);
     if (result.ok) {
-      setOpen(false);
+      handleOpenChange(false);
     } else {
       setError(result.error);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button">Anmeldung öffnen</Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Anmeldung öffnen</DialogTitle>
+          <DialogTitle>Anmeldung öffnen?</DialogTitle>
           <DialogDescription>
-            Sobald geöffnet, ist die Anmeldung bis zum Enddatum aktiv und kann
-            nicht wieder geschlossen werden. Die Anmeldung schließt automatisch
-            zum gesetzten Zeitpunkt.
+            Die Anmeldung für{" "}
+            <span className="font-semibold text-foreground">{SEASON_NAME}</span>{" "}
+            öffnet sofort und schließt automatisch am{" "}
+            <span className="font-semibold text-foreground">
+              {closesAtLabel}
+            </span>
+            .
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="closes-at">Enddatum</Label>
-            <Input
-              id="closes-at"
-              type="datetime-local"
-              value={closesAt}
-              onChange={(event) => setClosesAt(event.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="confirmation">
-              Tippe{" "}
-              <span className="font-semibold">{OPEN_CONFIRMATION_PHRASE}</span>{" "}
-              zur Bestätigung
-            </Label>
-            <Input
-              id="confirmation"
-              value={confirmation}
-              onChange={(event) => setConfirmation(event.target.value)}
-              autoComplete="off"
-            />
-          </div>
+        <div className="grid gap-2">
+          <Label htmlFor="confirmation">
+            Gib{" "}
+            <span className="font-semibold text-brand-blue dark:text-white">
+              {SEASON_NAME}
+            </span>{" "}
+            ein, um zu bestätigen
+          </Label>
+          <Input
+            id="confirmation"
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.target.value)}
+            placeholder={SEASON_NAME}
+            autoComplete="off"
+          />
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
         </div>
 
         <DialogFooter>
-          <Button type="button" disabled={!canSubmit} onClick={submit}>
+          <DialogClose asChild>
+            <Button type="button" variant="outline">
+              Abbrechen
+            </Button>
+          </DialogClose>
+          <Button
+            type="button"
+            disabled={!matchesConfirmationPhrase(confirmation) || pending}
+            onClick={submit}
+          >
             {pending ? "Wird geöffnet…" : "Anmeldung öffnen"}
           </Button>
         </DialogFooter>

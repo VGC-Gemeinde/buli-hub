@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { createWindow, latestWindow } from "./queries";
 
@@ -8,6 +8,11 @@ import { createWindow, latestWindow } from "./queries";
 // running). registration_windows.opened_by has an FK to auth.users, so the
 // test creates its own user and cleans up afterwards.
 const userId = randomUUID();
+
+// latestWindow() is global, so the file owns the table's state: start clean.
+beforeAll(async () => {
+  await db.execute(sql`delete from registration_windows`);
+});
 
 afterAll(async () => {
   await db.execute(

@@ -37,6 +37,17 @@ export function deriveRole(
   return "player";
 }
 
+const ROLE_ORDER: Record<Role, number> = {
+  dev: 3,
+  admin: 2,
+  staff: 1,
+  player: 0,
+};
+
+export function roleAtLeast(role: Role, minimum: Role): boolean {
+  return ROLE_ORDER[role] >= ROLE_ORDER[minimum];
+}
+
 export function isRoleStale(syncedAt: Date | null, now: Date): boolean {
   if (syncedAt === null) {
     return true;

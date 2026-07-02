@@ -29,6 +29,20 @@
       "when": 1782983569088,
       "tag": "20260702091249_roles_column_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782985245518,
+      "tag": "20260702094045_registration_windows",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782985246160,
+      "tag": "20260702094046_registration_windows_fk_rls",
+      "breakpoints": true
     }
   ]
 }

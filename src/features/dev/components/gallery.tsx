@@ -3,6 +3,9 @@ import { UserMenu } from "@/features/auth/components/user-menu";
 import type { DiscordIdentity } from "@/features/auth/identity";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
+import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
+import { RegistrationStatus } from "@/features/staff/components/registration-status";
+import type { RegistrationState } from "@/features/staff/registration-window";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
 
@@ -121,6 +124,33 @@ export function Gallery() {
           <p className="text-destructive text-sm">
             Anmeldung fehlgeschlagen. Bitte versuche es erneut.
           </p>
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Staff: Anmeldungs-Status</h2>
+        {(
+          [
+            ["not_started", null],
+            ["open", new Date("2100-01-01T18:00:00Z")],
+            ["closed", new Date("2000-01-01T18:00:00Z")],
+          ] as [RegistrationState, Date | null][]
+        ).map(([state, closesAt]) => (
+          <Specimen key={state} label={state}>
+            <RegistrationStatus
+              state={state}
+              registrationUrl="http://localhost:3000/anmeldung"
+              closesAt={closesAt}
+              players={[]}
+            />
+          </Specimen>
+        ))}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">CopyLinkButton</h2>
+        <Specimen label="Anmeldelink">
+          <CopyLinkButton url="http://localhost:3000/anmeldung" />
         </Specimen>
       </section>
     </div>

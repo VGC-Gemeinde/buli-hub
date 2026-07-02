@@ -14,7 +14,13 @@ import {
 import { signOut } from "../actions";
 import type { DiscordIdentity } from "../identity";
 
-export function UserMenu({ identity }: { identity: DiscordIdentity }) {
+export function UserMenu({
+  identity,
+  isStaff = false,
+}: {
+  identity: DiscordIdentity;
+  isStaff?: boolean;
+}) {
   const name = identity.displayName ?? "Discord-Nutzer";
 
   return (
@@ -44,6 +50,11 @@ export function UserMenu({ identity }: { identity: DiscordIdentity }) {
         <DropdownMenuItem asChild className="font-medium">
           <Link href="/profil">Profil</Link>
         </DropdownMenuItem>
+        {isStaff ? (
+          <DropdownMenuItem asChild className="font-medium">
+            <Link href="/staff">Staff-Bereich</Link>
+          </DropdownMenuItem>
+        ) : null}
         <form action={signOut}>
           <DropdownMenuItem asChild className="w-full font-medium">
             <button type="submit">Abmelden</button>

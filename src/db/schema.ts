@@ -29,3 +29,17 @@ export const profiles = pgTable("profiles", {
     .notNull()
     .defaultNow(),
 });
+
+// Season registration window. A row exists only once staff has opened a
+// registration; the current state (not started / open / closed) is derived
+// from the latest row and the current time — there is no status column and
+// no scheduled job. opened_by references auth.users (FK + RLS in a custom
+// migration, since Drizzle does not manage the auth schema).
+export const registrationWindows = pgTable("registration_windows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  openedAt: timestamp("opened_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
+  openedBy: uuid("opened_by").notNull(),
+});

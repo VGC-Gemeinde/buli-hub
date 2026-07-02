@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { deriveRole, isRoleStale, ROLE_SYNC_TTL_MS, roleLabel } from "./roles";
+import {
+  deriveRole,
+  isRoleStale,
+  ROLE_SYNC_TTL_MS,
+  roleAtLeast,
+  roleLabel,
+} from "./roles";
 
 const mapping = { dev: "111", admin: "222", staff: "333" };
 
@@ -45,6 +51,27 @@ describe("isRoleStale", () => {
   it("marks a sync older than the TTL as stale", () => {
     const old = new Date(now.getTime() - ROLE_SYNC_TTL_MS - 1000);
     expect(isRoleStale(old, now)).toBe(true);
+  });
+});
+
+describe("roleAtLeast", () => {
+  it("treats every role as meeting its own minimum", () => {
+    for (const role of ["dev", "admin", "staff", "player"] as const) {
+      expect(roleAtLeast(role, role)).toBe(true);
+    }
+  });
+
+  it("ranks dev > admin > staff > player", () => {
+    expect(roleAtLeast("dev", "staff")).toBe(true);
+    expect(roleAtLeast("admin", "staff")).toBe(true);
+    expect(roleAtLeast("staff", "staff")).toBe(true);
+    expect(roleAtLeast("player", "staff")).toBe(false);
+  });
+
+  it("rejects lower roles against a higher minimum", () => {
+    expect(roleAtLeast("staff", "admin")).toBe(false);
+    expect(roleAtLeast("admin", "dev")).toBe(false);
+    expect(roleAtLeast("player", "player")).toBe(true);
   });
 });
 

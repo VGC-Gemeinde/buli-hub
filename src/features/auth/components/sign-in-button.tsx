@@ -1,10 +1,18 @@
+import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { signInWithDiscord } from "../actions";
 
-export function SignInButton() {
+type SignInButtonProps = Pick<
+  ComponentProps<typeof Button>,
+  "variant" | "size"
+>;
+
+export function SignInButton(props: SignInButtonProps) {
   return (
     <form action={signInWithDiscord}>
-      <Button type="submit">Mit Discord anmelden</Button>
+      <Button type="submit" {...props}>
+        Mit Discord anmelden
+      </Button>
     </form>
   );
 }

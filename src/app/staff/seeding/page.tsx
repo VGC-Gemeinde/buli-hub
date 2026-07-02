@@ -3,12 +3,14 @@ import { SiteHeader } from "@/components/site-header";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import { ConfigForm } from "@/features/seeding/components/config-form";
+import { DivisionGroups } from "@/features/seeding/components/division-groups";
 import { PlacementList } from "@/features/seeding/components/placement-list";
 import { orderForPlacement } from "@/features/seeding/placement";
 import {
   getSeeding,
   listDivisions,
   listSeedingPlayers,
+  listSubDivisions,
 } from "@/features/seeding/queries";
 import { divisionName } from "@/features/seeding/seeding";
 import { StaffSectionHeader } from "@/features/staff/components/registration-status";
@@ -48,12 +50,14 @@ export default async function SeedingPage() {
     );
   }
 
-  const [seeding, divisions, players] = await Promise.all([
+  const [seeding, divisions, players, subDivisions] = await Promise.all([
     getSeeding(window.id),
     listDivisions(window.id),
     listSeedingPlayers(window.id),
+    listSubDivisions(window.id),
   ]);
   const orderedPlayers = orderForPlacement(players);
+  const anyAssigned = players.some((p) => p.divisionId !== null);
 
   return (
     <Shell>
@@ -98,6 +102,24 @@ export default async function SeedingPage() {
                 Keine Anmeldungen für diese Saison.
               </p>
             )}
+          </section>
+        ) : null}
+
+        {anyAssigned ? (
+          <section className="flex flex-col gap-5">
+            <StaffSectionHeader title="Gruppen" />
+            <div className="flex flex-col gap-4">
+              {divisions.map((division) => (
+                <DivisionGroups
+                  key={division.id}
+                  division={division}
+                  players={players.filter((p) => p.divisionId === division.id)}
+                  subDivisions={subDivisions.filter(
+                    (sd) => sd.divisionId === division.id,
+                  )}
+                />
+              ))}
+            </div>
           </section>
         ) : null}
       </div>

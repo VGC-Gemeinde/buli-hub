@@ -5,6 +5,7 @@ import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { ConfigForm } from "@/features/seeding/components/config-form";
+import { DivisionGroups } from "@/features/seeding/components/division-groups";
 import { PlacementList } from "@/features/seeding/components/placement-list";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import {
@@ -256,6 +257,7 @@ export function Gallery() {
                 prevDivision: "Division 1",
                 prevPlacement: "2. Platz",
                 divisionId: "d1",
+                subDivisionId: null,
               },
               {
                 userId: "2",
@@ -271,6 +273,54 @@ export function Gallery() {
                 prevDivision: null,
                 prevPlacement: null,
                 divisionId: null,
+                subDivisionId: null,
+              },
+            ]}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Seeding: Gruppen</h2>
+        <Specimen label="Division mit generierten Gruppen">
+          <DivisionGroups
+            division={{ id: "d1", tier: 1 }}
+            subDivisions={[
+              { id: "s1", position: 0 },
+              { id: "s2", position: 1 },
+            ]}
+            players={[
+              {
+                userId: "1",
+                displayName: "Testerino",
+                username: "testerino",
+                avatarUrl: AVATAR_URL,
+                status: "returning",
+                platform: "cartridge",
+                participatedBefore: true,
+                skillSelfRating: null,
+                prevSeason: null,
+                prevName: null,
+                prevDivision: null,
+                prevPlacement: null,
+                divisionId: "d1",
+                subDivisionId: "s1",
+              },
+              {
+                userId: "2",
+                displayName: "Neuling",
+                username: "neuling",
+                avatarUrl: null,
+                status: "new",
+                platform: "showdown",
+                participatedBefore: false,
+                skillSelfRating: 7,
+                prevSeason: null,
+                prevName: null,
+                prevDivision: null,
+                prevPlacement: null,
+                divisionId: "d1",
+                subDivisionId: "s2",
               },
             ]}
           />

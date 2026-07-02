@@ -19,6 +19,7 @@ export type SeedingPlayer = {
   prevDivision: string | null;
   prevPlacement: string | null;
   divisionId: string | null;
+  subDivisionId: string | null;
 };
 
 export type Caveat = { kind: "self_reported"; label: string };

@@ -5,9 +5,11 @@ import { createWindow, latestWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
 import {
   assignPlayerToDivision,
+  generateSubDivisionsForDivision,
   getSeeding,
   listDivisions,
   listSeedingPlayers,
+  listSubDivisions,
   saveSeedingConfig,
 } from "./queries";
 
@@ -82,5 +84,35 @@ describe("player placement", () => {
 
     await assignPlayerToDivision(windowId, userId, null);
     expect((await listSeedingPlayers(windowId))[0].divisionId).toBeNull();
+  });
+});
+
+describe("sub-division generation", () => {
+  it("creates a group and assigns the division's players", async () => {
+    const divisionId = (await listDivisions(windowId))[0].id;
+    await assignPlayerToDivision(windowId, userId, divisionId);
+
+    await generateSubDivisionsForDivision(windowId, divisionId);
+
+    const subs = (await listSubDivisions(windowId)).filter(
+      (s) => s.divisionId === divisionId,
+    );
+    expect(subs).toHaveLength(1);
+    expect((await listSeedingPlayers(windowId))[0].subDivisionId).toBe(
+      subs[0].id,
+    );
+  });
+
+  it("replaces the groups on re-generation", async () => {
+    const divisionId = (await listDivisions(windowId))[0].id;
+    await generateSubDivisionsForDivision(windowId, divisionId);
+    const subs = (await listSubDivisions(windowId)).filter(
+      (s) => s.divisionId === divisionId,
+    );
+    expect(subs).toHaveLength(1);
+    // the player is re-assigned to the fresh group
+    expect((await listSeedingPlayers(windowId))[0].subDivisionId).toBe(
+      subs[0].id,
+    );
   });
 });

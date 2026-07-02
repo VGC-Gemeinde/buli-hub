@@ -1,7 +1,7 @@
 # Discord sign-in
 
-**Status: implemented** (2026-07-02) — manual end-to-end sign-in verification
-pending (requires the Discord client secret in `.env` and a stack restart).
+**Status: done** (2026-07-02) — sign-in verified end to end against the local
+stack.
 
 Users sign in to Buli Hub with their Discord account via Supabase Auth. The
 signed-in user's Discord identity (username, avatar) is shown in the UI from

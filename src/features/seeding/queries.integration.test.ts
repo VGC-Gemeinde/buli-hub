@@ -3,8 +3,11 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createWindow, latestWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
+import { autoDivisionPlacements, suggestedDivisionCount } from "./placement";
 import {
+  assignPlayersToDivision,
   assignPlayerToDivision,
+  createDivisions,
   generateSubDivisionsForDivision,
   getSeeding,
   listDivisions,
@@ -123,5 +126,73 @@ describe("publishing", () => {
     expect((await getSeeding(windowId))?.publishedAt).toBeNull();
     await publishSeeding(windowId);
     expect((await getSeeding(windowId))?.publishedAt).toBeInstanceOf(Date);
+  });
+});
+
+// The DB side of initializeSeeding: derive the count, create the divisions,
+// and place returning players into their previous division. Own window so it
+// does not collide with the shared one above.
+describe("auto-init from registration history", () => {
+  const initUser = randomUUID();
+  const returner1 = randomUUID();
+  const returner3 = randomUUID();
+  const newcomer = randomUUID();
+  let initWindow: string;
+
+  beforeAll(async () => {
+    for (const id of [initUser, returner1, returner3, newcomer]) {
+      await db.execute(sql`insert into auth.users (id) values (${id})`);
+    }
+    await createWindow(new Date("2026-09-30T18:00:00Z"), initUser);
+    const windows = await db.execute<{ id: string }>(
+      sql`select id from registration_windows where opened_by = ${initUser}`,
+    );
+    initWindow = windows[0].id;
+    await db.execute(
+      sql`insert into registrations (window_id, user_id, platform, status, participated_before, prev_division, prev_placement) values
+        (${initWindow}, ${returner1}, 'showdown', 'returning', true, 1, 4),
+        (${initWindow}, ${returner3}, 'cartridge', 'returning', true, 3, 2),
+        (${initWindow}, ${newcomer}, 'showdown', 'new', false, null, null)`,
+    );
+  });
+
+  afterAll(async () => {
+    await db.execute(
+      sql`delete from registration_windows where id = ${initWindow}`,
+    );
+    for (const id of [initUser, returner1, returner3, newcomer]) {
+      await db.execute(sql`delete from auth.users where id = ${id}`);
+    }
+  });
+
+  it("creates divisions up to the largest previous division", async () => {
+    const players = await listSeedingPlayers(initWindow);
+    const count = suggestedDivisionCount(players);
+    expect(count).toBe(3);
+
+    await createDivisions(initWindow, count);
+    expect((await listDivisions(initWindow)).map((d) => d.tier)).toEqual([
+      1, 2, 3,
+    ]);
+  });
+
+  it("places returning players into their previous division, new stays unplaced", async () => {
+    const players = await listSeedingPlayers(initWindow);
+    const idByTier = new Map(
+      (await listDivisions(initWindow)).map((d) => [d.tier, d.id]),
+    );
+    for (const { userId: uid, tier } of autoDivisionPlacements(players, 3)) {
+      await assignPlayersToDivision(
+        initWindow,
+        [uid],
+        idByTier.get(tier) ?? "",
+      );
+    }
+
+    const placed = await listSeedingPlayers(initWindow);
+    const byUser = new Map(placed.map((p) => [p.userId, p.divisionId]));
+    expect(byUser.get(returner1)).toBe(idByTier.get(1));
+    expect(byUser.get(returner3)).toBe(idByTier.get(3));
+    expect(byUser.get(newcomer)).toBeNull();
   });
 });

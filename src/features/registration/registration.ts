@@ -59,11 +59,21 @@ export const platformSchema = z.enum(platformEnum.enumValues, {
   error: "Bitte eine Plattform wählen",
 });
 
+// Division and placement are tracked as numbers so the seeding tool can work
+// with them directly (prefill the divisions, auto-place returning players).
 export const veteranHistorySchema = z.object({
   prevSeason: z.string().trim().min(1, "Pflichtfeld").max(200),
   prevName: z.string().trim().min(1, "Pflichtfeld").max(200),
-  prevDivision: z.string().trim().min(1, "Pflichtfeld").max(200),
-  prevPlacement: z.string().trim().min(1, "Pflichtfeld").max(200),
+  prevDivision: z.coerce
+    .number({ error: "Bitte eine Zahl" })
+    .int("Bitte eine ganze Zahl")
+    .min(1, "Mindestens 1")
+    .max(30, "Höchstens 30"),
+  prevPlacement: z.coerce
+    .number({ error: "Bitte eine Zahl" })
+    .int("Bitte eine ganze Zahl")
+    .min(1, "Mindestens 1")
+    .max(500, "Höchstens 500"),
 });
 
 export const newPlayerSchema = z.object({

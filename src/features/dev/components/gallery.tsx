@@ -4,10 +4,11 @@ import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
-import { ConfigForm } from "@/features/seeding/components/config-form";
-import { DivisionGroups } from "@/features/seeding/components/division-groups";
-import { PlacementList } from "@/features/seeding/components/placement-list";
-import { PublishPanel } from "@/features/seeding/components/publish-panel";
+import { PublishDialog } from "@/features/seeding/components/publish-dialog";
+import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
+import { SeedingInitLoader } from "@/features/seeding/components/seeding-workspace";
+import type { SeedingPlayer } from "@/features/seeding/placement";
+import { assembleSheetRows } from "@/features/seeding/sheet";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import {
   PlayerGrid,
@@ -219,8 +220,8 @@ export function Gallery() {
               platform: "cartridge",
               prevSeason: "Saison 4",
               prevName: "AltHase",
-              prevDivision: "Division 2",
-              prevPlacement: "3. Platz",
+              prevDivision: 2,
+              prevPlacement: 3,
               skillSelfRating: null,
               greatestAchievements: null,
             }}
@@ -229,114 +230,114 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Seeding: Konfiguration</h2>
-        <Specimen label="Config-Formular">
-          <ConfigForm initialSize={8} initialDivisionCount={3} />
+        <h2 className="text-2xl">Seeding: Sheet</h2>
+        <Specimen label="Zeilen (Separatoren, Spieler, Gruppen)">
+          <div className="flex h-[440px] flex-col overflow-hidden rounded-lg border">
+            <SeedingSheet
+              rows={assembleSheetRows({
+                players: SEEDING_PLAYERS,
+                divisions: SEEDING_DIVISIONS,
+                subDivisions: SEEDING_SUBS,
+                size: 8,
+                filter: { query: "", status: "all" },
+              })}
+              divisions={SEEDING_DIVISIONS}
+              subDivisions={SEEDING_SUBS}
+              selection={new Set()}
+              readOnly={false}
+              generatingDivisionId={null}
+              onGenerate={() => {}}
+              onToggleSelect={() => {}}
+              onAssignDivision={() => {}}
+              onMoveGroup={() => {}}
+              onPlace={() => {}}
+            />
+          </div>
         </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Seeding: Spieler einteilen</h2>
-        <Specimen label="Placement-Liste">
-          <PlacementList
-            divisions={[
-              { id: "d1", tier: 1 },
-              { id: "d2", tier: 2 },
-            ]}
-            players={[
-              {
-                userId: "1",
-                displayName: "Testerino",
-                username: "testerino",
-                avatarUrl: AVATAR_URL,
-                status: "returning",
-                platform: "cartridge",
-                participatedBefore: true,
-                skillSelfRating: null,
-                prevSeason: "Saison 4",
-                prevName: "AltHase",
-                prevDivision: "Division 1",
-                prevPlacement: "2. Platz",
-                divisionId: "d1",
-                subDivisionId: null,
-              },
-              {
-                userId: "2",
-                displayName: "Neuling",
-                username: "neuling",
-                avatarUrl: null,
-                status: "new",
-                platform: "showdown",
-                participatedBefore: false,
-                skillSelfRating: 7,
-                prevSeason: null,
-                prevName: null,
-                prevDivision: null,
-                prevPlacement: null,
-                divisionId: null,
-                subDivisionId: null,
-              },
-            ]}
-          />
-        </Specimen>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Seeding: Gruppen</h2>
-        <Specimen label="Division mit generierten Gruppen">
-          <DivisionGroups
-            division={{ id: "d1", tier: 1 }}
-            subDivisions={[
-              { id: "s1", position: 0 },
-              { id: "s2", position: 1 },
-            ]}
-            players={[
-              {
-                userId: "1",
-                displayName: "Testerino",
-                username: "testerino",
-                avatarUrl: AVATAR_URL,
-                status: "returning",
-                platform: "cartridge",
-                participatedBefore: true,
-                skillSelfRating: null,
-                prevSeason: null,
-                prevName: null,
-                prevDivision: null,
-                prevPlacement: null,
-                divisionId: "d1",
-                subDivisionId: "s1",
-              },
-              {
-                userId: "2",
-                displayName: "Neuling",
-                username: "neuling",
-                avatarUrl: null,
-                status: "new",
-                platform: "showdown",
-                participatedBefore: false,
-                skillSelfRating: 7,
-                prevSeason: null,
-                prevName: null,
-                prevDivision: null,
-                prevPlacement: null,
-                divisionId: "d1",
-                subDivisionId: "s2",
-              },
-            ]}
-          />
+        <h2 className="text-2xl">Seeding: Auto-Einteilung (Ladezustand)</h2>
+        <Specimen label="Während die Rückkehrer eingeteilt werden">
+          <div className="flex h-40 flex-col rounded-lg border">
+            <SeedingInitLoader />
+          </div>
         </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Seeding: Veröffentlichen</h2>
         <Specimen label="Bereit">
-          <PublishPanel total={40} grouped={40} ready />
+          <PublishDialog
+            ready
+            gateHint="Endgültig — kann nicht rückgängig gemacht werden."
+            onConfirm={async () => ({ ok: true })}
+          />
         </Specimen>
-        <Specimen label="Noch nicht bereit">
-          <PublishPanel total={40} grouped={32} ready={false} />
+        <Specimen label="Gesperrt">
+          <PublishDialog
+            ready={false}
+            gateHint="Erst wenn alle Spieler platziert und in Gruppen sind."
+            onConfirm={async () => ({ ok: true })}
+          />
         </Specimen>
       </section>
     </div>
   );
 }
+
+const SEEDING_DIVISIONS = [
+  { id: "d1", tier: 1 },
+  { id: "d2", tier: 2 },
+];
+const SEEDING_SUBS = [
+  { id: "s1", divisionId: "d1", position: 0 },
+  { id: "s2", divisionId: "d1", position: 1 },
+];
+
+function seedPlayer(overrides: Partial<SeedingPlayer>): SeedingPlayer {
+  return {
+    userId: crypto.randomUUID(),
+    displayName: "Spieler",
+    username: "spieler",
+    avatarUrl: null,
+    status: "new",
+    platform: "showdown",
+    participatedBefore: false,
+    skillSelfRating: 5,
+    prevSeason: null,
+    prevName: null,
+    prevDivision: null,
+    prevPlacement: null,
+    greatestAchievements: null,
+    divisionId: null,
+    subDivisionId: null,
+    ...overrides,
+  };
+}
+
+const SEEDING_PLAYERS: SeedingPlayer[] = [
+  seedPlayer({
+    displayName: "AltHase",
+    status: "returning",
+    platform: "cartridge",
+    participatedBefore: true,
+    skillSelfRating: null,
+    prevSeason: "Saison 4",
+    prevDivision: 1,
+    prevPlacement: 2,
+  }),
+  seedPlayer({ displayName: "Neuling", skillSelfRating: 8 }),
+  seedPlayer({
+    displayName: "Kuro",
+    divisionId: "d1",
+    subDivisionId: "s1",
+    skillSelfRating: 9,
+  }),
+  seedPlayer({
+    displayName: "Annegret",
+    divisionId: "d1",
+    subDivisionId: "s2",
+    platform: "cartridge",
+  }),
+];

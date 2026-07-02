@@ -12,10 +12,10 @@ import { register } from "../actions";
 import { PLATFORM_LABELS, type Platform } from "../registration";
 
 const VETERAN_FIELDS = [
-  { key: "prevSeason", label: "Letzte Saison" },
-  { key: "prevName", label: "Damaliger Name" },
-  { key: "prevDivision", label: "Division" },
-  { key: "prevPlacement", label: "Platzierung" },
+  { key: "prevSeason", label: "Letzte Saison", type: "text" },
+  { key: "prevName", label: "Damaliger Name", type: "text" },
+  { key: "prevDivision", label: "Division", type: "number" },
+  { key: "prevPlacement", label: "Platzierung", type: "number" },
 ] as const;
 
 type VeteranKey = (typeof VETERAN_FIELDS)[number]["key"];
@@ -166,6 +166,8 @@ export function RegistrationForm({
                 <Label htmlFor={field.key}>{field.label}</Label>
                 <Input
                   id={field.key}
+                  type={field.type}
+                  min={field.type === "number" ? 1 : undefined}
                   value={veteran[field.key]}
                   onChange={(event) =>
                     setVeteran((prev) => ({

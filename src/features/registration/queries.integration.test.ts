@@ -106,8 +106,8 @@ describe("registrations", () => {
       veteran: {
         prevSeason: "Saison 2",
         prevName: "Alt",
-        prevDivision: "Div 1",
-        prevPlacement: "1. Platz",
+        prevDivision: 1,
+        prevPlacement: 1,
       },
       newPlayer: null,
     });

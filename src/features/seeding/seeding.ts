@@ -13,8 +13,12 @@ export function divisionName(tier: number): string {
 // „Division 1a", „Division 1b", … — division tier + a letter for the 0-based
 // group position.
 export function subDivisionName(tier: number, position: number): string {
-  const letter = String.fromCharCode(97 + position);
-  return `Division ${tier}${letter}`;
+  return `Division ${subDivisionShortName(tier, position)}`;
+}
+
+// Short form „1a", „2c" — for tight columns/selects.
+export function subDivisionShortName(tier: number, position: number): string {
+  return `${tier}${String.fromCharCode(97 + position)}`;
 }
 
 export const seedingConfigSchema = z.object({

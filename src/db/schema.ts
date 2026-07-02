@@ -89,8 +89,8 @@ export const registrations = pgTable(
     // Veteran-history (self-reported veterans only).
     prevSeason: text("prev_season"),
     prevName: text("prev_name"),
-    prevDivision: text("prev_division"),
-    prevPlacement: text("prev_placement"),
+    prevDivision: integer("prev_division"),
+    prevPlacement: integer("prev_placement"),
     // New-player set.
     skillSelfRating: integer("skill_self_rating"),
     greatestAchievements: text("greatest_achievements"),

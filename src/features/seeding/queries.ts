@@ -46,6 +46,7 @@ export async function listSeedingPlayers(
       prevName: registrations.prevName,
       prevDivision: registrations.prevDivision,
       prevPlacement: registrations.prevPlacement,
+      greatestAchievements: registrations.greatestAchievements,
       divisionId: placements.divisionId,
       subDivisionId: placements.subDivisionId,
     })
@@ -79,12 +80,73 @@ export async function assignPlayerToDivision(
   userId: string,
   divisionId: string | null,
 ) {
+  await assignPlayersToDivision(windowId, [userId], divisionId);
+}
+
+// Bulk variant: assign many players to one division in a single upsert.
+export async function assignPlayersToDivision(
+  windowId: string,
+  userIds: string[],
+  divisionId: string | null,
+) {
+  if (userIds.length === 0) {
+    return;
+  }
   await db
     .insert(placements)
-    .values({ windowId, userId, divisionId, subDivisionId: null })
+    .values(
+      userIds.map((userId) => ({
+        windowId,
+        userId,
+        divisionId,
+        subDivisionId: null,
+      })),
+    )
     .onConflictDoUpdate({
       target: [placements.windowId, placements.userId],
       set: { divisionId, subDivisionId: null },
+    });
+}
+
+// Creates the divisions for tiers 1..count. Used by the auto-init, which sets
+// up the divisions without a seedings row (the group size is chosen by staff
+// afterwards). No-op for count < 1.
+export async function createDivisions(windowId: string, count: number) {
+  if (count < 1) {
+    return;
+  }
+  const rows = [];
+  for (let tier = 1; tier <= count; tier++) {
+    rows.push({ windowId, tier });
+  }
+  await db.insert(divisions).values(rows);
+}
+
+// Places players into an exact division + sub-division in one upsert (drag &
+// drop can drop onto a group, which sets both at once — unlike the division /
+// group assignments above that each touch only one field).
+export async function placePlayersInGroup(
+  windowId: string,
+  userIds: string[],
+  divisionId: string | null,
+  subDivisionId: string | null,
+) {
+  if (userIds.length === 0) {
+    return;
+  }
+  await db
+    .insert(placements)
+    .values(
+      userIds.map((userId) => ({
+        windowId,
+        userId,
+        divisionId,
+        subDivisionId,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: [placements.windowId, placements.userId],
+      set: { divisionId, subDivisionId },
     });
 }
 

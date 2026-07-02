@@ -16,8 +16,9 @@ export type SeedingPlayer = {
   skillSelfRating: number | null;
   prevSeason: string | null;
   prevName: string | null;
-  prevDivision: string | null;
-  prevPlacement: string | null;
+  prevDivision: number | null;
+  prevPlacement: number | null;
+  greatestAchievements: string | null;
   divisionId: string | null;
   subDivisionId: string | null;
 };
@@ -45,6 +46,39 @@ export function seedingReadiness(
   const total = players.length;
   const grouped = players.filter((p) => p.subDivisionId !== null).length;
   return { total, grouped, ready: total > 0 && grouped === total };
+}
+
+// The division count suggested from the registrations: the largest previous
+// division any returning player reported (0 when nobody reported one). Used to
+// prefill the divisions when the seeding is first set up.
+export function suggestedDivisionCount(
+  players: readonly Pick<SeedingPlayer, "prevDivision">[],
+): number {
+  let max = 0;
+  for (const player of players) {
+    if (player.prevDivision !== null && player.prevDivision > max) {
+      max = player.prevDivision;
+    }
+  }
+  return max;
+}
+
+// The automatic placement of returning players into the division they were in
+// last season. Placement (relegation) is deliberately ignored — a player goes
+// back into the same tier. Players whose previous division is outside
+// 1..divisionCount (or who have none) are left unplaced.
+export function autoDivisionPlacements(
+  players: readonly Pick<SeedingPlayer, "userId" | "prevDivision">[],
+  divisionCount: number,
+): { userId: string; tier: number }[] {
+  const placements: { userId: string; tier: number }[] = [];
+  for (const player of players) {
+    const tier = player.prevDivision;
+    if (tier !== null && tier >= 1 && tier <= divisionCount) {
+      placements.push({ userId: player.userId, tier });
+    }
+  }
+  return placements;
 }
 
 // Order for manual placement: returning players first (staff place them from

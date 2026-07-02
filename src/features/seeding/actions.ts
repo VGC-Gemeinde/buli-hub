@@ -5,15 +5,23 @@ import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
-import { seedingReadiness } from "./placement";
 import {
+  autoDivisionPlacements,
+  seedingReadiness,
+  suggestedDivisionCount,
+} from "./placement";
+import {
+  assignPlayersToDivision,
   assignPlayerToDivision,
+  createDivisions,
   divisionBelongsToWindow,
   generateSubDivisionsForDivision,
   getSeeding,
+  listDivisions,
   listSeedingPlayers,
   movePlayerToSubDivision,
   publishSeeding as persistPublish,
+  placePlayersInGroup,
   saveSeedingConfig,
   subDivisionDivisionId,
 } from "./queries";
@@ -107,12 +115,64 @@ async function editableWindow(): Promise<
   return { ok: true, windowId: window.id };
 }
 
+// First-open setup: derive the division count from the largest previous
+// division any returning player reported, create those divisions, and place
+// returning players back into their old division (placement/relegation is
+// ignored for now). Idempotent — a no-op once divisions exist, so it never
+// clobbers manual work. `initialized` says whether it changed anything.
+export async function initializeSeeding(): Promise<
+  { ok: true; initialized: boolean } | { ok: false; error: string }
+> {
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
+  }
+
+  const existing = await listDivisions(gate.windowId);
+  if (existing.length > 0) {
+    return { ok: true, initialized: false };
+  }
+
+  const players = await listSeedingPlayers(gate.windowId);
+  const count = suggestedDivisionCount(players);
+  if (count < 1) {
+    return { ok: true, initialized: false };
+  }
+
+  await createDivisions(gate.windowId, count);
+  const created = await listDivisions(gate.windowId);
+  const idByTier = new Map(created.map((d) => [d.tier, d.id]));
+
+  // Group the placements by tier so each division is one bulk assignment.
+  const usersByTier = new Map<number, string[]>();
+  for (const { userId, tier } of autoDivisionPlacements(players, count)) {
+    const list = usersByTier.get(tier);
+    if (list) {
+      list.push(userId);
+    } else {
+      usersByTier.set(tier, [userId]);
+    }
+  }
+  for (const [tier, userIds] of usersByTier) {
+    const divisionId = idByTier.get(tier);
+    if (divisionId) {
+      await assignPlayersToDivision(gate.windowId, userIds, divisionId);
+    }
+  }
+
+  revalidatePath("/staff/seeding");
+  return { ok: true, initialized: true };
+}
+
 export async function generateGroups(input: {
   divisionId: string;
 }): Promise<SeedingResult> {
   const gate = await editableWindow();
   if (!gate.ok) {
     return gate;
+  }
+  if (!(await getSeeding(gate.windowId))) {
+    return { ok: false, error: "Bitte zuerst eine Gruppengröße festlegen" };
   }
   if (!(await divisionBelongsToWindow(gate.windowId, input.divisionId))) {
     return { ok: false, error: "Unbekannte Division" };
@@ -146,6 +206,74 @@ export async function moveToSubDivision(input: {
     input.userId,
     input.subDivisionId,
   );
+  revalidatePath("/staff/seeding");
+  return { ok: true };
+}
+
+export async function assignManyToDivision(input: {
+  userIds: string[];
+  divisionId: string | null;
+}): Promise<SeedingResult> {
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
+  }
+  if (
+    input.divisionId !== null &&
+    !(await divisionBelongsToWindow(gate.windowId, input.divisionId))
+  ) {
+    return { ok: false, error: "Unbekannte Division" };
+  }
+  await assignPlayersToDivision(gate.windowId, input.userIds, input.divisionId);
+  revalidatePath("/staff/seeding");
+  return { ok: true };
+}
+
+// Drag & drop lands players on an exact placement. A drop onto a group sets
+// both fields; onto a division separator or „Nicht platziert" the group is
+// null. Validates that a chosen group actually belongs to the chosen division.
+export async function placePlayers(input: {
+  userIds: string[];
+  divisionId: string | null;
+  subDivisionId: string | null;
+}): Promise<SeedingResult> {
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
+  }
+  if (
+    input.divisionId !== null &&
+    !(await divisionBelongsToWindow(gate.windowId, input.divisionId))
+  ) {
+    return { ok: false, error: "Unbekannte Division" };
+  }
+  if (input.subDivisionId !== null) {
+    const divisionId = await subDivisionDivisionId(input.subDivisionId);
+    if (divisionId === null || divisionId !== input.divisionId) {
+      return { ok: false, error: "Unbekannte Gruppe" };
+    }
+  }
+  await placePlayersInGroup(
+    gate.windowId,
+    input.userIds,
+    input.divisionId,
+    input.subDivisionId,
+  );
+  revalidatePath("/staff/seeding");
+  return { ok: true };
+}
+
+export async function generateAllGroups(): Promise<SeedingResult> {
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
+  }
+  if (!(await getSeeding(gate.windowId))) {
+    return { ok: false, error: "Bitte zuerst eine Gruppengröße festlegen" };
+  }
+  for (const division of await listDivisions(gate.windowId)) {
+    await generateSubDivisionsForDivision(gate.windowId, division.id);
+  }
   revalidatePath("/staff/seeding");
   return { ok: true };
 }

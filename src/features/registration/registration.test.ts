@@ -104,12 +104,28 @@ describe("veteranHistorySchema", () => {
   const valid = {
     prevSeason: "Saison 3",
     prevName: "OldNick",
-    prevDivision: "Division 1",
-    prevPlacement: "2. Platz",
+    prevDivision: "1",
+    prevPlacement: "2",
   };
 
   it("accepts all four fields", () => {
     expect(veteranHistorySchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("coerces division and placement to numbers", () => {
+    const parsed = veteranHistorySchema.parse(valid);
+    expect(parsed.prevDivision).toBe(1);
+    expect(parsed.prevPlacement).toBe(2);
+  });
+
+  it("rejects a non-numeric or zero division", () => {
+    expect(
+      veteranHistorySchema.safeParse({ ...valid, prevDivision: "eins" })
+        .success,
+    ).toBe(false);
+    expect(
+      veteranHistorySchema.safeParse({ ...valid, prevDivision: "0" }).success,
+    ).toBe(false);
   });
 
   it("rejects any missing field", () => {

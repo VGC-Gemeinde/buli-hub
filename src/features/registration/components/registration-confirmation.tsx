@@ -6,8 +6,8 @@ export type ConfirmationData = {
   platform: Platform;
   prevSeason: string | null;
   prevName: string | null;
-  prevDivision: string | null;
-  prevPlacement: string | null;
+  prevDivision: number | null;
+  prevPlacement: number | null;
   skillSelfRating: number | null;
   greatestAchievements: string | null;
 };
@@ -62,8 +62,18 @@ export function RegistrationConfirmation({
           <>
             <Row label="Letzte Saison" value={data.prevSeason} />
             <Row label="Damaliger Name" value={data.prevName ?? ""} />
-            <Row label="Division" value={data.prevDivision ?? ""} />
-            <Row label="Platzierung" value={data.prevPlacement ?? ""} />
+            <Row
+              label="Division"
+              value={
+                data.prevDivision !== null ? String(data.prevDivision) : ""
+              }
+            />
+            <Row
+              label="Platzierung"
+              value={
+                data.prevPlacement !== null ? String(data.prevPlacement) : ""
+              }
+            />
           </>
         ) : null}
         {data.skillSelfRating !== null ? (

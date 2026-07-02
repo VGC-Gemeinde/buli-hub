@@ -56,8 +56,8 @@ export type SeedRegistration = {
   participatedBefore: boolean | null;
   prevSeason: string | null;
   prevName: string | null;
-  prevDivision: string | null;
-  prevPlacement: string | null;
+  prevDivision: number | null;
+  prevPlacement: number | null;
 };
 
 // Pure: builds `count` registration specs. `rng` is injectable so the mix is
@@ -84,8 +84,8 @@ export function buildSeedRegistrations(
         participatedBefore: true,
         prevSeason: `Saison ${Math.floor(rng() * 4) + 1}`,
         prevName: displayName,
-        prevDivision: `Division ${Math.floor(rng() * 3) + 1}`,
-        prevPlacement: `${Math.floor(rng() * 8) + 1}. Platz`,
+        prevDivision: Math.floor(rng() * 5) + 1,
+        prevPlacement: Math.floor(rng() * 8) + 1,
       });
     } else {
       specs.push({

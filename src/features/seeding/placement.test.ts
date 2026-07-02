@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  autoDivisionPlacements,
   orderForPlacement,
   seedingCaveats,
   seedingReadiness,
+  suggestedDivisionCount,
 } from "./placement";
 
 describe("seedingCaveats", () => {
@@ -44,6 +46,67 @@ describe("seedingReadiness", () => {
     expect(
       seedingReadiness([{ subDivisionId: "a" }, { subDivisionId: "b" }]),
     ).toEqual({ total: 2, grouped: 2, ready: true });
+  });
+});
+
+describe("suggestedDivisionCount", () => {
+  it("is 0 when nobody reported a previous division", () => {
+    expect(
+      suggestedDivisionCount([{ prevDivision: null }, { prevDivision: null }]),
+    ).toBe(0);
+  });
+
+  it("returns the largest reported previous division", () => {
+    expect(
+      suggestedDivisionCount([
+        { prevDivision: 2 },
+        { prevDivision: null },
+        { prevDivision: 5 },
+        { prevDivision: 3 },
+      ]),
+    ).toBe(5);
+  });
+});
+
+describe("autoDivisionPlacements", () => {
+  it("places returning players into their previous division", () => {
+    expect(
+      autoDivisionPlacements(
+        [
+          { userId: "a", prevDivision: 1 },
+          { userId: "b", prevDivision: 3 },
+        ],
+        3,
+      ),
+    ).toEqual([
+      { userId: "a", tier: 1 },
+      { userId: "b", tier: 3 },
+    ]);
+  });
+
+  it("skips players without a previous division (new players)", () => {
+    expect(
+      autoDivisionPlacements(
+        [
+          { userId: "a", prevDivision: null },
+          { userId: "b", prevDivision: 2 },
+        ],
+        3,
+      ),
+    ).toEqual([{ userId: "b", tier: 2 }]);
+  });
+
+  it("skips previous divisions outside 1..divisionCount", () => {
+    expect(
+      autoDivisionPlacements(
+        [
+          { userId: "a", prevDivision: 4 },
+          { userId: "b", prevDivision: 0 },
+          { userId: "c", prevDivision: 2 },
+        ],
+        3,
+      ),
+    ).toEqual([{ userId: "c", tier: 2 }]);
   });
 });
 

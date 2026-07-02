@@ -93,40 +93,55 @@ export function SettingsForm({ initial }: SettingsFormProps) {
   }
 
   return (
-    <section aria-label="Einstellungen" className="flex flex-col gap-6">
-      <div className="flex items-baseline justify-between border-b pb-3.5">
-        <div className="flex items-center gap-2.5">
-          <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
-          <h2 className="text-[26px] tracking-[0.03em]">Einstellungen</h2>
+    <section aria-label="Für die Orga" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-baseline justify-between border-b pb-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
+            <h2 className="text-[26px] tracking-[0.03em]">Für die Orga</h2>
+          </div>
+          <SaveIndicator status={status} />
         </div>
-        <SaveIndicator status={status} />
+        <p className="text-muted-foreground text-sm">
+          Alle Angaben hier sind freiwillig.
+        </p>
       </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="twitter-handle">Twitter/X-Handle</Label>
-        {/* Input look-alike wrapper so the static @ prefix sits inside the field. */}
-        <div className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
-          <span className="text-base text-muted-foreground md:text-sm">@</span>
-          <input
-            id="twitter-handle"
-            value={values.twitterHandle}
-            onChange={(event) => change({ twitterHandle: event.target.value })}
-            placeholder="benutzername"
+      <div className="flex flex-col gap-3.5">
+        <div className="grid gap-2">
+          <Label htmlFor="twitter-handle">Twitter/X-Handle</Label>
+          {/* Input look-alike wrapper so the static @ prefix sits inside the field. */}
+          <div className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+            <span className="text-base text-muted-foreground md:text-sm">
+              @
+            </span>
+            <input
+              id="twitter-handle"
+              value={values.twitterHandle}
+              onChange={(event) =>
+                change({ twitterHandle: event.target.value })
+              }
+              placeholder="benutzername"
+              autoComplete="off"
+              className="h-full w-full min-w-0 bg-transparent pl-1 text-base outline-none placeholder:text-muted-foreground md:text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="bluesky-handle">Bluesky-Handle</Label>
+          <Input
+            id="bluesky-handle"
+            value={values.blueskyHandle}
+            onChange={(event) => change({ blueskyHandle: event.target.value })}
+            placeholder="name.bsky.social"
             autoComplete="off"
-            className="h-full w-full min-w-0 bg-transparent pl-1 text-base outline-none placeholder:text-muted-foreground md:text-sm"
           />
         </div>
-      </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="bluesky-handle">Bluesky-Handle</Label>
-        <Input
-          id="bluesky-handle"
-          value={values.blueskyHandle}
-          onChange={(event) => change({ blueskyHandle: event.target.value })}
-          placeholder="name.bsky.social"
-          autoComplete="off"
-        />
+        <p className="text-[13px] text-muted-foreground leading-snug">
+          Über deine Handles können wir dich in Social-Media-Posts erwähnen.
+        </p>
       </div>
 
       <div className="grid gap-2">
@@ -168,6 +183,9 @@ export function SettingsForm({ initial }: SettingsFormProps) {
             autoComplete="off"
           />
         ) : null}
+        <p className="text-[13px] text-muted-foreground leading-snug">
+          Zeigen wir in Content wie YouTube-Videos oder Twitch-Streams.
+        </p>
       </div>
     </section>
   );

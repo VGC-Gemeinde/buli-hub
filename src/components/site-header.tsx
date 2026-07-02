@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { discordIdentityFromUser } from "@/features/auth/identity";
@@ -28,11 +29,14 @@ export async function SiteHeader({ className }: { className?: string }) {
             Buli Hub
           </span>
         </Link>
-        {user ? (
-          <UserMenu identity={discordIdentityFromUser(user)} />
-        ) : (
-          <SignInButton variant="outline" />
-        )}
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          {user ? (
+            <UserMenu identity={discordIdentityFromUser(user)} />
+          ) : (
+            <SignInButton variant="outline" />
+          )}
+        </div>
       </header>
     </div>
   );

@@ -1,16 +1,19 @@
-# Dark mode: media strategy, not class strategy
+# Dark mode: class strategy via next-themes
 
 **Decided:** 2026-07-02
 
-`design/DESIGN.md` specifies the `.dark` class strategy, but nothing in the
-app ever set that class — dark mode was unreachable without adding a theme
-switcher (JS + a dependency like next-themes).
+Dark mode uses the `.dark` class strategy from `design/DESIGN.md`, managed by
+`next-themes`: the system preference is the default, and a header toggle lets
+users override it (persisted in localStorage).
 
-Decision: dark mode follows the OS via `@media (prefers-color-scheme: dark)`,
-pure CSS. In `src/app/globals.css` the dark token block is wrapped in the
-media query and the `@custom-variant dark` line is removed (Tailwind's `dark:`
-variant is media-based by default).
+- `src/app/globals.css` defines the dark tokens under `.dark` and restores
+  Tailwind's class-based `dark:` variant via `@custom-variant`.
+- `ThemeProvider` (`attribute="class" defaultTheme="system" enableSystem`)
+  wraps the app in `layout.tsx`; `<html>` carries `suppressHydrationWarning`
+  because next-themes sets the class before hydration.
+- next-themes also manages the `color-scheme` style on `<html>`, so native UI
+  (scrollbars, form controls) follows the active theme — no manual
+  `color-scheme` declaration in CSS.
 
-Trade-off, accepted deliberately: **no manual light/dark toggle is possible**
-with this strategy. If a toggle ever becomes a requirement, switch back to the
-class strategy and add next-themes — that migration is small and mechanical.
+A pure-CSS `prefers-color-scheme` media strategy was considered and rejected:
+it cannot support a manual toggle, which the design requires.

@@ -6,12 +6,14 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { updateProfile } from "../actions";
-import { REGIONS } from "../regions";
+import { GERMAN_STATES, NEIGHBOR_COUNTRIES } from "../regions";
 import { originToFormState } from "../settings";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -92,20 +94,28 @@ export function SettingsForm({ initial }: SettingsFormProps) {
 
   return (
     <section aria-label="Einstellungen" className="flex flex-col gap-6">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-2xl">Einstellungen</h2>
+      <div className="flex items-baseline justify-between border-b pb-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
+          <h2 className="text-[26px] tracking-[0.03em]">Einstellungen</h2>
+        </div>
         <SaveIndicator status={status} />
       </div>
 
       <div className="grid gap-2">
         <Label htmlFor="twitter-handle">Twitter/X-Handle</Label>
-        <Input
-          id="twitter-handle"
-          value={values.twitterHandle}
-          onChange={(event) => change({ twitterHandle: event.target.value })}
-          placeholder="benutzername"
-          autoComplete="off"
-        />
+        {/* Input look-alike wrapper so the static @ prefix sits inside the field. */}
+        <div className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+          <span className="text-base text-muted-foreground md:text-sm">@</span>
+          <input
+            id="twitter-handle"
+            value={values.twitterHandle}
+            onChange={(event) => change({ twitterHandle: event.target.value })}
+            placeholder="benutzername"
+            autoComplete="off"
+            className="h-full w-full min-w-0 bg-transparent pl-1 text-base outline-none placeholder:text-muted-foreground md:text-sm"
+          />
+        </div>
       </div>
 
       <div className="grid gap-2">
@@ -130,11 +140,22 @@ export function SettingsForm({ initial }: SettingsFormProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={NONE}>Keine Angabe</SelectItem>
-            {REGIONS.map((region) => (
-              <SelectItem key={region} value={region}>
-                {region}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel>Bundesländer</SelectLabel>
+              {GERMAN_STATES.map((state) => (
+                <SelectItem key={state} value={state}>
+                  {state}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+            <SelectGroup>
+              <SelectLabel>Weitere Länder</SelectLabel>
+              {NEIGHBOR_COUNTRIES.map((country) => (
+                <SelectItem key={country} value={country}>
+                  {country}
+                </SelectItem>
+              ))}
+            </SelectGroup>
             <SelectItem value={OTHER}>Andere</SelectItem>
           </SelectContent>
         </Select>

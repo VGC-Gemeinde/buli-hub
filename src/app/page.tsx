@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { SiteHeader } from "@/components/site-header";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function Home({
   searchParams,
@@ -8,27 +9,52 @@ export default async function Home({
   searchParams: Promise<{ auth_error?: string }>;
 }) {
   const { auth_error } = await searchParams;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
       <SiteHeader className="relative z-10 shrink-0" />
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-12 text-center">
-        <Image
-          src="/logo.svg"
-          alt=""
-          width={148}
-          height={102}
-          className="mb-9 rounded-2xl shadow-xl"
-        />
-        <h1 className="mb-9 text-7xl leading-[1.05] text-brand-blue dark:text-white">
-          VGC Bundesliga
-        </h1>
-        <SignInButton size="lg" />
-        {auth_error ? (
-          <p className="mt-5 text-destructive text-sm">
-            Anmeldung fehlgeschlagen. Bitte versuche es erneut.
-          </p>
-        ) : null}
+        {user ? (
+          <>
+            <Image
+              src="/logo.svg"
+              alt=""
+              width={132}
+              height={91}
+              className="mb-9 rounded-2xl shadow-xl"
+            />
+            <h1 className="mb-[18px] text-6xl leading-[1.05] text-brand-blue dark:text-white">
+              VGC Bundesliga
+            </h1>
+            <p className="max-w-[440px] text-[17px] text-muted-foreground">
+              Die Liga-Features sind in Arbeit. Sobald die erste Saison startet,
+              geht es hier los.
+            </p>
+          </>
+        ) : (
+          <>
+            <Image
+              src="/logo.svg"
+              alt=""
+              width={148}
+              height={102}
+              className="mb-9 rounded-2xl shadow-xl"
+            />
+            <h1 className="mb-9 text-7xl leading-[1.05] text-brand-blue dark:text-white">
+              VGC Bundesliga
+            </h1>
+            <SignInButton size="lg" />
+            {auth_error ? (
+              <p className="mt-5 text-destructive text-sm">
+                Anmeldung fehlgeschlagen. Bitte versuche es erneut.
+              </p>
+            ) : null}
+          </>
+        )}
       </main>
       <div className="absolute inset-x-0 bottom-[26px] z-10 flex items-center justify-center gap-3">
         <div className="h-[9px] w-5 -skew-x-[18deg] bg-brand-orange" />

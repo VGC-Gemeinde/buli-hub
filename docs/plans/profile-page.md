@@ -1,6 +1,6 @@
 # Profile page
 
-**Status: implemented** (2026-07-02) — verified end to end against the local
+**Status: done** (2026-07-02) — verified end to end against the local
 stack.
 
 Signed-in users get a profile page at `/profil`: their Discord avatar and

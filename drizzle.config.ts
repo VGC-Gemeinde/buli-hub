@@ -1,10 +1,10 @@
 import { defineConfig } from "drizzle-kit";
 
-// drizzle-kit does not load Next.js env files on its own.
+// drizzle-kit does not load env files on its own.
 try {
-  process.loadEnvFile(".env.local");
+  process.loadEnvFile(".env");
 } catch {
-  // .env.local is optional; DATABASE_URL may come from the environment.
+  // .env is optional; DATABASE_URL may come from the environment.
 }
 
 const databaseUrl = process.env.DATABASE_URL;

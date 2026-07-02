@@ -63,7 +63,7 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
 npm config set save-exact=true --location=project   # writes .npmrc: exact version pinning
 npm install          # install dependencies
 supabase init        # create supabase/ config (once per repo)
-supabase start       # start local Postgres + Auth (Docker); prints URLs/keys for .env.local
+supabase start       # start local Postgres + Auth (Docker); prints URLs/keys for .env
 ```
 
 ### Daily development
@@ -117,7 +117,7 @@ Common commands should be wrapped as npm scripts (`db:generate`, `db:migrate`, `
 
 ## Environment & secrets
 
-- `.env.local` — local Supabase URLs/keys (from `supabase start` output), Discord bot token for dev
+- `.env` — the single local env file (template: `.env.example`), read by Next.js, drizzle-kit, and the Supabase CLI alike: Supabase URLs/keys, Discord bot token, and the OAuth credentials the CLI substitutes into `supabase/config.toml` via `env()` on `supabase start`
 - Production secrets (Supabase service keys, Discord bot token) via Google Secret Manager, injected into Cloud Run
 - The Discord bot token must never reach client-side code
 

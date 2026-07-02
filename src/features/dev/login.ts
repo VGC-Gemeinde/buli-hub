@@ -1,6 +1,10 @@
-import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import {
+  createClient as createSupabaseAdmin,
+  type User,
+} from "@supabase/supabase-js";
 import { sql } from "drizzle-orm";
 import { profiles } from "@/db/schema";
+import { discordIdentityFromUser } from "@/features/auth/identity";
 import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { getPersona, type Persona, personaToAdminPayload } from "./personas";
@@ -71,15 +75,16 @@ export async function loginAsPersona(
     return { ok: false, error: verifyError.message };
   }
 
-  await pinPersonaRole(payload.email, persona.role);
+  await pinPersonaProfile(payload.email, persona);
 
   return { ok: true };
 }
 
-// Personas have fake Discord ids, so their roles cannot come from a real
-// guild lookup — write the role directly and date the sync far into the
-// future so getRole's TTL revalidation never overwrites it.
-async function pinPersonaRole(email: string, role: Persona["role"]) {
+// Personas have fake Discord ids, so their role and identity cannot come from
+// a real guild lookup — write them directly and date the sync far into the
+// future so getRole's TTL revalidation never overwrites them. Identity is
+// derived from the persona metadata via the same mapper as a real session.
+async function pinPersonaProfile(email: string, persona: Persona) {
   const rows = await db.execute<{ id: string }>(
     sql`select id from auth.users where email = ${email}`,
   );
@@ -87,12 +92,19 @@ async function pinPersonaRole(email: string, role: Persona["role"]) {
   if (!userId) {
     return;
   }
+  const identity = discordIdentityFromUser({
+    user_metadata: persona.userMetadata,
+  } as User);
   const farFuture = new Date("2100-01-01T00:00:00Z");
+  const values = {
+    role: persona.role,
+    roleSyncedAt: farFuture,
+    displayName: identity.displayName,
+    username: identity.username,
+    avatarUrl: identity.avatarUrl,
+  };
   await db
     .insert(profiles)
-    .values({ userId, role, roleSyncedAt: farFuture })
-    .onConflictDoUpdate({
-      target: profiles.userId,
-      set: { role, roleSyncedAt: farFuture },
-    });
+    .values({ userId, ...values })
+    .onConflictDoUpdate({ target: profiles.userId, set: values });
 }

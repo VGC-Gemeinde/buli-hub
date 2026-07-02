@@ -5,6 +5,8 @@ export type DiscordIdentity = {
   discordId: string | null;
   /** Discord global display name, falling back to the username. */
   displayName: string | null;
+  /** Discord username (the @handle). */
+  username: string | null;
   avatarUrl: string | null;
 };
 
@@ -31,6 +33,7 @@ export function discordIdentityFromUser(user: User): DiscordIdentity {
       asString(customClaims.global_name) ??
       asString(meta.full_name) ??
       asString(meta.name),
+    username: asString(meta.user_name) ?? asString(meta.name),
     avatarUrl: asString(meta.avatar_url) ?? asString(meta.picture),
   };
 }

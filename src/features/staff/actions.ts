@@ -25,8 +25,7 @@ export async function openRegistration(input: {
   }
 
   // Never trust UI gating: re-check the role in the action.
-  const identity = discordIdentityFromUser(user);
-  const role = await getRole(user.id, identity.discordId);
+  const role = await getRole(user.id, discordIdentityFromUser(user));
   if (!roleAtLeast(role, "staff")) {
     return { ok: false, error: "Keine Berechtigung" };
   }

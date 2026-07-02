@@ -29,6 +29,7 @@ describe("discordIdentityFromUser", () => {
     expect(discordIdentityFromUser(makeUser(fullMetadata))).toEqual({
       discordId: "123456789012345678",
       displayName: "Kuro",
+      username: "kuro_username",
       avatarUrl: "https://cdn.discordapp.com/avatars/123/abc.png",
     });
   });
@@ -58,6 +59,7 @@ describe("discordIdentityFromUser", () => {
     expect(discordIdentityFromUser(makeUser({}))).toEqual({
       discordId: null,
       displayName: null,
+      username: null,
       avatarUrl: null,
     });
   });
@@ -75,6 +77,7 @@ describe("discordIdentityFromUser", () => {
     expect(identity).toEqual({
       discordId: null,
       displayName: "kuro_username",
+      username: "kuro_username",
       avatarUrl: null,
     });
   });
@@ -83,6 +86,7 @@ describe("discordIdentityFromUser", () => {
     expect(discordIdentityFromUser(makeUser(undefined))).toEqual({
       discordId: null,
       displayName: null,
+      username: null,
       avatarUrl: null,
     });
   });

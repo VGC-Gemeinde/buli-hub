@@ -36,11 +36,17 @@ describe("profile upsert", () => {
     expect(profile?.roleSyncedAt).toBeNull();
   });
 
-  it("settings upsert never touches the role columns", async () => {
+  it("settings upsert never touches the server-managed columns", async () => {
     const syncedAt = new Date("2026-07-02T10:00:00Z");
     await db
       .update(profiles)
-      .set({ role: "admin", roleSyncedAt: syncedAt })
+      .set({
+        role: "admin",
+        roleSyncedAt: syncedAt,
+        displayName: "Alex | Team Rocket",
+        username: "alexk",
+        avatarUrl: "https://cdn.discordapp.com/avatars/1/x.png",
+      })
       .where(eq(profiles.userId, userId));
 
     await upsertProfile(userId, {
@@ -52,6 +58,29 @@ describe("profile upsert", () => {
     const profile = await getProfile(userId);
     expect(profile?.role).toBe("admin");
     expect(profile?.roleSyncedAt).toEqual(syncedAt);
+    expect(profile?.displayName).toBe("Alex | Team Rocket");
+    expect(profile?.username).toBe("alexk");
+    expect(profile?.avatarUrl).toBe(
+      "https://cdn.discordapp.com/avatars/1/x.png",
+    );
+  });
+
+  it("a server-managed identity write never touches the settings columns", async () => {
+    // Mirrors the syncMember upsert: only role + identity columns.
+    await db
+      .insert(profiles)
+      .values({ userId, role: "staff", displayName: "Neuer Name" })
+      .onConflictDoUpdate({
+        target: profiles.userId,
+        set: { role: "staff", displayName: "Neuer Name" },
+      });
+
+    const profile = await getProfile(userId);
+    expect(profile?.displayName).toBe("Neuer Name");
+    expect(profile?.role).toBe("staff");
+    // Settings from the previous test survive.
+    expect(profile?.twitterHandle).toBe("kuro_vgc");
+    expect(profile?.origin).toBe("Bayern");
   });
 
   it("updates on second save and bumps updated_at", async () => {

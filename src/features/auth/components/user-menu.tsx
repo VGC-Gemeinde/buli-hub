@@ -12,16 +12,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "../actions";
-import type { DiscordIdentity } from "../identity";
 
 export function UserMenu({
-  identity,
+  displayName,
+  avatarUrl,
   isStaff = false,
 }: {
-  identity: DiscordIdentity;
+  displayName: string | null;
+  avatarUrl: string | null;
   isStaff?: boolean;
 }) {
-  const name = identity.displayName ?? "Discord-Nutzer";
+  const name = displayName ?? "Discord-Nutzer";
 
   return (
     <DropdownMenu>
@@ -31,9 +32,7 @@ export function UserMenu({
           className="flex items-center gap-2 rounded-md py-1 pr-2.5 pl-1 hover:bg-secondary data-[state=open]:bg-secondary [&[data-state=open]>svg]:rotate-180"
         >
           <Avatar className="size-7">
-            {identity.avatarUrl ? (
-              <AvatarImage src={identity.avatarUrl} alt="" />
-            ) : null}
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
             <AvatarFallback className="text-xs">
               {name.slice(0, 2).toUpperCase()}
             </AvatarFallback>

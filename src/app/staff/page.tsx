@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { currentUserRole } from "@/features/roles/guard";
+import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import {
   PlayerGrid,
@@ -13,7 +13,7 @@ import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
 
 export default async function StaffPage() {
-  const current = await currentUserRole();
+  const current = await currentUser();
   if (!current || !roleAtLeast(current.role, "staff")) {
     redirect("/");
   }

@@ -22,6 +22,11 @@ export const profiles = pgTable("profiles", {
   origin: text("origin"),
   role: roleEnum("role").notNull().default("player"),
   roleSyncedAt: timestamp("role_synced_at", { withTimezone: true }),
+  // Discord guild identity, server-managed (synced from the guild member,
+  // JWT fallback for non-members). Nullable; null avatar → initials fallback.
+  displayName: text("display_name"),
+  username: text("username"),
+  avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

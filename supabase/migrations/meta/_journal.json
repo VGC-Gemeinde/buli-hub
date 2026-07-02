@@ -43,6 +43,13 @@
       "when": 1782985246160,
       "tag": "20260702094046_registration_windows_fk_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782990078072,
+      "tag": "20260702110118_profile_guild_identity",
+      "breakpoints": true
     }
   ]
 }

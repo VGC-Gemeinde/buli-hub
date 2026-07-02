@@ -2,10 +2,44 @@
 // client code). No bot process: the backend calls the API directly.
 
 const API_BASE = "https://discord.com/api/v10";
+const CDN_BASE = "https://cdn.discordapp.com";
 
 export type GuildMember = {
   roles: string[];
+  // Server-specific nickname, null if the member has none.
+  nick: string | null;
+  // Server-specific avatar hash, null if the member uses their global one.
+  avatar: string | null;
+  user: {
+    id: string;
+    username: string;
+    globalName: string | null;
+    avatar: string | null;
+  };
 };
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function avatarExt(hash: string): string {
+  return hash.startsWith("a_") ? "gif" : "png";
+}
+
+// Resolves the avatar URL, preferring the guild-specific avatar over the
+// global one. Returns null when the user has neither (→ initials fallback).
+export function memberAvatarUrl(
+  guildId: string,
+  member: GuildMember,
+): string | null {
+  if (member.avatar) {
+    return `${CDN_BASE}/guilds/${guildId}/users/${member.user.id}/avatars/${member.avatar}.${avatarExt(member.avatar)}`;
+  }
+  if (member.user.avatar) {
+    return `${CDN_BASE}/avatars/${member.user.id}/${member.user.avatar}.${avatarExt(member.user.avatar)}`;
+  }
+  return null;
+}
 
 /**
  * Fetches a guild member by Discord user id.
@@ -35,10 +69,29 @@ export async function fetchGuildMember(
     throw new Error(`Discord API ${response.status}: ${await response.text()}`);
   }
 
-  const member = (await response.json()) as { roles?: unknown };
+  const member = (await response.json()) as {
+    roles?: unknown;
+    nick?: unknown;
+    avatar?: unknown;
+    user?: {
+      id?: unknown;
+      username?: unknown;
+      global_name?: unknown;
+      avatar?: unknown;
+    };
+  };
+
   return {
     roles: Array.isArray(member.roles)
       ? member.roles.filter((role): role is string => typeof role === "string")
       : [],
+    nick: asString(member.nick),
+    avatar: asString(member.avatar),
+    user: {
+      id: asString(member.user?.id) ?? "",
+      username: asString(member.user?.username) ?? "",
+      globalName: asString(member.user?.global_name),
+      avatar: asString(member.user?.avatar),
+    },
   };
 }

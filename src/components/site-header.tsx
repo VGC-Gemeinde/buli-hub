@@ -3,18 +3,12 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
-import { discordIdentityFromUser } from "@/features/auth/identity";
-import { currentUserRole } from "@/features/roles/guard";
+import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
-import { createClient } from "@/lib/supabase/server";
 
 // Site chrome per design/DESIGN.md: orange accent line + header.
 export async function SiteHeader({ className }: { className?: string }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const current = user ? await currentUserRole() : null;
+  const current = await currentUser();
   const isStaff = current !== null && roleAtLeast(current.role, "staff");
 
   return (
@@ -35,9 +29,10 @@ export async function SiteHeader({ className }: { className?: string }) {
         </Link>
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
-          {user ? (
+          {current ? (
             <UserMenu
-              identity={discordIdentityFromUser(user)}
+              displayName={current.displayName}
+              avatarUrl={current.avatarUrl}
               isStaff={isStaff}
             />
           ) : (

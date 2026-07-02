@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { discordIdentityFromUser } from "@/features/auth/identity";
-import { syncRole } from "@/features/roles/sync";
+import { syncMember } from "@/features/roles/sync";
 import { createClient } from "@/lib/supabase/server";
 
 // OAuth callback: Discord redirects here (via Supabase Auth) with a code,
@@ -14,13 +14,12 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Best-effort role sync — a Discord failure never blocks sign-in;
+      // Best-effort member sync — a Discord failure never blocks sign-in;
       // getRole revalidates on read anyway.
       try {
-        const identity = discordIdentityFromUser(data.user);
-        await syncRole(data.user.id, identity.discordId);
+        await syncMember(data.user.id, discordIdentityFromUser(data.user));
       } catch (syncError) {
-        console.error("Role sync at sign-in failed:", syncError);
+        console.error("Member sync at sign-in failed:", syncError);
       }
       return NextResponse.redirect(origin);
     }

@@ -1,6 +1,5 @@
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
-import type { DiscordIdentity } from "@/features/auth/identity";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
@@ -12,38 +11,41 @@ import type { RegistrationState } from "@/features/staff/registration-window";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
 
-// Role labels cover all four role badge variants across the specimens.
+// Identity variants exercise the name/username/avatar fallbacks and, via
+// roleLabel, all four role badges.
 const IDENTITIES: {
   label: string;
-  identity: DiscordIdentity;
+  displayName: string | null;
+  username: string | null;
+  avatarUrl: string | null;
   roleLabel: string;
 }[] = [
   {
     label: "Avatar + Name",
-    identity: {
-      discordId: "1",
-      displayName: "Testerino",
-      avatarUrl: AVATAR_URL,
-    },
+    displayName: "Testerino",
+    username: "testerino",
+    avatarUrl: AVATAR_URL,
     roleLabel: "Admin",
   },
   {
     label: "Ohne Avatar",
-    identity: { discordId: "2", displayName: "Ohne Avatar", avatarUrl: null },
+    displayName: "Ohne Avatar",
+    username: "ohne_avatar",
+    avatarUrl: null,
     roleLabel: "Staff",
   },
   {
     label: "Langer Name",
-    identity: {
-      discordId: "3",
-      displayName: "Blaubeerkuchenbäckermeisterin Annegret III.",
-      avatarUrl: AVATAR_URL,
-    },
+    displayName: "Blaubeerkuchenbäckermeisterin Annegret III.",
+    username: "annegret",
+    avatarUrl: AVATAR_URL,
     roleLabel: "Dev",
   },
   {
     label: "Leere Metadaten",
-    identity: { discordId: null, displayName: null, avatarUrl: null },
+    displayName: null,
+    username: null,
+    avatarUrl: null,
     roleLabel: "Spieler",
   },
 ];
@@ -70,23 +72,30 @@ export function Gallery() {
     <div className="flex flex-col gap-10">
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">ProfileHeader</h2>
-        {IDENTITIES.map(({ label, identity, roleLabel }) => (
-          <Specimen key={label} label={label}>
-            {/* max-w mirrors the /profil column so truncation is visible */}
-            <div className="max-w-xl">
-              <ProfileHeader identity={identity} roleLabel={roleLabel} />
-            </div>
-          </Specimen>
-        ))}
+        {IDENTITIES.map(
+          ({ label, displayName, username, avatarUrl, roleLabel }) => (
+            <Specimen key={label} label={label}>
+              {/* max-w mirrors the /profil column so truncation is visible */}
+              <div className="max-w-xl">
+                <ProfileHeader
+                  displayName={displayName}
+                  username={username}
+                  avatarUrl={avatarUrl}
+                  roleLabel={roleLabel}
+                />
+              </div>
+            </Specimen>
+          ),
+        )}
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">UserMenu</h2>
         <div className="grid grid-cols-2 gap-3">
-          {IDENTITIES.slice(0, 2).map(({ label, identity }) => (
+          {IDENTITIES.slice(0, 2).map(({ label, displayName, avatarUrl }) => (
             <Specimen key={label} label={label}>
               <div className="flex justify-start">
-                <UserMenu identity={identity} />
+                <UserMenu displayName={displayName} avatarUrl={avatarUrl} />
               </div>
             </Specimen>
           ))}

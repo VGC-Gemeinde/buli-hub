@@ -1,1 +1,20 @@
-{ "version": "7", "dialect": "postgresql", "entries": [] }
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1782977272019,
+      "tag": "20260702072752_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782977272662,
+      "tag": "20260702072753_profiles_auth_fk_rls",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { signOut } from "../actions";
@@ -8,13 +9,18 @@ export function UserMenu({ identity }: { identity: DiscordIdentity }) {
 
   return (
     <div className="flex items-center gap-3">
-      <Avatar>
-        {identity.avatarUrl ? (
-          <AvatarImage src={identity.avatarUrl} alt={name} />
-        ) : null}
-        <AvatarFallback>{name.slice(0, 2).toUpperCase()}</AvatarFallback>
-      </Avatar>
-      <span className="text-sm font-medium">{name}</span>
+      <Link
+        href="/profil"
+        className="flex items-center gap-3 rounded-md focus-visible:outline-2"
+      >
+        <Avatar>
+          {identity.avatarUrl ? (
+            <AvatarImage src={identity.avatarUrl} alt={name} />
+          ) : null}
+          <AvatarFallback>{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <span className="text-sm font-medium">{name}</span>
+      </Link>
       <form action={signOut}>
         <Button type="submit" variant="outline" size="sm">
           Abmelden

@@ -1,42 +1,17 @@
 import Image from "next/image";
+import { SiteHeader } from "@/components/site-header";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
-import { UserMenu } from "@/features/auth/components/user-menu";
-import { discordIdentityFromUser } from "@/features/auth/identity";
-import { createClient } from "@/lib/supabase/server";
 
 export default async function Home({
   searchParams,
 }: {
   searchParams: Promise<{ auth_error?: string }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   const { auth_error } = await searchParams;
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
-      <div className="h-[3px] shrink-0 bg-brand-orange" />
-      <header className="relative z-10 flex items-center justify-between border-b px-7 py-3">
-        <div className="flex items-center gap-3">
-          <Image
-            src="/logo.svg"
-            alt="Buli Hub"
-            width={44}
-            height={30}
-            className="rounded-md"
-          />
-          <span className="text-[17px] font-semibold tracking-tight">
-            Buli Hub
-          </span>
-        </div>
-        {user ? (
-          <UserMenu identity={discordIdentityFromUser(user)} />
-        ) : (
-          <SignInButton variant="outline" />
-        )}
-      </header>
+      <SiteHeader className="relative z-10 shrink-0" />
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-12 text-center">
         <Image
           src="/logo.svg"

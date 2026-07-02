@@ -14,20 +14,20 @@ export async function SiteHeader({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="h-[3px] bg-brand-orange" />
-      <header className="flex items-center justify-between border-b px-7 py-3">
+      <header className="flex items-center justify-between border-b px-5 py-2.5">
         <Link href="/" className="flex items-center gap-3">
           <Image
             src="/logo.svg"
             alt="Buli Hub"
-            width={44}
-            height={30}
+            width={41}
+            height={28}
             className="rounded-md"
           />
-          <span className="text-[17px] font-semibold tracking-tight">
+          <span className="hidden font-semibold text-[17px] tracking-tight sm:inline">
             Buli Hub
           </span>
         </Link>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <ThemeToggle />
           {current ? (
             <UserMenu

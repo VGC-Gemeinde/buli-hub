@@ -29,7 +29,8 @@ export function UserMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-2 rounded-md py-1 pr-2.5 pl-1 hover:bg-secondary data-[state=open]:bg-secondary [&[data-state=open]>svg]:rotate-180"
+          aria-label={name}
+          className="flex items-center gap-1 rounded-md p-1 hover:bg-secondary data-[state=open]:bg-secondary [&[data-state=open]>svg]:rotate-180"
         >
           <Avatar className="size-7">
             {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
@@ -37,7 +38,6 @@ export function UserMenu({
               {name.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm font-medium">{name}</span>
           <ChevronDown className="size-3.5 text-muted-foreground transition-transform" />
         </button>
       </DropdownMenuTrigger>

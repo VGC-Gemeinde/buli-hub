@@ -81,6 +81,13 @@ export function RegistrationForm({
 
   return (
     <div className="flex flex-col gap-8">
+      {detectedReturning ? (
+        <p className="text-muted-foreground text-sm">
+          Willkommen zurück! Wir haben deine bisherige Teilnahme erkannt — mehr
+          als Plattform brauchen wir nicht von dir.
+        </p>
+      ) : null}
+
       <div className="grid gap-2">
         <Label htmlFor="display-name">Anzeigename</Label>
         <Input id="display-name" value={displayName ?? ""} disabled readOnly />
@@ -92,28 +99,30 @@ export function RegistrationForm({
       <div className="grid gap-2">
         <Label>Plattform</Label>
         <RadioGroup
+          className="grid grid-cols-2 gap-2"
           value={platform}
           onValueChange={(value) => setPlatform(value as Platform)}
         >
           {(Object.keys(PLATFORM_LABELS) as Platform[]).map((value) => (
-            <div key={value} className="flex items-center gap-2">
+            // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control
+            <label
+              key={value}
+              className="flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 px-3.5 has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/5"
+            >
               <RadioGroupItem value={value} id={`platform-${value}`} />
-              <Label htmlFor={`platform-${value}`} className="font-normal">
+              <span className="font-medium text-sm">
                 {PLATFORM_LABELS[value]}
-              </Label>
-            </div>
+              </span>
+            </label>
           ))}
         </RadioGroup>
       </div>
 
-      {detectedReturning ? (
-        <p className="text-muted-foreground text-sm">
-          Willkommen zurück! Wir haben deine bisherige Teilnahme erkannt.
-        </p>
-      ) : (
+      {detectedReturning ? null : (
         <div className="grid gap-2">
           <Label>Hast du schon einmal teilgenommen?</Label>
           <RadioGroup
+            className="grid grid-cols-2 gap-2"
             value={
               participatedBefore === null
                 ? ""
@@ -123,47 +132,64 @@ export function RegistrationForm({
             }
             onValueChange={(value) => setParticipatedBefore(value === "ja")}
           >
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="ja" id="participated-ja" />
-              <Label htmlFor="participated-ja" className="font-normal">
-                Ja
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="nein" id="participated-nein" />
-              <Label htmlFor="participated-nein" className="font-normal">
-                Nein
-              </Label>
-            </div>
+            {[
+              { value: "ja", label: "Ja" },
+              { value: "nein", label: "Nein" },
+            ].map((option) => (
+              // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control
+              <label
+                key={option.value}
+                className="flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 px-3.5 has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/5"
+              >
+                <RadioGroupItem
+                  value={option.value}
+                  id={`participated-${option.value}`}
+                />
+                <span className="font-medium text-sm">{option.label}</span>
+              </label>
+            ))}
           </RadioGroup>
         </div>
       )}
 
-      {isVeteran && !detectedReturning
-        ? VETERAN_FIELDS.map((field) => (
-            <div key={field.key} className="grid gap-2">
-              <Label htmlFor={field.key}>{field.label}</Label>
-              <Input
-                id={field.key}
-                value={veteran[field.key]}
-                onChange={(event) =>
-                  setVeteran((prev) => ({
-                    ...prev,
-                    [field.key]: event.target.value,
-                  }))
-                }
-                autoComplete="off"
-              />
-            </div>
-          ))
-        : null}
+      {isVeteran && !detectedReturning ? (
+        <div className="grid gap-2">
+          <div className="flex items-center gap-2">
+            <div className="h-[7px] w-3.5 -skew-x-[18deg] bg-brand-orange" />
+            <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
+              Deine bisherige Teilnahme
+            </span>
+          </div>
+          <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-4">
+            {VETERAN_FIELDS.map((field) => (
+              <div key={field.key} className="grid gap-2">
+                <Label htmlFor={field.key}>{field.label}</Label>
+                <Input
+                  id={field.key}
+                  value={veteran[field.key]}
+                  onChange={(event) =>
+                    setVeteran((prev) => ({
+                      ...prev,
+                      [field.key]: event.target.value,
+                    }))
+                  }
+                  autoComplete="off"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {isNew ? (
         <>
           <div className="grid gap-2">
-            <Label htmlFor="skill">
-              Wie schätzt du dein VGC-Niveau ein? ({skillSelfRating}/10)
-            </Label>
+            <div className="flex items-baseline justify-between">
+              <Label htmlFor="skill">Wie schätzt du dein VGC-Niveau ein?</Label>
+              <span className="font-semibold text-brand-blue text-sm dark:text-white">
+                {skillSelfRating}/10
+              </span>
+            </div>
             <Slider
               id="skill"
               min={0}
@@ -186,6 +212,7 @@ export function RegistrationForm({
               id="achievements"
               value={greatestAchievements}
               onChange={(event) => setGreatestAchievements(event.target.value)}
+              placeholder="Turniere, Platzierungen, Momente, auf die du stolz bist …"
             />
           </div>
         </>
@@ -193,10 +220,20 @@ export function RegistrationForm({
 
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
-      <div>
-        <Button type="button" size="lg" disabled={!canSubmit} onClick={submit}>
-          {pending ? "Wird gesendet…" : "Anmeldung absenden"}
-        </Button>
+      <div className="flex flex-col gap-2">
+        <div>
+          <Button
+            type="button"
+            size="lg"
+            disabled={!canSubmit}
+            onClick={submit}
+          >
+            {pending ? "Wird gesendet…" : "Anmeldung absenden"}
+          </Button>
+        </div>
+        <p className="text-[13px] text-muted-foreground">
+          Du kannst dich bis zum Anmeldeschluss jederzeit wieder abmelden.
+        </p>
       </div>
     </div>
   );

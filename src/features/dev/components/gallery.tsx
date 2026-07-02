@@ -195,6 +195,7 @@ export function Gallery() {
         <Specimen label="Neuer Spieler (mit Abmelden)">
           <RegistrationConfirmation
             canWithdraw
+            closesAt={new Date("2100-01-01T18:00:00Z")}
             data={{
               platform: "showdown",
               prevSeason: null,
@@ -209,6 +210,7 @@ export function Gallery() {
         <Specimen label="Veteran (geschlossen, kein Abmelden)">
           <RegistrationConfirmation
             canWithdraw={false}
+            closesAt={null}
             data={{
               platform: "cartridge",
               prevSeason: "Saison 4",

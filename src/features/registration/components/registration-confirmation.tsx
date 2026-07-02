@@ -1,3 +1,4 @@
+import { SEASON_NAME } from "@/features/staff/registration-window";
 import { PLATFORM_LABELS, type Platform } from "../registration";
 import { WithdrawButton } from "./withdraw-button";
 
@@ -23,18 +24,35 @@ function Row({ label, value }: { label: string; value: string }) {
 export function RegistrationConfirmation({
   data,
   canWithdraw,
+  closesAt,
 }: {
   data: ConfirmationData;
   canWithdraw: boolean;
+  closesAt: Date | null;
 }) {
+  const deadline = closesAt
+    ? new Intl.DateTimeFormat("de-DE", {
+        dateStyle: "short",
+        timeStyle: "short",
+      }).format(closesAt)
+    : null;
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-lg border px-6 py-5">
-        <p className="font-heading font-bold text-2xl uppercase tracking-[0.02em] text-brand-blue dark:text-white">
-          Du bist angemeldet
-        </p>
-        <p className="mt-1 text-muted-foreground text-sm">
-          Deine Anmeldung für die nächste Saison ist eingegangen.
+      <div className="flex flex-col gap-2 rounded-lg border px-6 py-5">
+        <div className="flex items-center gap-3.5">
+          <p className="font-heading font-bold text-2xl uppercase tracking-[0.02em] text-brand-blue dark:text-white">
+            Du bist angemeldet
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
+            <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
+              {SEASON_NAME}
+            </span>
+          </div>
+        </div>
+        <p className="text-muted-foreground text-sm">
+          Deine Anmeldung ist eingegangen. Alles Weitere erfährst du im Discord.
         </p>
       </div>
 
@@ -59,7 +77,16 @@ export function RegistrationConfirmation({
         ) : null}
       </div>
 
-      {canWithdraw ? <WithdrawButton /> : null}
+      {canWithdraw ? (
+        <div className="mt-2 flex flex-col gap-2 border-t pt-5">
+          <WithdrawButton />
+          {deadline ? (
+            <p className="text-[13px] text-muted-foreground">
+              Möglich bis zum Anmeldeschluss am {deadline}.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

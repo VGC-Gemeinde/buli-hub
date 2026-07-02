@@ -5,6 +5,7 @@ import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { ConfigForm } from "@/features/seeding/components/config-form";
+import { PlacementList } from "@/features/seeding/components/placement-list";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import {
   PlayerGrid,
@@ -229,6 +230,50 @@ export function Gallery() {
         <h2 className="text-2xl">Seeding: Konfiguration</h2>
         <Specimen label="Config-Formular">
           <ConfigForm initialSize={8} initialDivisionCount={3} />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Seeding: Spieler einteilen</h2>
+        <Specimen label="Placement-Liste">
+          <PlacementList
+            divisions={[
+              { id: "d1", tier: 1 },
+              { id: "d2", tier: 2 },
+            ]}
+            players={[
+              {
+                userId: "1",
+                displayName: "Testerino",
+                username: "testerino",
+                avatarUrl: AVATAR_URL,
+                status: "returning",
+                platform: "cartridge",
+                participatedBefore: true,
+                skillSelfRating: null,
+                prevSeason: "Saison 4",
+                prevName: "AltHase",
+                prevDivision: "Division 1",
+                prevPlacement: "2. Platz",
+                divisionId: "d1",
+              },
+              {
+                userId: "2",
+                displayName: "Neuling",
+                username: "neuling",
+                avatarUrl: null,
+                status: "new",
+                platform: "showdown",
+                participatedBefore: false,
+                skillSelfRating: 7,
+                prevSeason: null,
+                prevName: null,
+                prevDivision: null,
+                prevPlacement: null,
+                divisionId: null,
+              },
+            ]}
+          />
         </Specimen>
       </section>
     </div>

@@ -3,7 +3,13 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createWindow, latestWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
-import { getSeeding, listDivisions, saveSeedingConfig } from "./queries";
+import {
+  assignPlayerToDivision,
+  getSeeding,
+  listDivisions,
+  listSeedingPlayers,
+  saveSeedingConfig,
+} from "./queries";
 
 // Integration test against local Postgres. seedings/divisions FK to the
 // registration window; the test owns that window.
@@ -49,5 +55,32 @@ describe("seeding config", () => {
   it("removes the extra tiers when the count shrinks", async () => {
     await saveSeedingConfig(windowId, 6, 2);
     expect((await listDivisions(windowId)).map((d) => d.tier)).toEqual([1, 2]);
+  });
+});
+
+describe("player placement", () => {
+  beforeAll(async () => {
+    await db.execute(
+      sql`insert into registrations (window_id, user_id, platform, status, skill_self_rating) values (${windowId}, ${userId}, 'showdown', 'new', 5)`,
+    );
+    await db.execute(
+      sql`insert into profiles (user_id, display_name) values (${userId}, 'Testerino')`,
+    );
+  });
+
+  it("lists the registered player, unassigned, with identity", async () => {
+    const players = await listSeedingPlayers(windowId);
+    expect(players).toHaveLength(1);
+    expect(players[0].displayName).toBe("Testerino");
+    expect(players[0].divisionId).toBeNull();
+  });
+
+  it("assigns the player to a division and back to none", async () => {
+    const divisionId = (await listDivisions(windowId))[0].id;
+    await assignPlayerToDivision(windowId, userId, divisionId);
+    expect((await listSeedingPlayers(windowId))[0].divisionId).toBe(divisionId);
+
+    await assignPlayerToDivision(windowId, userId, null);
+    expect((await listSeedingPlayers(windowId))[0].divisionId).toBeNull();
   });
 });

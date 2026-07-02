@@ -3,7 +3,13 @@ import { SiteHeader } from "@/components/site-header";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import { ConfigForm } from "@/features/seeding/components/config-form";
-import { getSeeding, listDivisions } from "@/features/seeding/queries";
+import { PlacementList } from "@/features/seeding/components/placement-list";
+import { orderForPlacement } from "@/features/seeding/placement";
+import {
+  getSeeding,
+  listDivisions,
+  listSeedingPlayers,
+} from "@/features/seeding/queries";
 import { divisionName } from "@/features/seeding/seeding";
 import { StaffSectionHeader } from "@/features/staff/components/registration-status";
 import { latestWindow } from "@/features/staff/queries";
@@ -42,10 +48,12 @@ export default async function SeedingPage() {
     );
   }
 
-  const [seeding, divisions] = await Promise.all([
+  const [seeding, divisions, players] = await Promise.all([
     getSeeding(window.id),
     listDivisions(window.id),
+    listSeedingPlayers(window.id),
   ]);
+  const orderedPlayers = orderForPlacement(players);
 
   return (
     <Shell>
@@ -74,6 +82,22 @@ export default async function SeedingPage() {
                 </li>
               ))}
             </ul>
+          </section>
+        ) : null}
+
+        {divisions.length > 0 ? (
+          <section className="flex flex-col gap-5">
+            <StaffSectionHeader
+              title="Spieler einteilen"
+              meta={`${players.length} gesamt`}
+            />
+            {players.length > 0 ? (
+              <PlacementList players={orderedPlayers} divisions={divisions} />
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Keine Anmeldungen für diese Saison.
+              </p>
+            )}
           </section>
         ) : null}
       </div>

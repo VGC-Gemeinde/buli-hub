@@ -36,6 +36,31 @@ export default function DevPage() {
         </section>
 
         <section className="flex flex-col gap-3">
+          <h2 className="text-2xl">Testdaten</h2>
+          {/* Plain <a>: these routes mutate on GET; avoid Link prefetch. */}
+          <a
+            href="/dev/seed-registrations?count=100"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              100 Anmeldungen erzeugen
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Geschlossene Saison mit 100 Test-Spielern → zur Einteilung
+            </span>
+          </a>
+          <a
+            href="/dev/clear-registrations"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">Testdaten löschen</span>
+            <span className="text-[13px] text-muted-foreground">
+              Entfernt erzeugte Anmeldungen, Saisons und Fake-Nutzer
+            </span>
+          </a>
+        </section>
+
+        <section className="flex flex-col gap-3">
           <h2 className="text-2xl">Komponenten</h2>
           <Link
             href="/dev/ui"

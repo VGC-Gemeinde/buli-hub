@@ -1,6 +1,13 @@
 import { and, asc, eq, gt } from "drizzle-orm";
-import { divisions, seedings } from "@/db/schema";
+import {
+  divisions,
+  placements,
+  profiles,
+  registrations,
+  seedings,
+} from "@/db/schema";
 import { db } from "@/lib/db";
+import type { SeedingPlayer } from "./placement";
 
 export async function getSeeding(windowId: string) {
   return (
@@ -16,6 +23,66 @@ export async function listDivisions(windowId: string) {
     .from(divisions)
     .where(eq(divisions.windowId, windowId))
     .orderBy(asc(divisions.tier));
+}
+
+// Registered players for the season with their identity and current division
+// placement (null = unassigned).
+export async function listSeedingPlayers(
+  windowId: string,
+): Promise<SeedingPlayer[]> {
+  return db
+    .select({
+      userId: registrations.userId,
+      displayName: profiles.displayName,
+      username: profiles.username,
+      avatarUrl: profiles.avatarUrl,
+      status: registrations.status,
+      platform: registrations.platform,
+      participatedBefore: registrations.participatedBefore,
+      skillSelfRating: registrations.skillSelfRating,
+      prevSeason: registrations.prevSeason,
+      prevName: registrations.prevName,
+      prevDivision: registrations.prevDivision,
+      prevPlacement: registrations.prevPlacement,
+      divisionId: placements.divisionId,
+    })
+    .from(registrations)
+    .leftJoin(profiles, eq(profiles.userId, registrations.userId))
+    .leftJoin(
+      placements,
+      and(
+        eq(placements.userId, registrations.userId),
+        eq(placements.windowId, windowId),
+      ),
+    )
+    .where(eq(registrations.windowId, windowId));
+}
+
+export async function divisionBelongsToWindow(
+  windowId: string,
+  divisionId: string,
+): Promise<boolean> {
+  const row = await db.query.divisions.findFirst({
+    columns: { id: true },
+    where: and(eq(divisions.id, divisionId), eq(divisions.windowId, windowId)),
+  });
+  return row !== undefined;
+}
+
+// Assigns (or clears, divisionId null) a player's division. Changing the
+// division resets any sub-division placement, which belongs to a division.
+export async function assignPlayerToDivision(
+  windowId: string,
+  userId: string,
+  divisionId: string | null,
+) {
+  await db
+    .insert(placements)
+    .values({ windowId, userId, divisionId, subDivisionId: null })
+    .onConflictDoUpdate({
+      target: [placements.windowId, placements.userId],
+      set: { divisionId, subDivisionId: null },
+    });
 }
 
 // Persists the seeding config and reconciles the division rows to exactly

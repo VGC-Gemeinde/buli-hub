@@ -1,6 +1,7 @@
 # Division seeding
 
-**Status: awaiting approval**
+**Status: in progress** — slices 1 (config & schema) and 2 (placement) done;
+3 (sub-division generation) and 4 (publish) remain.
 
 Once a season's registration is closed, staff divide the registered players into
 divisions (skill tiers) and sub-divisions (round-robin groups), then publish.
@@ -48,12 +49,12 @@ Therefore:
 
 ## Slicing
 
-- **1 — Config & schema.** `seedings` (per season: sub-division size, publish
-  state) + `divisions` + `sub_divisions` + `placements`; the seeding page
-  shell, division-count + size config, staff-only gate, draft state.
-- **2 — Division placement.** Assign players to divisions via controls
-  (below), the unseeded list ordered by self-rating, caveat flags on
-  self-reported history.
+- **1 — Config & schema (done).** `seedings` + `divisions` + `sub_divisions` +
+  `placements`; the seeding page shell, division-count + size config,
+  staff-only gate, draft state.
+- **2 — Division placement (done).** Assign players to divisions via controls
+  (below), players ordered returning-first then new by self-rating, caveat
+  flags on self-reported history.
 - **3 — Sub-division generation.** The pure even-distribution + soft-platform
   algorithm, generate-per-division, manual moves between sub-divisions.
 - **4 — Publish.** Type-to-confirm gate; sets `published_at`.
@@ -84,15 +85,15 @@ with no policies (server-only, like the other staff tables).
 ## Domain logic (pure, exhaustively unit-tested — correctness is load-bearing)
 
 `src/features/seeding/`
-- `generate-sub-divisions.ts` — `generateSubDivisions(players, size)`:
-  `ceil(n/size)` groups, balanced to ≤1 difference, greedily keeping platforms
-  together without violating balance. Tests: n=0, n<size, exact multiples,
-  remainders (20/8→7/7/6), single platform, fully mixed, platform counts that
-  can't be cleanly grouped.
-- `rank-unseeded.ts` — order players with no proposal by self-rating desc
-  (nulls last, stable).
-- `caveats.ts` — `seedingCaveats(player)` → flags from registration data
-  (self-reported vs. detected, stale season, …).
+- `seeding.ts` — division/sub-division naming + the config Zod schema.
+- `placement.ts` — `seedingCaveats(player)` (self-reported flag today;
+  detected/stale flags arrive with standings) and `orderForPlacement(players)`
+  (returning-first, then new by self-rating desc, stable).
+- `generate-sub-divisions.ts` *(slice 3)* — `generateSubDivisions(players,
+  size)`: `ceil(n/size)` groups, balanced to ≤1 difference, greedily keeping
+  platforms together without violating balance. Tests: n=0, n<size, exact
+  multiples, remainders (20/8→7/7/6), single platform, fully mixed, platform
+  counts that can't be cleanly grouped.
 
 ## Interaction
 

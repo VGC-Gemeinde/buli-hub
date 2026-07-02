@@ -20,6 +20,7 @@ export const profileSettingsSchema = z.object({
     .trim()
     .max(100, "Maximal 100 Zeichen")
     .transform((value) => (value === "" ? null : value)),
+  hasCaptureCard: z.boolean(),
 });
 
 export type ProfileSettings = z.output<typeof profileSettingsSchema>;

@@ -6,7 +6,16 @@
 // Tables are added per feature (see CLAUDE.md); the schema stays central
 // because tables cross feature boundaries.
 
-import { pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 // App role, derived from the user's Discord guild roles (highest wins).
 export const roleEnum = pgEnum("role", ["dev", "admin", "staff", "player"]);
@@ -27,6 +36,17 @@ export const profiles = pgTable("profiles", {
   displayName: text("display_name"),
   username: text("username"),
   avatarUrl: text("avatar_url"),
+  // Live capability, editable by the owner (not a per-season snapshot — see
+  // docs/decisions/registration-vs-profile-data.md).
+  hasCaptureCard: boolean("has_capture_card").notNull().default(false),
+  // Set when the owner saves their settings (any change). Drives the
+  // registration profile-hint; distinct from updatedAt, which the identity
+  // sync also bumps.
+  settingsEditedAt: timestamp("settings_edited_at", { withTimezone: true }),
+  // Set when the owner dismisses the registration profile-hint.
+  registrationHintDismissedAt: timestamp("registration_hint_dismissed_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -48,3 +68,35 @@ export const registrationWindows = pgTable("registration_windows", {
   closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
   openedBy: uuid("opened_by").notNull(),
 });
+
+export const platformEnum = pgEnum("platform", ["showdown", "cartridge"]);
+export const playerStatusEnum = pgEnum("player_status", ["returning", "new"]);
+
+// One player's registration for one window. Status is resolved at submit time
+// (detected-returning / self-reported veteran / new); the branch-specific
+// columns are nullable and set only for the relevant status. FK + RLS live in
+// a custom migration.
+export const registrations = pgTable(
+  "registrations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    windowId: uuid("window_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    platform: platformEnum("platform").notNull(),
+    status: playerStatusEnum("status").notNull(),
+    // Self-report answer; null when detection settled the status.
+    participatedBefore: boolean("participated_before"),
+    // Veteran-history (self-reported veterans only).
+    prevSeason: text("prev_season"),
+    prevName: text("prev_name"),
+    prevDivision: text("prev_division"),
+    prevPlacement: text("prev_placement"),
+    // New-player set.
+    skillSelfRating: integer("skill_self_rating"),
+    greatestAchievements: text("greatest_achievements"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.windowId, table.userId)],
+);

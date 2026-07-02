@@ -10,5 +10,8 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["./src/test/setup.ts"],
+    // Integration tests share one local Postgres and clean shared tables in
+    // beforeAll; run test files serially so they never race.
+    fileParallelism: false,
   },
 });

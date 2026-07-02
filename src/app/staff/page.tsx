@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { listRegistrations } from "@/features/registration/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import {
@@ -27,8 +28,13 @@ export default async function StaffPage() {
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
   const registrationUrl = `${protocol}://${host}/anmeldung`;
 
-  // The registered-player list stays empty until the registration feature.
-  const players: RegisteredPlayer[] = [];
+  const players: RegisteredPlayer[] = window
+    ? (await listRegistrations(window.id)).map((row) => ({
+        id: row.id,
+        name: row.displayName ?? row.username ?? "Unbekannt",
+        avatarUrl: row.avatarUrl ?? undefined,
+      }))
+    : [];
 
   return (
     <div className="flex flex-1 flex-col">

@@ -12,12 +12,15 @@ export async function getProfile(userId: string) {
 }
 
 export async function upsertProfile(userId: string, settings: ProfileSettings) {
-  const updatedAt = new Date();
+  const now = new Date();
+  // settingsEditedAt marks that the owner actively saved settings — it drives
+  // the registration profile-hint and, unlike updatedAt, is never touched by
+  // the identity sync.
   await db
     .insert(profiles)
-    .values({ userId, ...settings, updatedAt })
+    .values({ userId, ...settings, updatedAt: now, settingsEditedAt: now })
     .onConflictDoUpdate({
       target: profiles.userId,
-      set: { ...settings, updatedAt },
+      set: { ...settings, updatedAt: now, settingsEditedAt: now },
     });
 }

@@ -25,6 +25,7 @@ describe("profile upsert", () => {
       twitterHandle: "kuro_vgc",
       blueskyHandle: null,
       origin: "Bayern",
+      hasCaptureCard: false,
     });
 
     const profile = await getProfile(userId);
@@ -53,6 +54,7 @@ describe("profile upsert", () => {
       twitterHandle: "kuro_vgc",
       blueskyHandle: null,
       origin: "Bayern",
+      hasCaptureCard: false,
     });
 
     const profile = await getProfile(userId);
@@ -90,6 +92,7 @@ describe("profile upsert", () => {
       twitterHandle: "kuro_vgc",
       blueskyHandle: "kuro.bsky.social",
       origin: "Südtirol",
+      hasCaptureCard: false,
     });
 
     const after = await getProfile(userId);

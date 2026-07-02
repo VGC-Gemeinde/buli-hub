@@ -18,6 +18,7 @@ export default async function ProfilPage() {
     twitterHandle: profile?.twitterHandle ?? "",
     blueskyHandle: profile?.blueskyHandle ?? "",
     origin: profile?.origin ?? null,
+    hasCaptureCard: profile?.hasCaptureCard ?? false,
   };
 
   return (

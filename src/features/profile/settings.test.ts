@@ -9,11 +9,13 @@ describe("profileSettingsSchema", () => {
         twitterHandle: "kuro",
         blueskyHandle: "kuro.bsky.social",
         origin: "Bayern",
+        hasCaptureCard: false,
       }),
     ).toEqual({
       twitterHandle: "kuro",
       blueskyHandle: "kuro.bsky.social",
       origin: "Bayern",
+      hasCaptureCard: false,
     });
   });
 
@@ -22,6 +24,7 @@ describe("profileSettingsSchema", () => {
       twitterHandle: "  @kuro ",
       blueskyHandle: "@kuro.bsky.social",
       origin: "",
+      hasCaptureCard: false,
     });
     expect(result.twitterHandle).toBe("kuro");
     expect(result.blueskyHandle).toBe("kuro.bsky.social");
@@ -32,6 +35,7 @@ describe("profileSettingsSchema", () => {
       twitterHandle: "Kuro",
       blueskyHandle: "Kuro.Bsky.Social",
       origin: "",
+      hasCaptureCard: false,
     });
     expect(result.twitterHandle).toBe("Kuro");
     expect(result.blueskyHandle).toBe("kuro.bsky.social");
@@ -43,8 +47,14 @@ describe("profileSettingsSchema", () => {
         twitterHandle: "",
         blueskyHandle: "   ",
         origin: " ",
+        hasCaptureCard: false,
       }),
-    ).toEqual({ twitterHandle: null, blueskyHandle: null, origin: null });
+    ).toEqual({
+      twitterHandle: null,
+      blueskyHandle: null,
+      origin: null,
+      hasCaptureCard: false,
+    });
   });
 
   it("normalizes a lone @ to null", () => {
@@ -52,6 +62,7 @@ describe("profileSettingsSchema", () => {
       twitterHandle: "@",
       blueskyHandle: "@",
       origin: "",
+      hasCaptureCard: false,
     });
     expect(result.twitterHandle).toBeNull();
     expect(result.blueskyHandle).toBeNull();
@@ -62,6 +73,7 @@ describe("profileSettingsSchema", () => {
       twitterHandle: "a".repeat(101),
       blueskyHandle: "",
       origin: "",
+      hasCaptureCard: false,
     });
     expect(result.success).toBe(false);
   });
@@ -71,6 +83,7 @@ describe("profileSettingsSchema", () => {
       twitterHandle: "",
       blueskyHandle: "",
       origin: "  Südtirol ",
+      hasCaptureCard: false,
     });
     expect(result.origin).toBe("Südtirol");
   });
@@ -80,6 +93,7 @@ describe("profileSettingsSchema", () => {
       twitterHandle: 42,
       blueskyHandle: "",
       origin: "",
+      hasCaptureCard: false,
     });
     expect(result.success).toBe(false);
   });

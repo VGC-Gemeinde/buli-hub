@@ -2,6 +2,8 @@ import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
+import { ProfileHint } from "@/features/registration/components/profile-hint";
+import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import {
   PlayerGrid,
@@ -178,6 +180,45 @@ export function Gallery() {
         <h2 className="text-2xl">CopyLinkButton</h2>
         <Specimen label="Anmeldelink">
           <CopyLinkButton url="http://localhost:3000/anmeldung" />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Registrierung: Profil-Hinweis</h2>
+        <Specimen label="Hinweis">
+          <ProfileHint />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Registrierung: Bestätigung</h2>
+        <Specimen label="Neuer Spieler (mit Abmelden)">
+          <RegistrationConfirmation
+            canWithdraw
+            data={{
+              platform: "showdown",
+              prevSeason: null,
+              prevName: null,
+              prevDivision: null,
+              prevPlacement: null,
+              skillSelfRating: 4,
+              greatestAchievements: "Top 16 Regional",
+            }}
+          />
+        </Specimen>
+        <Specimen label="Veteran (geschlossen, kein Abmelden)">
+          <RegistrationConfirmation
+            canWithdraw={false}
+            data={{
+              platform: "cartridge",
+              prevSeason: "Saison 4",
+              prevName: "AltHase",
+              prevDivision: "Division 2",
+              prevPlacement: "3. Platz",
+              skillSelfRating: null,
+              greatestAchievements: null,
+            }}
+          />
         </Specimen>
       </section>
     </div>

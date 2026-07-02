@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { updateProfile } from "../actions";
 import { GERMAN_STATES, NEIGHBOR_COUNTRIES } from "../regions";
 import { originToFormState } from "../settings";
@@ -28,6 +29,7 @@ type FormValues = {
   blueskyHandle: string;
   originSelect: string;
   originText: string;
+  hasCaptureCard: boolean;
 };
 
 type SettingsFormProps = {
@@ -35,6 +37,7 @@ type SettingsFormProps = {
     twitterHandle: string;
     blueskyHandle: string;
     origin: string | null;
+    hasCaptureCard: boolean;
   };
 };
 
@@ -50,6 +53,7 @@ export function SettingsForm({ initial }: SettingsFormProps) {
           ? OTHER
           : NONE,
     originText: originState.kind === "other" ? originState.text : "",
+    hasCaptureCard: initial.hasCaptureCard,
   });
   const [status, setStatus] = useState<SaveStatus>("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -83,6 +87,7 @@ export function SettingsForm({ initial }: SettingsFormProps) {
         twitterHandle: next.twitterHandle,
         blueskyHandle: next.blueskyHandle,
         origin,
+        hasCaptureCard: next.hasCaptureCard,
       });
       // A newer edit is already in flight — its result wins.
       if (id !== requestId.current) return;
@@ -186,6 +191,20 @@ export function SettingsForm({ initial }: SettingsFormProps) {
         <p className="text-[13px] text-muted-foreground leading-snug">
           Zeigen wir in Content wie YouTube-Videos oder Twitch-Streams.
         </p>
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="grid gap-1">
+          <Label htmlFor="capture-card">Capture Card</Label>
+          <p className="text-[13px] text-muted-foreground leading-snug">
+            Du besitzt eine Capture Card, um Gameplay aufzunehmen.
+          </p>
+        </div>
+        <Switch
+          id="capture-card"
+          checked={values.hasCaptureCard}
+          onCheckedChange={(checked) => change({ hasCaptureCard: checked })}
+        />
       </div>
     </section>
   );

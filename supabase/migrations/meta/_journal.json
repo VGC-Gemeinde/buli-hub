@@ -50,6 +50,27 @@
       "when": 1782990078072,
       "tag": "20260702110118_profile_guild_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782992984928,
+      "tag": "20260702114944_registrations_and_capture_card",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782992985612,
+      "tag": "20260702114945_registrations_fk_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782994186062,
+      "tag": "20260702120946_profile_registration_hint",
+      "breakpoints": true
     }
   ]
 }

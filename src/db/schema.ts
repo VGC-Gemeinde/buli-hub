@@ -100,3 +100,66 @@ export const registrations = pgTable(
   },
   (table) => [unique().on(table.windowId, table.userId)],
 );
+
+// Division seeding for a season (anchored to its registration window). One
+// seeding per window; holds the season-wide sub-division size and the publish
+// state. Divisions/sub-divisions/placements hang off it. All FKs + RLS live in
+// a custom migration (server-only, like the other staff tables).
+export const seedings = pgTable("seedings", {
+  windowId: uuid("window_id").primaryKey(),
+  subDivisionSize: integer("sub_division_size").notNull(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// A division = a skill tier within a season (1 = top). Name is derived:
+// „Division {tier}".
+export const divisions = pgTable(
+  "divisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    windowId: uuid("window_id").notNull(),
+    tier: integer("tier").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.windowId, table.tier)],
+);
+
+// A sub-division = a round-robin group within a division. Name is derived from
+// the division tier and the 0-based position → letter: „Division {tier}{a,b,…}".
+export const subDivisions = pgTable(
+  "sub_divisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    divisionId: uuid("division_id").notNull(),
+    position: integer("position").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.divisionId, table.position)],
+);
+
+// Where a registered player sits in the seeding: first a division (sub-division
+// null), then a sub-division. One row per player per season.
+export const placements = pgTable(
+  "placements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    windowId: uuid("window_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    divisionId: uuid("division_id"),
+    subDivisionId: uuid("sub_division_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.windowId, table.userId)],
+);

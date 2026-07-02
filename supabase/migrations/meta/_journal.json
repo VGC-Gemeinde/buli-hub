@@ -71,6 +71,20 @@
       "when": 1782994186062,
       "tag": "20260702120946_profile_registration_hint",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783000396571,
+      "tag": "20260702135316_seeding",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783000397267,
+      "tag": "20260702135317_seeding_fk_rls",
+      "breakpoints": true
     }
   ]
 }

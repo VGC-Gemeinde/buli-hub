@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { Button } from "@/components/ui/button";
 import { listRegistrations } from "@/features/registration/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
@@ -60,6 +62,17 @@ export default async function StaffPage() {
                 meta={`${players.length} gesamt`}
               />
               <PlayerGrid players={players} />
+            </section>
+          ) : null}
+
+          {state === "closed" ? (
+            <section className="flex flex-col gap-5">
+              <StaffSectionHeader title="Einteilung" />
+              <div>
+                <Button asChild>
+                  <Link href="/staff/seeding">Divisionen einteilen</Link>
+                </Button>
+              </div>
             </section>
           ) : null}
         </div>

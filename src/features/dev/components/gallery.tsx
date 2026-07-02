@@ -4,6 +4,7 @@ import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
+import { ConfigForm } from "@/features/seeding/components/config-form";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import {
   PlayerGrid,
@@ -221,6 +222,13 @@ export function Gallery() {
               greatestAchievements: null,
             }}
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Seeding: Konfiguration</h2>
+        <Specimen label="Config-Formular">
+          <ConfigForm initialSize={8} initialDivisionCount={3} />
         </Specimen>
       </section>
     </div>

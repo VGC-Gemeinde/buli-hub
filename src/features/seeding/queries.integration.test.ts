@@ -10,6 +10,7 @@ import {
   listDivisions,
   listSeedingPlayers,
   listSubDivisions,
+  publishSeeding,
   saveSeedingConfig,
 } from "./queries";
 
@@ -114,5 +115,13 @@ describe("sub-division generation", () => {
     expect((await listSeedingPlayers(windowId))[0].subDivisionId).toBe(
       subs[0].id,
     );
+  });
+});
+
+describe("publishing", () => {
+  it("sets published_at", async () => {
+    expect((await getSeeding(windowId))?.publishedAt).toBeNull();
+    await publishSeeding(windowId);
+    expect((await getSeeding(windowId))?.publishedAt).toBeInstanceOf(Date);
   });
 });

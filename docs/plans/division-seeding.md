@@ -1,6 +1,6 @@
 # Division seeding
 
-**Status: in progress** — slices 1–3 done; 4 (publish) remains.
+**Status: done** (2026-07-02) — slices 1–4 complete. Deferred: promotion/relegation proposal (needs standings) and the public division view.
 
 Once a season's registration is closed, staff divide the registered players into
 divisions (skill tiers) and sub-divisions (round-robin groups), then publish.
@@ -56,7 +56,7 @@ Therefore:
   flags on self-reported history.
 - **3 — Sub-division generation (done).** The pure even-distribution + soft-platform
   algorithm, generate-per-division, manual moves between sub-divisions.
-- **4 — Publish.** Type-to-confirm gate; sets `published_at`.
+- **4 — Publish (done).** Type-to-confirm gate; sets `published_at`.
 - **Later (own features):** season standings/results; the relegation-aware
   proposal built on them; the public division view.
 

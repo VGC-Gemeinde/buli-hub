@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { orderForPlacement, seedingCaveats } from "./placement";
+import {
+  orderForPlacement,
+  seedingCaveats,
+  seedingReadiness,
+} from "./placement";
 
 describe("seedingCaveats", () => {
   it("flags self-reported veteran history", () => {
@@ -18,6 +22,28 @@ describe("seedingCaveats", () => {
     expect(
       seedingCaveats({ status: "new", participatedBefore: false }),
     ).toEqual([]);
+  });
+});
+
+describe("seedingReadiness", () => {
+  it("is not ready with no players", () => {
+    expect(seedingReadiness([])).toEqual({
+      total: 0,
+      grouped: 0,
+      ready: false,
+    });
+  });
+
+  it("is not ready while some players are ungrouped", () => {
+    expect(
+      seedingReadiness([{ subDivisionId: "a" }, { subDivisionId: null }]),
+    ).toEqual({ total: 2, grouped: 1, ready: false });
+  });
+
+  it("is ready when every player is in a group", () => {
+    expect(
+      seedingReadiness([{ subDivisionId: "a" }, { subDivisionId: "b" }]),
+    ).toEqual({ total: 2, grouped: 2, ready: true });
   });
 });
 

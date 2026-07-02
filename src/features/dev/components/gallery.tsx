@@ -7,6 +7,7 @@ import { RegistrationConfirmation } from "@/features/registration/components/reg
 import { ConfigForm } from "@/features/seeding/components/config-form";
 import { DivisionGroups } from "@/features/seeding/components/division-groups";
 import { PlacementList } from "@/features/seeding/components/placement-list";
+import { PublishPanel } from "@/features/seeding/components/publish-panel";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import {
   PlayerGrid,
@@ -324,6 +325,16 @@ export function Gallery() {
               },
             ]}
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Seeding: Veröffentlichen</h2>
+        <Specimen label="Bereit">
+          <PublishPanel total={40} grouped={40} ready />
+        </Specimen>
+        <Specimen label="Noch nicht bereit">
+          <PublishPanel total={40} grouped={32} ready={false} />
         </Specimen>
       </section>
     </div>

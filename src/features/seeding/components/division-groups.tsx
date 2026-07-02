@@ -23,11 +23,13 @@ function PlayerRow({
   tier,
   subDivisions,
   onMove,
+  readOnly,
 }: {
   player: SeedingPlayer;
   tier: number;
   subDivisions: SubDivision[];
   onMove: (userId: string, subDivisionId: string) => void;
+  readOnly: boolean;
 }) {
   const name = player.displayName ?? player.username ?? "Unbekannt";
   return (
@@ -41,21 +43,23 @@ function PlayerRow({
         </AvatarFallback>
       </Avatar>
       <span className="min-w-0 flex-1 truncate text-sm">{name}</span>
-      <Select
-        value={player.subDivisionId ?? undefined}
-        onValueChange={(value) => onMove(player.userId, value)}
-      >
-        <SelectTrigger size="sm" className="w-[110px] shrink-0">
-          <SelectValue placeholder="Gruppe" />
-        </SelectTrigger>
-        <SelectContent>
-          {subDivisions.map((sd) => (
-            <SelectItem key={sd.id} value={sd.id}>
-              {subDivisionName(tier, sd.position)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {readOnly ? null : (
+        <Select
+          value={player.subDivisionId ?? undefined}
+          onValueChange={(value) => onMove(player.userId, value)}
+        >
+          <SelectTrigger size="sm" className="w-[110px] shrink-0">
+            <SelectValue placeholder="Gruppe" />
+          </SelectTrigger>
+          <SelectContent>
+            {subDivisions.map((sd) => (
+              <SelectItem key={sd.id} value={sd.id}>
+                {subDivisionName(tier, sd.position)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </li>
   );
 }
@@ -64,10 +68,12 @@ export function DivisionGroups({
   division,
   players,
   subDivisions,
+  readOnly = false,
 }: {
   division: { id: string; tier: number };
   players: SeedingPlayer[];
   subDivisions: SubDivision[];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -109,19 +115,21 @@ export function DivisionGroups({
             {players.length} Spieler
           </span>
         </div>
-        <Button
-          type="button"
-          variant={hasGroups ? "outline" : "default"}
-          size="sm"
-          disabled={pending || players.length === 0}
-          onClick={generate}
-        >
-          {pending
-            ? "Wird generiert…"
-            : hasGroups
-              ? "Neu generieren"
-              : "Gruppen generieren"}
-        </Button>
+        {readOnly ? null : (
+          <Button
+            type="button"
+            variant={hasGroups ? "outline" : "default"}
+            size="sm"
+            disabled={pending || players.length === 0}
+            onClick={generate}
+          >
+            {pending
+              ? "Wird generiert…"
+              : hasGroups
+                ? "Neu generieren"
+                : "Gruppen generieren"}
+          </Button>
+        )}
       </div>
 
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
@@ -153,6 +161,7 @@ export function DivisionGroups({
                       tier={division.tier}
                       subDivisions={subDivisions}
                       onMove={move}
+                      readOnly={readOnly}
                     />
                   ))}
                 </ul>
@@ -175,6 +184,7 @@ export function DivisionGroups({
                 tier={division.tier}
                 subDivisions={subDivisions}
                 onMove={move}
+                readOnly={readOnly}
               />
             ))}
           </ul>

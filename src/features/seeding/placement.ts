@@ -37,6 +37,16 @@ export function seedingCaveats(
   return caveats;
 }
 
+// A seeding is ready to publish when every registered player sits in a
+// sub-division (and there is at least one player).
+export function seedingReadiness(
+  players: readonly Pick<SeedingPlayer, "subDivisionId">[],
+): { total: number; grouped: number; ready: boolean } {
+  const total = players.length;
+  const grouped = players.filter((p) => p.subDivisionId !== null).length;
+  return { total, grouped, ready: total > 0 && grouped === total };
+}
+
 // Order for manual placement: returning players first (staff place them from
 // their history), then new players by self-rating descending. Stable within
 // each group. Auto-seeding by prior standings will replace this once it exists.

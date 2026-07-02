@@ -5,12 +5,15 @@ import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
+import { seedingReadiness } from "./placement";
 import {
   assignPlayerToDivision,
   divisionBelongsToWindow,
   generateSubDivisionsForDivision,
   getSeeding,
+  listSeedingPlayers,
   movePlayerToSubDivision,
+  publishSeeding as persistPublish,
   saveSeedingConfig,
   subDivisionDivisionId,
 } from "./queries";
@@ -143,6 +146,26 @@ export async function moveToSubDivision(input: {
     input.userId,
     input.subDivisionId,
   );
+  revalidatePath("/staff/seeding");
+  return { ok: true };
+}
+
+export async function publishSeeding(): Promise<SeedingResult> {
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
+  }
+
+  // Never publish an incomplete seeding — every player must be in a group.
+  const readiness = seedingReadiness(await listSeedingPlayers(gate.windowId));
+  if (!readiness.ready) {
+    return {
+      ok: false,
+      error: "Alle Spieler müssen einer Gruppe zugeordnet sein",
+    };
+  }
+
+  await persistPublish(gate.windowId);
   revalidatePath("/staff/seeding");
   return { ok: true };
 }

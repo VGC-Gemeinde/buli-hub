@@ -233,3 +233,10 @@ export async function movePlayerToSubDivision(
       and(eq(placements.windowId, windowId), eq(placements.userId, userId)),
     );
 }
+
+export async function publishSeeding(windowId: string) {
+  await db
+    .update(seedings)
+    .set({ publishedAt: new Date() })
+    .where(eq(seedings.windowId, windowId));
+}

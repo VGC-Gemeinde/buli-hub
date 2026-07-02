@@ -5,7 +5,11 @@ import { roleAtLeast } from "@/features/roles/roles";
 import { ConfigForm } from "@/features/seeding/components/config-form";
 import { DivisionGroups } from "@/features/seeding/components/division-groups";
 import { PlacementList } from "@/features/seeding/components/placement-list";
-import { orderForPlacement } from "@/features/seeding/placement";
+import { PublishPanel } from "@/features/seeding/components/publish-panel";
+import {
+  orderForPlacement,
+  seedingReadiness,
+} from "@/features/seeding/placement";
 import {
   getSeeding,
   listDivisions,
@@ -58,6 +62,41 @@ export default async function SeedingPage() {
   ]);
   const orderedPlayers = orderForPlacement(players);
   const anyAssigned = players.some((p) => p.divisionId !== null);
+  const hasGroups = subDivisions.length > 0;
+  const readiness = seedingReadiness(players);
+
+  // Published: terminal, read-only view of the final groups.
+  if (seeding?.publishedAt) {
+    const publishedAt = new Intl.DateTimeFormat("de-DE", {
+      dateStyle: "long",
+      timeStyle: "short",
+    }).format(seeding.publishedAt);
+    return (
+      <Shell>
+        <div className="flex flex-col gap-10">
+          <div className="rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-3">
+            <p className="text-sm">
+              Die Einteilung wurde am {publishedAt} veröffentlicht und ist
+              endgültig.
+            </p>
+          </div>
+          <div className="flex flex-col gap-4">
+            {divisions.map((division) => (
+              <DivisionGroups
+                key={division.id}
+                division={division}
+                players={players.filter((p) => p.divisionId === division.id)}
+                subDivisions={subDivisions.filter(
+                  (sd) => sd.divisionId === division.id,
+                )}
+                readOnly
+              />
+            ))}
+          </div>
+        </div>
+      </Shell>
+    );
+  }
 
   return (
     <Shell>
@@ -120,6 +159,17 @@ export default async function SeedingPage() {
                 />
               ))}
             </div>
+          </section>
+        ) : null}
+
+        {hasGroups ? (
+          <section className="flex flex-col gap-5">
+            <StaffSectionHeader title="Veröffentlichen" />
+            <PublishPanel
+              total={readiness.total}
+              grouped={readiness.grouped}
+              ready={readiness.ready}
+            />
           </section>
         ) : null}
       </div>

@@ -1,0 +1,50 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { SiteHeader } from "@/components/site-header";
+import { PERSONAS } from "@/features/dev/personas";
+
+export default function DevPage() {
+  if (process.env.NODE_ENV !== "development") {
+    notFound();
+  }
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <SiteHeader />
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-12">
+        <h1 className="text-4xl text-brand-blue dark:text-white">Dev-Tools</h1>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-2xl">Als Persona anmelden</h2>
+          <ul className="flex flex-col gap-2">
+            {PERSONAS.map((persona) => (
+              <li key={persona.id}>
+                {/* Plain <a>: full navigation, no prefetch — a Link prefetch
+                    would trigger the login as a side effect. */}
+                <a
+                  href={`/dev/login?persona=${persona.id}`}
+                  className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+                >
+                  <span className="font-medium text-sm">{persona.label}</span>
+                  <span className="text-[13px] text-muted-foreground">
+                    {persona.description}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-2xl">Komponenten</h2>
+          <Link
+            href="/dev/ui"
+            className="rounded-lg border px-4 py-2.5 font-medium text-sm hover:bg-secondary"
+          >
+            UI-Galerie — alle Komponenten-Zustände
+          </Link>
+        </section>
+      </main>
+    </div>
+  );
+}

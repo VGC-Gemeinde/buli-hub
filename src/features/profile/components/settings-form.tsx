@@ -191,7 +191,7 @@ export function SettingsForm({ initial }: SettingsFormProps) {
   );
 }
 
-function SaveIndicator({ status }: { status: SaveStatus }) {
+export function SaveIndicator({ status }: { status: SaveStatus }) {
   if (status === "idle") {
     return null;
   }

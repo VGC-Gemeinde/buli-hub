@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { asc, eq, sql } from "drizzle-orm";
 import {
+  disputes,
   divisions,
   matches,
   matchGames,
@@ -257,6 +258,9 @@ async function seedDevResults(windowId: string): Promise<void> {
     );
   };
 
+  // Reported normal matches (matchId + participants) to hang disputes on.
+  const reportedNormal: { matchId: string; a: string; b: string }[] = [];
+
   let past = 0;
   let current = 0;
   for (const match of all) {
@@ -298,6 +302,7 @@ async function seedDevResults(windowId: string): Promise<void> {
         continue;
       }
       await reportNormal(match.id, a, b, k % 2 === 0 ? a : b, k % 3 === 0);
+      reportedNormal.push({ matchId: match.id, a, b });
       continue;
     }
 
@@ -309,6 +314,29 @@ async function seedDevResults(windowId: string): Promise<void> {
       // odd → left „offen" this week
     }
     // future rounds stay open
+  }
+
+  // One open dispute (loser contests the result) and one already resolved, so
+  // both the „Angefochten" worklist and the resolved history have content.
+  if (reportedNormal[0]) {
+    const m = reportedNormal[0];
+    await db.insert(disputes).values({
+      matchId: m.matchId,
+      openedById: m.b,
+      reason: "Spiel 2 ging an mich, das Ergebnis stimmt nicht.",
+    });
+  }
+  if (reportedNormal[1]) {
+    const m = reportedNormal[1];
+    await db.insert(disputes).values({
+      matchId: m.matchId,
+      openedById: m.b,
+      reason: "Falscher Sieger gemeldet.",
+      status: "resolved",
+      resolution: "upheld",
+      resolvedById: m.a,
+      resolvedAt: new Date(),
+    });
   }
 }
 

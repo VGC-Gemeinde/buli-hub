@@ -18,10 +18,14 @@ import {
   getMatchResult,
   groupResults,
   listStaffAndAdmins,
+  matchOpenDispute,
+  openDispute,
+  resolveDispute,
   saveResult,
   subDivisionResults,
   upsertStaffResult,
   windowMatchOverview,
+  windowResolvedDisputes,
 } from "./queries";
 import { computeStandings } from "./standings";
 
@@ -288,6 +292,58 @@ describe("staff dashboard queries", () => {
     expect((await getMatchResult(m.id))?.confirmedAt).toBeNull();
     await confirmFreeWin(m.id, staff);
     expect((await getMatchResult(m.id))?.confirmedAt).not.toBeNull();
+    await db.execute(sql`delete from matches where id = ${m.id}`);
+  });
+});
+
+describe("disputes", () => {
+  it("open → visible in overview + match; second open rejected; resolve clears it", async () => {
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+    await saveResult(
+      m.id,
+      {
+        outcome: "normal",
+        winnerId: alice,
+        platform: "showdown",
+        playerATeamUrl: "https://pokepast.es/a",
+        playerBTeamUrl: "https://pokepast.es/b",
+        videoUrl: null,
+        freeWinReason: null,
+        discussedWithId: null,
+      },
+      [{ gameNumber: 1, winnerId: alice, replayUrl: "https://replay/1" }],
+      alice,
+    );
+
+    await openDispute({
+      matchId: m.id,
+      openedById: bob,
+      reason: "Falscher Sieger",
+    });
+    expect((await matchOpenDispute(m.id))?.reason).toBe("Falscher Sieger");
+    expect(
+      (await windowMatchOverview(windowId)).find((r) => r.matchId === m.id)
+        ?.dispute?.reason,
+    ).toBe("Falscher Sieger");
+
+    // Only one open dispute per match (partial unique index).
+    await expect(
+      openDispute({ matchId: m.id, openedById: alice, reason: "again" }),
+    ).rejects.toThrow();
+
+    await resolveDispute({
+      matchId: m.id,
+      resolution: "upheld",
+      note: "Ergebnis bestätigt",
+      resolvedById: staff,
+    });
+    expect(await matchOpenDispute(m.id)).toBeNull();
+    const resolved = await windowResolvedDisputes(windowId);
+    expect(resolved.find((d) => d.matchId === m.id)?.resolution).toBe("upheld");
+
     await db.execute(sql`delete from matches where id = ${m.id}`);
   });
 });

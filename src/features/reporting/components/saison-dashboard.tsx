@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { StaffMatchRow } from "../queries";
+import type { DisputeRow, StaffMatchRow } from "../queries";
 import { confirmFreeWin } from "../staff-actions";
 import { AwardFreewinDialog } from "./award-freewin-dialog";
 
@@ -114,15 +114,20 @@ export function SaisonDashboard({
   overdue,
   thisWeek,
   pendingFreeWins,
+  disputed,
+  resolvedDisputes,
   today = new Date().toISOString().slice(0, 10),
 }: {
   overdue: StaffMatchRow[];
   thisWeek: StaffMatchRow[];
   pendingFreeWins: StaffMatchRow[];
+  disputed: StaffMatchRow[];
+  resolvedDisputes: DisputeRow[];
   today?: string;
 }) {
   const router = useRouter();
   const [showAllWeek, setShowAllWeek] = useState(false);
+  const [showResolved, setShowResolved] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,6 +136,7 @@ export function SaisonDashboard({
   const allClear =
     overdue.length === 0 &&
     pendingFreeWins.length === 0 &&
+    disputed.length === 0 &&
     weekOpen.length === 0;
 
   async function confirm(matchId: string) {
@@ -147,8 +153,9 @@ export function SaisonDashboard({
 
   return (
     <div className="flex flex-col gap-8.5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <Stat label="Überfällig" value={overdue.length} alert />
+        <Stat label="Angefochten" value={disputed.length} alert />
         <Stat label="Offen diese Woche" value={weekOpen.length} />
         <Stat label="Freewins offen" value={pendingFreeWins.length} />
       </div>
@@ -179,6 +186,42 @@ export function SaisonDashboard({
                   />
                 }
               />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {disputed.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <SectionHead title="Angefochten" count={disputed.length} />
+          <div className="flex flex-col gap-2">
+            {disputed.map((m) => (
+              <div
+                key={m.matchId}
+                className="flex items-center gap-3.5 rounded-lg border border-destructive/30 bg-destructive/[0.03] px-4 py-2"
+              >
+                <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
+                  {shortGroup(m.groupName)} · S{m.round}
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <Link
+                    href={`/match/${m.matchId}`}
+                    className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+                  >
+                    {m.playerA.name}{" "}
+                    <span className="text-muted-foreground">vs.</span>{" "}
+                    {m.playerB.name}
+                  </Link>
+                  {m.dispute ? (
+                    <p className="truncate text-[13px] text-muted-foreground">
+                      „{m.dispute.reason}" — {m.dispute.openedByName ?? "—"}
+                    </p>
+                  ) : null}
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/match/${m.matchId}`}>Prüfen</Link>
+                </Button>
+              </div>
             ))}
           </div>
         </section>
@@ -241,7 +284,7 @@ export function SaisonDashboard({
             </p>
             <p className="text-[13.5px] text-muted-foreground">
               Alle {thisWeek.length} Matches dieser Woche sind gemeldet, nichts
-              ist überfällig, keine Freewins offen.
+              ist überfällig, keine Freewins offen, keine Anfechtungen.
             </p>
           </div>
         </div>
@@ -291,6 +334,63 @@ export function SaisonDashboard({
           </div>
         )}
       </section>
+
+      {resolvedDisputes.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <SectionHead
+              title="Erledigte Anfechtungen"
+              count={resolvedDisputes.length}
+            />
+            <button
+              type="button"
+              onClick={() => setShowResolved((v) => !v)}
+              className="font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
+            >
+              {showResolved ? "Ausblenden" : "Anzeigen"}
+            </button>
+          </div>
+          {showResolved ? (
+            <div className="flex flex-col gap-2">
+              {resolvedDisputes.map((d) => (
+                <div
+                  key={d.matchId}
+                  className="flex items-center gap-3.5 rounded-lg border px-4 py-2 opacity-80"
+                >
+                  <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
+                    {shortGroup(d.groupName)} · S{d.round}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <Link
+                      href={`/match/${d.matchId}`}
+                      className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+                    >
+                      {d.playerA.name}{" "}
+                      <span className="text-muted-foreground">vs.</span>{" "}
+                      {d.playerB.name}
+                    </Link>
+                    <p className="truncate text-[13px] text-muted-foreground">
+                      „{d.reason}" — {d.openedByName ?? "—"}
+                    </p>
+                  </div>
+                  <ChipEl
+                    chip={{
+                      label:
+                        d.resolution === "corrected"
+                          ? "Korrigiert"
+                          : "Bestätigt",
+                      tone: "done",
+                    }}
+                  />
+                  <span className="w-12 shrink-0 text-right text-[13px] text-muted-foreground tabular-nums">
+                    {reportedAtLabel(d.resolvedAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }

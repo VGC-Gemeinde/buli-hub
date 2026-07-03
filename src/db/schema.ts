@@ -289,3 +289,28 @@ export const matchGames = pgTable(
   },
   (table) => [unique().on(table.matchId, table.gameNumber)],
 );
+
+export const disputeStatusEnum = pgEnum("dispute_status", ["open", "resolved"]);
+export const disputeResolutionEnum = pgEnum("dispute_resolution", [
+  "upheld", // the reported result stands
+  "corrected", // staff edited the result
+]);
+
+// A participant contesting a match's recorded result; staff adjudicate. A log
+// per match (multiple over time) with at most one `open` at a time — the
+// partial unique index enforcing that lives in the custom migration, alongside
+// FKs + RLS (server-only, no policies).
+export const disputes = pgTable("disputes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  matchId: uuid("match_id").notNull(),
+  openedById: uuid("opened_by_id").notNull(),
+  reason: text("reason").notNull(),
+  status: disputeStatusEnum("status").notNull().default("open"),
+  resolution: disputeResolutionEnum("resolution"),
+  resolvedById: uuid("resolved_by_id"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  note: text("note"),
+  openedAt: timestamp("opened_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

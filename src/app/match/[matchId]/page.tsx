@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { ReportForm } from "@/features/reporting/components/report-form";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
 import { StaffMatchPanel } from "@/features/reporting/components/staff-match-panel";
@@ -7,6 +8,7 @@ import {
   getMatchForReport,
   getMatchResult,
   listStaffAndAdmins,
+  matchOpenDispute,
 } from "@/features/reporting/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
@@ -33,6 +35,7 @@ export default async function MatchReportPage({
   }
 
   const result = await getMatchResult(matchId);
+  const dispute = result ? await matchOpenDispute(matchId) : null;
   const staffOptions = result ? [] : await listStaffAndAdmins();
   const breadcrumb = result
     ? result.outcome === "free_win"
@@ -43,6 +46,19 @@ export default async function MatchReportPage({
   const back = isParticipant
     ? { href: "/spieler", label: "Zurück zur Übersicht" }
     : { href: "/staff", label: "Staff-Bereich" };
+  const editorInitial =
+    result && result.outcome === "normal"
+      ? {
+          platform: result.platform,
+          games: result.games.map((game) => ({
+            winnerId: game.winnerId,
+            replayUrl: game.replayUrl,
+          })),
+          playerATeamUrl: result.playerATeamUrl,
+          playerBTeamUrl: result.playerBTeamUrl,
+          videoUrl: result.videoUrl,
+        }
+      : null;
   const isPendingFreeWin =
     result?.outcome === "free_win" && result.confirmedAt === null;
   const pendingWinnerName = isPendingFreeWin
@@ -66,30 +82,49 @@ export default async function MatchReportPage({
             backHref={back.href}
             backLabel={back.label}
           />
-        ) : isParticipant ? (
-          <ReportForm
-            matchId={match.matchId}
-            round={match.round}
-            groupName={match.groupName}
-            deadline={match.deadline}
-            playerA={match.playerA}
-            playerB={match.playerB}
-            reporterId={current.userId}
-            staffOptions={staffOptions}
-          />
-        ) : (
-          <>
-            <p className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
-              Spieltag {match.round} · {match.groupName}
+        ) : null}
+
+        {result && dispute ? (
+          <div className="mt-8 flex flex-col gap-1.5 rounded-lg border border-destructive/35 bg-destructive/5 px-5 py-4">
+            <p className="font-semibold text-destructive text-sm">
+              Angefochten — in Prüfung
             </p>
-            <h1 className="mt-2 text-3xl text-brand-blue dark:text-white">
-              {match.playerA.name} vs. {match.playerB.name}
-            </h1>
-            <p className="mt-3 text-muted-foreground">
-              Noch kein Ergebnis gemeldet.
+            <p className="text-muted-foreground text-sm">
+              „{dispute.reason}" — {dispute.openedByName ?? "—"}
             </p>
-          </>
-        )}
+          </div>
+        ) : result && isParticipant ? (
+          <div className="mt-8">
+            <DisputeDialog matchId={match.matchId} />
+          </div>
+        ) : null}
+
+        {!result ? (
+          isParticipant ? (
+            <ReportForm
+              matchId={match.matchId}
+              round={match.round}
+              groupName={match.groupName}
+              deadline={match.deadline}
+              playerA={match.playerA}
+              playerB={match.playerB}
+              reporterId={current.userId}
+              staffOptions={staffOptions}
+            />
+          ) : (
+            <>
+              <p className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
+                Spieltag {match.round} · {match.groupName}
+              </p>
+              <h1 className="mt-2 text-3xl text-brand-blue dark:text-white">
+                {match.playerA.name} vs. {match.playerB.name}
+              </h1>
+              <p className="mt-3 text-muted-foreground">
+                Noch kein Ergebnis gemeldet.
+              </p>
+            </>
+          )
+        ) : null}
 
         {isStaff ? (
           <StaffMatchPanel
@@ -101,6 +136,8 @@ export default async function MatchReportPage({
             hasResult={result !== null}
             isPendingFreeWin={isPendingFreeWin}
             pendingWinnerName={pendingWinnerName}
+            editorInitial={editorInitial}
+            disputeOpen={dispute !== null}
           />
         ) : null}
       </main>

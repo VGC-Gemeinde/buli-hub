@@ -118,101 +118,127 @@ const freeWinSchema = z.object({
   discussedWithId: z.string().min(1, "Bitte einen Staff auswählen"),
 });
 
+// Staff-only outcome (never player-reportable): both players lose, no winner.
+const doubleLossSchema = z.object({ outcome: z.literal("double_loss") });
+
 const reportUnion = z.discriminatedUnion("outcome", [
   normalSchema,
   freeWinSchema,
 ]);
+const staffResultUnion = z.discriminatedUnion("outcome", [
+  normalSchema,
+  freeWinSchema,
+  doubleLossSchema,
+]);
 
 export type ReportInput = z.infer<typeof reportUnion>;
+export type StaffResultInput = z.infer<typeof staffResultUnion>;
 
-// The report form schema. Context is injected (participants for the free-win
-// winner, a staff/admin predicate for „discussed with") so the schema stays a
-// pure, testable function — mirroring the codebase's Zod-in-feature-.ts pattern.
-export function reportSchema(context: {
+export type ReportContext = {
   participants: { playerAId: string; playerBId: string };
   isStaffOrAdmin: (userId: string) => boolean;
-}) {
+};
+
+// Shared validation for player reports and staff edits (double_loss needs none).
+function refineReport(
+  value: StaffResultInput,
+  ctx: z.RefinementCtx,
+  context: ReportContext,
+) {
   const { playerAId, playerBId } = context.participants;
-  return reportUnion.superRefine((value, ctx) => {
-    if (value.outcome === "normal") {
-      const series = deriveSeries(
-        value.games.map((game) => game.winnerId),
-        playerAId,
-        playerBId,
-      );
-      if (!series.ok) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["games"],
-          message: seriesMessages[series.reason],
-        });
-      }
-      if (value.platform === "showdown") {
-        value.games.forEach((game, i) => {
-          if (!game.replayUrl || !isHttpsUrl(game.replayUrl)) {
-            ctx.addIssue({
-              code: "custom",
-              path: ["games", i, "replayUrl"],
-              message: "Replay-Link erforderlich",
-            });
-          }
-        });
-        if (value.videoUrl) {
+  if (value.outcome === "normal") {
+    const series = deriveSeries(
+      value.games.map((game) => game.winnerId),
+      playerAId,
+      playerBId,
+    );
+    if (!series.ok) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["games"],
+        message: seriesMessages[series.reason],
+      });
+    }
+    if (value.platform === "showdown") {
+      value.games.forEach((game, i) => {
+        if (!game.replayUrl || !isHttpsUrl(game.replayUrl)) {
           ctx.addIssue({
             code: "custom",
-            path: ["videoUrl"],
-            message: "Ein Video-Link ist nur für Cartridge vorgesehen.",
+            path: ["games", i, "replayUrl"],
+            message: "Replay-Link erforderlich",
           });
         }
-      } else {
-        if (value.videoUrl && !isHttpsUrl(value.videoUrl)) {
-          ctx.addIssue({
-            code: "custom",
-            path: ["videoUrl"],
-            message: "Ungültiger Link",
-          });
-        }
-        value.games.forEach((game, i) => {
-          if (game.replayUrl) {
-            ctx.addIssue({
-              code: "custom",
-              path: ["games", i, "replayUrl"],
-              message: "Replays gibt es nur für Showdown.",
-            });
-          }
-        });
-      }
-      if (!isPokepasteUrl(value.playerATeamUrl)) {
+      });
+      if (value.videoUrl) {
         ctx.addIssue({
           code: "custom",
-          path: ["playerATeamUrl"],
-          message: "Bitte einen gültigen Pokepaste-Link angeben.",
-        });
-      }
-      if (!isPokepasteUrl(value.playerBTeamUrl)) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["playerBTeamUrl"],
-          message: "Bitte einen gültigen Pokepaste-Link angeben.",
+          path: ["videoUrl"],
+          message: "Ein Video-Link ist nur für Cartridge vorgesehen.",
         });
       }
     } else {
-      if (value.winnerId !== playerAId && value.winnerId !== playerBId) {
+      if (value.videoUrl && !isHttpsUrl(value.videoUrl)) {
         ctx.addIssue({
           code: "custom",
-          path: ["winnerId"],
-          message: "Unbekannter Spieler",
+          path: ["videoUrl"],
+          message: "Ungültiger Link",
         });
       }
-      if (!context.isStaffOrAdmin(value.discussedWithId)) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["discussedWithId"],
-          message: "Bitte einen Staff auswählen",
-        });
-      }
+      value.games.forEach((game, i) => {
+        if (game.replayUrl) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["games", i, "replayUrl"],
+            message: "Replays gibt es nur für Showdown.",
+          });
+        }
+      });
     }
-  });
+    if (!isPokepasteUrl(value.playerATeamUrl)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["playerATeamUrl"],
+        message: "Bitte einen gültigen Pokepaste-Link angeben.",
+      });
+    }
+    if (!isPokepasteUrl(value.playerBTeamUrl)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["playerBTeamUrl"],
+        message: "Bitte einen gültigen Pokepaste-Link angeben.",
+      });
+    }
+  } else if (value.outcome === "free_win") {
+    if (value.winnerId !== playerAId && value.winnerId !== playerBId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["winnerId"],
+        message: "Unbekannter Spieler",
+      });
+    }
+    if (!context.isStaffOrAdmin(value.discussedWithId)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["discussedWithId"],
+        message: "Bitte einen Staff auswählen",
+      });
+    }
+  }
+}
+
+// The player report form schema (normal | free_win). Context is injected so it
+// stays a pure, testable function.
+export function reportSchema(context: ReportContext) {
+  return reportUnion.superRefine((value, ctx) =>
+    refineReport(value, ctx, context),
+  );
+}
+
+// The staff result editor schema — adds the staff-only double_loss outcome.
+export function staffResultSchema(context: ReportContext) {
+  return staffResultUnion.superRefine((value, ctx) =>
+    refineReport(value, ctx, context),
+  );
 }
 
 export type ResultRow = {
@@ -236,10 +262,25 @@ export type GameRow = {
 // absolute (the form picks a player), so the match winner is simply whoever won
 // two games; `playerATeamUrl`/`playerBTeamUrl` are keyed to player A/B by the
 // form and pass straight through.
-export function toResultRows(input: ReportInput): {
+export function toResultRows(input: StaffResultInput): {
   result: ResultRow;
   games: GameRow[];
 } {
+  if (input.outcome === "double_loss") {
+    return {
+      result: {
+        outcome: "double_loss",
+        winnerId: null,
+        platform: null,
+        playerATeamUrl: null,
+        playerBTeamUrl: null,
+        videoUrl: null,
+        freeWinReason: null,
+        discussedWithId: null,
+      },
+      games: [],
+    };
+  }
   if (input.outcome === "free_win") {
     return {
       result: {

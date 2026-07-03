@@ -6,9 +6,13 @@ import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
+import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
+import { DisputeResolveDialog } from "@/features/reporting/components/dispute-resolve-dialog";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
 import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
+import { StaffResultEditor } from "@/features/reporting/components/staff-result-editor";
 import type {
+  DisputeRow,
   MatchResultLite,
   StaffMatchRow,
   StoredResult,
@@ -78,6 +82,7 @@ const DASH_RESULTS = new Map<string, MatchResultLite>([
       outcome: "normal",
       winnerId: "me",
       confirmedAt: null,
+      disputed: false,
       games: [{ winnerId: "me" }, { winnerId: "a" }, { winnerId: "me" }],
     },
   ],
@@ -148,6 +153,7 @@ const staffRow = (
   freeWinReason: null,
   reporterName: null,
   reportedAt: null,
+  dispute: null,
   ...extra,
 });
 const STAFF_OVERDUE = [staffRow("o1", 1, "Division 1a", "Falinks", "Wooloo")];
@@ -167,6 +173,56 @@ const STAFF_PENDING = [
     reportedAt: new Date("2026-07-06T18:00:00Z"),
   }),
 ];
+const STAFF_DISPUTED = [
+  staffRow("d1", 2, "Division 1b", "Sora", "Kai", {
+    outcome: "normal",
+    winnerId: "d1a",
+    dispute: {
+      reason: "Spiel 2 ging an mich, nicht an Sora.",
+      openedByName: "Kai",
+      openedAt: new Date("2026-07-08T20:00:00Z"),
+    },
+  }),
+];
+const STAFF_RESOLVED: DisputeRow[] = [
+  {
+    matchId: "r1",
+    round: 1,
+    groupName: "Division 2b",
+    playerA: { userId: "r1a", name: "Emil", avatarUrl: null },
+    playerB: { userId: "r1b", name: "Ben", avatarUrl: null },
+    reason: "Falscher Sieger gemeldet.",
+    openedByName: "Ben",
+    openedAt: new Date("2026-07-02T18:00:00Z"),
+    resolution: "corrected",
+    resolvedAt: new Date("2026-07-03T09:00:00Z"),
+  },
+  {
+    matchId: "r2",
+    round: 1,
+    groupName: "Division 1a",
+    playerA: { userId: "r2a", name: "Lea", avatarUrl: null },
+    playerB: { userId: "r2b", name: "Tom", avatarUrl: null },
+    reason: "Replay-Link stimmt nicht.",
+    openedByName: "Lea",
+    openedAt: new Date("2026-07-01T18:00:00Z"),
+    resolution: "upheld",
+    resolvedAt: new Date("2026-07-02T11:00:00Z"),
+  },
+];
+const EDITOR_INITIAL = {
+  platform: "showdown" as const,
+  games: [
+    { winnerId: "ea", replayUrl: "https://replay.pokemonshowdown.com/gen9-1" },
+    { winnerId: "eb", replayUrl: "https://replay.pokemonshowdown.com/gen9-2" },
+    { winnerId: "ea", replayUrl: "https://replay.pokemonshowdown.com/gen9-3" },
+  ],
+  playerATeamUrl: "https://pokepast.es/aaaaaaaaaaaaaaaa",
+  playerBTeamUrl: "https://pokepast.es/bbbbbbbbbbbbbbbb",
+  videoUrl: null,
+};
+const EDITOR_A = { userId: "ea", name: "Sora", avatarUrl: null };
+const EDITOR_B = { userId: "eb", name: "Kai", avatarUrl: null };
 const DASH_STANDINGS: StandingsRow[] = [
   {
     userId: "me",
@@ -568,12 +624,32 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Staff: Saison-Dashboard</h2>
-        <Specimen label="Worklist (überfällig · diese Woche · Freewins)">
+        <Specimen label="Worklist (überfällig · angefochten · diese Woche · Freewins)">
           <SaisonDashboard
             overdue={STAFF_OVERDUE}
             thisWeek={STAFF_WEEK}
             pendingFreeWins={STAFF_PENDING}
+            disputed={STAFF_DISPUTED}
+            resolvedDisputes={STAFF_RESOLVED}
             today="2026-07-10"
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Disputes</h2>
+        <Specimen label="Spieler: Ergebnis anfechten">
+          <DisputeDialog matchId="demo" />
+        </Specimen>
+        <Specimen label="Staff: Anfechtung entscheiden">
+          <DisputeResolveDialog matchId="demo" />
+        </Specimen>
+        <Specimen label="Staff: Ergebnis bearbeiten">
+          <StaffResultEditor
+            matchId="demo"
+            playerA={EDITOR_A}
+            playerB={EDITOR_B}
+            initial={EDITOR_INITIAL}
           />
         </Specimen>
       </section>

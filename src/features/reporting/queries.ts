@@ -1,6 +1,7 @@
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
+  disputes,
   divisions,
   matchdays,
   matches,
@@ -191,6 +192,7 @@ export type MatchResultLite = {
   outcome: MatchOutcome;
   winnerId: string | null;
   confirmedAt: Date | null;
+  disputed: boolean;
   games: { winnerId: string }[];
 };
 
@@ -205,11 +207,19 @@ export async function subDivisionResults(
       outcome: matchResults.outcome,
       winnerId: matchResults.winnerId,
       confirmedAt: matchResults.confirmedAt,
+      disputeId: disputes.id,
       gameWinnerId: matchGames.winnerId,
       gameNumber: matchGames.gameNumber,
     })
     .from(matchResults)
     .innerJoin(matches, eq(matches.id, matchResults.matchId))
+    .leftJoin(
+      disputes,
+      and(
+        eq(disputes.matchId, matchResults.matchId),
+        eq(disputes.status, "open"),
+      ),
+    )
     .leftJoin(matchGames, eq(matchGames.matchId, matchResults.matchId))
     .where(eq(matches.subDivisionId, subDivisionId))
     .orderBy(asc(matchGames.gameNumber));
@@ -223,6 +233,7 @@ export async function subDivisionResults(
         outcome: row.outcome,
         winnerId: row.winnerId,
         confirmedAt: row.confirmedAt,
+        disputed: row.disputeId !== null,
         games: [],
       };
       byMatch.set(row.matchId, entry);
@@ -280,6 +291,12 @@ export type StaffMatchRow = {
   freeWinReason: string | null;
   reporterName: string | null;
   reportedAt: Date | null;
+  // The open dispute on this match, if any.
+  dispute: {
+    reason: string;
+    openedByName: string | null;
+    openedAt: Date;
+  } | null;
 };
 
 export async function windowMatchOverview(
@@ -288,6 +305,7 @@ export async function windowMatchOverview(
   const pa = alias(profiles, "pa");
   const pb = alias(profiles, "pb");
   const pr = alias(profiles, "pr");
+  const dp = alias(profiles, "dp");
   const rows = await db
     .select({
       matchId: matches.id,
@@ -310,6 +328,10 @@ export async function windowMatchOverview(
       reportedAt: matchResults.reportedAt,
       rpName: pr.displayName,
       rpUser: pr.username,
+      disputeReason: disputes.reason,
+      disputeOpenedAt: disputes.openedAt,
+      dpName: dp.displayName,
+      dpUser: dp.username,
     })
     .from(matches)
     .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
@@ -325,6 +347,11 @@ export async function windowMatchOverview(
     .leftJoin(pb, eq(pb.userId, matches.playerBId))
     .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
     .leftJoin(pr, eq(pr.userId, matchResults.reportedById))
+    .leftJoin(
+      disputes,
+      and(eq(disputes.matchId, matches.id), eq(disputes.status, "open")),
+    )
+    .leftJoin(dp, eq(dp.userId, disputes.openedById))
     .where(and(eq(divisions.windowId, windowId), isNotNull(matches.playerBId)))
     .orderBy(
       asc(divisions.tier),
@@ -355,6 +382,13 @@ export async function windowMatchOverview(
     freeWinReason: row.freeWinReason,
     reporterName: row.rpName ?? row.rpUser,
     reportedAt: row.reportedAt,
+    dispute: row.disputeReason
+      ? {
+          reason: row.disputeReason,
+          openedByName: row.dpName ?? row.dpUser,
+          openedAt: row.disputeOpenedAt as Date,
+        }
+      : null,
   }));
 }
 
@@ -433,4 +467,184 @@ export async function upsertStaffResult(input: {
 // re-reported.
 export async function deleteMatchResult(matchId: string): Promise<void> {
   await db.delete(matchResults).where(eq(matchResults.matchId, matchId));
+}
+
+// --- Disputes -------------------------------------------------------------
+
+export async function openDispute(input: {
+  matchId: string;
+  openedById: string;
+  reason: string;
+}): Promise<void> {
+  await db.insert(disputes).values({
+    matchId: input.matchId,
+    openedById: input.openedById,
+    reason: input.reason,
+  });
+}
+
+export async function resolveDispute(input: {
+  matchId: string;
+  resolution: "upheld" | "corrected";
+  note: string | null;
+  resolvedById: string;
+}): Promise<void> {
+  await db
+    .update(disputes)
+    .set({
+      status: "resolved",
+      resolution: input.resolution,
+      note: input.note,
+      resolvedById: input.resolvedById,
+      resolvedAt: new Date(),
+    })
+    .where(
+      and(eq(disputes.matchId, input.matchId), eq(disputes.status, "open")),
+    );
+}
+
+// The open dispute on a match (for the match page), or null.
+export async function matchOpenDispute(matchId: string): Promise<{
+  reason: string;
+  openedByName: string | null;
+  openedAt: Date;
+} | null> {
+  const rows = await db
+    .select({
+      reason: disputes.reason,
+      openedAt: disputes.openedAt,
+      name: profiles.displayName,
+      user: profiles.username,
+    })
+    .from(disputes)
+    .leftJoin(profiles, eq(profiles.userId, disputes.openedById))
+    .where(and(eq(disputes.matchId, matchId), eq(disputes.status, "open")))
+    .limit(1);
+  const row = rows[0];
+  return row
+    ? {
+        reason: row.reason,
+        openedByName: row.name ?? row.user,
+        openedAt: row.openedAt,
+      }
+    : null;
+}
+
+export type DisputeRow = {
+  matchId: string;
+  round: number;
+  groupName: string;
+  playerA: Identity;
+  playerB: Identity;
+  reason: string;
+  openedByName: string | null;
+  openedAt: Date;
+  resolution: "upheld" | "corrected" | null;
+  resolvedAt: Date | null;
+};
+
+// Resolved disputes of a window, newest first — the „resolved" history filter.
+export async function windowResolvedDisputes(
+  windowId: string,
+): Promise<DisputeRow[]> {
+  const pa = alias(profiles, "pa");
+  const pb = alias(profiles, "pb");
+  const dp = alias(profiles, "dp");
+  const rows = await db
+    .select({
+      matchId: matches.id,
+      round: matches.round,
+      tier: divisions.tier,
+      position: subDivisions.position,
+      playerAId: matches.playerAId,
+      playerBId: matches.playerBId,
+      aName: pa.displayName,
+      aUser: pa.username,
+      aAvatar: pa.avatarUrl,
+      bName: pb.displayName,
+      bUser: pb.username,
+      bAvatar: pb.avatarUrl,
+      reason: disputes.reason,
+      openedAt: disputes.openedAt,
+      dpName: dp.displayName,
+      dpUser: dp.username,
+      resolution: disputes.resolution,
+      resolvedAt: disputes.resolvedAt,
+    })
+    .from(disputes)
+    .innerJoin(matches, eq(matches.id, disputes.matchId))
+    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .leftJoin(pa, eq(pa.userId, matches.playerAId))
+    .leftJoin(pb, eq(pb.userId, matches.playerBId))
+    .leftJoin(dp, eq(dp.userId, disputes.openedById))
+    .where(
+      and(eq(divisions.windowId, windowId), eq(disputes.status, "resolved")),
+    )
+    .orderBy(desc(disputes.resolvedAt));
+
+  return rows.map((row) => ({
+    matchId: row.matchId,
+    round: row.round,
+    groupName: subDivisionName(row.tier, row.position),
+    playerA: toIdentity({
+      userId: row.playerAId,
+      displayName: row.aName,
+      username: row.aUser,
+      avatarUrl: row.aAvatar,
+    }),
+    playerB: toIdentity({
+      userId: row.playerBId as string,
+      displayName: row.bName,
+      username: row.bUser,
+      avatarUrl: row.bAvatar,
+    }),
+    reason: row.reason,
+    openedByName: row.dpName ?? row.dpUser,
+    openedAt: row.openedAt,
+    resolution: row.resolution,
+    resolvedAt: row.resolvedAt,
+  }));
+}
+
+// Staff full edit of an existing result: upserts the whole result + games,
+// recording `corrected_by`. A free-win set here is confirmed immediately.
+export async function replaceResult(input: {
+  matchId: string;
+  result: ResultRow;
+  games: GameRow[];
+  staffId: string;
+}): Promise<void> {
+  const now = new Date();
+  const confirmed = input.result.outcome === "free_win";
+  await db.transaction(async (tx) => {
+    await tx.delete(matchGames).where(eq(matchGames.matchId, input.matchId));
+    await tx
+      .insert(matchResults)
+      .values({
+        matchId: input.matchId,
+        ...input.result,
+        reportedById: input.staffId,
+        confirmedById: confirmed ? input.staffId : null,
+        confirmedAt: confirmed ? now : null,
+      })
+      .onConflictDoUpdate({
+        target: matchResults.matchId,
+        set: {
+          ...input.result,
+          confirmedById: confirmed ? input.staffId : null,
+          confirmedAt: confirmed ? now : null,
+          correctedById: input.staffId,
+          correctedAt: now,
+          updatedAt: now,
+        },
+      });
+    if (input.games.length > 0) {
+      await tx
+        .insert(matchGames)
+        .values(
+          input.games.map((game) => ({ matchId: input.matchId, ...game })),
+        );
+    }
+  });
 }

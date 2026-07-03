@@ -5,7 +5,10 @@ import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { listRegistrations } from "@/features/registration/queries";
 import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
-import { windowMatchOverview } from "@/features/reporting/queries";
+import {
+  windowMatchOverview,
+  windowResolvedDisputes,
+} from "@/features/reporting/queries";
 import { bucketMatches } from "@/features/reporting/staff-dashboard";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
@@ -111,12 +114,13 @@ export default async function StaffPage() {
   // work, no separate page.
   if (phase === "regular_season" && window) {
     const today = new Date().toISOString().slice(0, 10);
-    const [overview, matchdays] = await Promise.all([
+    const [overview, matchdays, resolvedDisputes] = await Promise.all([
       windowMatchOverview(window.id),
       matchdaysForWindow(window.id),
+      windowResolvedDisputes(window.id),
     ]);
     const week = currentMatchday(matchdays, today);
-    const { overdue, thisWeek, pendingFreeWins } = bucketMatches({
+    const { overdue, thisWeek, pendingFreeWins, disputed } = bucketMatches({
       matches: overview,
       currentRound: week?.round ?? null,
       today,
@@ -139,6 +143,8 @@ export default async function StaffPage() {
               overdue={overdue}
               thisWeek={thisWeek}
               pendingFreeWins={pendingFreeWins}
+              disputed={disputed}
+              resolvedDisputes={resolvedDisputes}
               today={today}
             />
           </div>

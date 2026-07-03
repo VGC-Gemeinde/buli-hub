@@ -7,14 +7,17 @@ import {
   deleteMatchResult,
   getMatchForReport,
   getMatchResult,
+  listStaffAndAdmins,
   confirmFreeWin as persistConfirmFreeWin,
+  replaceResult,
   upsertStaffResult,
 } from "./queries";
+import { staffResultSchema, toResultRows } from "./report";
 
 export type StaffActionResult = { ok: true } | { ok: false; error: string };
 
 function revalidate(matchId: string) {
-  revalidatePath("/staff/saison");
+  revalidatePath("/staff");
   revalidatePath(`/match/${matchId}`);
   revalidatePath("/spieler");
 }
@@ -100,6 +103,47 @@ export async function awardDoubleLoss(input: {
     outcome: "double_loss",
     winnerId: null,
     freeWinReason: null,
+    staffId: gate.staffId,
+  });
+  revalidate(input.matchId);
+  return { ok: true };
+}
+
+// Staff full edit of an existing result — change anything (games, platform,
+// replays, team sheets, or switch to a double loss). Free wins go through the
+// award dialog; players still do the initial submission.
+export async function editResult(input: {
+  matchId: string;
+  report: unknown;
+}): Promise<StaffActionResult> {
+  const gate = await staffGate(input.matchId);
+  if (!gate.ok) {
+    return gate;
+  }
+  if (!(await getMatchResult(input.matchId))) {
+    return { ok: false, error: "Es gibt kein Ergebnis zum Bearbeiten" };
+  }
+  const staffIds = new Set(
+    (await listStaffAndAdmins()).map((staff) => staff.userId),
+  );
+  const parsed = staffResultSchema({
+    participants: {
+      playerAId: gate.match.playerA.userId,
+      playerBId: gate.match.playerB.userId,
+    },
+    isStaffOrAdmin: (id) => staffIds.has(id),
+  }).safeParse(input.report);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
+    };
+  }
+  const { result, games } = toResultRows(parsed.data);
+  await replaceResult({
+    matchId: input.matchId,
+    result,
+    games,
     staffId: gate.staffId,
   });
   revalidate(input.matchId);

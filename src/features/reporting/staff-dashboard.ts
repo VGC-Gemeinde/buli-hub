@@ -9,6 +9,8 @@ export type MatchBuckets = {
   thisWeek: StaffMatchRow[];
   // Reported free wins still awaiting staff confirmation.
   pendingFreeWins: StaffMatchRow[];
+  // Matches with an open dispute.
+  disputed: StaffMatchRow[];
 };
 
 export function bucketMatches(input: {
@@ -19,8 +21,12 @@ export function bucketMatches(input: {
   const overdue: StaffMatchRow[] = [];
   const thisWeek: StaffMatchRow[] = [];
   const pendingFreeWins: StaffMatchRow[] = [];
+  const disputed: StaffMatchRow[] = [];
 
   for (const match of input.matches) {
+    if (match.dispute) {
+      disputed.push(match);
+    }
     if (match.outcome === "free_win" && match.confirmedAt === null) {
       pendingFreeWins.push(match);
     }
@@ -35,7 +41,7 @@ export function bucketMatches(input: {
       thisWeek.push(match);
     }
   }
-  return { overdue, thisWeek, pendingFreeWins };
+  return { overdue, thisWeek, pendingFreeWins, disputed };
 }
 
 // Whether a this-week match still needs a result (drives the default vs

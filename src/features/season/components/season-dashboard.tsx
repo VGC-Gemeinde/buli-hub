@@ -190,11 +190,33 @@ function Hero({
       </div>
 
       {reported && result ? (
-        <ReportedBadge result={result} meId={meId} />
+        <Link
+          href={`/match/${match.matchId}`}
+          className="flex flex-col items-end gap-1.5"
+        >
+          <ReportedBadge result={result} meId={meId} />
+          {result.disputed ? (
+            <span className="rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
+              Angefochten
+            </span>
+          ) : (
+            <span className="text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white">
+              Ansehen →
+            </span>
+          )}
+        </Link>
       ) : pendingFreeWin ? (
-        <div className="rounded-full bg-brand-orange/12 px-4 py-2 font-semibold text-brand-blue text-sm dark:text-white">
-          Freewin — wartet auf Bestätigung
-        </div>
+        <Link
+          href={`/match/${match.matchId}`}
+          className="flex flex-col items-end gap-1.5"
+        >
+          <span className="rounded-full bg-brand-orange/12 px-4 py-2 font-semibold text-brand-blue text-sm dark:text-white">
+            Freewin — wartet auf Bestätigung
+          </span>
+          <span className="text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white">
+            Ansehen →
+          </span>
+        </Link>
       ) : (
         <div className="flex items-center gap-7">
           <div className="flex flex-col items-start gap-1">
@@ -349,6 +371,11 @@ function RowRight({
     const score = scoreFor(meId, result);
     return (
       <div className="flex items-center gap-3">
+        {result.disputed ? (
+          <span className="rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
+            Angefochten
+          </span>
+        ) : null}
         {score.label ? (
           <span
             className={cn(

@@ -15,6 +15,7 @@ const base: StaffMatchRow = {
   freeWinReason: null,
   reporterName: null,
   reportedAt: null,
+  dispute: null,
 };
 const row = (o: Partial<StaffMatchRow>): StaffMatchRow => ({ ...base, ...o });
 const today = "2026-07-10";
@@ -81,5 +82,26 @@ describe("bucketMatches", () => {
       today,
     });
     expect(thisWeek).toHaveLength(0);
+  });
+
+  it("disputed = matches with an open dispute", () => {
+    const { disputed } = bucketMatches({
+      matches: [
+        row({
+          matchId: "d1",
+          outcome: "normal",
+          winnerId: "a",
+          dispute: {
+            reason: "wrong score",
+            openedByName: "B",
+            openedAt: new Date(),
+          },
+        }),
+        row({ matchId: "clean", outcome: "normal", winnerId: "a" }),
+      ],
+      currentRound: 2,
+      today,
+    });
+    expect(disputed.map((m) => m.matchId)).toEqual(["d1"]);
   });
 });

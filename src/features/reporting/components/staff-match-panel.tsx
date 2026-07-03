@@ -15,11 +15,17 @@ import {
 import type { Identity } from "@/features/season/dashboard";
 import { awardDoubleLoss, confirmFreeWin, reopenMatch } from "../staff-actions";
 import { AwardFreewinDialog } from "./award-freewin-dialog";
+import { DisputeResolveDialog } from "./dispute-resolve-dialog";
+import {
+  type NormalEditorInitial,
+  StaffResultEditor,
+} from "./staff-result-editor";
 
 type ActionState = "none" | "pending" | "reported";
 
 // Role-gated staff controls on a match, laid out as titled action rows. Staff
-// do not enter normal results — players report those.
+// do not enter normal results — players report those — but may edit or override
+// a reported result and resolve an open dispute.
 export function StaffMatchPanel({
   matchId,
   round,
@@ -29,6 +35,8 @@ export function StaffMatchPanel({
   hasResult,
   isPendingFreeWin,
   pendingWinnerName,
+  editorInitial,
+  disputeOpen,
 }: {
   matchId: string;
   round: number;
@@ -38,6 +46,9 @@ export function StaffMatchPanel({
   hasResult: boolean;
   isPendingFreeWin: boolean;
   pendingWinnerName?: string | null;
+  // Prefill for the „bearbeiten" editor — only for a reported normal result.
+  editorInitial?: NormalEditorInitial | null;
+  disputeOpen?: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -98,6 +109,15 @@ export function StaffMatchPanel({
       </div>
       <p className="mt-1.5 text-[13.5px] text-muted-foreground">{context}</p>
 
+      {disputeOpen ? (
+        <ActionRow
+          title="Anfechtung offen"
+          consequence="Ein Spieler hat das Ergebnis angefochten. Prüfen und entscheiden."
+        >
+          <DisputeResolveDialog matchId={matchId} />
+        </ActionRow>
+      ) : null}
+
       {state === "pending" ? (
         <>
           <ActionRow
@@ -129,6 +149,19 @@ export function StaffMatchPanel({
 
       {state === "reported" ? (
         <>
+          {editorInitial ? (
+            <ActionRow
+              title="Ergebnis bearbeiten"
+              consequence="Spiele, Plattform, Replays oder Teams anpassen."
+            >
+              <StaffResultEditor
+                matchId={matchId}
+                playerA={playerA}
+                playerB={playerB}
+                initial={editorInitial}
+              />
+            </ActionRow>
+          ) : null}
           <ActionRow
             title="Ergebnis zurücksetzen"
             consequence="Löscht das Ergebnis — das Match kann neu gemeldet werden."

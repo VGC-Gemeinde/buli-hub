@@ -12,12 +12,16 @@ import {
 import { createWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
 import {
+  confirmFreeWin,
+  deleteMatchResult,
   getMatchForReport,
   getMatchResult,
   groupResults,
   listStaffAndAdmins,
   saveResult,
   subDivisionResults,
+  upsertStaffResult,
+  windowMatchOverview,
 } from "./queries";
 import { computeStandings } from "./standings";
 
@@ -191,5 +195,99 @@ describe("listStaffAndAdmins", () => {
     const ids = list.map((s) => s.userId);
     expect(ids).toContain(staff);
     expect(ids).not.toContain(alice); // alice is a plain player (default role)
+  });
+});
+
+describe("staff dashboard queries", () => {
+  it("windowMatchOverview lists real pairings with identities, excludes byes", async () => {
+    const rows = await windowMatchOverview(windowId);
+    const ab = rows.find((r) => r.matchId === matchAB);
+    expect(ab?.playerA.name).toBe("Alice");
+    expect(ab?.playerB.name).toBe("Bob");
+    expect(rows.find((r) => r.matchId === matchBye)).toBeUndefined();
+  });
+
+  it("upsertStaffResult awards a free win (confirmed) then reopen clears it", async () => {
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+
+    await upsertStaffResult({
+      matchId: m.id,
+      outcome: "free_win",
+      winnerId: alice,
+      freeWinReason: "opponent forfeited",
+      staffId: staff,
+    });
+    const awarded = await getMatchResult(m.id);
+    expect(awarded?.outcome).toBe("free_win");
+    expect(awarded?.confirmedAt).not.toBeNull(); // staff award is confirmed
+    expect(awarded?.reportedById).toBe(staff);
+
+    await deleteMatchResult(m.id);
+    expect(await getMatchResult(m.id)).toBeNull();
+    await db.execute(sql`delete from matches where id = ${m.id}`);
+  });
+
+  it("upsertStaffResult over an existing result records corrected_by + clears games", async () => {
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+    await saveResult(
+      m.id,
+      {
+        outcome: "normal",
+        winnerId: alice,
+        platform: "showdown",
+        playerATeamUrl: "https://pokepast.es/a",
+        playerBTeamUrl: "https://pokepast.es/b",
+        videoUrl: null,
+        freeWinReason: null,
+        discussedWithId: null,
+      },
+      [{ gameNumber: 1, winnerId: alice, replayUrl: "https://replay/1" }],
+      alice,
+    );
+
+    await upsertStaffResult({
+      matchId: m.id,
+      outcome: "double_loss",
+      winnerId: null,
+      freeWinReason: null,
+      staffId: staff,
+    });
+    const corrected = await getMatchResult(m.id);
+    expect(corrected?.outcome).toBe("double_loss");
+    expect(corrected?.winnerId).toBeNull();
+    expect(corrected?.games).toHaveLength(0); // games cleared
+    await db.execute(sql`delete from matches where id = ${m.id}`);
+  });
+
+  it("confirmFreeWin sets the confirmation on a pending free win", async () => {
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+    await saveResult(
+      m.id,
+      {
+        outcome: "free_win",
+        winnerId: alice,
+        platform: null,
+        playerATeamUrl: null,
+        playerBTeamUrl: null,
+        videoUrl: null,
+        freeWinReason: "no show",
+        discussedWithId: staff,
+      },
+      [],
+      alice,
+    );
+    expect((await getMatchResult(m.id))?.confirmedAt).toBeNull();
+    await confirmFreeWin(m.id, staff);
+    expect((await getMatchResult(m.id))?.confirmedAt).not.toBeNull();
+    await db.execute(sql`delete from matches where id = ${m.id}`);
   });
 });

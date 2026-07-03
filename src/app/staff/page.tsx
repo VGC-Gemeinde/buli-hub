@@ -160,11 +160,14 @@ export default async function StaffPage() {
           {phase === "regular_season" ? (
             <section className="flex flex-col gap-5">
               <StaffSectionHeader title="Reguläre Saison" />
-              <div className="rounded-lg border px-6 py-5">
+              <div className="flex flex-col items-start gap-3 rounded-lg border px-6 py-5">
                 <p className="text-muted-foreground">
-                  Die reguläre Saison läuft. Das Dashboard mit Spielplan,
-                  Ergebnissen und Tabellen folgt in Kürze.
+                  Die reguläre Saison läuft. Verfolge offene, überfällige und zu
+                  bestätigende Ergebnisse im Dashboard.
                 </p>
+                <Button asChild>
+                  <Link href="/staff/saison">Saison-Dashboard öffnen</Link>
+                </Button>
               </div>
             </section>
           ) : null}

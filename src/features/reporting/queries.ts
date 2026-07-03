@@ -1,4 +1,5 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import {
   divisions,
   matchdays,
@@ -261,4 +262,162 @@ export async function isParticipant(
   return (
     row !== undefined && (row.playerAId === userId || row.playerBId === userId)
   );
+}
+
+// A match for the staff running-season dashboard: identity + schedule + result
+// state, across every group of a window. Byes are excluded (nothing to chase).
+export type StaffMatchRow = {
+  matchId: string;
+  round: number;
+  groupName: string;
+  endsOn: string | null;
+  playerA: Identity;
+  playerB: Identity;
+  outcome: MatchOutcome | null;
+  winnerId: string | null;
+  confirmedAt: Date | null;
+};
+
+export async function windowMatchOverview(
+  windowId: string,
+): Promise<StaffMatchRow[]> {
+  const pa = alias(profiles, "pa");
+  const pb = alias(profiles, "pb");
+  const rows = await db
+    .select({
+      matchId: matches.id,
+      round: matches.round,
+      tier: divisions.tier,
+      position: subDivisions.position,
+      endsOn: matchdays.endsOn,
+      playerAId: matches.playerAId,
+      playerBId: matches.playerBId,
+      aName: pa.displayName,
+      aUser: pa.username,
+      aAvatar: pa.avatarUrl,
+      bName: pb.displayName,
+      bUser: pb.username,
+      bAvatar: pb.avatarUrl,
+      outcome: matchResults.outcome,
+      winnerId: matchResults.winnerId,
+      confirmedAt: matchResults.confirmedAt,
+    })
+    .from(matches)
+    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .leftJoin(
+      matchdays,
+      and(
+        eq(matchdays.windowId, divisions.windowId),
+        eq(matchdays.round, matches.round),
+      ),
+    )
+    .leftJoin(pa, eq(pa.userId, matches.playerAId))
+    .leftJoin(pb, eq(pb.userId, matches.playerBId))
+    .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
+    .where(and(eq(divisions.windowId, windowId), isNotNull(matches.playerBId)))
+    .orderBy(
+      asc(divisions.tier),
+      asc(subDivisions.position),
+      asc(matches.round),
+    );
+
+  return rows.map((row) => ({
+    matchId: row.matchId,
+    round: row.round,
+    groupName: subDivisionName(row.tier, row.position),
+    endsOn: row.endsOn,
+    playerA: toIdentity({
+      userId: row.playerAId,
+      displayName: row.aName,
+      username: row.aUser,
+      avatarUrl: row.aAvatar,
+    }),
+    playerB: toIdentity({
+      userId: row.playerBId as string,
+      displayName: row.bName,
+      username: row.bUser,
+      avatarUrl: row.bAvatar,
+    }),
+    outcome: row.outcome,
+    winnerId: row.winnerId,
+    confirmedAt: row.confirmedAt,
+  }));
+}
+
+// Confirms a pending free win — it then counts for standings.
+export async function confirmFreeWin(
+  matchId: string,
+  staffId: string,
+): Promise<void> {
+  await db
+    .update(matchResults)
+    .set({
+      confirmedById: staffId,
+      confirmedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(matchResults.matchId, matchId),
+        eq(matchResults.outcome, "free_win"),
+      ),
+    );
+}
+
+// Staff award/correction: writes a free-win or double-loss result (no games),
+// recording `corrected_by` when a result already existed. Free wins awarded by
+// staff are confirmed immediately.
+export async function upsertStaffResult(input: {
+  matchId: string;
+  outcome: "free_win" | "double_loss";
+  winnerId: string | null;
+  freeWinReason: string | null;
+  staffId: string;
+}): Promise<void> {
+  const now = new Date();
+  const confirmed = input.outcome === "free_win";
+  await db.transaction(async (tx) => {
+    await tx.delete(matchGames).where(eq(matchGames.matchId, input.matchId));
+    await tx
+      .insert(matchResults)
+      .values({
+        matchId: input.matchId,
+        outcome: input.outcome,
+        winnerId: input.winnerId,
+        platform: null,
+        playerATeamUrl: null,
+        playerBTeamUrl: null,
+        videoUrl: null,
+        freeWinReason: input.freeWinReason,
+        discussedWithId: null,
+        reportedById: input.staffId,
+        confirmedById: confirmed ? input.staffId : null,
+        confirmedAt: confirmed ? now : null,
+      })
+      .onConflictDoUpdate({
+        target: matchResults.matchId,
+        set: {
+          outcome: input.outcome,
+          winnerId: input.winnerId,
+          platform: null,
+          playerATeamUrl: null,
+          playerBTeamUrl: null,
+          videoUrl: null,
+          freeWinReason: input.freeWinReason,
+          discussedWithId: null,
+          confirmedById: confirmed ? input.staffId : null,
+          confirmedAt: confirmed ? now : null,
+          correctedById: input.staffId,
+          correctedAt: now,
+          updatedAt: now,
+        },
+      });
+  });
+}
+
+// Reopens a match by clearing its result (games cascade) so it can be
+// re-reported.
+export async function deleteMatchResult(matchId: string): Promise<void> {
+  await db.delete(matchResults).where(eq(matchResults.matchId, matchId));
 }

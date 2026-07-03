@@ -7,8 +7,10 @@ import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
+import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
 import type {
   MatchResultLite,
+  StaffMatchRow,
   StoredResult,
 } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
@@ -126,6 +128,39 @@ const FREEWIN_RESULT: StoredResult = {
   confirmedAt: null,
   games: [],
 };
+const staffRow = (
+  matchId: string,
+  round: number,
+  groupName: string,
+  a: string,
+  b: string,
+  extra: Partial<StaffMatchRow> = {},
+): StaffMatchRow => ({
+  matchId,
+  round,
+  groupName,
+  endsOn: "2026-07-07",
+  playerA: { userId: `${matchId}a`, name: a, avatarUrl: null },
+  playerB: { userId: `${matchId}b`, name: b, avatarUrl: null },
+  outcome: null,
+  winnerId: null,
+  confirmedAt: null,
+  ...extra,
+});
+const STAFF_OVERDUE = [staffRow("o1", 1, "Division 1a", "Falinks", "Wooloo")];
+const STAFF_WEEK = [
+  staffRow("w1", 2, "Division 1a", "Pawmi", "Mika"),
+  staffRow("w2", 2, "Division 1b", "Nico", "Luca", {
+    outcome: "normal",
+    winnerId: "w2a",
+  }),
+];
+const STAFF_PENDING = [
+  staffRow("p1", 1, "Division 2a", "Finn", "Jonas", {
+    outcome: "free_win",
+    winnerId: "p1a",
+  }),
+];
 const DASH_STANDINGS: StandingsRow[] = [
   {
     userId: "me",
@@ -521,6 +556,19 @@ export function Gallery() {
             viewerId="me"
             round={3}
             groupName="Division 1a"
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Staff: Saison-Dashboard</h2>
+        <Specimen label="Worklist (überfällig · diese Woche · Freigewinne)">
+          <SaisonDashboard
+            overdue={STAFF_OVERDUE}
+            thisWeek={STAFF_WEEK}
+            pendingFreeWins={STAFF_PENDING}
+            currentRound={2}
+            totalRounds={6}
           />
         </Specimen>
       </section>

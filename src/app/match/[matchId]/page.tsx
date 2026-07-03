@@ -2,12 +2,14 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { ReportForm } from "@/features/reporting/components/report-form";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
+import { StaffMatchPanel } from "@/features/reporting/components/staff-match-panel";
 import {
   getMatchForReport,
   getMatchResult,
   listStaffAndAdmins,
 } from "@/features/reporting/queries";
 import { currentUser } from "@/features/roles/guard";
+import { roleAtLeast } from "@/features/roles/roles";
 
 export default async function MatchReportPage({
   params,
@@ -21,12 +23,13 @@ export default async function MatchReportPage({
   }
 
   const match = await getMatchForReport(matchId);
-  // Unknown match, a bye, or a non-participant: nothing to report here.
   const isParticipant =
     match !== null &&
     (current.userId === match.playerA.userId ||
       current.userId === match.playerB?.userId);
-  if (!match || !match.playerB || !isParticipant) {
+  const isStaff = roleAtLeast(current.role, "staff");
+  // Participants report; staff can officiate any match. Others / byes: nothing.
+  if (!match || !match.playerB || (!isParticipant && !isStaff)) {
     redirect("/spieler");
   }
 
@@ -51,7 +54,7 @@ export default async function MatchReportPage({
             round={match.round}
             groupName={match.groupName}
           />
-        ) : (
+        ) : isParticipant ? (
           <ReportForm
             matchId={match.matchId}
             round={match.round}
@@ -62,7 +65,31 @@ export default async function MatchReportPage({
             reporterId={current.userId}
             staffOptions={staffOptions}
           />
+        ) : (
+          <>
+            <p className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
+              Spieltag {match.round} · {match.groupName}
+            </p>
+            <h1 className="mt-2 text-3xl text-brand-blue dark:text-white">
+              {match.playerA.name} vs. {match.playerB.name}
+            </h1>
+            <p className="mt-3 text-muted-foreground">
+              Noch kein Ergebnis gemeldet.
+            </p>
+          </>
         )}
+
+        {isStaff ? (
+          <StaffMatchPanel
+            matchId={match.matchId}
+            playerA={match.playerA}
+            playerB={match.playerB}
+            hasResult={result !== null}
+            isPendingFreeWin={
+              result?.outcome === "free_win" && result.confirmedAt === null
+            }
+          />
+        ) : null}
       </main>
     </div>
   );

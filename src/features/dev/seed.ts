@@ -202,24 +202,39 @@ async function generateDevSchedule(windowId: string): Promise<void> {
   await persistSchedule(windowId, windows, matchRows);
 }
 
-// Reports the first matchday so a seeded dashboard is lived-in: past results
-// feed the standings while later rounds stay open (so „Ergebnis melden" is
-// actionable). Player A wins 2–1 deterministically.
+// Reports most of the first matchday so a seeded dashboard is lived-in, while
+// leaving a couple of matches unresolved for the staff dashboard to surface:
+// the first stays unreported (→ overdue, round 1 is in the past) and the second
+// is a pending free win. The rest are a deterministic 2–1 for player A.
 async function seedDevResults(windowId: string): Promise<void> {
-  const round1 = await db
-    .select({
-      id: matches.id,
-      playerAId: matches.playerAId,
-      playerBId: matches.playerBId,
-    })
-    .from(matches)
-    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
-    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
-    .where(and(eq(divisions.windowId, windowId), eq(matches.round, 1)));
+  const round1 = (
+    await db
+      .select({
+        id: matches.id,
+        playerAId: matches.playerAId,
+        playerBId: matches.playerBId,
+      })
+      .from(matches)
+      .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+      .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+      .where(and(eq(divisions.windowId, windowId), eq(matches.round, 1)))
+  ).filter((match) => match.playerBId !== null);
 
-  for (const match of round1) {
-    if (!match.playerBId) {
-      continue; // bye
+  for (let i = 0; i < round1.length; i++) {
+    const match = round1[i];
+    if (i === 0) {
+      continue; // left unreported → overdue
+    }
+    if (i === 1) {
+      await db.insert(matchResults).values({
+        matchId: match.id,
+        outcome: "free_win",
+        winnerId: match.playerAId,
+        freeWinReason: "Gegner war nicht erreichbar.",
+        reportedById: match.playerAId,
+        // confirmedAt null → pending staff confirmation
+      });
+      continue;
     }
     await db.insert(matchResults).values({
       matchId: match.id,
@@ -240,7 +255,7 @@ async function seedDevResults(windowId: string): Promise<void> {
       {
         matchId: match.id,
         gameNumber: 2,
-        winnerId: match.playerBId,
+        winnerId: match.playerBId as string,
         replayUrl: "https://replay.pokemonshowdown.com/seed-2",
       },
       {

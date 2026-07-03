@@ -79,7 +79,7 @@ npx drizzle-kit migrate    # apply migrations to local DB
 npx drizzle-kit studio     # browser GUI to inspect data
 supabase db reset          # wipe local DB, re-run all migrations + seed
 ```
-Workflow: edit `schema.ts` → `generate` → review generated SQL → `migrate`. Migrations are committed and versioned.
+Workflow: edit `schema.ts` → `generate` → review generated SQL → `migrate`. Migrations are committed and versioned. SQL that `schema.ts` cannot express (RLS policies, FKs into `auth.users`, grants) goes in a **custom** migration authored with `npx drizzle-kit generate --custom --name <x>` — this writes the file *and* its journal/snapshot entry; a hand-written `.sql` file is silently skipped by `migrate`. Migrations are kept per-feature and **squashed into one baseline at go-live** (there is no production DB to preserve history for) — see `docs/decisions/migrations-squash-at-launch.md`.
 
 ### Testing
 ```bash

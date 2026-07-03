@@ -28,6 +28,14 @@ export async function SiteHeader({ className }: { className?: string }) {
           </span>
         </Link>
         <div className="flex items-center gap-1">
+          {current ? (
+            <Link
+              href="/spieler"
+              className="mr-1 rounded-md px-3 py-1.5 font-medium text-sm hover:bg-secondary"
+            >
+              Spieler-Dashboard
+            </Link>
+          ) : null}
           <ThemeToggle />
           {current ? (
             <UserMenu

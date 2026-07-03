@@ -6,6 +6,16 @@ import type {
   PlayerStatus,
 } from "@/features/registration/registration";
 import {
+  persistSchedule,
+  subDivisionRosters,
+} from "@/features/schedule/queries";
+import { generateRoundRobin } from "@/features/schedule/round-robin";
+import {
+  defaultDeadlines,
+  spieltagCount,
+  windowsFromDeadlines,
+} from "@/features/schedule/spieltage";
+import {
   assignPlayersToDivision,
   finalizeSeeding,
   generateSubDivisionsForDivision,
@@ -157,14 +167,47 @@ async function finalizeDevSeeding(
   await finalizeSeeding(windowId);
 }
 
+// Generates the season's schedule from a finalized seeding, starting two weeks
+// in the past so the Spieler-Dashboard shows a mid-season state (past, current
+// and upcoming matchdays) rather than everything at round 1.
+async function generateDevSchedule(windowId: string): Promise<void> {
+  const rosters = await subDivisionRosters(windowId);
+  const count = spieltagCount(rosters.map((roster) => roster.userIds.length));
+  if (count === 0) {
+    return;
+  }
+  const seasonStart = new Date(Date.now() - 14 * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const deadlines = defaultDeadlines(seasonStart, count);
+  const windows = windowsFromDeadlines(seasonStart, deadlines);
+  const matchRows = rosters.flatMap((roster) =>
+    generateRoundRobin(roster.userIds).flatMap((pairings, roundIndex) =>
+      pairings.map((pairing) => ({
+        subDivisionId: roster.subDivisionId,
+        round: roundIndex + 1,
+        playerAId: pairing.a,
+        playerBId: pairing.b,
+      })),
+    ),
+  );
+  await persistSchedule(windowId, windows, matchRows);
+}
+
 export async function generateSeedData(
   count: number,
-  finalize = false,
+  opts: {
+    finalize?: boolean;
+    schedule?: boolean;
+    includeUserId?: string;
+  } = {},
 ): Promise<number> {
+  // A schedule needs a finalized seeding to build from.
+  const finalize = opts.finalize || opts.schedule;
   await clearSeedData();
 
   const specs = buildSeedRegistrations(count);
-  const ids = specs.map(() => randomUUID());
+  const ids: string[] = specs.map(() => randomUUID());
 
   // Fake auth users (one multi-row insert), then their profiles.
   const userValues = specs.map(
@@ -204,8 +247,29 @@ export async function generateSeedData(
     })),
   );
 
+  // Register the signed-in persona too, so a running-season seed populates
+  // *their* Spieler-Dashboard. Their profile already exists (created on
+  // /dev/login), so only a registration row is added — before finalizing, so
+  // they get placed with everyone else.
+  if (opts.includeUserId && !ids.includes(opts.includeUserId)) {
+    await db
+      .insert(registrations)
+      .values({
+        windowId: window.id,
+        userId: opts.includeUserId,
+        platform: "showdown",
+        status: "new",
+        participatedBefore: false,
+        skillSelfRating: 7,
+      })
+      .onConflictDoNothing();
+  }
+
   if (finalize) {
     await finalizeDevSeeding(window.id, 2, 8);
+  }
+  if (opts.schedule) {
+    await generateDevSchedule(window.id);
   }
 
   return specs.length;

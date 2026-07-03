@@ -62,6 +62,18 @@ export default function DevPage() {
             </span>
           </a>
           <a
+            href="/dev/seed-registrations?count=100&schedule=1"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              100 Anmeldungen + laufende Saison
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Baut Einteilung + Spielplan und meldet die aktuelle Persona an →
+              zum Spieler-Dashboard
+            </span>
+          </a>
+          <a
             href="/dev/clear-registrations"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >

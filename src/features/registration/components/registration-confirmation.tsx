@@ -25,10 +25,14 @@ export function RegistrationConfirmation({
   data,
   canWithdraw,
   closesAt,
+  note,
 }: {
   data: ConfirmationData;
   canWithdraw: boolean;
   closesAt: Date | null;
+  // Overrides the default subline — e.g. the locked „warte auf deine Paarungen"
+  // message once registration has closed.
+  note?: string;
 }) {
   const deadline = closesAt
     ? new Intl.DateTimeFormat("de-DE", {
@@ -52,7 +56,8 @@ export function RegistrationConfirmation({
           </div>
         </div>
         <p className="text-muted-foreground text-sm">
-          Deine Anmeldung ist eingegangen. Alles Weitere erfährst du im Discord.
+          {note ??
+            "Deine Anmeldung ist eingegangen. Alles Weitere erfährst du im Discord."}
         </p>
       </div>
 

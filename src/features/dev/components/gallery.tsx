@@ -8,6 +8,15 @@ import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
 import { defaultDeadlines } from "@/features/schedule/spieltage";
+import {
+  ComingSoonPanel,
+  RegisterCtaPanel,
+  SeasonMessagePanel,
+} from "@/features/season/components/pre-season";
+import {
+  InSeasonDashboard,
+  NextPairing,
+} from "@/features/season/components/season-dashboard";
 import { ControlBar } from "@/features/seeding/components/control-bar";
 import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
 import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
@@ -22,6 +31,29 @@ import {
 import type { RegistrationState } from "@/features/staff/registration-window";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
+
+// Mock data for the Spieler-Dashboard specimens.
+const DASH_TODAY = "2026-07-10";
+const DASH_MEMBERS = [
+  { userId: "me", name: "Testerino", avatarUrl: AVATAR_URL },
+  { userId: "a", name: "Falinks", avatarUrl: null },
+  { userId: "b", name: "Wooloo", avatarUrl: AVATAR_URL },
+  { userId: "c", name: "Pawmi", avatarUrl: null },
+];
+const DASH_UPCOMING = [
+  {
+    round: 2,
+    startsOn: "2026-07-08",
+    endsOn: "2026-07-14",
+    opponent: DASH_MEMBERS[1],
+  },
+  {
+    round: 3,
+    startsOn: "2026-07-15",
+    endsOn: "2026-07-21",
+    opponent: DASH_MEMBERS[2],
+  },
+];
 
 // Identity variants exercise the name/username/avatar fallbacks and, via
 // roleLabel, all four role badges.
@@ -326,6 +358,46 @@ export function Gallery() {
             seasonStart="2026-07-01"
             defaultDeadlines={defaultDeadlines("2026-07-01", 7)}
             largest={8}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Spieler-Dashboard</h2>
+        <Specimen label="Laufende Saison (Paarung · Tabelle · kommende Spiele)">
+          <InSeasonDashboard
+            groupName="Division 1a"
+            next={DASH_UPCOMING[0]}
+            upcoming={DASH_UPCOMING.slice(1)}
+            members={DASH_MEMBERS}
+            meId="me"
+            today={DASH_TODAY}
+          />
+        </Specimen>
+        <Specimen label="Nächste Paarung: Freilos">
+          <NextPairing
+            match={{
+              round: 3,
+              startsOn: "2026-07-15",
+              endsOn: "2026-07-21",
+              opponent: null,
+            }}
+            today={DASH_TODAY}
+          />
+        </Specimen>
+        <Specimen label="Nächste Paarung: Saison abgeschlossen">
+          <NextPairing match={null} today={DASH_TODAY} />
+        </Specimen>
+        <Specimen label="Vorsaison: keine Saison">
+          <ComingSoonPanel />
+        </Specimen>
+        <Specimen label="Vorsaison: Anmeldung läuft (CTA)">
+          <RegisterCtaPanel seasonName="Saison 1" />
+        </Specimen>
+        <Specimen label="Vorsaison: nicht dabei">
+          <SeasonMessagePanel
+            title="Du bist in der laufenden Saison nicht dabei"
+            body="Für diese Saison liegt keine Einteilung für dich vor."
           />
         </Specimen>
       </section>

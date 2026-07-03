@@ -1,5 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { Button } from "@/components/ui/button";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,10 +32,13 @@ export default async function Home({
             <h1 className="mb-[18px] text-6xl leading-[1.05] text-brand-blue dark:text-white">
               VGC Bundesliga
             </h1>
-            <p className="max-w-[440px] text-[17px] text-muted-foreground">
-              Die Liga-Features sind in Arbeit. Sobald die erste Saison startet,
-              geht es hier los.
+            <p className="mb-7 max-w-[440px] text-[17px] text-muted-foreground">
+              Deine Gruppe, dein Spielplan und deine nächste Paarung — alles im
+              Spieler-Dashboard.
             </p>
+            <Button asChild size="lg">
+              <Link href="/spieler">Zum Spieler-Dashboard</Link>
+            </Button>
           </>
         ) : (
           <>

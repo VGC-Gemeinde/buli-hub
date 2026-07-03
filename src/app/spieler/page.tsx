@@ -1,0 +1,147 @@
+import { redirect } from "next/navigation";
+import { SiteHeader } from "@/components/site-header";
+import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
+import { getRegistration } from "@/features/registration/queries";
+import { currentUser } from "@/features/roles/guard";
+import { hasSchedule } from "@/features/schedule/queries";
+import {
+  ComingSoonPanel,
+  RegisterCtaPanel,
+  SeasonMessagePanel,
+} from "@/features/season/components/pre-season";
+import { InSeasonDashboard } from "@/features/season/components/season-dashboard";
+import {
+  buildPlayerMatches,
+  dashboardState,
+  splitPlayerMatches,
+} from "@/features/season/dashboard";
+import {
+  groupRoster,
+  matchdaysForWindow,
+  playerPlacement,
+  subDivisionMatches,
+} from "@/features/season/queries";
+import { getSeeding } from "@/features/seeding/queries";
+import { subDivisionName } from "@/features/seeding/seeding";
+import { latestWindow } from "@/features/staff/queries";
+import {
+  registrationState,
+  SEASON_NAME,
+} from "@/features/staff/registration-window";
+import { seasonPhase } from "@/features/staff/season-phase";
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
+        <h1 className="mb-9 text-4xl text-brand-blue dark:text-white">
+          Spieler-Dashboard
+        </h1>
+        {children}
+      </main>
+    </div>
+  );
+}
+
+export default async function SpielerPage() {
+  const current = await currentUser();
+  if (!current) {
+    redirect("/");
+  }
+
+  const window = await latestWindow();
+  const state = window ? registrationState(window, new Date()) : "not_started";
+  const seeding =
+    window && state === "closed" ? await getSeeding(window.id) : null;
+  const seedingFinalized = Boolean(seeding?.finalizedAt);
+  const scheduleExists =
+    window && seedingFinalized ? await hasSchedule(window.id) : false;
+  const phase = seasonPhase({
+    registration: state,
+    seedingFinalized,
+    hasSchedule: scheduleExists,
+  });
+
+  const registration = window
+    ? await getRegistration(window.id, current.userId)
+    : null;
+  const placement =
+    window && phase === "regular_season"
+      ? await playerPlacement(window.id, current.userId)
+      : null;
+
+  const view = dashboardState({
+    phase,
+    registration: state,
+    hasRegistration: registration !== null,
+    isPlaced: placement !== null,
+  });
+
+  if (view === "in_season" && window && placement) {
+    const today = new Date().toISOString().slice(0, 10);
+    const [members, days, rawMatches] = await Promise.all([
+      groupRoster(placement.subDivisionId),
+      matchdaysForWindow(window.id),
+      subDivisionMatches(placement.subDivisionId),
+    ]);
+    const matchdaysByRound = new Map(
+      days.map((d) => [d.round, { startsOn: d.startsOn, endsOn: d.endsOn }]),
+    );
+    const rosterById = new Map(members.map((m) => [m.userId, m]));
+    const myMatches = buildPlayerMatches({
+      matches: rawMatches,
+      matchdaysByRound,
+      rosterById,
+      userId: current.userId,
+    });
+    const { next, upcoming } = splitPlayerMatches(myMatches, today);
+
+    return (
+      <Shell>
+        <InSeasonDashboard
+          groupName={subDivisionName(placement.tier, placement.position)}
+          next={next}
+          upcoming={upcoming}
+          members={members}
+          meId={current.userId}
+          today={today}
+        />
+      </Shell>
+    );
+  }
+
+  const closesAt = window?.closesAt ?? null;
+  return (
+    <Shell>
+      {view === "register_cta" ? (
+        <RegisterCtaPanel seasonName={SEASON_NAME} />
+      ) : view === "registered_open" && registration ? (
+        <RegistrationConfirmation
+          data={registration}
+          canWithdraw
+          closesAt={closesAt}
+        />
+      ) : view === "registered_closed" && registration ? (
+        <RegistrationConfirmation
+          data={registration}
+          canWithdraw={false}
+          closesAt={closesAt}
+          note="Die Anmeldung ist geschlossen. Du kannst deine Angaben nicht mehr ändern — warte auf deine Paarungen."
+        />
+      ) : view === "not_registered_closed" ? (
+        <SeasonMessagePanel
+          title="Du bist in dieser Saison nicht dabei"
+          body="Die Anmeldung ist bereits geschlossen. Die nächste Chance kommt — schau im Discord vorbei."
+        />
+      ) : view === "not_placed" ? (
+        <SeasonMessagePanel
+          title="Du bist in der laufenden Saison nicht dabei"
+          body="Für diese Saison liegt keine Einteilung für dich vor."
+        />
+      ) : (
+        <ComingSoonPanel />
+      )}
+    </Shell>
+  );
+}

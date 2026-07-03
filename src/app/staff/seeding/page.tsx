@@ -54,8 +54,8 @@ export default async function SeedingPage() {
         subDivisions={subDivisions}
         initialSize={seeding?.subDivisionSize ?? null}
         initialDivisionCount={divisions.length}
-        published={Boolean(seeding?.publishedAt)}
-        publishedAt={seeding?.publishedAt ?? null}
+        finalized={Boolean(seeding?.finalizedAt)}
+        finalizedAt={seeding?.finalizedAt ?? null}
       />
     </div>
   );

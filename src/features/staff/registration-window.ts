@@ -26,13 +26,10 @@ export function registrationState(
 // knows the season, staff only open its registration.
 export const SEASON_NAME = "Saison 1";
 
-// The phrase staff must type to confirm opening the registration — the season
-// name, so it names what is being opened instead of echoing the button label.
-export const OPEN_CONFIRMATION_PHRASE = SEASON_NAME;
-
-export function matchesConfirmationPhrase(input: string): boolean {
-  return input.trim() === OPEN_CONFIRMATION_PHRASE;
-}
+// Type-to-confirm phrase for opening the registration — names the action. The
+// phrase is a client-side deliberateness gate (see src/components/
+// type-to-confirm.tsx); the server action enforces role + state.
+export const OPEN_CONFIRMATION_PHRASE = "Anmeldung öffnen";
 
 // Validates the open-registration input. The end date must be a valid,
 // future instant; comparison against `now` is injected so the schema stays
@@ -44,8 +41,5 @@ export function openRegistrationSchema(now: Date) {
       .refine((date) => date.getTime() > now.getTime(), {
         error: "Das Enddatum muss in der Zukunft liegen",
       }),
-    confirmation: z
-      .string()
-      .refine(matchesConfirmationPhrase, { error: "Bestätigung stimmt nicht" }),
   });
 }

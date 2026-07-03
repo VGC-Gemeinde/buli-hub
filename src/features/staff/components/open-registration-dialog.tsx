@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TypeToConfirm } from "@/components/type-to-confirm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,10 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { matchesConfirmationPhrase } from "@/lib/confirm";
 import { openRegistration } from "../actions";
-import { matchesConfirmationPhrase, SEASON_NAME } from "../registration-window";
+import { OPEN_CONFIRMATION_PHRASE, SEASON_NAME } from "../registration-window";
 
 // Confirm-only: the end date is chosen on the card (OpenRegistrationForm) and
 // passed in here as a datetime-local string. The dialog only confirms.
@@ -51,7 +51,6 @@ export function OpenRegistrationDialog({
     setError(null);
     const result = await openRegistration({
       closesAt: new Date(closesAtLocal).toISOString(),
-      confirmation,
     });
     setPending(false);
     if (result.ok) {
@@ -77,23 +76,13 @@ export function OpenRegistrationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-2">
-          <Label htmlFor="confirmation">
-            Gib{" "}
-            <span className="font-semibold text-brand-blue dark:text-white">
-              {SEASON_NAME}
-            </span>{" "}
-            ein, um zu bestätigen
-          </Label>
-          <Input
-            id="confirmation"
-            value={confirmation}
-            onChange={(event) => setConfirmation(event.target.value)}
-            placeholder={SEASON_NAME}
-            autoComplete="off"
-          />
-          {error ? <p className="text-destructive text-sm">{error}</p> : null}
-        </div>
+        <TypeToConfirm
+          id="confirmation"
+          phrase={OPEN_CONFIRMATION_PHRASE}
+          value={confirmation}
+          onChange={setConfirmation}
+          error={error}
+        />
 
         <DialogFooter>
           <DialogClose asChild>
@@ -103,7 +92,12 @@ export function OpenRegistrationDialog({
           </DialogClose>
           <Button
             type="button"
-            disabled={!matchesConfirmationPhrase(confirmation) || pending}
+            disabled={
+              !matchesConfirmationPhrase(
+                confirmation,
+                OPEN_CONFIRMATION_PHRASE,
+              ) || pending
+            }
             onClick={submit}
           >
             {pending ? "Wird geöffnet…" : "Anmeldung öffnen"}

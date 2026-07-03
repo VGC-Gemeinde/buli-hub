@@ -4,7 +4,7 @@ import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
-import { PublishDialog } from "@/features/seeding/components/publish-dialog";
+import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
 import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
 import { SeedingInitLoader } from "@/features/seeding/components/seeding-workspace";
 import type { SeedingPlayer } from "@/features/seeding/placement";
@@ -266,16 +266,16 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Seeding: Veröffentlichen</h2>
+        <h2 className="text-2xl">Einteilung: Finalisieren</h2>
         <Specimen label="Bereit">
-          <PublishDialog
+          <FinalizeDialog
             ready
             gateHint="Endgültig — kann nicht rückgängig gemacht werden."
             onConfirm={async () => ({ ok: true })}
           />
         </Specimen>
         <Specimen label="Gesperrt">
-          <PublishDialog
+          <FinalizeDialog
             ready={false}
             gateHint="Erst wenn alle Spieler platziert und in Gruppen sind."
             onConfirm={async () => ({ ok: true })}

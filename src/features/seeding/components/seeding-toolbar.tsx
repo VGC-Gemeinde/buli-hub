@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { SheetFilter } from "../sheet";
-import { PublishDialog } from "./publish-dialog";
+import { FinalizeDialog } from "./finalize-dialog";
 
 function Meter({
   label,
@@ -44,7 +45,7 @@ const STATUS_PILLS: { value: SheetFilter["status"]; label: string }[] = [
 ];
 
 export function SeedingToolbar({
-  published,
+  finalized,
   divisionCount,
   size,
   configError,
@@ -54,13 +55,13 @@ export function SeedingToolbar({
   total,
   ready,
   gateHint,
-  onPublish,
+  onFinalize,
   onGenerateAll,
   generatingAll,
   filter,
   onFilterChange,
 }: {
-  published: boolean;
+  finalized: boolean;
   divisionCount: string;
   size: string;
   configError: string | null;
@@ -70,7 +71,7 @@ export function SeedingToolbar({
   total: number;
   ready: boolean;
   gateHint: string;
-  onPublish: () => Promise<{ ok: boolean; error?: string }>;
+  onFinalize: () => Promise<{ ok: boolean; error?: string }>;
   onGenerateAll: () => void;
   generatingAll: boolean;
   filter: SheetFilter;
@@ -80,7 +81,13 @@ export function SeedingToolbar({
 
   return (
     <div className="shrink-0">
-      <div className="flex items-center gap-7 px-7 pt-4 pb-3">
+      <Link
+        href="/staff"
+        className="inline-block px-7 pt-3 text-muted-foreground text-sm hover:text-foreground"
+      >
+        ← Zurück zum Staff-Bereich
+      </Link>
+      <div className="flex items-center gap-7 px-7 pt-2 pb-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className="h-[11px] w-[22px] -skew-x-[18deg] bg-brand-orange" />
           <h1 className="whitespace-nowrap text-[28px] text-brand-blue leading-none dark:text-white">
@@ -103,21 +110,21 @@ export function SeedingToolbar({
           total={total}
           fill="bg-brand-blue dark:bg-white/80"
         />
-        {published ? (
+        {finalized ? (
           <div className="flex items-center gap-2 rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-3 py-1.5 font-semibold text-[13.5px]">
             <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
-            Veröffentlicht — endgültig
+            Finalisiert — endgültig
           </div>
         ) : (
-          <PublishDialog
+          <FinalizeDialog
             ready={ready}
             gateHint={gateHint}
-            onConfirm={onPublish}
+            onConfirm={onFinalize}
           />
         )}
       </div>
 
-      {published ? (
+      {finalized ? (
         <div className="border-b" />
       ) : (
         <div className="flex items-center gap-5 border-b px-7 pb-3">

@@ -3,7 +3,7 @@
 **Status: done** (2026-07-02) — slices 1–4 complete. Deferred: promotion/relegation proposal (needs standings) and the public division view.
 
 Once a season's registration is closed, staff divide the registered players into
-divisions (skill tiers) and sub-divisions (round-robin groups), then publish.
+divisions (skill tiers) and sub-divisions (round-robin groups), then finalize.
 Assisted throughout: the system proposes, staff adjust and confirm. One of the
 largest staff tasks — planned as several slices.
 
@@ -29,7 +29,7 @@ week; its size sets the season length.
    players spread **as evenly as possible** (sizes differ by ≤ 1 — 20 ÷ 8 →
    7/7/6), **soft-preferring same-platform grouping**. Suggestion only; staff
    move players between sub-divisions by hand.
-5. **Publish** — type-to-confirm destructive gate; the seeding becomes final.
+5. **Finalize** — type-to-confirm destructive gate; the seeding becomes final.
 
 ## Hard dependency: promotion/relegation needs recorded standings
 
@@ -56,7 +56,7 @@ Therefore:
   flags on self-reported history.
 - **3 — Sub-division generation (done).** The pure even-distribution + soft-platform
   algorithm, generate-per-division, manual moves between sub-divisions.
-- **4 — Publish (done).** Type-to-confirm gate; sets `published_at`.
+- **4 — Finalize (done).** Type-to-confirm gate; sets `finalized_at`.
 - **Later (own features):** season standings/results; the relegation-aware
   proposal built on them; the public division view.
 
@@ -68,7 +68,7 @@ identifies the season, and "prior season" is the previous window by date), and
 introducing it properly means re-anchoring the registration and staff features
 — its own slice, cheap to add later since there is no production data.
 
-- `seedings` — `window_id` PK/FK, `sub_division_size` int, `published_at`
+- `seedings` — `window_id` PK/FK, `sub_division_size` int, `finalized_at`
   timestamptz null.
 - `divisions` — `id`, `window_id` FK, `tier` int (1 = top; ordering + name
   „Division {tier}"), unique `(window_id, tier)`.
@@ -114,8 +114,8 @@ later. Keeps the stack boring and avoids the mobile pitfalls we just hit.
 
 - Unit: the three pure modules above (the algorithm exhaustively).
 - Integration: config upsert; placement upsert/move; sub-division generation
-  persisted; publish sets `published_at`; window-cascade cleans up.
-- Manual/browser: full staff flow on a seeded closed window; publish gate.
+  persisted; finalize sets `finalized_at`; window-cascade cleans up.
+- Manual/browser: full staff flow on a seeded closed window; finalize gate.
 
 ## Resolved decisions
 
@@ -124,4 +124,4 @@ later. Keeps the stack boring and avoids the mobile pitfalls we just hit.
 2. **Interaction** — control-based, no drag-and-drop dependency.
 3. **Naming** — auto for both levels: „Division {tier}" and „Division
    {tier}{letter}".
-4. **Publish** — terminal; no re-seed.
+4. **Finalize** — terminal; no re-seed.

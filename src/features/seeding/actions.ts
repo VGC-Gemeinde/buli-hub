@@ -20,7 +20,7 @@ import {
   listDivisions,
   listSeedingPlayers,
   movePlayerToSubDivision,
-  publishSeeding as persistPublish,
+  finalizeSeeding as persistFinalize,
   placePlayersInGroup,
   saveSeedingConfig,
   subDivisionDivisionId,
@@ -46,8 +46,8 @@ export async function configureSeeding(input: {
     };
   }
 
-  if ((await getSeeding(window.id))?.publishedAt) {
-    return { ok: false, error: "Die Einteilung ist bereits veröffentlicht" };
+  if ((await getSeeding(window.id))?.finalizedAt) {
+    return { ok: false, error: "Die Einteilung ist bereits finalisiert" };
   }
 
   const parsed = seedingConfigSchema.safeParse(input);
@@ -80,8 +80,8 @@ export async function assignToDivision(input: {
   if (!window || registrationState(window, new Date()) !== "closed") {
     return { ok: false, error: "Nicht möglich" };
   }
-  if ((await getSeeding(window.id))?.publishedAt) {
-    return { ok: false, error: "Die Einteilung ist bereits veröffentlicht" };
+  if ((await getSeeding(window.id))?.finalizedAt) {
+    return { ok: false, error: "Die Einteilung ist bereits finalisiert" };
   }
 
   if (
@@ -97,7 +97,7 @@ export async function assignToDivision(input: {
 }
 
 // Shared gate for editing the seeding: staff, registration closed, not yet
-// published. Returns the window id or an error.
+// finalized. Returns the window id or an error.
 async function editableWindow(): Promise<
   { ok: true; windowId: string } | { ok: false; error: string }
 > {
@@ -109,8 +109,8 @@ async function editableWindow(): Promise<
   if (!window || registrationState(window, new Date()) !== "closed") {
     return { ok: false, error: "Nicht möglich" };
   }
-  if ((await getSeeding(window.id))?.publishedAt) {
-    return { ok: false, error: "Die Einteilung ist bereits veröffentlicht" };
+  if ((await getSeeding(window.id))?.finalizedAt) {
+    return { ok: false, error: "Die Einteilung ist bereits finalisiert" };
   }
   return { ok: true, windowId: window.id };
 }
@@ -278,13 +278,13 @@ export async function generateAllGroups(): Promise<SeedingResult> {
   return { ok: true };
 }
 
-export async function publishSeeding(): Promise<SeedingResult> {
+export async function finalizeSeeding(): Promise<SeedingResult> {
   const gate = await editableWindow();
   if (!gate.ok) {
     return gate;
   }
 
-  // Never publish an incomplete seeding — every player must be in a group.
+  // Never finalize an incomplete seeding — every player must be in a group.
   const readiness = seedingReadiness(await listSeedingPlayers(gate.windowId));
   if (!readiness.ready) {
     return {
@@ -293,7 +293,7 @@ export async function publishSeeding(): Promise<SeedingResult> {
     };
   }
 
-  await persistPublish(gate.windowId);
+  await persistFinalize(gate.windowId);
   revalidatePath("/staff/seeding");
   return { ok: true };
 }

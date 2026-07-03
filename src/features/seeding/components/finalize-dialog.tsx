@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TypeToConfirm } from "@/components/type-to-confirm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,16 +13,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  matchesConfirmationPhrase,
-  SEASON_NAME,
-} from "@/features/staff/registration-window";
+import { SEASON_NAME } from "@/features/staff/registration-window";
+import { matchesConfirmationPhrase } from "@/lib/confirm";
+import { FINALIZE_CONFIRMATION_PHRASE } from "../seeding";
 
-// Type-to-confirm publish. Trigger is the toolbar's gated button; the caller
-// runs the publish action and reports failure back.
-export function PublishDialog({
+// Type-to-confirm finalize. Trigger is the toolbar's gated button; the caller
+// runs the finalize action and reports failure back.
+export function FinalizeDialog({
   ready,
   gateHint,
   onConfirm,
@@ -60,36 +58,26 @@ export function PublishDialog({
       <DialogTrigger asChild>
         <div title={gateHint}>
           <Button type="button" disabled={!ready}>
-            Veröffentlichen
+            Einteilung finalisieren
           </Button>
         </div>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Einteilung veröffentlichen?</DialogTitle>
+          <DialogTitle>Einteilung finalisieren?</DialogTitle>
           <DialogDescription>
             Die Einteilung für{" "}
             <span className="font-semibold text-foreground">{SEASON_NAME}</span>{" "}
-            wird veröffentlicht und kann danach nicht mehr geändert werden.
+            wird finalisiert und kann danach nicht mehr geändert werden.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-2">
-          <Label htmlFor="publish-confirmation">
-            Gib{" "}
-            <span className="font-semibold text-brand-blue dark:text-white">
-              {SEASON_NAME}
-            </span>{" "}
-            ein, um zu bestätigen
-          </Label>
-          <Input
-            id="publish-confirmation"
-            value={confirmation}
-            onChange={(event) => setConfirmation(event.target.value)}
-            placeholder={SEASON_NAME}
-            autoComplete="off"
-          />
-          {error ? <p className="text-destructive text-sm">{error}</p> : null}
-        </div>
+        <TypeToConfirm
+          id="finalize-confirmation"
+          phrase={FINALIZE_CONFIRMATION_PHRASE}
+          value={confirmation}
+          onChange={setConfirmation}
+          error={error}
+        />
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="outline">
@@ -98,10 +86,15 @@ export function PublishDialog({
           </DialogClose>
           <Button
             type="button"
-            disabled={!matchesConfirmationPhrase(confirmation) || pending}
+            disabled={
+              !matchesConfirmationPhrase(
+                confirmation,
+                FINALIZE_CONFIRMATION_PHRASE,
+              ) || pending
+            }
             onClick={submit}
           >
-            {pending ? "Wird veröffentlicht…" : "Veröffentlichen"}
+            {pending ? "Wird finalisiert…" : "Einteilung finalisieren"}
           </Button>
         </DialogFooter>
       </DialogContent>

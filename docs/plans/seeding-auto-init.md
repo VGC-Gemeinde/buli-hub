@@ -68,14 +68,14 @@ with `prevDivision` above the count are skipped; new players never placed.
   create half of `saveSeedingConfig`, without touching the `seedings` row, so no
   group size is invented).
 - New action `initializeSeeding()`:
-  - gate: staff + closed + not published (`editableWindow`);
+  - gate: staff + closed + not finalized (`editableWindow`);
   - if divisions already exist → `{ ok: true, initialized: false }` (idempotent);
   - `count = suggestedDivisionCount(players)`; if `< 1` → `initialized: false`;
   - create the divisions, map tier → id, bulk-assign returning players via
     `assignPlayersToDivision` grouped by tier;
   - `{ ok: true, initialized: true }`.
 - `seeding-workspace.tsx`: a `useEffect` fires once (ref-guarded) when
-  `!published && divisions.length === 0`; on `initialized: true`, `router.refresh()`.
+  `!finalized && divisions.length === 0`; on `initialized: true`, `router.refresh()`.
 - `generateGroups` / `generateAllGroups`: return
   `"Bitte zuerst eine Gruppengröße festlegen"` when `getSeeding` is null, instead
   of silently no-op'ing (divisions can now precede a size).

@@ -296,9 +296,9 @@ export async function movePlayerToSubDivision(
     );
 }
 
-export async function publishSeeding(windowId: string) {
+export async function finalizeSeeding(windowId: string) {
   await db
     .update(seedings)
-    .set({ publishedAt: new Date() })
+    .set({ finalizedAt: new Date() })
     .where(eq(seedings.windowId, windowId));
 }

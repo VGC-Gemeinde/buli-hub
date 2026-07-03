@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// Type-to-confirm phrase for the terminal finalize gate — names the action.
+export const FINALIZE_CONFIRMATION_PHRASE = "Einteilung finalisieren";
+
 export const MIN_SUB_DIVISION_SIZE = 2;
 export const MAX_SUB_DIVISION_SIZE = 24;
 export const MIN_DIVISIONS = 1;

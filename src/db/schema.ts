@@ -102,13 +102,13 @@ export const registrations = pgTable(
 );
 
 // Division seeding for a season (anchored to its registration window). One
-// seeding per window; holds the season-wide sub-division size and the publish
+// seeding per window; holds the season-wide sub-division size and the finalize
 // state. Divisions/sub-divisions/placements hang off it. All FKs + RLS live in
 // a custom migration (server-only, like the other staff tables).
 export const seedings = pgTable("seedings", {
   windowId: uuid("window_id").primaryKey(),
   subDivisionSize: integer("sub_division_size").notNull(),
-  publishedAt: timestamp("published_at", { withTimezone: true }),
+  finalizedAt: timestamp("finalized_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

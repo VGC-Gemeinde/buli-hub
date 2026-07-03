@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  matchesConfirmationPhrase,
   openRegistrationSchema,
   type RegistrationWindow,
   registrationState,
@@ -41,51 +40,21 @@ describe("registrationState", () => {
   });
 });
 
-describe("matchesConfirmationPhrase", () => {
-  it("accepts the exact phrase, trimmed", () => {
-    expect(matchesConfirmationPhrase("Saison 1")).toBe(true);
-    expect(matchesConfirmationPhrase("  Saison 1  ")).toBe(true);
-  });
-
-  it("rejects anything else", () => {
-    expect(matchesConfirmationPhrase("saison 1")).toBe(false);
-    expect(matchesConfirmationPhrase("Saison")).toBe(false);
-    expect(matchesConfirmationPhrase("")).toBe(false);
-  });
-});
-
 describe("openRegistrationSchema", () => {
   const schema = openRegistrationSchema(now);
 
-  it("accepts a future date with the right confirmation", () => {
-    const result = schema.safeParse({
-      closesAt: "2026-07-09T12:00:00Z",
-      confirmation: "Saison 1",
-    });
+  it("accepts a future date", () => {
+    const result = schema.safeParse({ closesAt: "2026-07-09T12:00:00Z" });
     expect(result.success).toBe(true);
   });
 
   it("rejects a past date", () => {
-    const result = schema.safeParse({
-      closesAt: "2026-07-01T12:00:00Z",
-      confirmation: "Saison 1",
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects a wrong confirmation phrase", () => {
-    const result = schema.safeParse({
-      closesAt: "2026-07-09T12:00:00Z",
-      confirmation: "nope",
-    });
+    const result = schema.safeParse({ closesAt: "2026-07-01T12:00:00Z" });
     expect(result.success).toBe(false);
   });
 
   it("rejects an invalid date", () => {
-    const result = schema.safeParse({
-      closesAt: "not-a-date",
-      confirmation: "Saison 1",
-    });
+    const result = schema.safeParse({ closesAt: "not-a-date" });
     expect(result.success).toBe(false);
   });
 });

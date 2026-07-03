@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { listRegistrations } from "@/features/registration/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { getSeeding } from "@/features/seeding/queries";
 import {
   PlayerGrid,
   type RegisteredPlayer,
@@ -37,6 +38,12 @@ export default async function StaffPage() {
         avatarUrl: row.avatarUrl ?? undefined,
       }))
     : [];
+
+  // Once the seeding is finalized, the seeding page renders read-only — the
+  // entry point says „ansehen" rather than „einteilen".
+  const seeding =
+    window && state === "closed" ? await getSeeding(window.id) : null;
+  const seedingFinalized = Boolean(seeding?.finalizedAt);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -70,7 +77,11 @@ export default async function StaffPage() {
               <StaffSectionHeader title="Einteilung" />
               <div>
                 <Button asChild>
-                  <Link href="/staff/seeding">Divisionen einteilen</Link>
+                  <Link href="/staff/seeding">
+                    {seedingFinalized
+                      ? "Divisionen ansehen"
+                      : "Divisionen einteilen"}
+                  </Link>
                 </Button>
               </div>
             </section>

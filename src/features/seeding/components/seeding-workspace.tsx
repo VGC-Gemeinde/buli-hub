@@ -7,12 +7,12 @@ import {
   assignManyToDivision,
   assignToDivision,
   configureSeeding,
+  finalizeSeeding,
   generateAllGroups,
   generateGroups,
   initializeSeeding,
   moveToSubDivision,
   placePlayers,
-  publishSeeding,
 } from "../actions";
 import {
   type SeedingPlayer,
@@ -38,16 +38,16 @@ export function SeedingWorkspace({
   subDivisions,
   initialSize,
   initialDivisionCount,
-  published,
-  publishedAt,
+  finalized,
+  finalizedAt,
 }: {
   players: SeedingPlayer[];
   divisions: DivisionRef[];
   subDivisions: SubDivisionRef[];
   initialSize: number | null;
   initialDivisionCount: number;
-  published: boolean;
-  publishedAt: Date | null;
+  finalized: boolean;
+  finalizedAt: Date | null;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<SheetFilter>({
@@ -73,7 +73,7 @@ export function SeedingWorkspace({
   // seeding (no divisions) that has returning players to place. Computed on the
   // client from the props, so we can show the loader from the very first paint.
   const willAutoInit =
-    !published &&
+    !finalized &&
     divisions.length === 0 &&
     suggestedDivisionCount(players) >= 1;
   const [initializing, setInitializing] = useState(willAutoInit);
@@ -280,20 +280,20 @@ export function SeedingWorkspace({
     });
   }
 
-  async function onPublish() {
-    const result = await publishSeeding();
+  async function onFinalize() {
+    const result = await finalizeSeeding();
     if (result.ok) {
       router.refresh();
     }
     return result;
   }
 
-  const publishedNotice =
-    published && publishedAt
+  const finalizedNotice =
+    finalized && finalizedAt
       ? new Intl.DateTimeFormat("de-DE", {
           dateStyle: "long",
           timeStyle: "short",
-        }).format(publishedAt)
+        }).format(finalizedAt)
       : null;
 
   // While the auto-init runs, cover the workspace so the sheet is never seen in
@@ -305,7 +305,7 @@ export function SeedingWorkspace({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <SeedingToolbar
-        published={published}
+        finalized={finalized}
         divisionCount={divisionCount}
         size={size}
         configError={configError}
@@ -315,7 +315,7 @@ export function SeedingWorkspace({
         total={total}
         ready={ready}
         gateHint={gateHint}
-        onPublish={onPublish}
+        onFinalize={onFinalize}
         onGenerateAll={onGenerateAll}
         generatingAll={generatingAll}
         filter={filter}
@@ -325,9 +325,9 @@ export function SeedingWorkspace({
       {actionError ? (
         <p className="px-7 py-1.5 text-destructive text-sm">{actionError}</p>
       ) : null}
-      {publishedNotice ? (
+      {finalizedNotice ? (
         <p className="border-brand-orange/40 border-b bg-brand-orange/5 px-7 py-2 text-sm">
-          Die Einteilung wurde am {publishedNotice} veröffentlicht und ist
+          Die Einteilung wurde am {finalizedNotice} finalisiert und ist
           endgültig.
         </p>
       ) : null}
@@ -344,7 +344,7 @@ export function SeedingWorkspace({
           divisions={divisions}
           subDivisions={subDivisions}
           selection={selection}
-          readOnly={published}
+          readOnly={finalized}
           generatingDivisionId={generatingDivisionId}
           onGenerate={onGenerate}
           onToggleSelect={onToggleSelect}
@@ -354,7 +354,7 @@ export function SeedingWorkspace({
         />
       )}
 
-      {published ? null : (
+      {finalized ? null : (
         <BulkBar
           count={selection.size}
           divisions={divisions}

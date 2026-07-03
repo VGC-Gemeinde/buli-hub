@@ -8,12 +8,12 @@ import {
   assignPlayersToDivision,
   assignPlayerToDivision,
   createDivisions,
+  finalizeSeeding,
   generateSubDivisionsForDivision,
   getSeeding,
   listDivisions,
   listSeedingPlayers,
   listSubDivisions,
-  publishSeeding,
   saveSeedingConfig,
 } from "./queries";
 
@@ -121,11 +121,11 @@ describe("sub-division generation", () => {
   });
 });
 
-describe("publishing", () => {
-  it("sets published_at", async () => {
-    expect((await getSeeding(windowId))?.publishedAt).toBeNull();
-    await publishSeeding(windowId);
-    expect((await getSeeding(windowId))?.publishedAt).toBeInstanceOf(Date);
+describe("finalizing", () => {
+  it("sets finalized_at", async () => {
+    expect((await getSeeding(windowId))?.finalizedAt).toBeNull();
+    await finalizeSeeding(windowId);
+    expect((await getSeeding(windowId))?.finalizedAt).toBeInstanceOf(Date);
   });
 });
 

@@ -38,7 +38,7 @@ export function seedingCaveats(
   return caveats;
 }
 
-// A seeding is ready to publish when every registered player sits in a
+// A seeding is ready to finalize when every registered player sits in a
 // sub-division (and there is at least one player).
 export function seedingReadiness(
   players: readonly Pick<SeedingPlayer, "subDivisionId">[],

@@ -14,7 +14,6 @@ export type OpenRegistrationResult =
 
 export async function openRegistration(input: {
   closesAt: string;
-  confirmation: string;
 }): Promise<OpenRegistrationResult> {
   const supabase = await createClient();
   const {

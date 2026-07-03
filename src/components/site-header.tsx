@@ -6,8 +6,16 @@ import { UserMenu } from "@/features/auth/components/user-menu";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 
-// Site chrome per design/DESIGN.md: orange accent line + header.
-export async function SiteHeader({ className }: { className?: string }) {
+// Site chrome per design/DESIGN.md: orange accent line + header. `breadcrumb`
+// turns the Spieler-Dashboard nav link into a breadcrumb trail with the given
+// current-page label (used on the match report screen).
+export async function SiteHeader({
+  className,
+  breadcrumb,
+}: {
+  className?: string;
+  breadcrumb?: string;
+}) {
   const current = await currentUser();
   const isStaff = current !== null && roleAtLeast(current.role, "staff");
 
@@ -29,12 +37,28 @@ export async function SiteHeader({ className }: { className?: string }) {
             </span>
           </Link>
           {current ? (
-            <Link href="/spieler" className="flex items-center gap-2">
-              <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
-              <span className="font-semibold text-brand-blue text-sm dark:text-white">
-                Spieler-Dashboard
-              </span>
-            </Link>
+            <div className="flex items-center gap-2.5">
+              <Link href="/spieler" className="flex items-center gap-2">
+                <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
+                <span
+                  className={
+                    breadcrumb
+                      ? "font-medium text-muted-foreground text-sm hover:text-brand-blue dark:hover:text-white"
+                      : "font-semibold text-brand-blue text-sm dark:text-white"
+                  }
+                >
+                  Spieler-Dashboard
+                </span>
+              </Link>
+              {breadcrumb ? (
+                <>
+                  <span className="text-[13px] text-border">/</span>
+                  <span className="font-semibold text-brand-blue text-sm dark:text-white">
+                    {breadcrumb}
+                  </span>
+                </>
+              ) : null}
+            </div>
           ) : null}
         </div>
         <div className="flex items-center gap-1">

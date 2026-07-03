@@ -61,14 +61,7 @@ export async function reportMatch(input: {
     };
   }
 
-  const opponentId =
-    current.userId === match.playerA.userId
-      ? match.playerB.userId
-      : match.playerA.userId;
-  const { result, games } = toResultRows(parsed.data, {
-    reporterId: current.userId,
-    opponentId,
-  });
+  const { result, games } = toResultRows(parsed.data);
 
   await saveResult(input.matchId, result, games, current.userId);
   revalidatePath("/spieler");

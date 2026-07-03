@@ -32,31 +32,31 @@ export default async function MatchReportPage({
 
   const result = await getMatchResult(matchId);
   const staffOptions = result ? [] : await listStaffAndAdmins();
+  const breadcrumb = result
+    ? result.outcome === "free_win"
+      ? "Freigewinn"
+      : "Ergebnis"
+    : "Ergebnis melden";
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
-      <main className="mx-auto w-full max-w-xl flex-1 px-6 py-12">
-        <h1 className="mb-1.5 text-3xl text-brand-blue dark:text-white">
-          {result ? "Ergebnis" : "Ergebnis melden"}
-        </h1>
-        <div className="mb-8 flex items-center gap-2">
-          <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
-          <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
-            Spieltag {match.round} · {match.playerA.name} vs.{" "}
-            {match.playerB.name}
-          </span>
-        </div>
-
+      <SiteHeader breadcrumb={breadcrumb} />
+      <main className="mx-auto w-full max-w-[760px] flex-1 px-8 pt-9 pb-[140px]">
         {result ? (
           <ReportSummary
             result={result}
             playerA={match.playerA}
             playerB={match.playerB}
+            viewerId={current.userId}
+            round={match.round}
+            groupName={match.groupName}
           />
         ) : (
           <ReportForm
             matchId={match.matchId}
+            round={match.round}
+            groupName={match.groupName}
+            deadline={match.deadline}
             playerA={match.playerA}
             playerB={match.playerB}
             reporterId={current.userId}

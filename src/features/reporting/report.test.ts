@@ -21,8 +21,8 @@ function normal(overrides: Record<string, unknown> = {}) {
     outcome: "normal",
     platform: "showdown",
     games: [
-      { won: true, replayUrl: REPLAY },
-      { won: true, replayUrl: REPLAY },
+      { winnerId: "a", replayUrl: REPLAY },
+      { winnerId: "a", replayUrl: REPLAY },
     ],
     playerATeamUrl: PASTE_A,
     playerBTeamUrl: PASTE_B,
@@ -31,56 +31,34 @@ function normal(overrides: Record<string, unknown> = {}) {
 }
 
 describe("deriveSeries", () => {
+  const s = (winners: string[]) => deriveSeries(winners, "a", "b");
   it("2–0 and 0–2 are decisive in two games", () => {
-    expect(deriveSeries([true, true])).toEqual({
-      ok: true,
-      winner: "reporter",
-      gamesPlayed: 2,
-    });
-    expect(deriveSeries([false, false])).toEqual({
-      ok: true,
-      winner: "opponent",
-      gamesPlayed: 2,
-    });
+    expect(s(["a", "a"])).toEqual({ ok: true, winnerId: "a", gamesPlayed: 2 });
+    expect(s(["b", "b"])).toEqual({ ok: true, winnerId: "b", gamesPlayed: 2 });
   });
   it("2–1 and 1–2 are decisive in three games", () => {
-    expect(deriveSeries([true, false, true])).toMatchObject({
+    expect(s(["a", "b", "a"])).toMatchObject({
       ok: true,
-      winner: "reporter",
+      winnerId: "a",
       gamesPlayed: 3,
     });
-    expect(deriveSeries([false, true, false])).toMatchObject({
-      ok: true,
-      winner: "opponent",
-    });
+    expect(s(["b", "a", "b"])).toMatchObject({ ok: true, winnerId: "b" });
   });
   it("rejects too few / too many", () => {
-    expect(deriveSeries([true])).toEqual({ ok: false, reason: "too_few" });
-    expect(deriveSeries([])).toEqual({ ok: false, reason: "too_few" });
-    expect(deriveSeries([true, false, true, false])).toEqual({
-      ok: false,
-      reason: "too_many",
-    });
+    expect(s(["a"])).toEqual({ ok: false, reason: "too_few" });
+    expect(s([])).toEqual({ ok: false, reason: "too_few" });
+    expect(s(["a", "b", "a", "b"])).toEqual({ ok: false, reason: "too_many" });
   });
   it("rejects 1–1 without a decider", () => {
-    expect(deriveSeries([true, false])).toEqual({
-      ok: false,
-      reason: "not_decisive",
-    });
+    expect(s(["a", "b"])).toEqual({ ok: false, reason: "not_decisive" });
   });
   it("rejects a game played after the series was decided", () => {
-    expect(deriveSeries([true, true, false])).toEqual({
-      ok: false,
-      reason: "extra_game",
-    });
-    expect(deriveSeries([false, false, true])).toEqual({
-      ok: false,
-      reason: "extra_game",
-    });
-    expect(deriveSeries([true, true, true])).toEqual({
-      ok: false,
-      reason: "extra_game",
-    });
+    expect(s(["a", "a", "b"])).toEqual({ ok: false, reason: "extra_game" });
+    expect(s(["b", "b", "a"])).toEqual({ ok: false, reason: "extra_game" });
+    expect(s(["a", "a", "a"])).toEqual({ ok: false, reason: "extra_game" });
+  });
+  it("rejects an unknown winner", () => {
+    expect(s(["a", "c"])).toEqual({ ok: false, reason: "unknown_player" });
   });
 });
 
@@ -103,7 +81,7 @@ describe("reportSchema — normal", () => {
   it("accepts a valid cartridge 2–1 with optional video", () => {
     const input = normal({
       platform: "cartridge",
-      games: [{ won: true }, { won: false }, { won: true }],
+      games: [{ winnerId: "a" }, { winnerId: "b" }, { winnerId: "a" }],
       videoUrl: "https://youtu.be/x",
     });
     expect(parse(input).success).toBe(true);
@@ -111,15 +89,27 @@ describe("reportSchema — normal", () => {
   it("accepts cartridge without a video", () => {
     const input = normal({
       platform: "cartridge",
-      games: [{ won: true }, { won: true }],
+      games: [{ winnerId: "a" }, { winnerId: "a" }],
     });
     expect(parse(input).success).toBe(true);
   });
   it("rejects a showdown game missing its replay", () => {
     const input = normal({
-      games: [{ won: true, replayUrl: REPLAY }, { won: true }],
+      games: [{ winnerId: "a", replayUrl: REPLAY }, { winnerId: "a" }],
     });
     expect(parse(input).success).toBe(false);
+  });
+  it("rejects a game won by a non-participant", () => {
+    expect(
+      parse(
+        normal({
+          games: [
+            { winnerId: "a", replayUrl: REPLAY },
+            { winnerId: "c", replayUrl: REPLAY },
+          ],
+        }),
+      ).success,
+    ).toBe(false);
   });
   it("rejects a video on showdown", () => {
     expect(parse(normal({ videoUrl: "https://youtu.be/x" })).success).toBe(
@@ -135,9 +125,9 @@ describe("reportSchema — normal", () => {
   it("rejects an illegal best-of-3 (game 3 after 2–0)", () => {
     const input = normal({
       games: [
-        { won: true, replayUrl: REPLAY },
-        { won: true, replayUrl: REPLAY },
-        { won: false, replayUrl: REPLAY },
+        { winnerId: "a", replayUrl: REPLAY },
+        { winnerId: "a", replayUrl: REPLAY },
+        { winnerId: "b", replayUrl: REPLAY },
       ],
     });
     expect(parse(input).success).toBe(false);
@@ -168,11 +158,9 @@ describe("reportSchema — free win", () => {
 });
 
 describe("toResultRows", () => {
-  const rowCtx = { reporterId: "a", opponentId: "b" };
-
-  it("maps a reporter 2–0 to absolute winner + game rows", () => {
+  it("maps a 2–0 to the match winner + game rows", () => {
     const input = parse(normal()).data as ReportInput;
-    const { result, games } = toResultRows(input, rowCtx);
+    const { result, games } = toResultRows(input);
     expect(result.outcome).toBe("normal");
     expect(result.winnerId).toBe("a");
     expect(result.videoUrl).toBeNull();
@@ -182,16 +170,16 @@ describe("toResultRows", () => {
     ]);
   });
 
-  it("resolves the opponent as winner when the reporter loses", () => {
+  it("takes the match winner from the game tally", () => {
     const input = parse(
       normal({
         games: [
-          { won: false, replayUrl: REPLAY },
-          { won: false, replayUrl: REPLAY },
+          { winnerId: "b", replayUrl: REPLAY },
+          { winnerId: "b", replayUrl: REPLAY },
         ],
       }),
     ).data as ReportInput;
-    const { result, games } = toResultRows(input, rowCtx);
+    const { result, games } = toResultRows(input);
     expect(result.winnerId).toBe("b");
     expect(games.every((g) => g.winnerId === "b")).toBe(true);
   });
@@ -200,11 +188,11 @@ describe("toResultRows", () => {
     const input = parse(
       normal({
         platform: "cartridge",
-        games: [{ won: true }, { won: true }],
+        games: [{ winnerId: "a" }, { winnerId: "a" }],
         videoUrl: "https://youtu.be/x",
       }),
     ).data as ReportInput;
-    const { result, games } = toResultRows(input, rowCtx);
+    const { result, games } = toResultRows(input);
     expect(result.videoUrl).toBe("https://youtu.be/x");
     expect(games.every((g) => g.replayUrl === null)).toBe(true);
   });
@@ -216,7 +204,7 @@ describe("toResultRows", () => {
       freeWinReason: "no show",
       discussedWithId: "staff1",
     };
-    const { result, games } = toResultRows(input, rowCtx);
+    const { result, games } = toResultRows(input);
     expect(result).toMatchObject({
       outcome: "free_win",
       winnerId: "b",

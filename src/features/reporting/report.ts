@@ -31,42 +31,52 @@ function isHttpsUrl(value: string): boolean {
 }
 
 export type SeriesResult =
-  | { ok: true; winner: "reporter" | "opponent"; gamesPlayed: 2 | 3 }
+  | { ok: true; winnerId: string; gamesPlayed: 2 | 3 }
   | {
       ok: false;
-      reason: "too_few" | "too_many" | "not_decisive" | "extra_game";
+      reason:
+        | "too_few"
+        | "too_many"
+        | "not_decisive"
+        | "extra_game"
+        | "unknown_player";
     };
 
-// Best-of-3 derivation from the reporter's per-game wins (true = reporter won
-// that game). Legal series: play exactly until one side reaches 2 wins.
-export function deriveSeries(games: readonly boolean[]): SeriesResult {
-  if (games.length < 2) {
+// Best-of-3 derivation from the per-game winner ids. Legal series: each winner
+// is one of the two participants and games are played until one side reaches 2.
+export function deriveSeries(
+  winners: readonly string[],
+  playerAId: string,
+  playerBId: string,
+): SeriesResult {
+  if (winners.length < 2) {
     return { ok: false, reason: "too_few" };
   }
-  if (games.length > 3) {
+  if (winners.length > 3) {
     return { ok: false, reason: "too_many" };
   }
-  let reporter = 0;
-  let opponent = 0;
-  for (let i = 0; i < games.length; i++) {
-    if (games[i]) {
-      reporter++;
+  let a = 0;
+  let b = 0;
+  for (let i = 0; i < winners.length; i++) {
+    if (winners[i] === playerAId) {
+      a++;
+    } else if (winners[i] === playerBId) {
+      b++;
     } else {
-      opponent++;
+      return { ok: false, reason: "unknown_player" };
     }
-    const decided = reporter === 2 || opponent === 2;
     // A decided series must end immediately — no game after 2 wins.
-    if (decided && i !== games.length - 1) {
+    if ((a === 2 || b === 2) && i !== winners.length - 1) {
       return { ok: false, reason: "extra_game" };
     }
   }
-  if (reporter < 2 && opponent < 2) {
+  if (a < 2 && b < 2) {
     return { ok: false, reason: "not_decisive" };
   }
   return {
     ok: true,
-    winner: reporter === 2 ? "reporter" : "opponent",
-    gamesPlayed: games.length as 2 | 3,
+    winnerId: a === 2 ? playerAId : playerBId,
+    gamesPlayed: winners.length as 2 | 3,
   };
 }
 
@@ -78,12 +88,13 @@ const seriesMessages: Record<
   too_many: "Ein Best-of-3 hat höchstens drei Spiele.",
   not_decisive: "Bei 1:1 fehlt das entscheidende dritte Spiel.",
   extra_game: "Das Match war bereits entschieden.",
+  unknown_player: "Unbekannter Spieler",
 };
 
 const platformValues = platformEnum.enumValues;
 
 const gameInputSchema = z.object({
-  won: z.boolean(),
+  winnerId: z.string().min(1),
   replayUrl: z.string().trim().optional(),
 });
 
@@ -121,9 +132,14 @@ export function reportSchema(context: {
   participants: { playerAId: string; playerBId: string };
   isStaffOrAdmin: (userId: string) => boolean;
 }) {
+  const { playerAId, playerBId } = context.participants;
   return reportUnion.superRefine((value, ctx) => {
     if (value.outcome === "normal") {
-      const series = deriveSeries(value.games.map((game) => game.won));
+      const series = deriveSeries(
+        value.games.map((game) => game.winnerId),
+        playerAId,
+        playerBId,
+      );
       if (!series.ok) {
         ctx.addIssue({
           code: "custom",
@@ -181,7 +197,6 @@ export function reportSchema(context: {
         });
       }
     } else {
-      const { playerAId, playerBId } = context.participants;
       if (value.winnerId !== playerAId && value.winnerId !== playerBId) {
         ctx.addIssue({
           code: "custom",
@@ -217,14 +232,14 @@ export type GameRow = {
   replayUrl: string | null;
 };
 
-// Maps a validated report to persistence rows, resolving the reporter-relative
-// Win/Loss into absolute winner ids. `playerATeamUrl`/`playerBTeamUrl` are
-// already keyed to the match's player A/B (the form labels them by identity),
-// so they pass straight through.
-export function toResultRows(
-  input: ReportInput,
-  context: { reporterId: string; opponentId: string },
-): { result: ResultRow; games: GameRow[] } {
+// Maps a validated report to persistence rows. Game winners are already
+// absolute (the form picks a player), so the match winner is simply whoever won
+// two games; `playerATeamUrl`/`playerBTeamUrl` are keyed to player A/B by the
+// form and pass straight through.
+export function toResultRows(input: ReportInput): {
+  result: ResultRow;
+  games: GameRow[];
+} {
   if (input.outcome === "free_win") {
     return {
       result: {
@@ -241,14 +256,15 @@ export function toResultRows(
     };
   }
 
-  const series = deriveSeries(input.games.map((game) => game.won));
+  const wins = new Map<string, number>();
+  for (const game of input.games) {
+    wins.set(game.winnerId, (wins.get(game.winnerId) ?? 0) + 1);
+  }
   const winnerId =
-    series.ok && series.winner === "opponent"
-      ? context.opponentId
-      : context.reporterId;
+    [...wins.entries()].find(([, count]) => count >= 2)?.[0] ?? null;
   const games: GameRow[] = input.games.map((game, i) => ({
     gameNumber: i + 1,
-    winnerId: game.won ? context.reporterId : context.opponentId,
+    winnerId: game.winnerId,
     replayUrl: input.platform === "showdown" ? (game.replayUrl ?? null) : null,
   }));
   return {

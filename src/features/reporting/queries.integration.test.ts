@@ -64,14 +64,12 @@ beforeAll(async () => {
       subDivisionId,
     })),
   );
-  await db
-    .insert(matchdays)
-    .values({
-      windowId,
-      round: 1,
-      startsOn: "2026-07-01",
-      endsOn: "2026-07-07",
-    });
+  await db.insert(matchdays).values({
+    windowId,
+    round: 1,
+    startsOn: "2026-07-01",
+    endsOn: "2026-07-07",
+  });
 
   const inserted = await db
     .insert(matches)

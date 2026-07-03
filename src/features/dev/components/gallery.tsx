@@ -6,7 +6,11 @@ import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
-import type { MatchResultLite } from "@/features/reporting/queries";
+import { ReportSummary } from "@/features/reporting/components/report-summary";
+import type {
+  MatchResultLite,
+  StoredResult,
+} from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
 import { defaultDeadlines } from "@/features/schedule/spieltage";
@@ -76,6 +80,52 @@ const DASH_RESULTS = new Map<string, MatchResultLite>([
     },
   ],
 ]);
+const SUMMARY_A = { userId: "me", name: "Testerino", avatarUrl: AVATAR_URL };
+const SUMMARY_B = { userId: "opp", name: "Falinks", avatarUrl: null };
+const SUMMARY_RESULT: StoredResult = {
+  outcome: "normal",
+  winnerId: "me",
+  platform: "showdown",
+  playerATeamUrl: "https://pokepast.es/aaaa",
+  playerBTeamUrl: "https://pokepast.es/bbbb",
+  videoUrl: null,
+  freeWinReason: null,
+  discussedWithId: null,
+  reportedById: "me",
+  reportedAt: new Date("2026-07-06T18:00:00Z"),
+  confirmedAt: null,
+  games: [
+    {
+      gameNumber: 1,
+      winnerId: "me",
+      replayUrl: "https://replay.pokemonshowdown.com/x",
+    },
+    {
+      gameNumber: 2,
+      winnerId: "opp",
+      replayUrl: "https://replay.pokemonshowdown.com/y",
+    },
+    {
+      gameNumber: 3,
+      winnerId: "me",
+      replayUrl: "https://replay.pokemonshowdown.com/z",
+    },
+  ],
+};
+const FREEWIN_RESULT: StoredResult = {
+  outcome: "free_win",
+  winnerId: "me",
+  platform: null,
+  playerATeamUrl: null,
+  playerBTeamUrl: null,
+  videoUrl: null,
+  freeWinReason: "Gegner war trotz mehrerer Terminvorschläge nicht erreichbar.",
+  discussedWithId: "staff",
+  reportedById: "me",
+  reportedAt: new Date("2026-07-06T18:00:00Z"),
+  confirmedAt: null,
+  games: [],
+};
 const DASH_STANDINGS: StandingsRow[] = [
   {
     userId: "me",
@@ -447,6 +497,30 @@ export function Gallery() {
           <SeasonMessagePanel
             title="Du bist in der laufenden Saison nicht dabei"
             body="Für diese Saison liegt keine Einteilung für dich vor."
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Match-Meldung: Ergebnis</h2>
+        <Specimen label="Ergebnis (Sieg, Showdown, 2:1)">
+          <ReportSummary
+            result={SUMMARY_RESULT}
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+            viewerId="me"
+            round={2}
+            groupName="Division 1a"
+          />
+        </Specimen>
+        <Specimen label="Freigewinn (wartet auf Staff)">
+          <ReportSummary
+            result={FREEWIN_RESULT}
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+            viewerId="me"
+            round={3}
+            groupName="Division 1a"
           />
         </Specimen>
       </section>

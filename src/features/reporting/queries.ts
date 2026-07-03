@@ -1,6 +1,15 @@
-import { asc, eq, inArray } from "drizzle-orm";
-import { matches, matchGames, matchResults, profiles } from "@/db/schema";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import {
+  divisions,
+  matchdays,
+  matches,
+  matchGames,
+  matchResults,
+  profiles,
+  subDivisions,
+} from "@/db/schema";
 import type { Identity } from "@/features/season/dashboard";
+import { subDivisionName } from "@/features/seeding/seeding";
 import { db } from "@/lib/db";
 import type { GameRow, MatchOutcome, ResultRow } from "./report";
 import type { ResultForStandings } from "./standings";
@@ -18,21 +27,49 @@ function toIdentity(row: {
   };
 }
 
-// The pairing + both players' identities for the report screen (playerB null =
-// bye, unreportable). Null when the match does not exist.
+// The pairing + both players' identities plus the group name and matchday
+// deadline for the report screen header (playerB null = bye, unreportable).
+// Null when the match does not exist.
 export async function getMatchForReport(matchId: string): Promise<{
   matchId: string;
   round: number;
   subDivisionId: string;
+  groupName: string;
+  deadline: string | null;
   playerA: Identity;
   playerB: Identity | null;
 } | null> {
-  const match = await db.query.matches.findFirst({
-    where: eq(matches.id, matchId),
-  });
+  const [match] = await db
+    .select({
+      id: matches.id,
+      round: matches.round,
+      subDivisionId: matches.subDivisionId,
+      playerAId: matches.playerAId,
+      playerBId: matches.playerBId,
+      tier: divisions.tier,
+      position: subDivisions.position,
+      windowId: divisions.windowId,
+    })
+    .from(matches)
+    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .where(eq(matches.id, matchId))
+    .limit(1);
   if (!match) {
     return null;
   }
+
+  const [matchday] = await db
+    .select({ endsOn: matchdays.endsOn })
+    .from(matchdays)
+    .where(
+      and(
+        eq(matchdays.windowId, match.windowId),
+        eq(matchdays.round, match.round),
+      ),
+    )
+    .limit(1);
+
   const ids = [match.playerAId, match.playerBId].filter(
     (id): id is string => id !== null,
   );
@@ -55,6 +92,8 @@ export async function getMatchForReport(matchId: string): Promise<{
     matchId: match.id,
     round: match.round,
     subDivisionId: match.subDivisionId,
+    groupName: subDivisionName(match.tier, match.position),
+    deadline: matchday?.endsOn ?? null,
     playerA: identity(match.playerAId),
     playerB: match.playerBId ? identity(match.playerBId) : null,
   };
@@ -62,6 +101,7 @@ export async function getMatchForReport(matchId: string): Promise<{
 
 export type StoredResult = ResultRow & {
   reportedById: string;
+  reportedAt: Date;
   confirmedAt: Date | null;
   games: GameRow[];
 };
@@ -95,6 +135,7 @@ export async function getMatchResult(
     freeWinReason: result.freeWinReason,
     discussedWithId: result.discussedWithId,
     reportedById: result.reportedById,
+    reportedAt: result.reportedAt,
     confirmedAt: result.confirmedAt,
     games,
   };

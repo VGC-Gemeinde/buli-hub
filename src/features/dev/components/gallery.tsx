@@ -1,3 +1,5 @@
+"use client";
+
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { ProfileHeader } from "@/features/profile/components/profile-header";

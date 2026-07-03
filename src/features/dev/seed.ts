@@ -5,6 +5,14 @@ import type {
   Platform,
   PlayerStatus,
 } from "@/features/registration/registration";
+import {
+  assignPlayersToDivision,
+  finalizeSeeding,
+  generateSubDivisionsForDivision,
+  listDivisions,
+  listSeedingPlayers,
+  saveSeedingConfig,
+} from "@/features/seeding/queries";
 import { db } from "@/lib/db";
 
 // Dev-only test-data generator: a closed registration window filled with fake
@@ -114,7 +122,45 @@ export async function clearSeedData() {
   );
 }
 
-export async function generateSeedData(count: number): Promise<number> {
+// Builds a complete, finalized seeding from the window's registered players:
+// picks a division count, distributes players round-robin across divisions,
+// generates sub-divisions, and finalizes. Lets the „Spielplan erstellen" flow
+// be exercised without hand-running the seeding tool.
+async function finalizeDevSeeding(
+  windowId: string,
+  divisionCount: number,
+  size: number,
+): Promise<void> {
+  await saveSeedingConfig(windowId, size, divisionCount);
+  const players = await listSeedingPlayers(windowId);
+  const divisions = await listDivisions(windowId);
+  if (divisions.length === 0) {
+    return;
+  }
+
+  const byDivision = new Map<string, string[]>();
+  players.forEach((player, i) => {
+    const division = divisions[i % divisions.length];
+    const list = byDivision.get(division.id);
+    if (list) {
+      list.push(player.userId);
+    } else {
+      byDivision.set(division.id, [player.userId]);
+    }
+  });
+  for (const [divisionId, userIds] of byDivision) {
+    await assignPlayersToDivision(windowId, userIds, divisionId);
+  }
+  for (const division of divisions) {
+    await generateSubDivisionsForDivision(windowId, division.id);
+  }
+  await finalizeSeeding(windowId);
+}
+
+export async function generateSeedData(
+  count: number,
+  finalize = false,
+): Promise<number> {
   await clearSeedData();
 
   const specs = buildSeedRegistrations(count);
@@ -122,7 +168,7 @@ export async function generateSeedData(count: number): Promise<number> {
 
   // Fake auth users (one multi-row insert), then their profiles.
   const userValues = specs.map(
-    (spec, i) =>
+    (_, i) =>
       sql`(${ids[i]}, ${`${SEED_EMAIL_PREFIX}${i}${SEED_EMAIL_DOMAIN}`})`,
   );
   await db.execute(
@@ -157,6 +203,10 @@ export async function generateSeedData(count: number): Promise<number> {
       skillSelfRating: spec.skillSelfRating,
     })),
   );
+
+  if (finalize) {
+    await finalizeDevSeeding(window.id, 2, 8);
+  }
 
   return specs.length;
 }

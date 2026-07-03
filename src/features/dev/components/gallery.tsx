@@ -4,6 +4,8 @@ import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
+import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
+import { defaultDeadlines } from "@/features/schedule/spieltage";
 import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
 import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
 import { SeedingInitLoader } from "@/features/seeding/components/seeding-workspace";
@@ -279,6 +281,16 @@ export function Gallery() {
             ready={false}
             gateHint="Erst wenn alle Spieler platziert und in Gruppen sind."
             onConfirm={async () => ({ ok: true })}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Spielplan: Erstellen</h2>
+        <Specimen label="Dialog (Spielwochen-Deadlines)">
+          <CreateScheduleDialog
+            seasonStart="2026-07-01"
+            defaultDeadlines={defaultDeadlines("2026-07-01", 7)}
           />
         </Specimen>
       </section>

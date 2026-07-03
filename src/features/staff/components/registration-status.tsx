@@ -52,10 +52,16 @@ export function SeasonCard({
   state,
   registrationUrl,
   closesAt,
+  statusLabel,
+  accent,
 }: {
   state: RegistrationState;
   registrationUrl: string;
   closesAt: Date | null;
+  // Overrides for later phases the registration state alone cannot express
+  // (e.g. the regular season running): a custom label and an active accent.
+  statusLabel?: string;
+  accent?: boolean;
 }) {
   return (
     <div
@@ -72,11 +78,11 @@ export function SeasonCard({
           <div
             className={cn(
               "h-2 w-4 -skew-x-[18deg]",
-              state === "open" ? "bg-brand-orange" : "bg-border",
+              state === "open" || accent ? "bg-brand-orange" : "bg-border",
             )}
           />
           <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
-            {STATUS_LABEL[state]}
+            {statusLabel ?? STATUS_LABEL[state]}
           </span>
         </div>
       </div>

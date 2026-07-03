@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { DateTimePicker } from "@/components/date-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OpenRegistrationDialog } from "./open-registration-dialog";
 
@@ -32,12 +32,10 @@ export function OpenRegistrationForm() {
       <div className="flex items-end gap-3">
         <div className="grid gap-2">
           <Label htmlFor="closes-at">Anmeldeschluss</Label>
-          <Input
+          <DateTimePicker
             id="closes-at"
-            type="datetime-local"
-            className="h-8 w-[200px]"
             value={closesAtLocal}
-            onChange={(event) => setClosesAtLocal(event.target.value)}
+            onChange={setClosesAtLocal}
           />
         </div>
         <Button type="button" onClick={tryOpen}>

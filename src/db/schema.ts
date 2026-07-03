@@ -8,6 +8,7 @@
 
 import {
   boolean,
+  date,
   integer,
   pgEnum,
   pgTable,
@@ -163,3 +164,39 @@ export const placements = pgTable(
   },
   (table) => [unique().on(table.windowId, table.userId)],
 );
+
+// The season-wide Spieltag calendar generated from a finalized seeding: one row
+// per matchday (round), shared across all sub-divisions. Week 1 starts on
+// generation; each week's `ends_on` is its deadline (staff-editable in the
+// dialog), and starts follow from the previous deadline. The presence of these
+// rows marks the season as running (no status column). FKs + RLS in a custom
+// migration (server-only, like the other staff tables).
+export const matchdays = pgTable(
+  "matchdays",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    windowId: uuid("window_id").notNull(),
+    round: integer("round").notNull(),
+    startsOn: date("starts_on").notNull(),
+    endsOn: date("ends_on").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.windowId, table.round)],
+);
+
+// One match in a sub-division's single round-robin: two players on one matchday
+// (`round`), or a bye when `player_b_id` is null. Its date is the matchday for
+// the same window + round. Result columns arrive with the reporting feature.
+// FKs + RLS in a custom migration.
+export const matches = pgTable("matches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  subDivisionId: uuid("sub_division_id").notNull(),
+  round: integer("round").notNull(),
+  playerAId: uuid("player_a_id").notNull(),
+  playerBId: uuid("player_b_id"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

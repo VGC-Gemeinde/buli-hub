@@ -5,6 +5,7 @@ import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
+import { type ControlState, controls, deriveControlState } from "./control";
 import {
   autoDivisionPlacements,
   seedingReadiness,
@@ -13,41 +14,37 @@ import {
 import {
   assignPlayersToDivision,
   assignPlayerToDivision,
+  bumpHeartbeat,
   createDivisions,
   divisionBelongsToWindow,
   generateSubDivisionsForDivision,
+  getLockWithHolder,
   getSeeding,
   listDivisions,
   listSeedingPlayers,
   movePlayerToSubDivision,
   finalizeSeeding as persistFinalize,
   placePlayersInGroup,
+  releaseLock,
   saveSeedingConfig,
   subDivisionDivisionId,
+  upsertLock,
 } from "./queries";
 import { seedingConfigSchema } from "./seeding";
 
-export type SeedingResult = { ok: true } | { ok: false; error: string };
+// `code: "no_control"` lets the client tell "you lost control" apart from other
+// failures and flip its UI to read-only instead of only surfacing the error.
+export type SeedingResult =
+  | { ok: true }
+  | { ok: false; error: string; code?: "no_control" };
 
 export async function configureSeeding(input: {
   subDivisionSize: unknown;
   divisionCount: unknown;
 }): Promise<SeedingResult> {
-  const current = await currentUser();
-  if (!current || !roleAtLeast(current.role, "staff")) {
-    return { ok: false, error: "Keine Berechtigung" };
-  }
-
-  const window = await latestWindow();
-  if (!window || registrationState(window, new Date()) !== "closed") {
-    return {
-      ok: false,
-      error: "Die Einteilung ist erst nach Anmeldeschluss möglich",
-    };
-  }
-
-  if ((await getSeeding(window.id))?.finalizedAt) {
-    return { ok: false, error: "Die Einteilung ist bereits finalisiert" };
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
   }
 
   const parsed = seedingConfigSchema.safeParse(input);
@@ -59,7 +56,7 @@ export async function configureSeeding(input: {
   }
 
   await saveSeedingConfig(
-    window.id,
+    gate.windowId,
     parsed.data.subDivisionSize,
     parsed.data.divisionCount,
   );
@@ -71,35 +68,30 @@ export async function assignToDivision(input: {
   userId: string;
   divisionId: string | null;
 }): Promise<SeedingResult> {
-  const current = await currentUser();
-  if (!current || !roleAtLeast(current.role, "staff")) {
-    return { ok: false, error: "Keine Berechtigung" };
-  }
-
-  const window = await latestWindow();
-  if (!window || registrationState(window, new Date()) !== "closed") {
-    return { ok: false, error: "Nicht möglich" };
-  }
-  if ((await getSeeding(window.id))?.finalizedAt) {
-    return { ok: false, error: "Die Einteilung ist bereits finalisiert" };
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
   }
 
   if (
     input.divisionId !== null &&
-    !(await divisionBelongsToWindow(window.id, input.divisionId))
+    !(await divisionBelongsToWindow(gate.windowId, input.divisionId))
   ) {
     return { ok: false, error: "Unbekannte Division" };
   }
 
-  await assignPlayerToDivision(window.id, input.userId, input.divisionId);
+  await assignPlayerToDivision(gate.windowId, input.userId, input.divisionId);
   revalidatePath("/staff/seeding");
   return { ok: true };
 }
 
 // Shared gate for editing the seeding: staff, registration closed, not yet
-// finalized. Returns the window id or an error.
+// finalized, and — because seeding is a live meeting driven by one person — the
+// caller must currently hold the control lock. Returns the window id or an
+// error; `no_control` tells the client to flip to read-only.
 async function editableWindow(): Promise<
-  { ok: true; windowId: string } | { ok: false; error: string }
+  | { ok: true; windowId: string }
+  | { ok: false; error: string; code?: "no_control" }
 > {
   const current = await currentUser();
   if (!current || !roleAtLeast(current.role, "staff")) {
@@ -112,6 +104,21 @@ async function editableWindow(): Promise<
   if ((await getSeeding(window.id))?.finalizedAt) {
     return { ok: false, error: "Die Einteilung ist bereits finalisiert" };
   }
+
+  const lock = await getLockWithHolder(window.id);
+  const state = deriveControlState({
+    lock,
+    currentUserId: current.userId,
+    now: new Date(),
+  });
+  if (!controls(state)) {
+    return {
+      ok: false,
+      error: "Du steuerst die Einteilung gerade nicht.",
+      code: "no_control",
+    };
+  }
+
   return { ok: true, windowId: window.id };
 }
 
@@ -295,5 +302,89 @@ export async function finalizeSeeding(): Promise<SeedingResult> {
 
   await persistFinalize(gate.windowId);
   revalidatePath("/staff/seeding");
+  return { ok: true };
+}
+
+// The seeding page's current control view for the caller: whether they/someone
+// drives, and who (for the observer banner).
+export type ControlView = { state: ControlState; holderName: string | null };
+
+// Preamble for the control actions: staff, registration closed, not finalized.
+// Unlike `editableWindow` this does NOT require holding the lock — these actions
+// grant, renew, or read it. A finalized seeding is read-only for everyone, so
+// control is pointless there.
+async function controllableWindow(): Promise<
+  { ok: true; windowId: string; userId: string } | { ok: false; error: string }
+> {
+  const current = await currentUser();
+  if (!current || !roleAtLeast(current.role, "staff")) {
+    return { ok: false, error: "Keine Berechtigung" };
+  }
+  const window = await latestWindow();
+  if (!window || registrationState(window, new Date()) !== "closed") {
+    return { ok: false, error: "Nicht möglich" };
+  }
+  if ((await getSeeding(window.id))?.finalizedAt) {
+    return { ok: false, error: "Die Einteilung ist bereits finalisiert" };
+  }
+  return { ok: true, windowId: window.id, userId: current.userId };
+}
+
+// Takes control of the seeding. A lock freshly held by someone else is only
+// overwritten with `force: true` (the client confirms the takeover first).
+export async function acquireControl(input: {
+  force?: boolean;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const gate = await controllableWindow();
+  if (!gate.ok) {
+    return gate;
+  }
+
+  const lock = await getLockWithHolder(gate.windowId);
+  const state = deriveControlState({
+    lock,
+    currentUserId: gate.userId,
+    now: new Date(),
+  });
+  if (state === "held-by-other" && !input.force) {
+    return {
+      ok: false,
+      error: `${lock?.holderName ?? "Jemand anderes"} bearbeitet die Einteilung gerade.`,
+    };
+  }
+
+  await upsertLock(gate.windowId, gate.userId);
+  revalidatePath("/staff/seeding");
+  return { ok: true };
+}
+
+// Returns the current control view and, while the caller is the holder, renews
+// their heartbeat. Called on an interval by every open page: the controller
+// stays alive, observers see holder changes and releases.
+export async function pollControl(): Promise<ControlView> {
+  const gate = await controllableWindow();
+  if (!gate.ok) {
+    return { state: "free", holderName: null };
+  }
+
+  const lock = await getLockWithHolder(gate.windowId);
+  const state = deriveControlState({
+    lock,
+    currentUserId: gate.userId,
+    now: new Date(),
+  });
+  if (controls(state)) {
+    await bumpHeartbeat(gate.windowId, gate.userId);
+  }
+  return { state, holderName: lock?.holderName ?? null };
+}
+
+// Releases the caller's control (no-op if they no longer hold it).
+export async function releaseControl(): Promise<{ ok: true }> {
+  const gate = await controllableWindow();
+  if (gate.ok) {
+    await releaseLock(gate.windowId, gate.userId);
+    revalidatePath("/staff/seeding");
+  }
   return { ok: true };
 }

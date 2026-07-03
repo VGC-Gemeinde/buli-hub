@@ -6,6 +6,7 @@ import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
 import { defaultDeadlines } from "@/features/schedule/spieltage";
+import { ControlBar } from "@/features/seeding/components/control-bar";
 import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
 import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
 import { SeedingInitLoader } from "@/features/seeding/components/seeding-workspace";
@@ -264,6 +265,37 @@ export function Gallery() {
           <div className="flex h-40 flex-col rounded-lg border">
             <SeedingInitLoader />
           </div>
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Seeding: Steuerung</h2>
+        <Specimen label="Beobachter — niemand steuert">
+          <ControlBar
+            state="free"
+            holderName={null}
+            pending={false}
+            onAcquire={() => {}}
+            onRelease={() => {}}
+          />
+        </Specimen>
+        <Specimen label="Beobachter — jemand steuert">
+          <ControlBar
+            state="held-by-other"
+            holderName="Testerino"
+            pending={false}
+            onAcquire={() => {}}
+            onRelease={() => {}}
+          />
+        </Specimen>
+        <Specimen label="Du steuerst">
+          <ControlBar
+            state="self"
+            holderName="Testerino"
+            pending={false}
+            onAcquire={() => {}}
+            onRelease={() => {}}
+          />
         </Specimen>
       </section>
 

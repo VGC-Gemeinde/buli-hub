@@ -46,6 +46,7 @@ const STATUS_PILLS: { value: SheetFilter["status"]; label: string }[] = [
 
 export function SeedingToolbar({
   finalized,
+  readOnly,
   divisionCount,
   size,
   configError,
@@ -62,6 +63,9 @@ export function SeedingToolbar({
   onFilterChange,
 }: {
   finalized: boolean;
+  // Observer mode: someone else drives. Editing controls are disabled, but
+  // search + filter stay usable so observers can look around.
+  readOnly: boolean;
   divisionCount: string;
   size: string;
   configError: string | null;
@@ -115,7 +119,7 @@ export function SeedingToolbar({
             <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
             Finalisiert — endgültig
           </div>
-        ) : (
+        ) : readOnly ? null : (
           <FinalizeDialog
             ready={ready}
             gateHint={gateHint}
@@ -137,6 +141,7 @@ export function SeedingToolbar({
               min={1}
               max={20}
               value={divisionCount}
+              disabled={readOnly}
               onChange={(e) => onConfigChange(e.target.value, size)}
               className="h-7 w-14"
             />
@@ -150,6 +155,7 @@ export function SeedingToolbar({
               min={2}
               max={24}
               value={size}
+              disabled={readOnly}
               onChange={(e) => onConfigChange(divisionCount, e.target.value)}
               className="h-7 w-14"
             />
@@ -165,7 +171,7 @@ export function SeedingToolbar({
           <Button
             variant="outline"
             size="sm"
-            disabled={generatingAll}
+            disabled={generatingAll || readOnly}
             onClick={onGenerateAll}
           >
             {generatingAll ? "Wird generiert…" : "Alle Gruppen generieren"}

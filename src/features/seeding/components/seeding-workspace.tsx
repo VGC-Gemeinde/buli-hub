@@ -2,10 +2,12 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  acquireControl,
   assignManyToDivision,
   assignToDivision,
+  type ControlView,
   configureSeeding,
   finalizeSeeding,
   generateAllGroups,
@@ -13,7 +15,11 @@ import {
   initializeSeeding,
   moveToSubDivision,
   placePlayers,
+  pollControl,
+  releaseControl,
+  type SeedingResult,
 } from "../actions";
+import { CONTROL_HEARTBEAT_MS, type ControlState } from "../control";
 import {
   type SeedingPlayer,
   seedingReadiness,
@@ -27,6 +33,7 @@ import {
   type SubDivisionRef,
 } from "../sheet";
 import { BulkBar } from "./bulk-bar";
+import { ControlBar } from "./control-bar";
 import { SeedingSheet } from "./seeding-sheet";
 import { SeedingToolbar } from "./seeding-toolbar";
 
@@ -40,6 +47,8 @@ export function SeedingWorkspace({
   initialDivisionCount,
   finalized,
   finalizedAt,
+  initialControlState,
+  initialHolderName,
 }: {
   players: SeedingPlayer[];
   divisions: DivisionRef[];
@@ -48,8 +57,17 @@ export function SeedingWorkspace({
   initialDivisionCount: number;
   finalized: boolean;
   finalizedAt: Date | null;
+  initialControlState: ControlState;
+  initialHolderName: string | null;
 }) {
   const router = useRouter();
+  const [control, setControl] = useState<ControlView>({
+    state: initialControlState,
+    holderName: initialHolderName,
+  });
+  const [controlPending, setControlPending] = useState(false);
+  const isController = control.state === "self";
+  const readOnly = finalized || !isController;
   const [filter, setFilter] = useState<SheetFilter>({
     query: "",
     status: "all",
@@ -72,8 +90,11 @@ export function SeedingWorkspace({
   // Whether this first render will trigger the lazy auto-init: an un-set-up
   // seeding (no divisions) that has returning players to place. Computed on the
   // client from the props, so we can show the loader from the very first paint.
+  // Auto-init is a mutation, so it only runs for the controller — an observer
+  // opening an un-set-up seeding must not trigger it.
   const willAutoInit =
     !finalized &&
+    isController &&
     divisions.length === 0 &&
     suggestedDivisionCount(players) >= 1;
   const [initializing, setInitializing] = useState(willAutoInit);
@@ -164,6 +185,62 @@ export function SeedingWorkspace({
     });
   }
 
+  const refreshControl = useCallback(async () => {
+    setControl(await pollControl());
+  }, []);
+
+  // Surface a failed mutation. A `no_control` failure means someone took over
+  // mid-edit: pull the true control state so the UI flips to read-only.
+  const reportError = useCallback(
+    (result: Extract<SeedingResult, { ok: false }>) => {
+      setActionError(result.error);
+      if (result.code === "no_control") {
+        refreshControl();
+        router.refresh();
+      }
+    },
+    [refreshControl, router],
+  );
+
+  // One interval drives control for every open page: the controller renews its
+  // heartbeat, observers see holder changes and releases. Losing control (a
+  // takeover) flips the page to read-only with fresh server data.
+  const wasControllingRef = useRef(isController);
+  wasControllingRef.current = isController;
+  useEffect(() => {
+    if (finalized) {
+      return;
+    }
+    const id = setInterval(async () => {
+      const next = await pollControl();
+      if (wasControllingRef.current && next.state !== "self") {
+        router.refresh();
+      }
+      setControl(next);
+    }, CONTROL_HEARTBEAT_MS);
+    return () => clearInterval(id);
+  }, [finalized, router]);
+
+  async function onAcquireControl(force: boolean) {
+    setControlPending(true);
+    setActionError(null);
+    const result = await acquireControl({ force });
+    setControlPending(false);
+    if (!result.ok) {
+      setActionError(result.error);
+    }
+    await refreshControl();
+    router.refresh();
+  }
+
+  async function onReleaseControl() {
+    setControlPending(true);
+    await releaseControl();
+    setControlPending(false);
+    await refreshControl();
+    router.refresh();
+  }
+
   function onConfigChange(nextCount: string, nextSize: string) {
     setDivisionCount(nextCount);
     setSize(nextSize);
@@ -178,6 +255,9 @@ export function SeedingWorkspace({
       setConfigError(result.ok ? null : result.error);
       if (result.ok) {
         router.refresh();
+      } else if (result.code === "no_control") {
+        refreshControl();
+        router.refresh();
       }
     }, 500);
   }
@@ -188,7 +268,7 @@ export function SeedingWorkspace({
     const result = await assignToDivision({ userId, divisionId });
     if (!result.ok) {
       dropOverride(userId);
-      setActionError(result.error);
+      reportError(result);
       return;
     }
     router.refresh();
@@ -200,7 +280,7 @@ export function SeedingWorkspace({
     const result = await moveToSubDivision({ userId, subDivisionId });
     if (!result.ok) {
       dropOverride(userId);
-      setActionError(result.error);
+      reportError(result);
       return;
     }
     router.refresh();
@@ -212,7 +292,7 @@ export function SeedingWorkspace({
     const result = await generateGroups({ divisionId });
     setGeneratingDivisionId(null);
     if (!result.ok) {
-      setActionError(result.error);
+      reportError(result);
       return;
     }
     router.refresh();
@@ -224,7 +304,7 @@ export function SeedingWorkspace({
     const result = await generateAllGroups();
     setGeneratingAll(false);
     if (!result.ok) {
-      setActionError(result.error);
+      reportError(result);
       return;
     }
     router.refresh();
@@ -242,7 +322,7 @@ export function SeedingWorkspace({
     setActionError(null);
     const result = await assignManyToDivision({ userIds, divisionId });
     if (!result.ok) {
-      setActionError(result.error);
+      reportError(result);
     }
     router.refresh();
   }
@@ -262,7 +342,7 @@ export function SeedingWorkspace({
       for (const userId of userIds) {
         dropOverride(userId);
       }
-      setActionError(result.error);
+      reportError(result);
       return;
     }
     router.refresh();
@@ -306,6 +386,7 @@ export function SeedingWorkspace({
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <SeedingToolbar
         finalized={finalized}
+        readOnly={readOnly}
         divisionCount={divisionCount}
         size={size}
         configError={configError}
@@ -321,6 +402,16 @@ export function SeedingWorkspace({
         filter={filter}
         onFilterChange={setFilter}
       />
+
+      {finalized ? null : (
+        <ControlBar
+          state={control.state}
+          holderName={control.holderName}
+          pending={controlPending}
+          onAcquire={onAcquireControl}
+          onRelease={onReleaseControl}
+        />
+      )}
 
       {actionError ? (
         <p className="px-7 py-1.5 text-destructive text-sm">{actionError}</p>
@@ -344,7 +435,7 @@ export function SeedingWorkspace({
           divisions={divisions}
           subDivisions={subDivisions}
           selection={selection}
-          readOnly={finalized}
+          readOnly={readOnly}
           generatingDivisionId={generatingDivisionId}
           onGenerate={onGenerate}
           onToggleSelect={onToggleSelect}
@@ -354,7 +445,7 @@ export function SeedingWorkspace({
         />
       )}
 
-      {finalized ? null : (
+      {readOnly ? null : (
         <BulkBar
           count={selection.size}
           divisions={divisions}

@@ -3,18 +3,23 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createWindow, latestWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
+import { deriveControlState } from "./control";
 import { autoDivisionPlacements, suggestedDivisionCount } from "./placement";
 import {
   assignPlayersToDivision,
   assignPlayerToDivision,
+  bumpHeartbeat,
   createDivisions,
   finalizeSeeding,
   generateSubDivisionsForDivision,
+  getLockWithHolder,
   getSeeding,
   listDivisions,
   listSeedingPlayers,
   listSubDivisions,
+  releaseLock,
   saveSeedingConfig,
+  upsertLock,
 } from "./queries";
 
 // Integration test against local Postgres. seedings/divisions FK to the
@@ -194,5 +199,121 @@ describe("auto-init from registration history", () => {
     expect(byUser.get(returner1)).toBe(idByTier.get(1));
     expect(byUser.get(returner3)).toBe(idByTier.get(3));
     expect(byUser.get(newcomer)).toBeNull();
+  });
+});
+
+describe("control lock", () => {
+  const opener = randomUUID();
+  const other = randomUUID();
+  let lockWindow: string;
+
+  beforeAll(async () => {
+    for (const id of [opener, other]) {
+      await db.execute(sql`insert into auth.users (id) values (${id})`);
+    }
+    // A profile for `opener` so the holder name join returns a value.
+    await db.execute(
+      sql`insert into profiles (user_id, display_name) values (${opener}, 'Drivername')`,
+    );
+    await createWindow(new Date("2026-11-30T18:00:00Z"), opener);
+    const windows = await db.execute<{ id: string }>(
+      sql`select id from registration_windows where opened_by = ${opener}`,
+    );
+    lockWindow = windows[0].id;
+  });
+
+  afterAll(async () => {
+    await db.execute(
+      sql`delete from registration_windows where id = ${lockWindow}`,
+    );
+    await db.execute(sql`delete from profiles where user_id = ${opener}`);
+    for (const id of [opener, other]) {
+      await db.execute(sql`delete from auth.users where id = ${id}`);
+    }
+  });
+
+  it("has no lock before anyone takes control", async () => {
+    expect(await getLockWithHolder(lockWindow)).toBeNull();
+    expect(
+      deriveControlState({
+        lock: null,
+        currentUserId: opener,
+        now: new Date(),
+      }),
+    ).toBe("free");
+  });
+
+  it("acquires control and joins the holder name", async () => {
+    await upsertLock(lockWindow, opener);
+    const lock = await getLockWithHolder(lockWindow);
+    expect(lock?.holderId).toBe(opener);
+    expect(lock?.holderName).toBe("Drivername");
+    // The lock's own heartbeat is "now" — freshly acquired, so it is fresh.
+    const now = lock?.heartbeatAt ?? new Date();
+    expect(deriveControlState({ lock, currentUserId: opener, now })).toBe(
+      "self",
+    );
+    expect(deriveControlState({ lock, currentUserId: other, now })).toBe(
+      "held-by-other",
+    );
+  });
+
+  it("treats a lock with a stale heartbeat as free", async () => {
+    await upsertLock(lockWindow, opener);
+    const lock = await getLockWithHolder(lockWindow);
+    if (!lock) throw new Error("lock missing");
+    const later = new Date(lock.heartbeatAt.getTime() + 61_000);
+    expect(
+      deriveControlState({ lock, currentUserId: opener, now: later }),
+    ).toBe("stale");
+  });
+
+  it("takeover replaces the holder", async () => {
+    await upsertLock(lockWindow, opener);
+    await upsertLock(lockWindow, other);
+    const lock = await getLockWithHolder(lockWindow);
+    expect(lock?.holderId).toBe(other);
+    expect(lock?.holderName).toBeNull(); // `other` has no profile row
+  });
+
+  it("heartbeat refreshes only for the current holder", async () => {
+    await upsertLock(lockWindow, other);
+    const before = await getLockWithHolder(lockWindow);
+    if (!before) throw new Error("lock missing");
+
+    // A non-holder's heartbeat is a no-op.
+    await bumpHeartbeat(lockWindow, opener);
+    const unchanged = await getLockWithHolder(lockWindow);
+    expect(unchanged?.heartbeatAt.getTime()).toBe(before.heartbeatAt.getTime());
+
+    await bumpHeartbeat(lockWindow, other);
+    const bumped = await getLockWithHolder(lockWindow);
+    expect(bumped?.heartbeatAt.getTime()).toBeGreaterThanOrEqual(
+      before.heartbeatAt.getTime(),
+    );
+  });
+
+  it("release only clears the caller's own lock", async () => {
+    await upsertLock(lockWindow, other);
+    await releaseLock(lockWindow, opener); // not the holder — no-op
+    expect(await getLockWithHolder(lockWindow)).not.toBeNull();
+    await releaseLock(lockWindow, other);
+    expect(await getLockWithHolder(lockWindow)).toBeNull();
+  });
+
+  it("is torn down when the window is deleted", async () => {
+    const throwaway = randomUUID();
+    await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
+    await createWindow(new Date("2026-12-31T18:00:00Z"), throwaway);
+    const rows = await db.execute<{ id: string }>(
+      sql`select id from registration_windows where opened_by = ${throwaway}`,
+    );
+    const wid = rows[0].id;
+    await upsertLock(wid, throwaway);
+    expect(await getLockWithHolder(wid)).not.toBeNull();
+
+    await db.execute(sql`delete from registration_windows where id = ${wid}`);
+    expect(await getLockWithHolder(wid)).toBeNull();
+    await db.execute(sql`delete from auth.users where id = ${throwaway}`);
   });
 });

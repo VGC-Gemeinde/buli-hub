@@ -165,6 +165,23 @@ export const placements = pgTable(
   (table) => [unique().on(table.windowId, table.userId)],
 );
 
+// Who is currently driving a season's seeding. Division seeding is a live staff
+// meeting (one person shares their screen, the group discusses); this soft lock
+// keeps everyone else in read-only until they explicitly take control. A stale
+// `heartbeat_at` (older than the client TTL) means the holder's tab is gone and
+// the lock is free to take. Separate from `seedings` because control can be
+// taken before any config row exists. Server-only (RLS on, no policies).
+export const seedingLocks = pgTable("seeding_locks", {
+  windowId: uuid("window_id").primaryKey(),
+  holderId: uuid("holder_id").notNull(),
+  acquiredAt: timestamp("acquired_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  heartbeatAt: timestamp("heartbeat_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 // The season-wide Spieltag calendar generated from a finalized seeding: one row
 // per matchday (round), shared across all sub-divisions. Week 1 starts on
 // generation; each week's `ends_on` is its deadline (staff-editable in the

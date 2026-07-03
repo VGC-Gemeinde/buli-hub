@@ -2,8 +2,11 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { MobileWarning } from "@/features/seeding/components/mobile-warning";
 import { SeedingWorkspace } from "@/features/seeding/components/seeding-workspace";
+import { deriveControlState } from "@/features/seeding/control";
 import {
+  getLockWithHolder,
   getSeeding,
   listDivisions,
   listSeedingPlayers,
@@ -38,16 +41,24 @@ export default async function SeedingPage() {
     );
   }
 
-  const [seeding, divisions, players, subDivisions] = await Promise.all([
+  const [seeding, divisions, players, subDivisions, lock] = await Promise.all([
     getSeeding(window.id),
     listDivisions(window.id),
     listSeedingPlayers(window.id),
     listSubDivisions(window.id),
+    getLockWithHolder(window.id),
   ]);
+
+  const controlState = deriveControlState({
+    lock,
+    currentUserId: current.userId,
+    now: new Date(),
+  });
 
   return (
     <div className="flex h-screen min-w-[1520px] flex-col overflow-hidden">
       <SiteHeader className="shrink-0" />
+      <MobileWarning />
       <SeedingWorkspace
         players={players}
         divisions={divisions}
@@ -56,6 +67,8 @@ export default async function SeedingPage() {
         initialDivisionCount={divisions.length}
         finalized={Boolean(seeding?.finalizedAt)}
         finalizedAt={seeding?.finalizedAt ?? null}
+        initialControlState={controlState}
+        initialHolderName={lock?.holderName ?? null}
       />
     </div>
   );

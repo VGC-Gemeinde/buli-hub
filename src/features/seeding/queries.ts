@@ -4,12 +4,80 @@ import {
   placements,
   profiles,
   registrations,
+  seedingLocks,
   seedings,
   subDivisions,
 } from "@/db/schema";
 import { db } from "@/lib/db";
+import type { Lock } from "./control";
 import { generateSubDivisions } from "./generate-sub-divisions";
 import type { SeedingPlayer } from "./placement";
+
+// The current control lock plus the holder's display name for the banner, or
+// null if nobody has ever taken control. Freshness (TTL) is decided by the pure
+// `deriveControlState`, not here.
+export async function getLockWithHolder(
+  windowId: string,
+): Promise<(Lock & { holderName: string | null }) | null> {
+  const row = await db
+    .select({
+      holderId: seedingLocks.holderId,
+      heartbeatAt: seedingLocks.heartbeatAt,
+      displayName: profiles.displayName,
+      username: profiles.username,
+    })
+    .from(seedingLocks)
+    .leftJoin(profiles, eq(profiles.userId, seedingLocks.holderId))
+    .where(eq(seedingLocks.windowId, windowId))
+    .limit(1);
+  const lock = row[0];
+  if (!lock) {
+    return null;
+  }
+  return {
+    holderId: lock.holderId,
+    heartbeatAt: lock.heartbeatAt,
+    holderName: lock.displayName ?? lock.username,
+  };
+}
+
+// Takes (or renews) control for `holderId`, resetting both timestamps to now.
+export async function upsertLock(windowId: string, holderId: string) {
+  const now = new Date();
+  await db
+    .insert(seedingLocks)
+    .values({ windowId, holderId, acquiredAt: now, heartbeatAt: now })
+    .onConflictDoUpdate({
+      target: seedingLocks.windowId,
+      set: { holderId, acquiredAt: now, heartbeatAt: now },
+    });
+}
+
+// Refreshes the heartbeat only while `holderId` still holds the lock (a
+// takeover changes the holder, so this becomes a no-op for the ousted tab).
+export async function bumpHeartbeat(windowId: string, holderId: string) {
+  await db
+    .update(seedingLocks)
+    .set({ heartbeatAt: new Date() })
+    .where(
+      and(
+        eq(seedingLocks.windowId, windowId),
+        eq(seedingLocks.holderId, holderId),
+      ),
+    );
+}
+
+// Releases the lock only if `holderId` still holds it.
+export async function releaseLock(windowId: string, holderId: string) {
+  await db
+    .delete(seedingLocks)
+    .where(
+      and(
+        eq(seedingLocks.windowId, windowId),
+        eq(seedingLocks.holderId, holderId),
+      ),
+    );
+}
 
 export async function getSeeding(windowId: string) {
   return (

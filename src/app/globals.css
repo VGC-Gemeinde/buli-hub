@@ -151,3 +151,14 @@
     font-weight: 700;
   }
 }
+
+/* Deadline-shift feedback in the schedule dialog: rows after an edited week
+   flash once so the „shifts everything after" rule is visible. */
+@keyframes rowflash {
+  from {
+    background-color: rgba(255, 123, 0, 0.14);
+  }
+  to {
+    background-color: transparent;
+  }
+}

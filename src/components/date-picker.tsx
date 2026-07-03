@@ -26,12 +26,14 @@ export function DatePicker({
   disabledBefore,
   id,
   className,
+  formatStr = "dd.MM.yyyy",
 }: {
   value: string;
   onChange: (value: string) => void;
   disabledBefore?: string;
   id?: string;
   className?: string;
+  formatStr?: string;
 }) {
   const [open, setOpen] = useState(false);
   const selected = parseIso(value);
@@ -48,7 +50,7 @@ export function DatePicker({
         >
           <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
           {selected ? (
-            format(selected, "dd.MM.yyyy", { locale: de })
+            format(selected, formatStr, { locale: de })
           ) : (
             <span className="text-muted-foreground">Datum wählen</span>
           )}

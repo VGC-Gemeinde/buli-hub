@@ -57,17 +57,28 @@ export default async function StaffPage() {
     hasSchedule: scheduleExists,
   });
 
-  // Inputs for the „Spielplan erstellen" dialog, only while seeded: the default
-  // weekly deadlines derived from the largest group and today's season start.
-  let scheduleSetup: { seasonStart: string; deadlines: string[] } | null = null;
+  // Inputs for the „Spielplan erstellen" dialog + its consequence line, only
+  // while seeded: default weekly deadlines from the largest group and today's
+  // season start, plus the season's size (groups, total matches).
+  let scheduleSetup: {
+    seasonStart: string;
+    deadlines: string[];
+    groups: number;
+    matches: number;
+    largest: number;
+  } | null = null;
   if (phase === "seeded" && window) {
     const rosters = await subDivisionRosters(window.id);
-    const count = spieltagCount(rosters.map((roster) => roster.userIds.length));
+    const sizes = rosters.map((roster) => roster.userIds.length);
+    const count = spieltagCount(sizes);
     const seasonStart = new Date().toISOString().slice(0, 10);
     if (count > 0) {
       scheduleSetup = {
         seasonStart,
         deadlines: defaultDeadlines(seasonStart, count),
+        groups: rosters.length,
+        matches: sizes.reduce((sum, size) => sum + (size * (size - 1)) / 2, 0),
+        largest: Math.max(...sizes),
       };
     }
   }
@@ -106,22 +117,41 @@ export default async function StaffPage() {
           {state === "closed" ? (
             <section className="flex flex-col gap-5">
               <StaffSectionHeader title="Einteilung & Spielplan" />
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  asChild
-                  variant={seedingFinalized ? "outline" : "default"}
-                >
-                  <Link href="/staff/seeding">
-                    {seedingFinalized
-                      ? "Divisionen ansehen"
-                      : "Divisionen einteilen"}
-                  </Link>
-                </Button>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    asChild
+                    variant={seedingFinalized ? "outline" : "default"}
+                  >
+                    <Link href="/staff/seeding">
+                      {seedingFinalized
+                        ? "Divisionen ansehen"
+                        : "Divisionen einteilen"}
+                    </Link>
+                  </Button>
+                  {phase === "seeded" && scheduleSetup ? (
+                    <CreateScheduleDialog
+                      seasonStart={scheduleSetup.seasonStart}
+                      defaultDeadlines={scheduleSetup.deadlines}
+                      largest={scheduleSetup.largest}
+                    />
+                  ) : null}
+                  {phase === "regular_season" ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-3 py-1.5">
+                      <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
+                      <span className="font-semibold text-[13.5px]">
+                        Spielplan erstellt — die Saison läuft
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
                 {phase === "seeded" && scheduleSetup ? (
-                  <CreateScheduleDialog
-                    seasonStart={scheduleSetup.seasonStart}
-                    defaultDeadlines={scheduleSetup.deadlines}
-                  />
+                  <p className="text-[13px] text-muted-foreground">
+                    {scheduleSetup.groups} Gruppen ·{" "}
+                    {scheduleSetup.deadlines.length} Spieltage ·{" "}
+                    {scheduleSetup.matches} Spiele — die Saison startet mit der
+                    Erstellung des Spielplans.
+                  </p>
                 ) : null}
               </div>
             </section>

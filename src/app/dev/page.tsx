@@ -50,6 +50,18 @@ export default function DevPage() {
             </span>
           </a>
           <a
+            href="/dev/seed-registrations?count=100&finalize=1"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              100 Anmeldungen + finalisierte Einteilung
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Baut und finalisiert die Einteilung → bereit für „Spielplan
+              erstellen"
+            </span>
+          </a>
+          <a
             href="/dev/clear-registrations"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >

@@ -291,6 +291,7 @@ export function Gallery() {
           <CreateScheduleDialog
             seasonStart="2026-07-01"
             defaultDeadlines={defaultDeadlines("2026-07-01", 7)}
+            largest={8}
           />
         </Specimen>
       </section>

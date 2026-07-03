@@ -7,20 +7,46 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { StaffMatchRow } from "../queries";
 import { confirmFreeWin } from "../staff-actions";
+import { AwardFreewinDialog } from "./award-freewin-dialog";
 
-function formatDeadline(dateStr: string | null): string {
+function ddMM(dateStr: string | null): string {
   if (!dateStr) return "—";
   return new Intl.DateTimeFormat("de-DE", {
-    day: "numeric",
-    month: "short",
+    day: "2-digit",
+    month: "2-digit",
   }).format(new Date(`${dateStr}T00:00:00Z`));
+}
+function reportedAtLabel(date: Date | null): string {
+  if (!date) return "";
+  return new Intl.DateTimeFormat("de-DE", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  }).format(date);
+}
+function daysSince(dateStr: string | null, today: string): number {
+  if (!dateStr) return 0;
+  return Math.round(
+    (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${dateStr}T00:00:00Z`)) /
+      86_400_000,
+  );
+}
+function shortGroup(groupName: string): string {
+  return groupName.replace("Division ", "Div ");
+}
+function winnerName(match: StaffMatchRow): string {
+  return match.winnerId === match.playerA.userId
+    ? match.playerA.name
+    : match.playerB.name;
 }
 
 function SectionHead({ title, count }: { title: string; count: number }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="h-[11px] w-[22px] -skew-x-[18deg] bg-brand-orange" />
-      <h2 className="text-brand-blue text-xl dark:text-white">{title}</h2>
+      <h2 className="font-bold font-heading text-[22px] text-brand-blue uppercase tracking-[0.03em] dark:text-white">
+        {title}
+      </h2>
       <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-[12.5px] text-muted-foreground tabular-nums">
         {count}
       </span>
@@ -28,57 +54,59 @@ function SectionHead({ title, count }: { title: string; count: number }) {
   );
 }
 
-function MatchRow({
-  match,
-  chip,
-  action,
-}: {
-  match: StaffMatchRow;
-  chip?: { label: string; tone: "overdue" | "open" | "free" };
-  action?: React.ReactNode;
-}) {
+type Chip = { label: string; tone: "overdue" | "open" | "free" | "done" };
+
+function ChipEl({ chip }: { chip: Chip }) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border px-4 py-2.5">
-      <Link
-        href={`/match/${match.matchId}`}
-        className="flex min-w-0 flex-1 items-center gap-3 hover:text-brand-blue dark:hover:text-white"
-      >
-        <span className="w-[92px] shrink-0 font-semibold text-[12.5px] text-muted-foreground uppercase tracking-[0.06em]">
-          {match.groupName} · S{match.round}
-        </span>
-        <span className="truncate font-medium text-sm">
-          {match.playerA.name}{" "}
-          <span className="text-muted-foreground">vs.</span>{" "}
-          {match.playerB.name}
-        </span>
-      </Link>
-      {chip ? (
-        <span
-          className={cn(
-            "shrink-0 whitespace-nowrap rounded-full px-2.5 py-[3px] font-semibold text-xs",
-            chip.tone === "overdue" && "bg-destructive/10 text-destructive",
-            chip.tone === "open" &&
-              "bg-brand-orange/12 text-brand-blue dark:text-white",
-            chip.tone === "free" &&
-              "bg-brand-orange/12 text-brand-blue dark:text-white",
-          )}
-        >
-          {chip.label}
-        </span>
-      ) : null}
-      <span className="w-[52px] shrink-0 text-right text-[13px] text-muted-foreground">
-        {formatDeadline(match.endsOn)}
-      </span>
-      {action}
-    </div>
+    <span
+      className={cn(
+        "flex shrink-0 items-center justify-center whitespace-nowrap rounded-full px-2.5 py-[3px] font-semibold text-xs leading-none",
+        chip.tone === "overdue" && "bg-destructive/8 text-destructive",
+        chip.tone === "open" && "bg-muted text-muted-foreground",
+        chip.tone === "free" &&
+          "bg-brand-orange/14 text-brand-blue dark:text-white",
+        chip.tone === "done" && "bg-muted text-muted-foreground",
+      )}
+    >
+      {chip.label}
+    </span>
   );
 }
 
-function EmptyNote({ text }: { text: string }) {
+function MatchRow({
+  match,
+  chip,
+  dimmed,
+  action,
+}: {
+  match: StaffMatchRow;
+  chip?: Chip;
+  dimmed?: boolean;
+  action?: React.ReactNode;
+}) {
   return (
-    <p className="rounded-lg border border-dashed px-4 py-4 text-center text-muted-foreground text-sm">
-      {text}
-    </p>
+    <div
+      className={cn(
+        "flex items-center gap-3.5 rounded-lg border px-4 py-2",
+        dimmed && "opacity-60",
+      )}
+    >
+      <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
+        {shortGroup(match.groupName)} · S{match.round}
+      </span>
+      <Link
+        href={`/match/${match.matchId}`}
+        className="min-w-0 flex-1 truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+      >
+        {match.playerA.name} <span className="text-muted-foreground">vs.</span>{" "}
+        {match.playerB.name}
+      </Link>
+      {chip ? <ChipEl chip={chip} /> : null}
+      <span className="w-12 shrink-0 text-right text-[13px] text-muted-foreground tabular-nums">
+        {ddMM(match.endsOn)}
+      </span>
+      {action}
+    </div>
   );
 }
 
@@ -86,14 +114,12 @@ export function SaisonDashboard({
   overdue,
   thisWeek,
   pendingFreeWins,
-  currentRound,
-  totalRounds,
+  today = new Date().toISOString().slice(0, 10),
 }: {
   overdue: StaffMatchRow[];
   thisWeek: StaffMatchRow[];
   pendingFreeWins: StaffMatchRow[];
-  currentRound: number | null;
-  totalRounds: number;
+  today?: string;
 }) {
   const router = useRouter();
   const [showAllWeek, setShowAllWeek] = useState(false);
@@ -102,6 +128,10 @@ export function SaisonDashboard({
 
   const weekOpen = thisWeek.filter((m) => m.outcome === null);
   const weekShown = showAllWeek ? thisWeek : weekOpen;
+  const allClear =
+    overdue.length === 0 &&
+    pendingFreeWins.length === 0 &&
+    weekOpen.length === 0;
 
   async function confirm(matchId: string) {
     setConfirming(matchId);
@@ -116,112 +146,150 @@ export function SaisonDashboard({
   }
 
   return (
-    <div className="flex flex-col gap-9">
-      <div className="flex flex-wrap gap-3">
-        <Stat label="Überfällig" value={overdue.length} tone="alert" />
+    <div className="flex flex-col gap-8.5">
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="Überfällig" value={overdue.length} alert />
         <Stat label="Offen diese Woche" value={weekOpen.length} />
-        <Stat label="Freigewinne offen" value={pendingFreeWins.length} />
-        <Stat
-          label="Spieltag"
-          value={currentRound ? `${currentRound}/${totalRounds}` : "—"}
-        />
+        <Stat label="Freewins offen" value={pendingFreeWins.length} />
       </div>
 
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
-      <section className="flex flex-col gap-3">
-        <SectionHead title="Überfällig" count={overdue.length} />
-        {overdue.length === 0 ? (
-          <EmptyNote text="Keine überfälligen Matches." />
-        ) : (
+      {overdue.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <SectionHead title="Überfällig" count={overdue.length} />
           <div className="flex flex-col gap-2">
             {overdue.map((m) => (
               <MatchRow
                 key={m.matchId}
                 match={m}
-                chip={{ label: "Überfällig", tone: "overdue" }}
+                chip={{
+                  label: `seit ${daysSince(m.endsOn, today)} Tagen`,
+                  tone: "overdue",
+                }}
+                action={
+                  <AwardFreewinDialog
+                    matchId={m.matchId}
+                    round={m.round}
+                    groupName={m.groupName}
+                    playerA={m.playerA}
+                    playerB={m.playerB}
+                    triggerLabel="Freewin"
+                    triggerSize="sm"
+                  />
+                }
               />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
+
+      {pendingFreeWins.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <SectionHead
+            title="Freewins bestätigen"
+            count={pendingFreeWins.length}
+          />
+          <div className="flex flex-col gap-2">
+            {pendingFreeWins.map((m) => (
+              <div
+                key={m.matchId}
+                className="flex items-center gap-3.5 rounded-lg border px-4 py-2"
+              >
+                <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
+                  {shortGroup(m.groupName)} · S{m.round}
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <Link
+                    href={`/match/${m.matchId}`}
+                    className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+                  >
+                    {m.playerA.name}{" "}
+                    <span className="text-muted-foreground">vs.</span>{" "}
+                    {m.playerB.name}
+                  </Link>
+                  {m.freeWinReason ? (
+                    <p className="truncate text-[13px] text-muted-foreground">
+                      „{m.freeWinReason}" — gemeldet von {m.reporterName ?? "—"}
+                      {m.reportedAt ? `, ${reportedAtLabel(m.reportedAt)}` : ""}
+                    </p>
+                  ) : null}
+                </div>
+                <ChipEl
+                  chip={{ label: `Freewin: ${winnerName(m)}`, tone: "free" }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={confirming === m.matchId}
+                  onClick={() => confirm(m.matchId)}
+                >
+                  {confirming === m.matchId ? "…" : "Bestätigen"}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {allClear ? (
+        <div className="flex items-center gap-4 rounded-lg border border-dashed px-6 py-5">
+          <div className="h-2.5 w-5 -skew-x-[18deg] bg-brand-orange" />
+          <div>
+            <p className="font-bold font-heading text-brand-blue text-xl uppercase dark:text-white">
+              Alles erledigt
+            </p>
+            <p className="text-[13.5px] text-muted-foreground">
+              Alle {thisWeek.length} Matches dieser Woche sind gemeldet, nichts
+              ist überfällig, keine Freewins offen.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <SectionHead title="Diese Woche" count={weekShown.length} />
+          <SectionHead title="Diese Woche offen" count={weekOpen.length} />
           <button
             type="button"
             onClick={() => setShowAllWeek((v) => !v)}
             className="font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
           >
-            {showAllWeek ? "Nur offene" : "Alle dieser Woche"}
+            {showAllWeek ? "Nur offene" : `Alle anzeigen (${thisWeek.length})`}
           </button>
         </div>
         {weekShown.length === 0 ? (
-          <EmptyNote
-            text={
-              showAllWeek
-                ? "Diese Woche sind keine Matches angesetzt."
-                : "Diese Woche ist alles gemeldet."
-            }
-          />
+          <p className="rounded-lg border border-dashed px-4 py-4 text-center text-muted-foreground text-sm">
+            {showAllWeek
+              ? "Diese Woche sind keine Matches angesetzt."
+              : "Diese Woche ist alles gemeldet."}
+          </p>
         ) : (
           <div className="flex flex-col gap-2">
-            {weekShown.map((m) => (
-              <MatchRow
-                key={m.matchId}
-                match={m}
-                chip={
-                  m.outcome === null
-                    ? { label: "offen", tone: "open" }
-                    : undefined
-                }
-              />
-            ))}
+            {weekShown.map((m) =>
+              m.outcome === null ? (
+                <MatchRow
+                  key={m.matchId}
+                  match={m}
+                  chip={{ label: "offen", tone: "open" }}
+                />
+              ) : (
+                <MatchRow
+                  key={m.matchId}
+                  match={m}
+                  dimmed
+                  chip={{
+                    label:
+                      m.outcome === "double_loss"
+                        ? "Doppelniederlage"
+                        : `Sieg: ${winnerName(m)}`,
+                    tone: "done",
+                  }}
+                />
+              ),
+            )}
           </div>
         )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <SectionHead
-          title="Freigewinne bestätigen"
-          count={pendingFreeWins.length}
-        />
-        {pendingFreeWins.length === 0 ? (
-          <EmptyNote text="Keine Freigewinne zu bestätigen." />
-        ) : (
-          <div className="flex flex-col gap-2">
-            {pendingFreeWins.map((m) => (
-              <MatchRow
-                key={m.matchId}
-                match={m}
-                chip={{
-                  label: `Freigewinn: ${
-                    m.winnerId === m.playerA.userId
-                      ? m.playerA.name
-                      : m.playerB.name
-                  }`,
-                  tone: "free",
-                }}
-                action={
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={confirming === m.matchId}
-                    onClick={() => confirm(m.matchId)}
-                  >
-                    {confirming === m.matchId ? "…" : "Bestätigen"}
-                  </Button>
-                }
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <SectionHead title="Disputes" count={0} />
-        <EmptyNote text="Einsprüche gegen Ergebnisse folgen als eigenes Feature." />
       </section>
     </div>
   );
@@ -230,25 +298,37 @@ export function SaisonDashboard({
 function Stat({
   label,
   value,
-  tone,
+  alert,
 }: {
   label: string;
-  value: number | string;
-  tone?: "alert";
+  value: number;
+  alert?: boolean;
 }) {
+  const isAlert = alert && value > 0;
   return (
     <div
       className={cn(
-        "min-w-[130px] flex-1 rounded-lg border px-4 py-3",
-        tone === "alert" &&
-          value !== 0 &&
-          "border-destructive/40 bg-destructive/5",
+        "rounded-lg border px-4.5 py-3.5",
+        isAlert && "border-destructive/40 bg-destructive/5",
       )}
     >
-      <div className="font-bold font-heading text-3xl text-brand-blue tabular-nums dark:text-white">
+      <div
+        className={cn(
+          "font-bold font-heading text-[32px] leading-none tabular-nums",
+          value === 0
+            ? "text-[oklch(0.72_0.02_262)]"
+            : "text-brand-blue dark:text-white",
+          isAlert && "text-destructive",
+        )}
+      >
         {value}
       </div>
-      <div className="mt-0.5 font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.08em]">
+      <div
+        className={cn(
+          "mt-1 font-semibold text-xs uppercase tracking-[0.08em]",
+          isAlert ? "text-destructive" : "text-muted-foreground",
+        )}
+      >
         {label}
       </div>
     </div>

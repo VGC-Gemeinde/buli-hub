@@ -12,6 +12,9 @@ const base: StaffMatchRow = {
   outcome: null,
   winnerId: null,
   confirmedAt: null,
+  freeWinReason: null,
+  reporterName: null,
+  reportedAt: null,
 };
 const row = (o: Partial<StaffMatchRow>): StaffMatchRow => ({ ...base, ...o });
 const today = "2026-07-10";

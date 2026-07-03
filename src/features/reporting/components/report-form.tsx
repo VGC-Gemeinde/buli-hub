@@ -192,6 +192,8 @@ export function ReportForm({
   playerB,
   reporterId,
   staffOptions,
+  backHref = "/spieler",
+  backLabel = "Zurück zur Übersicht",
 }: {
   matchId: string;
   round: number;
@@ -201,6 +203,8 @@ export function ReportForm({
   playerB: Identity;
   reporterId: string;
   staffOptions: Identity[];
+  backHref?: string;
+  backLabel?: string;
 }) {
   const router = useRouter();
   const reporter = reporterId === playerA.userId ? playerA : playerB;
@@ -262,7 +266,7 @@ export function ReportForm({
   if (fwWinnerId === "") fwMissing.push("Spieler");
   if (reason.trim() === "") fwMissing.push("Begründung");
   if (discussedWithId === "") fwMissing.push("Staff-Mitglied");
-  const fwReadback = `Freigewinn für ${
+  const fwReadback = `Freewin für ${
     fwWinnerId === reporter.userId ? "dich" : opponent.name
   } melden — wartet danach auf Staff-Bestätigung.`;
 
@@ -317,10 +321,10 @@ export function ReportForm({
         </button>
         <Eyebrow>{eyebrow}</Eyebrow>
         <h1 className="mt-2 mb-6.5 text-[38px] text-brand-blue leading-[1.1] dark:text-white">
-          Freigewinn melden
+          Freewin melden
         </h1>
         <p className="mb-9 max-w-[560px] text-[14.5px] text-muted-foreground">
-          Für Matches, die nicht gespielt wurden. Ein Freigewinn muss{" "}
+          Für Matches, die nicht gespielt wurden. Ein Freewin muss{" "}
           <span className="font-semibold text-brand-blue dark:text-white">
             vorab mit dem Staff abgesprochen
           </span>{" "}
@@ -329,7 +333,7 @@ export function ReportForm({
 
         <div className="flex flex-col gap-9">
           <section className="flex flex-col gap-3">
-            <SectionHead title="Wer erhält den Freigewinn?" />
+            <SectionHead title="Wer erhält den Freewin?" />
             <div className="grid grid-cols-2 gap-3">
               {[reporter, opponent].map((p) => (
                 // biome-ignore lint/a11y/noStaticElementInteractions: pick card
@@ -388,7 +392,7 @@ export function ReportForm({
           missing={fwMissing}
           readback={fwReadback}
           subline="Zählt erst nach Bestätigung durch ein Staff-Mitglied."
-          buttonLabel="Freigewinn melden"
+          buttonLabel="Freewin melden"
           pending={pending}
           onSubmit={submit}
         />
@@ -399,10 +403,10 @@ export function ReportForm({
   return (
     <>
       <Link
-        href="/spieler"
+        href={backHref}
         className="mb-4.5 inline-block font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
       >
-        ← Zurück zur Übersicht
+        ← {backLabel}
       </Link>
       <Eyebrow>{eyebrow}</Eyebrow>
       <h1 className="mt-2 mb-6.5 text-[38px] text-brand-blue leading-[1.1] dark:text-white">
@@ -528,7 +532,7 @@ export function ReportForm({
             onClick={() => setView("free_win")}
             className="font-semibold text-brand-blue text-sm underline underline-offset-[3px] dark:text-white"
           >
-            Freigewinn melden
+            Freewin melden
           </button>
         </div>
 

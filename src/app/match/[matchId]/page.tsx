@@ -28,7 +28,6 @@ export default async function MatchReportPage({
     (current.userId === match.playerA.userId ||
       current.userId === match.playerB?.userId);
   const isStaff = roleAtLeast(current.role, "staff");
-  // Participants report; staff can officiate any match. Others / byes: nothing.
   if (!match || !match.playerB || (!isParticipant && !isStaff)) {
     redirect("/spieler");
   }
@@ -37,9 +36,20 @@ export default async function MatchReportPage({
   const staffOptions = result ? [] : await listStaffAndAdmins();
   const breadcrumb = result
     ? result.outcome === "free_win"
-      ? "Freigewinn"
+      ? "Freewin"
       : "Ergebnis"
     : "Ergebnis melden";
+  // Participants return to their dashboard; a staff officiant to the Staff area.
+  const back = isParticipant
+    ? { href: "/spieler", label: "Zurück zur Übersicht" }
+    : { href: "/staff", label: "Staff-Bereich" };
+  const isPendingFreeWin =
+    result?.outcome === "free_win" && result.confirmedAt === null;
+  const pendingWinnerName = isPendingFreeWin
+    ? result.winnerId === match.playerA.userId
+      ? match.playerA.name
+      : match.playerB.name
+    : null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -53,6 +63,8 @@ export default async function MatchReportPage({
             viewerId={current.userId}
             round={match.round}
             groupName={match.groupName}
+            backHref={back.href}
+            backLabel={back.label}
           />
         ) : isParticipant ? (
           <ReportForm
@@ -82,12 +94,13 @@ export default async function MatchReportPage({
         {isStaff ? (
           <StaffMatchPanel
             matchId={match.matchId}
+            round={match.round}
+            groupName={match.groupName}
             playerA={match.playerA}
             playerB={match.playerB}
             hasResult={result !== null}
-            isPendingFreeWin={
-              result?.outcome === "free_win" && result.confirmedAt === null
-            }
+            isPendingFreeWin={isPendingFreeWin}
+            pendingWinnerName={pendingWinnerName}
           />
         ) : null}
       </main>

@@ -193,7 +193,7 @@ function Hero({
         <ReportedBadge result={result} meId={meId} />
       ) : pendingFreeWin ? (
         <div className="rounded-full bg-brand-orange/12 px-4 py-2 font-semibold text-brand-blue text-sm dark:text-white">
-          Freigewinn — wartet auf Bestätigung
+          Freewin — wartet auf Bestätigung
         </div>
       ) : (
         <div className="flex items-center gap-7">
@@ -370,7 +370,7 @@ function RowRight({
   if (state === "pending_free_win") {
     return (
       <span className="rounded-full bg-brand-orange/12 px-2.5 py-[3px] font-semibold text-brand-blue text-xs dark:text-white">
-        Freigewinn · offen
+        Freewin · offen
       </span>
     );
   }

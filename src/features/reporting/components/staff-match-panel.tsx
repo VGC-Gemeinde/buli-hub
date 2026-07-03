@@ -12,207 +12,238 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import type { Identity } from "@/features/season/dashboard";
-import {
-  awardDoubleLoss,
-  awardFreeWin,
-  confirmFreeWin,
-  reopenMatch,
-} from "../staff-actions";
+import { awardDoubleLoss, confirmFreeWin, reopenMatch } from "../staff-actions";
+import { AwardFreewinDialog } from "./award-freewin-dialog";
 
-// Role-gated staff controls on a match: confirm a pending free win, award a
-// free win / double loss, or reopen a reported match. Staff do not enter normal
-// results — players report those.
+type ActionState = "none" | "pending" | "reported";
+
+// Role-gated staff controls on a match, laid out as titled action rows. Staff
+// do not enter normal results — players report those.
 export function StaffMatchPanel({
   matchId,
+  round,
+  groupName,
   playerA,
   playerB,
   hasResult,
   isPendingFreeWin,
+  pendingWinnerName,
 }: {
   matchId: string;
+  round: number;
+  groupName: string;
   playerA: Identity;
   playerB: Identity;
   hasResult: boolean;
   isPendingFreeWin: boolean;
+  pendingWinnerName?: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(action: () => Promise<{ ok: boolean; error?: string }>) {
+  const state: ActionState = isPendingFreeWin
+    ? "pending"
+    : hasResult
+      ? "reported"
+      : "none";
+
+  async function confirm() {
     setPending(true);
     setError(null);
-    const result = await action();
+    const result = await confirmFreeWin(matchId);
     setPending(false);
     if (!result.ok) {
-      setError(result.error ?? "Fehler");
-      return false;
+      setError(result.error);
+      return;
     }
     router.refresh();
-    return true;
   }
 
+  const context =
+    state === "pending"
+      ? "Der Freewin zählt erst nach Bestätigung für die Tabelle."
+      : state === "reported"
+        ? "Eingriffe überschreiben bzw. löschen das gemeldete Ergebnis."
+        : "Spieler melden Ergebnisse selbst. Staff greift ein, wenn ein Match nicht zustande kommt.";
+
+  const award = (label: string) => (
+    <AwardFreewinDialog
+      matchId={matchId}
+      round={round}
+      groupName={groupName}
+      playerA={playerA}
+      playerB={playerB}
+      triggerLabel={label}
+    />
+  );
+  const doubleLoss = (
+    <ConfirmDialog
+      trigger="Vergeben"
+      title="Doppelniederlage vergeben?"
+      body="Beide Spieler erhalten eine Niederlage, niemand einen Sieg. Ein bestehendes Ergebnis wird überschrieben."
+      confirmLabel="Doppelniederlage vergeben"
+      onConfirm={() => awardDoubleLoss({ matchId })}
+    />
+  );
+
   return (
-    <section className="mt-10 flex flex-col gap-4 rounded-xl border border-brand-blue/25 bg-brand-blue/[0.03] px-6 py-5">
+    <section className="mt-9 rounded-xl border border-brand-blue/25 bg-brand-blue/[0.03] px-6 pt-5 pb-2 dark:bg-muted/20">
       <div className="flex items-center gap-2.5">
-        <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-blue dark:bg-white" />
-        <h2 className="font-bold font-heading text-brand-blue text-lg uppercase tracking-[0.03em] dark:text-white">
+        <div className="h-2 w-4 -skew-x-[18deg] bg-brand-blue dark:bg-white" />
+        <h2 className="font-bold font-heading text-brand-blue text-xl uppercase tracking-[0.03em] dark:text-white">
           Staff-Aktionen
         </h2>
       </div>
+      <p className="mt-1.5 text-[13.5px] text-muted-foreground">{context}</p>
 
-      <div className="flex flex-wrap gap-2.5">
-        {isPendingFreeWin ? (
-          <Button
-            type="button"
-            disabled={pending}
-            onClick={() => run(() => confirmFreeWin(matchId))}
+      {state === "pending" ? (
+        <>
+          <ActionRow
+            title="Freewin bestätigen"
+            consequence={
+              pendingWinnerName
+                ? `Sieg für ${pendingWinnerName} wird gewertet.`
+                : "Der gemeldete Freewin wird gewertet."
+            }
           >
-            Freigewinn bestätigen
-          </Button>
-        ) : null}
-        <AwardFreeWinDialog
-          playerA={playerA}
-          playerB={playerB}
-          pending={pending}
-          onAward={(winnerId, reason) =>
-            run(() => awardFreeWin({ matchId, winnerId, reason }))
-          }
-        />
-        <ConfirmDialog
-          trigger="Doppelniederlage"
-          title="Doppelniederlage vergeben?"
-          body="Beide Spieler erhalten eine Niederlage, niemand einen Sieg. Ein bestehendes Ergebnis wird überschrieben."
-          confirmLabel="Doppelniederlage vergeben"
-          pending={pending}
-          onConfirm={() => run(() => awardDoubleLoss({ matchId }))}
-        />
-        {hasResult ? (
-          <ConfirmDialog
-            trigger="Ergebnis zurücksetzen"
-            title="Ergebnis zurücksetzen?"
-            body="Das gemeldete Ergebnis wird gelöscht und das Match kann neu gemeldet werden."
-            confirmLabel="Zurücksetzen"
-            variant="destructive"
-            pending={pending}
-            onConfirm={() => run(() => reopenMatch(matchId))}
-          />
-        ) : null}
-      </div>
+            <Button type="button" disabled={pending} onClick={confirm}>
+              Bestätigen
+            </Button>
+          </ActionRow>
+          <ActionRow
+            title="Zurückweisen"
+            consequence="Meldung wird gelöscht, das Match kann neu gemeldet werden."
+          >
+            <ConfirmDialog
+              trigger="Zurückweisen"
+              title="Freewin zurückweisen?"
+              body="Die Meldung wird gelöscht und das Match kann neu gemeldet werden."
+              confirmLabel="Zurückweisen"
+              onConfirm={() => reopenMatch(matchId)}
+            />
+          </ActionRow>
+        </>
+      ) : null}
 
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      {state === "reported" ? (
+        <>
+          <ActionRow
+            title="Ergebnis zurücksetzen"
+            consequence="Löscht das Ergebnis — das Match kann neu gemeldet werden."
+          >
+            <ConfirmDialog
+              trigger="Zurücksetzen"
+              triggerDestructive
+              title="Ergebnis zurücksetzen?"
+              body="Das gemeldete Ergebnis wird gelöscht und das Match kann neu gemeldet werden."
+              confirmLabel="Zurücksetzen"
+              onConfirm={() => reopenMatch(matchId)}
+            />
+          </ActionRow>
+          <ActionRow
+            title="Freewin vergeben"
+            consequence="Überschreibt das gemeldete Ergebnis. Begründung erforderlich."
+          >
+            {award("Vergeben")}
+          </ActionRow>
+          <ActionRow
+            title="Doppelniederlage vergeben"
+            consequence="Überschreibt das gemeldete Ergebnis — beide verlieren."
+          >
+            {doubleLoss}
+          </ActionRow>
+        </>
+      ) : null}
+
+      {state === "none" ? (
+        <>
+          <ActionRow
+            title="Freewin vergeben"
+            consequence="Ein Spieler erhält den Sieg. Begründung erforderlich — sofort gewertet."
+          >
+            {award("Vergeben")}
+          </ActionRow>
+          <ActionRow
+            title="Doppelniederlage vergeben"
+            consequence="Beide Spieler erhalten eine Niederlage, niemand einen Sieg."
+          >
+            {doubleLoss}
+          </ActionRow>
+        </>
+      ) : null}
+
+      {error ? <p className="py-3 text-destructive text-sm">{error}</p> : null}
     </section>
   );
 }
 
-function AwardFreeWinDialog({
-  playerA,
-  playerB,
-  pending,
-  onAward,
+function ActionRow({
+  title,
+  consequence,
+  children,
 }: {
-  playerA: Identity;
-  playerB: Identity;
-  pending: boolean;
-  onAward: (winnerId: string, reason: string) => Promise<boolean>;
+  title: string;
+  consequence: string;
+  children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-  const [winnerId, setWinnerId] = useState("");
-  const [reason, setReason] = useState("");
-  const ready = winnerId !== "" && reason.trim() !== "";
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
-        Freigewinn vergeben
-      </Button>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Freigewinn vergeben</DialogTitle>
-          <DialogDescription>
-            Wird sofort gewertet und überschreibt ein bestehendes Ergebnis.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="grid gap-2">
-            <Label>Gewinner</Label>
-            <Select value={winnerId} onValueChange={setWinnerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Spieler wählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {[playerA, playerB].map((p) => (
-                  <SelectItem key={p.userId} value={p.userId}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label>Begründung</Label>
-            <Textarea
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Warum gibt es einen Freigewinn?"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Abbrechen
-            </Button>
-          </DialogClose>
-          <Button
-            type="button"
-            disabled={!ready || pending}
-            onClick={async () => {
-              if (await onAward(winnerId, reason)) {
-                setOpen(false);
-              }
-            }}
-          >
-            Vergeben
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <div className="flex items-center justify-between gap-4 border-brand-blue/10 border-t py-3.5">
+      <div className="min-w-0">
+        <p className="font-semibold text-sm">{title}</p>
+        <p className="text-[13px] text-muted-foreground">{consequence}</p>
+      </div>
+      {children}
+    </div>
   );
 }
 
 function ConfirmDialog({
   trigger,
+  triggerDestructive,
   title,
   body,
   confirmLabel,
-  variant,
-  pending,
   onConfirm,
 }: {
   trigger: string;
+  triggerDestructive?: boolean;
   title: string;
   body: string;
   confirmLabel: string;
-  variant?: "destructive";
-  pending: boolean;
-  onConfirm: () => Promise<boolean>;
+  onConfirm: () => Promise<{ ok: boolean; error?: string }>;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setPending(true);
+    setError(null);
+    const result = await onConfirm();
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error ?? "Fehler");
+      return;
+    }
+    setOpen(false);
+    router.refresh();
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant="outline"
+        className={
+          triggerDestructive
+            ? "border-destructive/35 text-destructive"
+            : undefined
+        }
+        onClick={() => setOpen(true)}
+      >
         {trigger}
       </Button>
       <DialogContent>
@@ -220,22 +251,14 @@ function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{body}</DialogDescription>
         </DialogHeader>
+        {error ? <p className="text-destructive text-sm">{error}</p> : null}
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="outline">
               Abbrechen
             </Button>
           </DialogClose>
-          <Button
-            type="button"
-            variant={variant === "destructive" ? "destructive" : "default"}
-            disabled={pending}
-            onClick={async () => {
-              if (await onConfirm()) {
-                setOpen(false);
-              }
-            }}
-          >
+          <Button type="button" disabled={pending} onClick={submit}>
             {confirmLabel}
           </Button>
         </DialogFooter>

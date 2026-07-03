@@ -47,7 +47,7 @@ export async function confirmFreeWin(
   }
   const result = await getMatchResult(matchId);
   if (!result || result.outcome !== "free_win") {
-    return { ok: false, error: "Kein Freigewinn zum Bestätigen" };
+    return { ok: false, error: "Kein Freewin zum Bestätigen" };
   }
   if (result.confirmedAt) {
     return { ok: false, error: "Bereits bestätigt" };

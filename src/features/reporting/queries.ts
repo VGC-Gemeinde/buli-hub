@@ -276,6 +276,10 @@ export type StaffMatchRow = {
   outcome: MatchOutcome | null;
   winnerId: string | null;
   confirmedAt: Date | null;
+  // Free-win context for the confirm list.
+  freeWinReason: string | null;
+  reporterName: string | null;
+  reportedAt: Date | null;
 };
 
 export async function windowMatchOverview(
@@ -283,6 +287,7 @@ export async function windowMatchOverview(
 ): Promise<StaffMatchRow[]> {
   const pa = alias(profiles, "pa");
   const pb = alias(profiles, "pb");
+  const pr = alias(profiles, "pr");
   const rows = await db
     .select({
       matchId: matches.id,
@@ -301,6 +306,10 @@ export async function windowMatchOverview(
       outcome: matchResults.outcome,
       winnerId: matchResults.winnerId,
       confirmedAt: matchResults.confirmedAt,
+      freeWinReason: matchResults.freeWinReason,
+      reportedAt: matchResults.reportedAt,
+      rpName: pr.displayName,
+      rpUser: pr.username,
     })
     .from(matches)
     .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
@@ -315,6 +324,7 @@ export async function windowMatchOverview(
     .leftJoin(pa, eq(pa.userId, matches.playerAId))
     .leftJoin(pb, eq(pb.userId, matches.playerBId))
     .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
+    .leftJoin(pr, eq(pr.userId, matchResults.reportedById))
     .where(and(eq(divisions.windowId, windowId), isNotNull(matches.playerBId)))
     .orderBy(
       asc(divisions.tier),
@@ -342,6 +352,9 @@ export async function windowMatchOverview(
     outcome: row.outcome,
     winnerId: row.winnerId,
     confirmedAt: row.confirmedAt,
+    freeWinReason: row.freeWinReason,
+    reporterName: row.rpName ?? row.rpUser,
+    reportedAt: row.reportedAt,
   }));
 }
 

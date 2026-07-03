@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import {
   divisions,
   matches,
@@ -23,6 +23,8 @@ import {
   spieltagCount,
   windowsFromDeadlines,
 } from "@/features/schedule/spieltage";
+import { currentMatchday } from "@/features/season/dashboard";
+import { matchdaysForWindow } from "@/features/season/queries";
 import {
   assignPlayersToDivision,
   finalizeSeeding,
@@ -202,69 +204,111 @@ async function generateDevSchedule(windowId: string): Promise<void> {
   await persistSchedule(windowId, windows, matchRows);
 }
 
-// Reports most of the first matchday so a seeded dashboard is lived-in, while
-// leaving a couple of matches unresolved for the staff dashboard to surface:
-// the first stays unreported (→ overdue, round 1 is in the past) and the second
-// is a pending free win. The rest are a deterministic 2–1 for player A.
+// Fills the season with varied, lived-in results so the dashboards and
+// standings have something to chew on. Past rounds are mostly reported with
+// mixed winners and 2:0/2:1 scores, plus one of each edge state (overdue,
+// pending free win, confirmed free win, double loss); the current round is
+// half-reported (the rest „offen"); future rounds stay open.
 async function seedDevResults(windowId: string): Promise<void> {
-  const round1 = (
+  const days = await matchdaysForWindow(windowId);
+  const today = new Date().toISOString().slice(0, 10);
+  const currentRound = currentMatchday(days, today)?.round ?? 1;
+
+  const all = (
     await db
       .select({
         id: matches.id,
+        round: matches.round,
         playerAId: matches.playerAId,
         playerBId: matches.playerBId,
       })
       .from(matches)
       .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
       .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
-      .where(and(eq(divisions.windowId, windowId), eq(matches.round, 1)))
+      .where(eq(divisions.windowId, windowId))
+      .orderBy(asc(matches.round), asc(matches.id))
   ).filter((match) => match.playerBId !== null);
 
-  for (let i = 0; i < round1.length; i++) {
-    const match = round1[i];
-    if (i === 0) {
-      continue; // left unreported → overdue
-    }
-    if (i === 1) {
-      await db.insert(matchResults).values({
-        matchId: match.id,
-        outcome: "free_win",
-        winnerId: match.playerAId,
-        freeWinReason: "Gegner war nicht erreichbar.",
-        reportedById: match.playerAId,
-        // confirmedAt null → pending staff confirmation
-      });
-      continue;
-    }
+  const reportNormal = async (
+    matchId: string,
+    a: string,
+    b: string,
+    winner: string,
+    sweep: boolean,
+  ) => {
+    const loser = winner === a ? b : a;
+    const games = sweep ? [winner, winner] : [winner, loser, winner];
     await db.insert(matchResults).values({
-      matchId: match.id,
+      matchId,
       outcome: "normal",
-      winnerId: match.playerAId,
+      winnerId: winner,
       platform: "showdown",
       playerATeamUrl: "https://pokepast.es/seed-a",
       playerBTeamUrl: "https://pokepast.es/seed-b",
-      reportedById: match.playerAId,
+      reportedById: a,
     });
-    await db.insert(matchGames).values([
-      {
-        matchId: match.id,
-        gameNumber: 1,
-        winnerId: match.playerAId,
-        replayUrl: "https://replay.pokemonshowdown.com/seed-1",
-      },
-      {
-        matchId: match.id,
-        gameNumber: 2,
-        winnerId: match.playerBId as string,
-        replayUrl: "https://replay.pokemonshowdown.com/seed-2",
-      },
-      {
-        matchId: match.id,
-        gameNumber: 3,
-        winnerId: match.playerAId,
-        replayUrl: "https://replay.pokemonshowdown.com/seed-3",
-      },
-    ]);
+    await db.insert(matchGames).values(
+      games.map((w, i) => ({
+        matchId,
+        gameNumber: i + 1,
+        winnerId: w,
+        replayUrl: `https://replay.pokemonshowdown.com/seed-${i + 1}`,
+      })),
+    );
+  };
+
+  let past = 0;
+  let current = 0;
+  for (const match of all) {
+    const a = match.playerAId;
+    const b = match.playerBId as string;
+
+    if (match.round < currentRound) {
+      const k = past++;
+      if (k === 0) continue; // overdue (unreported past)
+      if (k === 1) {
+        await db.insert(matchResults).values({
+          matchId: match.id,
+          outcome: "free_win",
+          winnerId: a,
+          freeWinReason: "Gegner war trotz mehrerer Anfragen nicht erreichbar.",
+          reportedById: a,
+        }); // pending confirmation
+        continue;
+      }
+      if (k === 2) {
+        await db.insert(matchResults).values({
+          matchId: match.id,
+          outcome: "free_win",
+          winnerId: b,
+          freeWinReason: "Kein gemeinsamer Termin gefunden.",
+          reportedById: b,
+          confirmedById: a,
+          confirmedAt: new Date(),
+        }); // confirmed → counts
+        continue;
+      }
+      if (k === 3) {
+        await db.insert(matchResults).values({
+          matchId: match.id,
+          outcome: "double_loss",
+          winnerId: null,
+          reportedById: a,
+        });
+        continue;
+      }
+      await reportNormal(match.id, a, b, k % 2 === 0 ? a : b, k % 3 === 0);
+      continue;
+    }
+
+    if (match.round === currentRound) {
+      const k = current++;
+      if (k % 2 === 0) {
+        await reportNormal(match.id, a, b, k % 4 === 0 ? a : b, false);
+      }
+      // odd → left „offen" this week
+    }
+    // future rounds stay open
   }
 }
 

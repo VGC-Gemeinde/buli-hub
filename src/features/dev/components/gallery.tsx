@@ -145,6 +145,9 @@ const staffRow = (
   outcome: null,
   winnerId: null,
   confirmedAt: null,
+  freeWinReason: null,
+  reporterName: null,
+  reportedAt: null,
   ...extra,
 });
 const STAFF_OVERDUE = [staffRow("o1", 1, "Division 1a", "Falinks", "Wooloo")];
@@ -159,6 +162,9 @@ const STAFF_PENDING = [
   staffRow("p1", 1, "Division 2a", "Finn", "Jonas", {
     outcome: "free_win",
     winnerId: "p1a",
+    freeWinReason: "Gegner war trotz mehrerer Anfragen nicht erreichbar.",
+    reporterName: "Finn",
+    reportedAt: new Date("2026-07-06T18:00:00Z"),
   }),
 ];
 const DASH_STANDINGS: StandingsRow[] = [
@@ -548,7 +554,7 @@ export function Gallery() {
             groupName="Division 1a"
           />
         </Specimen>
-        <Specimen label="Freigewinn (wartet auf Staff)">
+        <Specimen label="Freewin (wartet auf Staff)">
           <ReportSummary
             result={FREEWIN_RESULT}
             playerA={SUMMARY_A}
@@ -562,13 +568,12 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Staff: Saison-Dashboard</h2>
-        <Specimen label="Worklist (überfällig · diese Woche · Freigewinne)">
+        <Specimen label="Worklist (überfällig · diese Woche · Freewins)">
           <SaisonDashboard
             overdue={STAFF_OVERDUE}
             thisWeek={STAFF_WEEK}
             pendingFreeWins={STAFF_PENDING}
-            currentRound={2}
-            totalRounds={6}
+            today="2026-07-10"
           />
         </Specimen>
       </section>

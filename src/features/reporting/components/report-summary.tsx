@@ -37,14 +37,22 @@ function Face({
   );
 }
 
-function BackAndEyebrow({ label }: { label: string }) {
+function BackAndEyebrow({
+  label,
+  backHref,
+  backLabel,
+}: {
+  label: string;
+  backHref: string;
+  backLabel: string;
+}) {
   return (
     <>
       <Link
-        href="/spieler"
+        href={backHref}
         className="mb-4.5 inline-block font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
       >
-        ← Zurück zur Übersicht
+        ← {backLabel}
       </Link>
       <div className="flex items-center gap-2">
         <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
@@ -65,6 +73,8 @@ export function ReportSummary({
   viewerId,
   round,
   groupName,
+  backHref = "/spieler",
+  backLabel = "Zurück zur Übersicht",
 }: {
   result: StoredResult;
   playerA: Identity;
@@ -72,6 +82,8 @@ export function ReportSummary({
   viewerId: string;
   round: number;
   groupName: string;
+  backHref?: string;
+  backLabel?: string;
 }) {
   const viewer = viewerId === playerA.userId ? playerA : playerB;
   const other = viewerId === playerA.userId ? playerB : playerA;
@@ -87,11 +99,13 @@ export function ReportSummary({
     return (
       <>
         <BackAndEyebrow
-          label={`Freigewinn · Spieltag ${round} · ${groupName}`}
+          label={`Freewin · Spieltag ${round} · ${groupName}`}
+          backHref={backHref}
+          backLabel={backLabel}
         />
         <div className="mt-3 mb-6 flex items-center gap-3">
           <h1 className="text-[38px] text-brand-blue leading-[1.1] dark:text-white">
-            Freigewinn für {nameOf(result.winnerId)}
+            Freewin für {nameOf(result.winnerId)}
           </h1>
           <span
             className={cn(
@@ -113,7 +127,7 @@ export function ReportSummary({
             </p>
             <p className="text-muted-foreground text-sm">
               Ein Staff-Mitglied prüft die Meldung. Erst nach der Bestätigung
-              zählt der Freigewinn für die Tabelle — bis dahin bleibt das Match
+              zählt der Freewin für die Tabelle — bis dahin bleibt das Match
               offen.
             </p>
           </div>
@@ -147,7 +161,11 @@ export function ReportSummary({
 
   return (
     <>
-      <BackAndEyebrow label={`Ergebnis · Spieltag ${round} · ${groupName}`} />
+      <BackAndEyebrow
+        label={`Ergebnis · Spieltag ${round} · ${groupName}`}
+        backHref={backHref}
+        backLabel={backLabel}
+      />
       <div className="mt-3 mb-6 flex items-center gap-3">
         <h1 className="text-[38px] text-brand-blue leading-[1.1] dark:text-white">
           {title}

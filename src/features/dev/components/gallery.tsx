@@ -6,6 +6,8 @@ import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
+import type { MatchResultLite } from "@/features/reporting/queries";
+import type { StandingsRow } from "@/features/reporting/standings";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
 import { defaultDeadlines } from "@/features/schedule/spieltage";
 import {
@@ -13,10 +15,8 @@ import {
   RegisterCtaPanel,
   SeasonMessagePanel,
 } from "@/features/season/components/pre-season";
-import {
-  InSeasonDashboard,
-  NextPairing,
-} from "@/features/season/components/season-dashboard";
+import { InSeasonDashboard } from "@/features/season/components/season-dashboard";
+import type { PlayerMatch } from "@/features/season/dashboard";
 import { ControlBar } from "@/features/seeding/components/control-bar";
 import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
 import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
@@ -32,26 +32,86 @@ import type { RegistrationState } from "@/features/staff/registration-window";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
 
-// Mock data for the Spieler-Dashboard specimens.
+// Mock data for the Spieler-Dashboard specimen.
 const DASH_TODAY = "2026-07-10";
-const DASH_MEMBERS = [
-  { userId: "me", name: "Testerino", avatarUrl: AVATAR_URL },
-  { userId: "a", name: "Falinks", avatarUrl: null },
-  { userId: "b", name: "Wooloo", avatarUrl: AVATAR_URL },
-  { userId: "c", name: "Pawmi", avatarUrl: null },
-];
-const DASH_UPCOMING = [
+const DASH_MATCHES: PlayerMatch[] = [
   {
+    matchId: "m1",
+    round: 1,
+    startsOn: "2026-07-01",
+    endsOn: "2026-07-07",
+    opponent: { userId: "a", name: "Falinks", avatarUrl: null },
+  },
+  {
+    matchId: "m2",
     round: 2,
     startsOn: "2026-07-08",
     endsOn: "2026-07-14",
-    opponent: DASH_MEMBERS[1],
+    opponent: { userId: "b", name: "Wooloo", avatarUrl: AVATAR_URL },
   },
   {
+    matchId: "m3",
     round: 3,
     startsOn: "2026-07-15",
     endsOn: "2026-07-21",
-    opponent: DASH_MEMBERS[2],
+    opponent: { userId: "c", name: "Pawmi", avatarUrl: null },
+  },
+  {
+    matchId: "m4",
+    round: 4,
+    startsOn: "2026-07-22",
+    endsOn: "2026-07-28",
+    opponent: null,
+  },
+];
+const DASH_RESULTS = new Map<string, MatchResultLite>([
+  [
+    "m1",
+    {
+      matchId: "m1",
+      outcome: "normal",
+      winnerId: "me",
+      confirmedAt: null,
+      games: [{ winnerId: "me" }, { winnerId: "a" }, { winnerId: "me" }],
+    },
+  ],
+]);
+const DASH_STANDINGS: StandingsRow[] = [
+  {
+    userId: "me",
+    name: "Testerino",
+    avatarUrl: AVATAR_URL,
+    wins: 1,
+    losses: 0,
+    points: 3,
+    rank: 1,
+  },
+  {
+    userId: "a",
+    name: "Falinks",
+    avatarUrl: null,
+    wins: 0,
+    losses: 1,
+    points: 0,
+    rank: 2,
+  },
+  {
+    userId: "b",
+    name: "Wooloo",
+    avatarUrl: AVATAR_URL,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    rank: 3,
+  },
+  {
+    userId: "c",
+    name: "Pawmi",
+    avatarUrl: null,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    rank: 4,
   },
 ];
 
@@ -364,29 +424,18 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Spieler-Dashboard</h2>
-        <Specimen label="Laufende Saison (Paarung · Tabelle · kommende Spiele)">
+        <Specimen label="Laufende Saison (Hero · Spielplan · Tabelle)">
           <InSeasonDashboard
             groupName="Division 1a"
-            next={DASH_UPCOMING[0]}
-            upcoming={DASH_UPCOMING.slice(1)}
-            members={DASH_MEMBERS}
+            currentRound={2}
+            totalRounds={4}
+            next={DASH_MATCHES[1]}
+            matches={DASH_MATCHES}
+            resultByMatchId={DASH_RESULTS}
+            standings={DASH_STANDINGS}
             meId="me"
             today={DASH_TODAY}
           />
-        </Specimen>
-        <Specimen label="Nächste Paarung: Freilos">
-          <NextPairing
-            match={{
-              round: 3,
-              startsOn: "2026-07-15",
-              endsOn: "2026-07-21",
-              opponent: null,
-            }}
-            today={DASH_TODAY}
-          />
-        </Specimen>
-        <Specimen label="Nächste Paarung: Saison abgeschlossen">
-          <NextPairing match={null} today={DASH_TODAY} />
         </Specimen>
         <Specimen label="Vorsaison: keine Saison">
           <ComingSoonPanel />

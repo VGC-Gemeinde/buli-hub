@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { getRegistration } from "@/features/registration/queries";
+import { groupResults, subDivisionResults } from "@/features/reporting/queries";
+import { computeStandings } from "@/features/reporting/standings";
 import { currentUser } from "@/features/roles/guard";
 import { hasSchedule } from "@/features/schedule/queries";
 import {
@@ -12,6 +14,7 @@ import {
 import { InSeasonDashboard } from "@/features/season/components/season-dashboard";
 import {
   buildPlayerMatches,
+  currentMatchday,
   dashboardState,
   splitPlayerMatches,
 } from "@/features/season/dashboard";
@@ -30,6 +33,7 @@ import {
 } from "@/features/staff/registration-window";
 import { seasonPhase } from "@/features/staff/season-phase";
 
+// Narrow shell with the plain title — used by every non-in-season state.
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-1 flex-col">
@@ -80,13 +84,20 @@ export default async function SpielerPage() {
 
   if (view === "in_season" && window && placement) {
     const today = new Date().toISOString().slice(0, 10);
-    const [members, days, rawMatches] = await Promise.all([
-      groupRoster(placement.subDivisionId),
-      matchdaysForWindow(window.id),
-      subDivisionMatches(placement.subDivisionId),
-    ]);
+    const [members, matchdays, rawMatches, resultByMatchId, standingsResults] =
+      await Promise.all([
+        groupRoster(placement.subDivisionId),
+        matchdaysForWindow(window.id),
+        subDivisionMatches(placement.subDivisionId),
+        subDivisionResults(placement.subDivisionId),
+        groupResults(placement.subDivisionId),
+      ]);
+
     const matchdaysByRound = new Map(
-      days.map((d) => [d.round, { startsOn: d.startsOn, endsOn: d.endsOn }]),
+      matchdays.map((d) => [
+        d.round,
+        { startsOn: d.startsOn, endsOn: d.endsOn },
+      ]),
     );
     const rosterById = new Map(members.map((m) => [m.userId, m]));
     const myMatches = buildPlayerMatches({
@@ -95,19 +106,47 @@ export default async function SpielerPage() {
       rosterById,
       userId: current.userId,
     });
-    const { next, upcoming } = splitPlayerMatches(myMatches, today);
+    const { next } = splitPlayerMatches(myMatches, today);
+    const standings = computeStandings({
+      roster: members,
+      results: standingsResults,
+    });
+    const totalRounds = matchdays.length;
+    const currentRound =
+      currentMatchday(matchdays, today)?.round ?? totalRounds;
+    const groupName = subDivisionName(placement.tier, placement.position);
 
     return (
-      <Shell>
-        <InSeasonDashboard
-          groupName={subDivisionName(placement.tier, placement.position)}
-          next={next}
-          upcoming={upcoming}
-          members={members}
-          meId={current.userId}
-          today={today}
-        />
-      </Shell>
+      <div className="flex flex-1 flex-col">
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 pt-11 pb-18">
+          <div className="flex flex-wrap items-baseline justify-between gap-4">
+            <h1 className="text-[38px] text-brand-blue leading-[1.1] dark:text-white">
+              Deine Saison
+            </h1>
+            <div className="flex items-center gap-2.5">
+              <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
+              <span className="font-bold font-heading text-brand-blue text-xl uppercase tracking-[0.04em] dark:text-white">
+                {groupName}
+              </span>
+              <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
+                · {SEASON_NAME}
+              </span>
+            </div>
+          </div>
+          <InSeasonDashboard
+            groupName={groupName}
+            currentRound={currentRound}
+            totalRounds={totalRounds}
+            next={next}
+            matches={myMatches}
+            resultByMatchId={resultByMatchId}
+            standings={standings}
+            meId={current.userId}
+            today={today}
+          />
+        </main>
+      </div>
     );
   }
 
@@ -137,7 +176,7 @@ export default async function SpielerPage() {
       ) : view === "not_placed" ? (
         <SeasonMessagePanel
           title="Du bist in der laufenden Saison nicht dabei"
-          body="Für diese Saison liegt keine Einteilung für dich vor."
+          body="Für diese Saison liegt keine Einteilung für dich vor. Die nächste Anmeldung wird im Discord angekündigt."
         />
       ) : (
         <ComingSoonPanel />

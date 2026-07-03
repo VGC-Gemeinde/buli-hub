@@ -136,6 +136,7 @@ describe("currentMatchday", () => {
 
 describe("splitPlayerMatches", () => {
   const m = (round: number, startsOn: string, endsOn: string): PlayerMatch => ({
+    matchId: `m${round}`,
     round,
     startsOn,
     endsOn,
@@ -193,10 +194,10 @@ describe("buildPlayerMatches", () => {
   it("keeps only the player's matches, resolves opponent + dates, sorts by round", () => {
     const result = buildPlayerMatches({
       matches: [
-        { round: 2, playerAId: "opp2", playerBId: "me" },
-        { round: 1, playerAId: "me", playerBId: "opp1" },
-        { round: 1, playerAId: "opp1", playerBId: "opp2" }, // not mine
-        { round: 3, playerAId: "me", playerBId: null }, // bye
+        { id: "m2", round: 2, playerAId: "opp2", playerBId: "me" },
+        { id: "m1", round: 1, playerAId: "me", playerBId: "opp1" },
+        { id: "x", round: 1, playerAId: "opp1", playerBId: "opp2" }, // not mine
+        { id: "m3", round: 3, playerAId: "me", playerBId: null }, // bye
       ],
       matchdaysByRound,
       rosterById: roster,
@@ -211,7 +212,7 @@ describe("buildPlayerMatches", () => {
 
   it("skips matches whose round has no matchday", () => {
     const result = buildPlayerMatches({
-      matches: [{ round: 9, playerAId: "me", playerBId: "opp1" }],
+      matches: [{ id: "m9", round: 9, playerAId: "me", playerBId: "opp1" }],
       matchdaysByRound,
       rosterById: roster,
       userId: "me",

@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { sql } from "drizzle-orm";
-import { profiles, registrations } from "@/db/schema";
+import { and, eq, sql } from "drizzle-orm";
+import {
+  divisions,
+  matches,
+  matchGames,
+  matchResults,
+  profiles,
+  registrations,
+  subDivisions,
+} from "@/db/schema";
 import type {
   Platform,
   PlayerStatus,
@@ -194,6 +202,57 @@ async function generateDevSchedule(windowId: string): Promise<void> {
   await persistSchedule(windowId, windows, matchRows);
 }
 
+// Reports the first matchday so a seeded dashboard is lived-in: past results
+// feed the standings while later rounds stay open (so „Ergebnis melden" is
+// actionable). Player A wins 2–1 deterministically.
+async function seedDevResults(windowId: string): Promise<void> {
+  const round1 = await db
+    .select({
+      id: matches.id,
+      playerAId: matches.playerAId,
+      playerBId: matches.playerBId,
+    })
+    .from(matches)
+    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .where(and(eq(divisions.windowId, windowId), eq(matches.round, 1)));
+
+  for (const match of round1) {
+    if (!match.playerBId) {
+      continue; // bye
+    }
+    await db.insert(matchResults).values({
+      matchId: match.id,
+      outcome: "normal",
+      winnerId: match.playerAId,
+      platform: "showdown",
+      playerATeamUrl: "https://pokepast.es/seed-a",
+      playerBTeamUrl: "https://pokepast.es/seed-b",
+      reportedById: match.playerAId,
+    });
+    await db.insert(matchGames).values([
+      {
+        matchId: match.id,
+        gameNumber: 1,
+        winnerId: match.playerAId,
+        replayUrl: "https://replay.pokemonshowdown.com/seed-1",
+      },
+      {
+        matchId: match.id,
+        gameNumber: 2,
+        winnerId: match.playerBId,
+        replayUrl: "https://replay.pokemonshowdown.com/seed-2",
+      },
+      {
+        matchId: match.id,
+        gameNumber: 3,
+        winnerId: match.playerAId,
+        replayUrl: "https://replay.pokemonshowdown.com/seed-3",
+      },
+    ]);
+  }
+}
+
 export async function generateSeedData(
   count: number,
   opts: {
@@ -270,6 +329,7 @@ export async function generateSeedData(
   }
   if (opts.schedule) {
     await generateDevSchedule(window.id);
+    await seedDevResults(window.id);
   }
 
   return specs.length;

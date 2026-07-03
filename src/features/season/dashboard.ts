@@ -42,8 +42,9 @@ export type Identity = {
 };
 
 // A player's match on the schedule: the opponent (null = bye) and the matchday
-// week it falls in.
+// week it falls in. `matchId` links to the match's report screen.
 export type PlayerMatch = {
+  matchId: string;
   round: number;
   startsOn: string;
   endsOn: string;
@@ -107,6 +108,7 @@ export function daysUntil(dateStr: string, today: string): number {
 // skipped (should not happen for a consistent schedule).
 export function buildPlayerMatches(input: {
   matches: readonly {
+    id: string;
     round: number;
     playerAId: string;
     playerBId: string | null;
@@ -126,6 +128,7 @@ export function buildPlayerMatches(input: {
     }
     const opponentId = opponentOf(match, input.userId);
     result.push({
+      matchId: match.id,
       round: match.round,
       startsOn: day.startsOn,
       endsOn: day.endsOn,

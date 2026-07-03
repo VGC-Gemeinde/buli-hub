@@ -127,6 +127,20 @@
       "when": 1783064573620,
       "tag": "20260703074253_seeding_locks_fk_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1783074352109,
+      "tag": "20260703102552_match_reporting",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1783074365598,
+      "tag": "20260703102605_match_reporting_fk_rls",
+      "breakpoints": true
     }
   ]
 }

@@ -76,9 +76,12 @@ export async function groupRoster(subDivisionId: string): Promise<Identity[]> {
 // with the reporting feature).
 export async function subDivisionMatches(
   subDivisionId: string,
-): Promise<{ round: number; playerAId: string; playerBId: string | null }[]> {
+): Promise<
+  { id: string; round: number; playerAId: string; playerBId: string | null }[]
+> {
   return db
     .select({
+      id: matches.id,
       round: matches.round,
       playerAId: matches.playerAId,
       playerBId: matches.playerBId,

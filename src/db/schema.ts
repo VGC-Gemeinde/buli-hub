@@ -217,3 +217,75 @@ export const matches = pgTable("matches", {
     .notNull()
     .defaultNow(),
 });
+
+// The kind of result recorded for a match. Drives which columns are meaningful
+// and how standings count it. „normal" = a best-of-3 was played (winner from the
+// games); „free_win" = a walkover (winner set, no games, pending staff
+// confirmation); „double_loss" = both players lose, no winner. Only normal and
+// free_win are player-reportable; double_loss (and corrections/confirmation) are
+// staff-issued — modeled now, their UI arrives with the staff dashboard.
+export const matchOutcomeEnum = pgEnum("match_outcome", [
+  "normal",
+  "free_win",
+  "double_loss",
+]);
+
+// A reported result for a match (1:1, `match_id` PK — a result is a distinct
+// lifecycle object from the pairing, may not exist yet, and can later be
+// corrected in place). Per-game rows live in `match_games`. FKs + RLS in a
+// custom migration (server-only, no policies, like the other tables).
+export const matchResults = pgTable("match_results", {
+  matchId: uuid("match_id").primaryKey(),
+  outcome: matchOutcomeEnum("outcome").notNull(),
+  // Absolute winner. Set for normal + free_win; null for double_loss.
+  winnerId: uuid("winner_id"),
+  // Platform the match was played on. Set for normal; null otherwise.
+  platform: platformEnum("platform"),
+  // Both required for a normal report (pokepaste URLs); null otherwise.
+  playerATeamUrl: text("player_a_team_url"),
+  playerBTeamUrl: text("player_b_team_url"),
+  // Cartridge only: one optional match video (per-game replays live on
+  // match_games for Showdown).
+  videoUrl: text("video_url"),
+  // Free-win only: the reason and the staff/admin member discussed with.
+  freeWinReason: text("free_win_reason"),
+  discussedWithId: uuid("discussed_with_id"),
+  // Provenance: who submitted the result.
+  reportedById: uuid("reported_by_id").notNull(),
+  reportedAt: timestamp("reported_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  // Free-win confirmation lifecycle. Stays null (pending) until a staff member
+  // confirms — that UI ships with the staff dashboard.
+  confirmedById: uuid("confirmed_by_id"),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  // Correction provenance (staff feature; null now). Set when this row replaced
+  // a prior result.
+  correctedById: uuid("corrected_by_id"),
+  correctedAt: timestamp("corrected_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// One game of a normal (best-of-3) result: 1–3 rows per match_results. Showdown
+// carries a required replay link per game; Cartridge carries none (its optional
+// video lives on match_results). FKs + RLS in a custom migration.
+export const matchGames = pgTable(
+  "match_games",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    matchId: uuid("match_id").notNull(),
+    // 1-based game number within the best-of-3 (1, 2, optionally 3).
+    gameNumber: integer("game_number").notNull(),
+    winnerId: uuid("winner_id").notNull(),
+    replayUrl: text("replay_url"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.matchId, table.gameNumber)],
+);

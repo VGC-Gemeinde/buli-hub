@@ -34,7 +34,7 @@ export function RegisterCtaPanel({ seasonName }: { seasonName: string }) {
 }
 
 // Generic informational state (not placed in the running season; registration
-// closed and never registered).
+// closed and never registered) — the signature tick + heading panel.
 export function SeasonMessagePanel({
   title,
   body,
@@ -43,9 +43,14 @@ export function SeasonMessagePanel({
   body: string;
 }) {
   return (
-    <div className="rounded-lg border px-6 py-6">
-      <p className="font-medium">{title}</p>
-      <p className="mt-1 text-muted-foreground text-sm">{body}</p>
+    <div className="flex flex-col items-start gap-2.5 rounded-lg border px-8 py-7">
+      <div className="flex items-center gap-2.5">
+        <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
+        <p className="font-bold font-heading text-[22px] text-brand-blue uppercase dark:text-white">
+          {title}
+        </p>
+      </div>
+      <p className="text-[15px] text-muted-foreground">{body}</p>
     </div>
   );
 }

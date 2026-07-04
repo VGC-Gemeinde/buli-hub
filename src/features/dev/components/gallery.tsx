@@ -464,6 +464,12 @@ const PUBLIC_OVERVIEW: PublicOverview = {
   seasonName: "Saison 1",
   currentRound: 2,
   totalRounds: 4,
+  matchdays: [
+    { round: 1, startsOn: "2026-01-05", endsOn: "2026-01-11" },
+    { round: 2, startsOn: "2026-01-12", endsOn: "2026-01-18" },
+    { round: 3, startsOn: "2026-01-19", endsOn: "2026-01-25" },
+    { round: 4, startsOn: "2026-01-26", endsOn: "2026-02-01" },
+  ],
   divisions: [
     {
       tier: 1,
@@ -493,6 +499,7 @@ const PUBLIC_OVERVIEW: PublicOverview = {
           matches: [
             {
               matchId: "pm1",
+              round: 2,
               playerA: asIdentity(DASH_STANDINGS[0]),
               playerB: asIdentity(DASH_STANDINGS[1]),
               reported: true,
@@ -503,6 +510,7 @@ const PUBLIC_OVERVIEW: PublicOverview = {
             },
             {
               matchId: "pm2",
+              round: 2,
               playerA: asIdentity(DASH_STANDINGS[2]),
               playerB: asIdentity(DASH_STANDINGS[3]),
               reported: false,
@@ -513,6 +521,7 @@ const PUBLIC_OVERVIEW: PublicOverview = {
             },
             {
               matchId: "pm3",
+              round: 2,
               playerA: asIdentity(DASH_STANDINGS[0]),
               playerB: null,
               reported: false,

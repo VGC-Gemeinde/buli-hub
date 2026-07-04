@@ -954,22 +954,35 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Match-Meldung: Ergebnis</h2>
-        <Specimen label="Ergebnis (Sieg, Showdown, 2:1)">
+        <Specimen label="Ergebnis (Teilnehmer-Sicht: Sieg, Showdown, 2:1)">
           <ReportSummary
             result={SUMMARY_RESULT}
             playerA={SUMMARY_A}
             playerB={SUMMARY_B}
             viewerId="me"
+            privileged
             round={2}
             groupName="Division 1a"
           />
         </Specimen>
-        <Specimen label="Freewin (wartet auf Staff)">
+        <Specimen label="Ergebnis (neutrale Sicht: A vs. B, ohne Meta)">
+          <ReportSummary
+            result={SUMMARY_RESULT}
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+            viewerId={null}
+            privileged={false}
+            round={2}
+            groupName="Division 1a"
+          />
+        </Specimen>
+        <Specimen label="Freewin (Teilnehmer/Staff: wartet auf Staff + Kontext)">
           <ReportSummary
             result={FREEWIN_RESULT}
             playerA={SUMMARY_A}
             playerB={SUMMARY_B}
             viewerId="me"
+            privileged
             round={3}
             groupName="Division 1a"
           />

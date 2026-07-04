@@ -150,13 +150,13 @@ function MatchdayList({
 
 function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
   const mine = match.playerA.userId === meId || match.playerB?.userId === meId;
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-        mine && "border-brand-orange/40 bg-brand-orange/5",
-      )}
-    >
+  const className = cn(
+    "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+    mine && "border-brand-orange/40 bg-brand-orange/5",
+    match.playerB && "transition-colors hover:border-brand-orange/50",
+  );
+  const content = (
+    <>
       <Side
         identity={match.playerA}
         winner={match.winnerId === match.playerA.userId}
@@ -166,11 +166,10 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
         {match.playerB === null ? (
           "spielfrei"
         ) : match.reported ? (
+          // A pending free win is not shown publicly until confirmed → „offen".
           <span className="text-foreground">
             {match.scoreA} : {match.scoreB}
           </span>
-        ) : match.pending ? (
-          "wartet auf Staff"
         ) : (
           "offen"
         )}
@@ -184,7 +183,15 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
       ) : (
         <span className="min-w-0 flex-1" />
       )}
-    </div>
+    </>
+  );
+  // Real matches link to their public detail page; byes are not clickable.
+  return match.playerB ? (
+    <Link href={`/match/${match.matchId}`} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <div className={className}>{content}</div>
   );
 }
 

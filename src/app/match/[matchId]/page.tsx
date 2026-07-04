@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { ReportForm } from "@/features/reporting/components/report-form";
@@ -13,39 +13,56 @@ import {
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 
+// Public, read-only for neutral observers; participants get the report form +
+// dispute option and staff get the staff panel. Disputes are never shown to
+// neutral visitors.
 export default async function MatchReportPage({
   params,
 }: {
   params: Promise<{ matchId: string }>;
 }) {
   const { matchId } = await params;
-  const current = await currentUser();
-  if (!current) {
-    redirect("/");
-  }
 
   const match = await getMatchForReport(matchId);
-  const isParticipant =
-    match !== null &&
-    (current.userId === match.playerA.userId ||
-      current.userId === match.playerB?.userId);
-  const isStaff = roleAtLeast(current.role, "staff");
-  if (!match || !match.playerB || (!isParticipant && !isStaff)) {
-    redirect("/spieler");
+  // A bye (playerB null) or an unknown id has no match to show.
+  if (!match || !match.playerB) {
+    notFound();
   }
 
+  const current = await currentUser();
+  const isParticipant =
+    current !== null &&
+    (current.userId === match.playerA.userId ||
+      current.userId === match.playerB.userId);
+  const isStaff = current !== null && roleAtLeast(current.role, "staff");
+  const privileged = isParticipant || isStaff;
+
   const result = await getMatchResult(matchId);
-  const dispute = result ? await matchOpenDispute(matchId) : null;
-  const staffOptions = result ? [] : await listStaffAndAdmins();
-  const breadcrumb = result
-    ? result.outcome === "free_win"
+  // A pending (unconfirmed) free win is not public — neutral observers see the
+  // match as still open until it is confirmed.
+  const pendingFreeWinHidden =
+    !privileged &&
+    result?.outcome === "free_win" &&
+    result.confirmedAt === null;
+  const shownResult = pendingFreeWinHidden ? null : result;
+  // Dispute machinery stays with participants + staff.
+  const dispute = result && privileged ? await matchOpenDispute(matchId) : null;
+  const staffOptions =
+    !result && isParticipant ? await listStaffAndAdmins() : [];
+  const breadcrumb = shownResult
+    ? shownResult.outcome === "free_win"
       ? "Freewin"
       : "Ergebnis"
-    : "Ergebnis melden";
-  // Participants return to their dashboard; a staff officiant to the Staff area.
+    : isParticipant
+      ? "Ergebnis melden"
+      : "Spiel";
+  // Participants return to their dashboard, staff to the Staff area, neutral
+  // observers to the public overview.
   const back = isParticipant
     ? { href: "/spieler", label: "Zurück zur Übersicht" }
-    : { href: "/staff", label: "Staff-Bereich" };
+    : isStaff
+      ? { href: "/staff", label: "Staff-Bereich" }
+      : { href: "/", label: "Zur Übersicht" };
   const editorInitial =
     result && result.outcome === "normal"
       ? {
@@ -71,12 +88,13 @@ export default async function MatchReportPage({
     <div className="flex flex-1 flex-col">
       <SiteHeader breadcrumb={breadcrumb} />
       <main className="mx-auto w-full max-w-[760px] flex-1 px-8 pt-9 pb-[140px]">
-        {result ? (
+        {shownResult ? (
           <ReportSummary
-            result={result}
+            result={shownResult}
             playerA={match.playerA}
             playerB={match.playerB}
-            viewerId={current.userId}
+            viewerId={current?.userId ?? null}
+            privileged={privileged}
             round={match.round}
             groupName={match.groupName}
             backHref={back.href}
@@ -99,8 +117,8 @@ export default async function MatchReportPage({
           </div>
         ) : null}
 
-        {!result ? (
-          isParticipant ? (
+        {!shownResult ? (
+          isParticipant && current ? (
             <ReportForm
               matchId={match.matchId}
               round={match.round}

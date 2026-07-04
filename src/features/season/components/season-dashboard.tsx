@@ -141,14 +141,14 @@ function Hero({
   const daysLeft = daysUntil(match.endsOn, today);
 
   return (
-    <section className="flex flex-wrap items-center justify-between gap-6 rounded-lg border px-[30px] py-[26px]">
-      <div className="flex flex-col gap-4.5">
+    <section className="flex flex-col gap-5 rounded-lg border px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 sm:px-[30px] sm:py-[26px]">
+      <div className="flex min-w-0 flex-col gap-4.5">
         {label(
           reported
             ? `Ergebnis · Spieltag ${match.round}`
             : `Nächstes Match · Spieltag ${match.round}`,
         )}
-        <div className="flex items-center gap-4.5">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4.5">
           <PlayerAvatar
             identity={{ userId: meId, name: "Du", avatarUrl: null }}
             size="size-[46px]"
@@ -158,7 +158,7 @@ function Hero({
             VS
           </span>
           <PlayerAvatar identity={match.opponent} size="size-[46px]" />
-          <span className="font-bold font-heading text-[22px] text-brand-blue uppercase leading-none dark:text-white">
+          <span className="min-w-0 truncate font-bold font-heading text-[22px] text-brand-blue uppercase leading-none dark:text-white">
             {match.opponent.name}
           </span>
         </div>
@@ -167,7 +167,7 @@ function Hero({
       {reported && result ? (
         <Link
           href={`/match/${match.matchId}`}
-          className="flex flex-col items-end gap-1.5"
+          className="flex flex-col items-start gap-1.5 sm:items-end"
         >
           <ReportedBadge result={result} meId={meId} />
           {result.disputed ? (
@@ -183,7 +183,7 @@ function Hero({
       ) : pendingFreeWin ? (
         <Link
           href={`/match/${match.matchId}`}
-          className="flex flex-col items-end gap-1.5"
+          className="flex flex-col items-start gap-1.5 sm:items-end"
         >
           <span className="rounded-full bg-brand-orange/12 px-4 py-2 font-semibold text-brand-blue text-sm dark:text-white">
             Freewin — wartet auf Bestätigung
@@ -193,9 +193,9 @@ function Hero({
           </span>
         </Link>
       ) : (
-        <div className="flex items-center gap-7">
-          <div className="flex flex-col items-start gap-1">
-            <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-7">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:flex-col sm:items-start sm:gap-1">
+            <span className="w-full font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em] sm:w-auto">
               Deadline
             </span>
             <span className="font-bold font-heading text-2xl text-brand-blue uppercase dark:text-white">
@@ -212,7 +212,7 @@ function Hero({
               {deadlineHint(match.endsOn, today)}
             </span>
           </div>
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="w-full sm:w-auto">
             <Link href={`/match/${match.matchId}`}>Ergebnis melden</Link>
           </Button>
         </div>

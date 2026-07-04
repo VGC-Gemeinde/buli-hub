@@ -64,13 +64,17 @@ function BackAndEyebrow({
   );
 }
 
-// Read-only view of a recorded result, from the viewer's perspective.
-// Corrections go through the (later) dispute flow.
+// Read-only view of a recorded result. A participant sees it from their own
+// perspective („Du" / „Sieg für dich"); a neutral observer (viewerId null or not
+// a participant) sees the objective Player A vs Player B view. Corrections go
+// through the dispute flow. Everything shown here is public once the game is
+// played; disputes live outside this component.
 export function ReportSummary({
   result,
   playerA,
   playerB,
   viewerId,
+  privileged,
   round,
   groupName,
   backHref = "/spieler",
@@ -79,14 +83,21 @@ export function ReportSummary({
   result: StoredResult;
   playerA: Identity;
   playerB: Identity;
-  viewerId: string;
+  viewerId: string | null;
+  // Participant or staff. Report metadata (reporter, free-win reason, discussed-
+  // with) is shown only to them; neutral observers see just the result.
+  privileged: boolean;
   round: number;
   groupName: string;
   backHref?: string;
   backLabel?: string;
 }) {
-  const viewer = viewerId === playerA.userId ? playerA : playerB;
-  const other = viewerId === playerA.userId ? playerB : playerA;
+  const isParticipant =
+    viewerId === playerA.userId || viewerId === playerB.userId;
+  // Participant B is framed as the viewer; everyone else (participant A or a
+  // neutral observer) reads left-to-right as Player A vs Player B.
+  const viewer = viewerId === playerB.userId ? playerB : playerA;
+  const other = viewer === playerA ? playerB : playerA;
   const nameOf = (id: string | null) =>
     id === playerA.userId
       ? playerA.name
@@ -95,7 +106,10 @@ export function ReportSummary({
         : "—";
 
   if (result.outcome === "free_win") {
+    // Neutral observers only ever reach this branch for a confirmed free win
+    // (the page hides pending ones); it is shown as the walkover 2:0.
     const pending = result.confirmedAt === null;
+    const self = result.winnerId === viewer.userId ? 2 : 0;
     return (
       <>
         <BackAndEyebrow
@@ -120,7 +134,7 @@ export function ReportSummary({
             </span>
           </span>
         </div>
-        {pending ? (
+        {pending && privileged ? (
           <div className="mb-8 flex flex-col gap-1.5 rounded-xl border border-brand-orange/45 bg-brand-orange/5 px-6 py-5">
             <p className="font-semibold text-[15px] text-brand-blue dark:text-white">
               Noch nicht gewertet
@@ -132,20 +146,30 @@ export function ReportSummary({
             </p>
           </div>
         ) : null}
-        <div className="flex flex-col gap-4.5">
-          {result.freeWinReason ? (
-            <Field label="Begründung">
-              <p className="max-w-[560px] text-sm">{result.freeWinReason}</p>
+        <ScoreBoard
+          viewer={viewer}
+          other={other}
+          self={self}
+          opp={2 - self}
+          winnerId={result.winnerId}
+          isParticipant={isParticipant}
+        />
+        {privileged ? (
+          <div className="mt-4.5 flex flex-col gap-4.5">
+            {result.freeWinReason ? (
+              <Field label="Begründung">
+                <p className="max-w-[560px] text-sm">{result.freeWinReason}</p>
+              </Field>
+            ) : null}
+            {result.discussedWithName ? (
+              <Field label="Besprochen mit">{result.discussedWithName}</Field>
+            ) : null}
+            <Field label="Gemeldet">
+              Von {nameOf(result.reportedById)} ·{" "}
+              {formatReportedAt(result.reportedAt)}
             </Field>
-          ) : null}
-          {result.discussedWithName ? (
-            <Field label="Besprochen mit">{result.discussedWithName}</Field>
-          ) : null}
-          <Field label="Gemeldet">
-            Von {nameOf(result.reportedById)} ·{" "}
-            {formatReportedAt(result.reportedAt)}
-          </Field>
-        </div>
+          </div>
+        ) : null}
       </>
     );
   }
@@ -158,7 +182,7 @@ export function ReportSummary({
   const title =
     result.outcome === "double_loss"
       ? "Doppelniederlage"
-      : viewerWon
+      : isParticipant && viewerWon
         ? "Sieg für dich"
         : `Sieg für ${nameOf(result.winnerId)}`;
 
@@ -178,28 +202,26 @@ export function ReportSummary({
         </span>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4.5 rounded-xl border bg-muted/30 px-[30px] py-[26px]">
-        <ScoreSide identity={viewer} filled sub="Du" winner={viewerWon} />
-        <span className="font-bold font-heading text-[56px] text-brand-blue leading-none dark:text-white">
-          {selfScore}
-          <span className="px-2 text-border">:</span>
-          {oppScore}
-        </span>
-        <ScoreSide
-          identity={other}
-          align="right"
-          sub="Gegner"
-          winner={result.winnerId === other.userId}
-        />
-      </div>
+      <ScoreBoard
+        viewer={viewer}
+        other={other}
+        self={selfScore}
+        opp={oppScore}
+        winnerId={result.winnerId}
+        isParticipant={isParticipant}
+      />
 
       <p className="mt-3.5 flex items-center gap-2 whitespace-nowrap text-[13px] text-muted-foreground">
         {result.platform ? (
           <span>{PLATFORM_LABELS[result.platform]}</span>
         ) : null}
         {result.platform ? <Dot /> : null}
-        <span>Gemeldet von {nameOf(result.reportedById)}</span>
-        <Dot />
+        {privileged ? (
+          <>
+            <span>Gemeldet von {nameOf(result.reportedById)}</span>
+            <Dot />
+          </>
+        ) : null}
         <span>{formatReportedAt(result.reportedAt)}</span>
       </p>
 
@@ -261,10 +283,12 @@ export function ReportSummary({
         </div>
       </section>
 
-      <p className="mt-10 border-t pt-5 text-[13.5px] text-muted-foreground">
-        Stimmt etwas nicht? Ergebnisse sind final — wende dich an den Staff, um
-        eine Korrektur anzustoßen.
-      </p>
+      {isParticipant ? (
+        <p className="mt-10 border-t pt-5 text-[13.5px] text-muted-foreground">
+          Stimmt etwas nicht? Ergebnisse sind final — wende dich an den Staff,
+          um eine Korrektur anzustoßen.
+        </p>
+      ) : null}
     </>
   );
 }
@@ -297,6 +321,113 @@ function Field({
   );
 }
 
+// The score block, shared by normal results and free wins (walkover 2:0). Scores
+// are given from the `viewer`'s side; the winner marker is driven by `winnerId`.
+function ScoreBoard({
+  viewer,
+  other,
+  self,
+  opp,
+  winnerId,
+  isParticipant,
+}: {
+  viewer: Identity;
+  other: Identity;
+  self: number;
+  opp: number;
+  winnerId: string | null;
+  isParticipant: boolean;
+}) {
+  return (
+    <>
+      {/* Mobile: each player on their own row with their score — no truncation. */}
+      <div className="flex flex-col divide-y rounded-xl border bg-muted/30 sm:hidden">
+        <PlayerRow
+          identity={viewer}
+          score={self}
+          winner={winnerId === viewer.userId}
+          sub={isParticipant ? "Du" : undefined}
+          filled={isParticipant}
+        />
+        <PlayerRow
+          identity={other}
+          score={opp}
+          winner={winnerId === other.userId}
+          sub={isParticipant ? "Gegner" : undefined}
+        />
+      </div>
+
+      {/* Desktop: Player A  :  Player B. */}
+      <div className="hidden grid-cols-[1fr_auto_1fr] items-center gap-4.5 rounded-xl border bg-muted/30 px-[30px] py-[26px] sm:grid">
+        <ScoreSide
+          identity={viewer}
+          filled={isParticipant}
+          sub={isParticipant ? "Du" : undefined}
+          winner={winnerId === viewer.userId}
+        />
+        <span className="font-bold font-heading text-[56px] text-brand-blue leading-none dark:text-white">
+          {self}
+          <span className="px-2 text-border">:</span>
+          {opp}
+        </span>
+        <ScoreSide
+          identity={other}
+          align="right"
+          sub={isParticipant ? "Gegner" : undefined}
+          winner={winnerId === other.userId}
+        />
+      </div>
+    </>
+  );
+}
+
+// One player as a full-width row (mobile scoreboard): avatar, name + marker, and
+// their score. The name gets the whole row, so it never has to truncate.
+function PlayerRow({
+  identity,
+  score,
+  winner,
+  sub,
+  filled,
+}: {
+  identity: Identity;
+  score: number;
+  winner: boolean;
+  sub?: string;
+  filled?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <Face identity={identity} filled={filled} size="size-10" />
+      <div className="min-w-0 flex-1">
+        <div className="font-bold font-heading text-[20px] text-brand-blue uppercase leading-[1.15] dark:text-white">
+          {identity.name}
+        </div>
+        {winner ? (
+          <span className="flex items-center gap-1.5">
+            <span className="h-[6px] w-3 -skew-x-[18deg] bg-brand-orange" />
+            <span className="font-bold text-[10.5px] text-brand-orange uppercase tracking-[0.12em]">
+              Sieger
+            </span>
+          </span>
+        ) : sub ? (
+          <span className="font-semibold text-[10.5px] text-muted-foreground uppercase tracking-[0.12em]">
+            {sub}
+          </span>
+        ) : null}
+      </div>
+      <span
+        className={cn(
+          "font-bold font-heading text-[32px] leading-none tabular-nums",
+          winner ? "text-brand-blue dark:text-white" : "text-muted-foreground",
+        )}
+      >
+        {score}
+      </span>
+    </div>
+  );
+}
+
 function ScoreSide({
   identity,
   sub,
@@ -305,7 +436,7 @@ function ScoreSide({
   align,
 }: {
   identity: Identity;
-  sub: string;
+  sub?: string;
   winner: boolean;
   filled?: boolean;
   align?: "right";
@@ -313,18 +444,23 @@ function ScoreSide({
   return (
     <div
       className={cn(
-        "flex items-center gap-3",
+        "flex min-w-0 items-center gap-2 sm:gap-3",
         align === "right" && "flex-row-reverse",
       )}
     >
-      <Face identity={identity} filled={filled} />
+      <Face identity={identity} filled={filled} size="size-10 sm:size-[50px]" />
       <div
         className={cn(
           "flex min-w-0 flex-col",
           align === "right" && "items-end",
         )}
       >
-        <span className="truncate font-bold font-heading text-[28px] text-brand-blue uppercase leading-[1.05] dark:text-white">
+        <span
+          className={cn(
+            "w-full truncate font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] sm:text-[28px] dark:text-white",
+            align === "right" && "text-right",
+          )}
+        >
           {identity.name}
         </span>
         {winner ? (
@@ -334,11 +470,11 @@ function ScoreSide({
               Sieger
             </span>
           </span>
-        ) : (
+        ) : sub ? (
           <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
             {sub}
           </span>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -37,6 +37,7 @@ export type PostSeasonConfigInput = {
   guaranteedDemotions: number;
   promotionPlayoffSlots: number;
   demotionPlayoffSlots: number;
+  championshipPlayoffSlots: number;
 };
 
 type Row = {
@@ -48,6 +49,7 @@ type Row = {
   guaranteedDemotions: number;
   promotionPlayoffSlots: number;
   demotionPlayoffSlots: number;
+  championshipPlayoffSlots: number;
 };
 
 // A preview place can also be "overbooked" — claimed by both a promotion and a
@@ -55,6 +57,7 @@ type Row = {
 type PreviewCell = Zone | "overbooked";
 
 const ZONE_NAME: Record<Zone, string> = {
+  champion: "Meister-Playoff",
   promote: "Direkter Aufstieg",
   promotion_playoff: "Aufstiegs-Playoff",
   demotion_playoff: "Abstiegs-Playoff",
@@ -74,6 +77,7 @@ function toRows(divisions: DivisionWithGroupSizes[]): Row[] {
       guaranteedDemotions: d.guaranteedDemotions,
       promotionPlayoffSlots: d.promotionPlayoffSlots,
       demotionPlayoffSlots: d.demotionPlayoffSlots,
+      championshipPlayoffSlots: d.championshipPlayoffSlots,
     }));
 }
 
@@ -86,6 +90,7 @@ function forValidation(row: Row): DivisionForValidation {
     guaranteedDemotions: row.guaranteedDemotions,
     promotionPlayoffSlots: row.promotionPlayoffSlots,
     demotionPlayoffSlots: row.demotionPlayoffSlots,
+    championshipPlayoffSlots: row.championshipPlayoffSlots,
   };
 }
 
@@ -97,6 +102,7 @@ function toInput(row: Row): PostSeasonConfigInput {
     guaranteedDemotions: row.guaranteedDemotions,
     promotionPlayoffSlots: row.promotionPlayoffSlots,
     demotionPlayoffSlots: row.demotionPlayoffSlots,
+    championshipPlayoffSlots: row.championshipPlayoffSlots,
   };
 }
 
@@ -116,17 +122,23 @@ function capacityOf(row: Row): number {
 
 // Per-place zone for the preview strip, marking over-capacity overlap.
 function previewZones(row: Row, capacity: number): PreviewCell[] {
-  const promoEnd = row.guaranteedPromotions + row.promotionPlayoffSlots;
+  const champion = row.championshipPlayoffSlots;
+  const promoStart = champion;
+  const promoEnd = promoStart + row.guaranteedPromotions;
+  const promoPlayoffEnd = promoEnd + row.promotionPlayoffSlots;
   const demoteStart = capacity - row.guaranteedDemotions;
   const demoPlayoffStart = demoteStart - row.demotionPlayoffSlots;
   return Array.from({ length: capacity }, (_, i): PreviewCell => {
-    const inPromote = i < row.guaranteedPromotions;
-    const inPromoPlayoff = !inPromote && i < promoEnd;
+    const inChampion = i < champion;
+    const inPromote = !inChampion && i >= promoStart && i < promoEnd;
+    const inPromoPlayoff = !inChampion && i >= promoEnd && i < promoPlayoffEnd;
     const inDemote = i >= demoteStart;
     const inDemoPlayoff = !inDemote && i >= demoPlayoffStart;
-    if ((inPromote || inPromoPlayoff) && (inDemote || inDemoPlayoff)) {
+    const topSide = inChampion || inPromote || inPromoPlayoff;
+    if (topSide && (inDemote || inDemoPlayoff)) {
       return "overbooked";
     }
+    if (inChampion) return "champion";
     if (inPromote) return "promote";
     if (inPromoPlayoff) return "promotion_playoff";
     if (inDemote) return "demote";
@@ -164,6 +176,8 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
       return `Division ${issue.tier}: kein Aufstiegsweg — mindestens ein Platz oder Playoff-Slot nötig.`;
     case "missing_demotion_path":
       return `Division ${issue.tier}: kein Abstiegsweg — mindestens ein Platz oder Playoff-Slot nötig.`;
+    case "championship_not_top":
+      return `Division ${issue.tier}: ein Meister-Playoff gibt es nur in Division 1.`;
   }
 }
 
@@ -361,6 +375,7 @@ function DivisionCard({
   const capacity = capacityOf(row);
   const preview = previewZones(row, capacity);
   const span =
+    row.championshipPlayoffSlots +
     row.guaranteedPromotions +
     row.promotionPlayoffSlots +
     row.demotionPlayoffSlots +
@@ -407,32 +422,43 @@ function DivisionCard({
         <ZonePreview preview={preview} />
 
         <div className="flex items-start gap-4">
-          <Cluster
-            zoneClass="bg-zone-promote"
-            label="Direkter Aufstieg"
-            value={row.guaranteedPromotions}
-            disabled={readOnly || isTop}
-            note={note(
-              row.guaranteedPromotions,
-              isTop ? "Oberste Division — kein Aufstieg" : null,
-            )}
-            onChange={(guaranteedPromotions) =>
-              onPatch({ guaranteedPromotions })
-            }
-          />
-          <Cluster
-            zoneClass="bg-zone-playoff"
-            label="Aufstiegs-Playoff"
-            value={row.promotionPlayoffSlots}
-            disabled={readOnly || isTop}
-            note={note(
-              row.promotionPlayoffSlots,
-              isTop ? "Oberste Division — kein Aufstieg" : null,
-            )}
-            onChange={(promotionPlayoffSlots) =>
-              onPatch({ promotionPlayoffSlots })
-            }
-          />
+          {isTop ? (
+            // The top division can't promote — instead it sends its top players
+            // to the title playoff that crowns the champion.
+            <Cluster
+              zoneClass="bg-zone-champion"
+              label="Meister-Playoff"
+              value={row.championshipPlayoffSlots}
+              disabled={readOnly}
+              note={note(row.championshipPlayoffSlots, null)}
+              onChange={(championshipPlayoffSlots) =>
+                onPatch({ championshipPlayoffSlots })
+              }
+            />
+          ) : (
+            <>
+              <Cluster
+                zoneClass="bg-zone-promote"
+                label="Direkter Aufstieg"
+                value={row.guaranteedPromotions}
+                disabled={readOnly}
+                note={note(row.guaranteedPromotions, null)}
+                onChange={(guaranteedPromotions) =>
+                  onPatch({ guaranteedPromotions })
+                }
+              />
+              <Cluster
+                zoneClass="bg-zone-playoff"
+                label="Aufstiegs-Playoff"
+                value={row.promotionPlayoffSlots}
+                disabled={readOnly}
+                note={note(row.promotionPlayoffSlots, null)}
+                onChange={(promotionPlayoffSlots) =>
+                  onPatch({ promotionPlayoffSlots })
+                }
+              />
+            </>
+          )}
           <div className="flex flex-1 items-center justify-center px-2 pt-6 text-center">
             {leftover >= 0 ? (
               <span className="text-[12px] text-muted-foreground">
@@ -475,6 +501,7 @@ function DivisionCard({
 }
 
 const SQUARE_FILL: Record<PreviewCell, string> = {
+  champion: "border-transparent bg-zone-champion text-brand-blue",
   promote: "border-transparent bg-zone-promote text-white",
   promotion_playoff: "border-transparent bg-zone-playoff text-brand-blue",
   demotion_playoff: "border-transparent bg-zone-playoff text-brand-blue",

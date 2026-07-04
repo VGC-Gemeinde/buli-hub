@@ -390,6 +390,7 @@ export type DivisionWithGroupSizes = {
   guaranteedDemotions: number;
   promotionPlayoffSlots: number;
   demotionPlayoffSlots: number;
+  championshipPlayoffSlots: number;
   groupSizes: number[];
 };
 
@@ -426,6 +427,7 @@ export async function divisionsWithGroupSizes(
     guaranteedDemotions: division.guaranteedDemotions,
     promotionPlayoffSlots: division.promotionPlayoffSlots,
     demotionPlayoffSlots: division.demotionPlayoffSlots,
+    championshipPlayoffSlots: division.championshipPlayoffSlots,
     groupSizes: sizesByDivision.get(division.id) ?? [],
   }));
 }
@@ -437,6 +439,7 @@ export async function divisionPostSeason(divisionId: string): Promise<{
   guaranteedDemotions: number;
   promotionPlayoffSlots: number;
   demotionPlayoffSlots: number;
+  championshipPlayoffSlots: number;
 } | null> {
   const row = await db.query.divisions.findFirst({
     columns: {
@@ -445,6 +448,7 @@ export async function divisionPostSeason(divisionId: string): Promise<{
       guaranteedDemotions: true,
       promotionPlayoffSlots: true,
       demotionPlayoffSlots: true,
+      championshipPlayoffSlots: true,
     },
     where: eq(divisions.id, divisionId),
   });
@@ -463,6 +467,7 @@ export async function savePostSeasonConfig(
     guaranteedDemotions: number;
     promotionPlayoffSlots: number;
     demotionPlayoffSlots: number;
+    championshipPlayoffSlots: number;
   }[],
   valid: boolean,
 ) {
@@ -477,6 +482,7 @@ export async function savePostSeasonConfig(
           guaranteedDemotions: config.guaranteedDemotions,
           promotionPlayoffSlots: config.promotionPlayoffSlots,
           demotionPlayoffSlots: config.demotionPlayoffSlots,
+          championshipPlayoffSlots: config.championshipPlayoffSlots,
         })
         .where(
           and(

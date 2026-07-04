@@ -153,6 +153,12 @@ export const divisions = pgTable(
     demotionPlayoffSlots: integer("demotion_playoff_slots")
       .notNull()
       .default(0),
+    // Title-playoff slots — only the top tier: the top N qualify for the
+    // tournament that decides the Bundesliga champion. See
+    // docs/plans/championship-playoff.md.
+    championshipPlayoffSlots: integer("championship_playoff_slots")
+      .notNull()
+      .default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

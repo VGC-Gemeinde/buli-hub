@@ -17,6 +17,7 @@ function formatDiff(diff: number): string {
 // (demotion); both playoff bands share amber — position + legend disambiguate.
 // Each zoned row gets a soft tint plus a 6px rail flush left.
 const ZONE_TINT: Record<Zone, string> = {
+  champion: "bg-zone-champion/12",
   promote: "bg-zone-promote/7",
   promotion_playoff: "bg-zone-playoff/10",
   demotion_playoff: "bg-zone-playoff/10",
@@ -24,6 +25,7 @@ const ZONE_TINT: Record<Zone, string> = {
   none: "",
 };
 const ZONE_OVERLAY: Record<Zone, string> = {
+  champion: "before:absolute before:inset-0 before:bg-zone-champion/12",
   promote: "before:absolute before:inset-0 before:bg-zone-promote/7",
   promotion_playoff: "before:absolute before:inset-0 before:bg-zone-playoff/10",
   demotion_playoff: "before:absolute before:inset-0 before:bg-zone-playoff/10",
@@ -31,6 +33,7 @@ const ZONE_OVERLAY: Record<Zone, string> = {
   none: "",
 };
 const ZONE_RAIL: Record<Zone, string> = {
+  champion: "bg-zone-champion",
   promote: "bg-zone-promote",
   promotion_playoff: "bg-zone-playoff",
   demotion_playoff: "bg-zone-playoff",
@@ -170,6 +173,11 @@ function ZoneLegend({ zones }: { zones?: ZoneMap }) {
   if (!zones) return null;
   const present = new Set(zones.values());
   const items: { show: boolean; bar: string; label: string }[] = [
+    {
+      show: present.has("champion"),
+      bar: "bg-zone-champion",
+      label: "Meister-Playoff",
+    },
     {
       show: present.has("promote"),
       bar: "bg-zone-promote",

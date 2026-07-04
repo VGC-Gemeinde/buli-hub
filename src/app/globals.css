@@ -53,6 +53,7 @@
   --color-zone-promote: var(--zone-promote);
   --color-zone-playoff: var(--zone-playoff);
   --color-zone-demote: var(--zone-demote);
+  --color-zone-champion: var(--zone-champion);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -71,6 +72,7 @@
   --zone-promote: oklch(0.55 0.12 158); /* guaranteed promotion — green */
   --zone-playoff: oklch(0.8 0.13 79); /* both playoff bands — amber */
   --zone-demote: oklch(0.55 0.19 27); /* guaranteed demotion — red */
+  --zone-champion: oklch(0.82 0.16 95); /* Division 1 title playoff — gold */
 
   --background: #ffffff; /* wooloo-white */
   --foreground: oklch(0.28 0.06 264); /* navy-tinted body text */

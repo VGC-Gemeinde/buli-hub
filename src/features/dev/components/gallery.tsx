@@ -233,6 +233,7 @@ const EDITOR_B = { userId: "eb", name: "Kai", avatarUrl: null };
 const zoneMap = (
   rows: StandingsRow[],
   counts: {
+    champion?: number;
     promotions: number;
     promotionPlayoff: number;
     demotionPlayoff: number;
@@ -256,6 +257,7 @@ const POST_SEASON_DIVISIONS: DivisionWithGroupSizes[] = [
     guaranteedDemotions: 1,
     promotionPlayoffSlots: 0,
     demotionPlayoffSlots: 1,
+    championshipPlayoffSlots: 2,
     groupSizes: [8, 8],
   },
   {
@@ -266,6 +268,7 @@ const POST_SEASON_DIVISIONS: DivisionWithGroupSizes[] = [
     guaranteedDemotions: 2,
     promotionPlayoffSlots: 2,
     demotionPlayoffSlots: 2,
+    championshipPlayoffSlots: 0,
     groupSizes: [8, 8],
   },
   {
@@ -276,6 +279,7 @@ const POST_SEASON_DIVISIONS: DivisionWithGroupSizes[] = [
     guaranteedDemotions: 0,
     promotionPlayoffSlots: 1,
     demotionPlayoffSlots: 0,
+    championshipPlayoffSlots: 0,
     groupSizes: [8, 8],
   },
 ];
@@ -291,6 +295,7 @@ const POST_SEASON_OVERBOOKED: DivisionWithGroupSizes[] = [
     guaranteedDemotions: 3,
     promotionPlayoffSlots: 0,
     demotionPlayoffSlots: 2, // 5 demote spots in a group of 4 → overbooked
+    championshipPlayoffSlots: 0,
     groupSizes: [4, 4],
   },
   {
@@ -301,6 +306,7 @@ const POST_SEASON_OVERBOOKED: DivisionWithGroupSizes[] = [
     guaranteedDemotions: 0,
     promotionPlayoffSlots: 1,
     demotionPlayoffSlots: 0, // promotes 2, but o1 demotes 6 → unbalanced
+    championshipPlayoffSlots: 0,
     groupSizes: [4, 4],
   },
 ];
@@ -786,6 +792,7 @@ export function Gallery() {
             divisionName="Division 1"
             divisionStandings={DASH_DIVISION_STANDINGS}
             divisionZones={zoneMap(DASH_DIVISION_STANDINGS, {
+              champion: 1,
               promotions: 1,
               promotionPlayoff: 1,
               demotionPlayoff: 1,

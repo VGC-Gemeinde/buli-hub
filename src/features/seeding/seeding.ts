@@ -42,6 +42,7 @@ export const postSeasonDivisionSchema = z.object({
   guaranteedDemotions: movementCount,
   promotionPlayoffSlots: movementCount,
   demotionPlayoffSlots: movementCount,
+  championshipPlayoffSlots: movementCount,
 });
 
 export const postSeasonConfigSchema = z.array(postSeasonDivisionSchema);

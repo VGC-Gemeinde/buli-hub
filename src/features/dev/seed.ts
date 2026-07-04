@@ -206,6 +206,8 @@ async function applyDevPostSeason(windowId: string): Promise<void> {
     guaranteedDemotions: 0,
     promotionPlayoffSlots: i === 0 ? 0 : 1,
     demotionPlayoffSlots: i === divs.length - 1 ? 0 : 1,
+    // Top division always gets a title playoff so the champion zone is seeded.
+    championshipPlayoffSlots: i === 0 ? 2 : 0,
   }));
 
   const richDemo =
@@ -219,6 +221,7 @@ async function applyDevPostSeason(windowId: string): Promise<void> {
       guaranteedDemotions: 1,
       promotionPlayoffSlots: 0,
       demotionPlayoffSlots: 0,
+      championshipPlayoffSlots: 2,
     };
     configs[1] = {
       divisionId: divs[1].id,
@@ -227,6 +230,7 @@ async function applyDevPostSeason(windowId: string): Promise<void> {
       guaranteedDemotions: 0,
       promotionPlayoffSlots: 0,
       demotionPlayoffSlots: 0,
+      championshipPlayoffSlots: 0,
     };
   }
 
@@ -240,6 +244,7 @@ async function applyDevPostSeason(windowId: string): Promise<void> {
         guaranteedDemotions: configs[i].guaranteedDemotions,
         promotionPlayoffSlots: configs[i].promotionPlayoffSlots,
         demotionPlayoffSlots: configs[i].demotionPlayoffSlots,
+        championshipPlayoffSlots: configs[i].championshipPlayoffSlots,
       })),
     ).length === 0;
   await savePostSeasonConfig(windowId, configs, valid);
@@ -611,6 +616,7 @@ async function applyLadderPostSeason(
           guaranteedDemotions: 2,
           promotionPlayoffSlots: 2,
           demotionPlayoffSlots: 2,
+          championshipPlayoffSlots: 0,
         }
       : {
           divisionId: middle.id,
@@ -619,6 +625,7 @@ async function applyLadderPostSeason(
           guaranteedDemotions: 1,
           promotionPlayoffSlots: 1,
           demotionPlayoffSlots: 1,
+          championshipPlayoffSlots: 0,
         };
 
   const configs = [
@@ -629,6 +636,7 @@ async function applyLadderPostSeason(
       guaranteedDemotions: 1,
       promotionPlayoffSlots: 0,
       demotionPlayoffSlots: 1,
+      championshipPlayoffSlots: 2, // Division 1 title playoff
     },
     middleConfig,
     {
@@ -638,6 +646,7 @@ async function applyLadderPostSeason(
       guaranteedDemotions: 0,
       promotionPlayoffSlots: 1,
       demotionPlayoffSlots: 0,
+      championshipPlayoffSlots: 0,
     },
   ];
 
@@ -651,6 +660,7 @@ async function applyLadderPostSeason(
         guaranteedDemotions: configs[i].guaranteedDemotions,
         promotionPlayoffSlots: configs[i].promotionPlayoffSlots,
         demotionPlayoffSlots: configs[i].demotionPlayoffSlots,
+        championshipPlayoffSlots: configs[i].championshipPlayoffSlots,
       })),
     ).length === 0;
   await savePostSeasonConfig(windowId, configs, valid);

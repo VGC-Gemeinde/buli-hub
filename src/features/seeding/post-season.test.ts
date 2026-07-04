@@ -18,6 +18,7 @@ const div = (
   guaranteedDemotions: 0,
   promotionPlayoffSlots: 0,
   demotionPlayoffSlots: 0,
+  championshipPlayoffSlots: 0,
   groupSizes: [8, 8],
   ...o,
 });
@@ -188,6 +189,35 @@ describe("validatePostSeason", () => {
     ];
     expect(validatePostSeason(divisions)).toEqual([]);
   });
+
+  it("allows a championship playoff on the top tier", () => {
+    const divisions = [
+      div(1, { championshipPlayoffSlots: 2, demotionPlayoffSlots: 1 }),
+      div(2, { promotionPlayoffSlots: 1 }),
+    ];
+    expect(validatePostSeason(divisions)).toEqual([]);
+  });
+
+  it("flags a championship playoff on a non-top tier", () => {
+    const divisions = [
+      div(1, { demotionPlayoffSlots: 1 }),
+      div(2, { promotionPlayoffSlots: 1, championshipPlayoffSlots: 2 }),
+    ];
+    expect(kinds(divisions)).toContain("championship_not_top");
+  });
+
+  it("counts the championship playoff toward capacity", () => {
+    // 6 champion + 3 demote in a group of 8 → over capacity.
+    const divisions = [
+      div(1, {
+        championshipPlayoffSlots: 6,
+        guaranteedDemotions: 3,
+        groupSizes: [8, 8],
+      }),
+      div(2, { guaranteedPromotions: 3 }),
+    ];
+    expect(kinds(divisions)).toContain("capacity");
+  });
 });
 
 describe("assignZones", () => {
@@ -207,6 +237,25 @@ describe("assignZones", () => {
       "none",
       "none",
       "demotion_playoff",
+      "demote",
+    ]);
+  });
+
+  it("places a champion band at the very top, above promotion", () => {
+    const zones = assignZones({
+      rowCount: 6,
+      champion: 2,
+      promotions: 1,
+      promotionPlayoff: 0,
+      demotionPlayoff: 0,
+      demotions: 1,
+    });
+    expect(zones).toEqual([
+      "champion",
+      "champion",
+      "promote",
+      "none",
+      "none",
       "demote",
     ]);
   });

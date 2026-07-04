@@ -139,6 +139,7 @@ export default async function SpielerPage() {
       // Division mode: counts are the per-division totals.
       const zones = assignZones({
         rowCount: division.length,
+        champion: config?.championshipPlayoffSlots ?? 0,
         promotions: config?.guaranteedPromotions ?? 0,
         promotionPlayoff: config?.promotionPlayoffSlots ?? 0,
         demotionPlayoff: config?.demotionPlayoffSlots ?? 0,
@@ -149,6 +150,7 @@ export default async function SpielerPage() {
       // Sub-division mode: counts are per group, applied to the player's group.
       const zones = assignZones({
         rowCount: standings.length,
+        champion: config?.championshipPlayoffSlots ?? 0,
         promotions: config?.guaranteedPromotions ?? 0,
         promotionPlayoff: config?.promotionPlayoffSlots ?? 0,
         demotionPlayoff: config?.demotionPlayoffSlots ?? 0,

@@ -5,7 +5,9 @@
 export type RelevantTable = "sub_division" | "division";
 
 // The zone a player's row sits in, from the top of the (relevant) table down.
+// `champion` is the Division-1 title playoff, above promotion.
 export type Zone =
+  | "champion"
   | "promote"
   | "promotion_playoff"
   | "demotion_playoff"
@@ -20,6 +22,8 @@ export type DivisionPostSeason = {
   guaranteedDemotions: number;
   promotionPlayoffSlots: number;
   demotionPlayoffSlots: number;
+  // Title-playoff slots — only the top tier (Division 1).
+  championshipPlayoffSlots: number;
 };
 
 // A division as seen by validation: its config plus the structural facts the
@@ -60,6 +64,7 @@ export function effectiveMovement(division: DivisionForValidation): {
 // The zones occupy per group (`sub_division`) or per division (`division`).
 function zoneSpan(division: DivisionForValidation): number {
   return (
+    division.championshipPlayoffSlots +
     division.guaranteedPromotions +
     division.promotionPlayoffSlots +
     division.demotionPlayoffSlots +
@@ -91,7 +96,9 @@ export type PostSeasonIssue =
   // no promotion path (neither a guaranteed spot nor a playoff slot).
   | { kind: "missing_promotion_path"; tier: number }
   // no demotion path.
-  | { kind: "missing_demotion_path"; tier: number };
+  | { kind: "missing_demotion_path"; tier: number }
+  // championship playoff set on a division that is not the top tier.
+  | { kind: "championship_not_top"; tier: number };
 
 // Validates a whole window's post-season config. Divisions may be given in any
 // order; they are sorted by tier (1 = top) internally. Returns every issue found
@@ -147,6 +154,12 @@ export function validatePostSeason(
       issues.push({ kind: "division_mode_invalid", tier: division.tier });
     }
 
+    // The championship playoff only makes sense at the top — it decides the
+    // overall champion, and only Division 1 has no promotion to compete with.
+    if (!isTop && division.championshipPlayoffSlots > 0) {
+      issues.push({ kind: "championship_not_top", tier: division.tier });
+    }
+
     if (zoneSpan(division) > zoneCapacity(division)) {
       issues.push({ kind: "capacity", tier: division.tier });
     }
@@ -180,6 +193,7 @@ export function validatePostSeason(
 // by the postseason tie feature, not here — this is purely positional.
 export function assignZones(input: {
   rowCount: number;
+  champion?: number;
   promotions: number;
   promotionPlayoff: number;
   demotionPlayoff: number;
@@ -187,12 +201,15 @@ export function assignZones(input: {
 }): Zone[] {
   const { rowCount, promotions, promotionPlayoff, demotionPlayoff, demotions } =
     input;
+  const champion = input.champion ?? 0;
   const demoteStart = rowCount - demotions;
   const demotionPlayoffStart = demoteStart - demotionPlayoff;
 
   return Array.from({ length: rowCount }, (_, i): Zone => {
-    if (i < promotions) return "promote";
-    if (i < promotions + promotionPlayoff) return "promotion_playoff";
+    if (i < champion) return "champion";
+    if (i < champion + promotions) return "promote";
+    if (i < champion + promotions + promotionPlayoff)
+      return "promotion_playoff";
     if (i >= demoteStart) return "demote";
     if (i >= demotionPlayoffStart) return "demotion_playoff";
     return "none";

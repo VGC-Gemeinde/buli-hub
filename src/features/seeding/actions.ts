@@ -105,6 +105,7 @@ export async function savePostSeason(input: {
       guaranteedDemotions: config.guaranteedDemotions,
       promotionPlayoffSlots: config.promotionPlayoffSlots,
       demotionPlayoffSlots: config.demotionPlayoffSlots,
+      championshipPlayoffSlots: config.championshipPlayoffSlots,
     });
   }
 

@@ -154,3 +154,29 @@ export function computeStandings(input: {
   });
   return rows;
 }
+
+export type StandingsGroup = {
+  roster: readonly Identity[];
+  results: readonly ResultForStandings[];
+};
+
+// Standings for a whole division: every sub-division's players in one table.
+// The ranking keys are opponent-independent (see the header), so merging the
+// groups and re-running `computeStandings` produces a correct combined order —
+// but only when every player has played the same number of matches, i.e. all
+// groups are the same size. Returns null when that does not hold: fewer than two
+// groups (nothing to combine — the division table would equal the sub-division
+// table) or groups of differing roster size (unequal matches played, so raw win
+// counts are not comparable). The caller uses null to mean "offer no division
+// view".
+export function divisionStandings(
+  groups: readonly StandingsGroup[],
+): StandingsRow[] | null {
+  if (groups.length < 2) return null;
+  const size = groups[0].roster.length;
+  if (groups.some((group) => group.roster.length !== size)) return null;
+  return computeStandings({
+    roster: groups.flatMap((group) => group.roster),
+    results: groups.flatMap((group) => group.results),
+  });
+}

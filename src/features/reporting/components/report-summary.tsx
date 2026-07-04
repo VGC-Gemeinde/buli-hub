@@ -138,6 +138,9 @@ export function ReportSummary({
               <p className="max-w-[560px] text-sm">{result.freeWinReason}</p>
             </Field>
           ) : null}
+          {result.discussedWithName ? (
+            <Field label="Besprochen mit">{result.discussedWithName}</Field>
+          ) : null}
           <Field label="Gemeldet">
             Von {nameOf(result.reportedById)} ·{" "}
             {formatReportedAt(result.reportedAt)}

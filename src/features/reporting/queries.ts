@@ -11,6 +11,7 @@ import {
   subDivisions,
 } from "@/db/schema";
 import type { Identity } from "@/features/season/dashboard";
+import { groupRoster } from "@/features/season/queries";
 import { subDivisionName } from "@/features/seeding/seeding";
 import { db } from "@/lib/db";
 import type { GameRow, MatchOutcome, ResultRow } from "./report";
@@ -105,6 +106,9 @@ export type StoredResult = ResultRow & {
   reportedById: string;
   reportedAt: Date;
   confirmedAt: Date | null;
+  // Display name of the staff member a free win was discussed with, resolved
+  // from `discussedWithId` (null for normal/double-loss results and staff awards).
+  discussedWithName: string | null;
   games: GameRow[];
 };
 
@@ -127,6 +131,20 @@ export async function getMatchResult(
     .from(matchGames)
     .where(eq(matchGames.matchId, matchId))
     .orderBy(asc(matchGames.gameNumber));
+
+  let discussedWithName: string | null = null;
+  if (result.discussedWithId) {
+    const [staff] = await db
+      .select({
+        displayName: profiles.displayName,
+        username: profiles.username,
+      })
+      .from(profiles)
+      .where(eq(profiles.userId, result.discussedWithId))
+      .limit(1);
+    discussedWithName = staff?.displayName ?? staff?.username ?? null;
+  }
+
   return {
     outcome: result.outcome,
     winnerId: result.winnerId,
@@ -136,6 +154,7 @@ export async function getMatchResult(
     videoUrl: result.videoUrl,
     freeWinReason: result.freeWinReason,
     discussedWithId: result.discussedWithId,
+    discussedWithName,
     reportedById: result.reportedById,
     reportedAt: result.reportedAt,
     confirmedAt: result.confirmedAt,
@@ -203,6 +222,37 @@ export async function groupResults(
     }
   }
   return [...byMatch.values()];
+}
+
+// One sub-division's standings input, plus its id/position — the per-group shape
+// `divisionStandings` merges into a division table.
+export type DivisionGroup = {
+  subDivisionId: string;
+  position: number;
+  roster: Identity[];
+  results: ResultForStandings[];
+};
+
+// Every sub-division of a division with its roster + results, ordered by
+// position — the input for the division-wide standings table. Reuses the same
+// per-group loaders as the single-group table, so grouping stays identical.
+export async function divisionGroups(
+  divisionId: string,
+): Promise<DivisionGroup[]> {
+  const subs = await db
+    .select({ id: subDivisions.id, position: subDivisions.position })
+    .from(subDivisions)
+    .where(eq(subDivisions.divisionId, divisionId))
+    .orderBy(asc(subDivisions.position));
+
+  return Promise.all(
+    subs.map(async (sub) => ({
+      subDivisionId: sub.id,
+      position: sub.position,
+      roster: await groupRoster(sub.id),
+      results: await groupResults(sub.id),
+    })),
+  );
 }
 
 // A match's result state keyed for the dashboard schedule (per player match).

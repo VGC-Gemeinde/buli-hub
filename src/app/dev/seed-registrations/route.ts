@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { generateSeedData } from "@/features/dev/seed";
+import {
+  generateEvenRunningSeason,
+  generateSeedData,
+} from "@/features/dev/seed";
 import { currentUser } from "@/features/roles/guard";
 
 // Dev-only: generates a closed window with fake registrations for testing the
@@ -8,17 +11,25 @@ import { currentUser } from "@/features/roles/guard";
 //   erstellen".
 // - &schedule=1 goes all the way to a running season (schedule + matches) and
 //   registers the signed-in persona so their Spieler-Dashboard is populated.
+// - &even=1 is a running season with equal-size sub-divisions, so the division
+//   table appears on the Spieler-Dashboard (ignores count).
 export async function GET(request: Request) {
   if (process.env.NODE_ENV !== "development") {
     return new Response("Not found", { status: 404 });
   }
 
   const params = new URL(request.url).searchParams;
+  const current = await currentUser();
+
+  if (params.get("even") === "1") {
+    await generateEvenRunningSeason(current?.userId);
+    redirect("/spieler");
+  }
+
   const raw = Number(params.get("count") ?? "100");
   const count = Math.min(Math.max(Number.isFinite(raw) ? raw : 100, 1), 500);
   const finalize = params.get("finalize") === "1";
   const schedule = params.get("schedule") === "1";
-  const current = await currentUser();
   await generateSeedData(count, {
     finalize,
     schedule,

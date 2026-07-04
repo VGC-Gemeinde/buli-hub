@@ -14,6 +14,7 @@ import { db } from "@/lib/db";
 import {
   confirmFreeWin,
   deleteMatchResult,
+  divisionGroups,
   getMatchForReport,
   getMatchResult,
   groupResults,
@@ -27,7 +28,7 @@ import {
   windowMatchOverview,
   windowResolvedDisputes,
 } from "./queries";
-import { computeStandings } from "./standings";
+import { computeStandings, divisionStandings } from "./standings";
 
 const alice = randomUUID();
 const bob = randomUUID();
@@ -345,5 +346,96 @@ describe("disputes", () => {
     expect(resolved.find((d) => d.matchId === m.id)?.resolution).toBe("upheld");
 
     await db.execute(sql`delete from matches where id = ${m.id}`);
+  });
+});
+
+describe("divisionGroups", () => {
+  // A second division under the same window, two equal-size groups (1x/1y),
+  // each a single decided match — isolated from the tier-1 fixture above.
+  const x1 = randomUUID();
+  const x2 = randomUUID();
+  const y1 = randomUUID();
+  const y2 = randomUUID();
+  let divisionId: string;
+
+  beforeAll(async () => {
+    for (const id of [x1, x2, y1, y2]) {
+      await db.execute(sql`insert into auth.users (id) values (${id})`);
+    }
+    await db.insert(profiles).values([
+      { userId: x1, displayName: "Xander" },
+      { userId: x2, displayName: "Xenia" },
+      { userId: y1, displayName: "Yanis" },
+      { userId: y2, displayName: "Yara" },
+    ]);
+    const [division] = await db
+      .insert(divisions)
+      .values({ windowId, tier: 2 })
+      .returning({ id: divisions.id });
+    divisionId = division.id;
+    const [groupX, groupY] = await db
+      .insert(subDivisions)
+      .values([
+        { divisionId, position: 0 },
+        { divisionId, position: 1 },
+      ])
+      .returning({ id: subDivisions.id });
+    await db.insert(placements).values([
+      { windowId, userId: x1, divisionId, subDivisionId: groupX.id },
+      { windowId, userId: x2, divisionId, subDivisionId: groupX.id },
+      { windowId, userId: y1, divisionId, subDivisionId: groupY.id },
+      { windowId, userId: y2, divisionId, subDivisionId: groupY.id },
+    ]);
+    const [matchX, matchY] = await db
+      .insert(matches)
+      .values([
+        { subDivisionId: groupX.id, round: 1, playerAId: x1, playerBId: x2 },
+        { subDivisionId: groupY.id, round: 1, playerAId: y1, playerBId: y2 },
+      ])
+      .returning({ id: matches.id });
+    const decided = (matchId: string, winner: string, loser: string) =>
+      saveResult(
+        matchId,
+        {
+          outcome: "normal",
+          winnerId: winner,
+          platform: "showdown",
+          playerATeamUrl: "https://pokepast.es/a",
+          playerBTeamUrl: "https://pokepast.es/b",
+          videoUrl: null,
+          freeWinReason: null,
+          discussedWithId: null,
+        },
+        [
+          { gameNumber: 1, winnerId: winner, replayUrl: null },
+          { gameNumber: 2, winnerId: winner, replayUrl: null },
+        ],
+        winner,
+      ).then(() => loser);
+    await decided(matchX.id, x1, x2);
+    await decided(matchY.id, y1, y2);
+  });
+
+  afterAll(async () => {
+    for (const id of [x1, x2, y1, y2]) {
+      await db.execute(sql`delete from auth.users where id = ${id}`);
+    }
+  });
+
+  it("returns each group's roster + results, ordered by position", async () => {
+    const groups = await divisionGroups(divisionId);
+    expect(groups.map((g) => g.position)).toEqual([0, 1]);
+    expect(groups[0].roster.map((r) => r.name)).toEqual(["Xander", "Xenia"]);
+    expect(groups[1].roster.map((r) => r.name)).toEqual(["Yanis", "Yara"]);
+    expect(groups.every((g) => g.results.length === 1)).toBe(true);
+  });
+
+  it("feeds a combined division table via divisionStandings", async () => {
+    const rows = divisionStandings(await divisionGroups(divisionId));
+    expect(rows).not.toBeNull();
+    expect(rows?.map((r) => r.userId).sort()).toEqual([x1, x2, y1, y2].sort());
+    // Both group winners swept 2:0 → tied at the top of the division.
+    expect(rows?.find((r) => r.userId === x1)?.rank).toBe(1);
+    expect(rows?.find((r) => r.userId === y1)?.rank).toBe(1);
   });
 });

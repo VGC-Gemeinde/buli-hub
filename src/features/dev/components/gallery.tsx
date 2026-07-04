@@ -98,6 +98,7 @@ const SUMMARY_RESULT: StoredResult = {
   videoUrl: null,
   freeWinReason: null,
   discussedWithId: null,
+  discussedWithName: null,
   reportedById: "me",
   reportedAt: new Date("2026-07-06T18:00:00Z"),
   confirmedAt: null,
@@ -128,6 +129,7 @@ const FREEWIN_RESULT: StoredResult = {
   videoUrl: null,
   freeWinReason: "Gegner war trotz mehrerer Terminvorschläge nicht erreichbar.",
   discussedWithId: "staff",
+  discussedWithName: "Orga Team",
   reportedById: "me",
   reportedAt: new Date("2026-07-06T18:00:00Z"),
   confirmedAt: null,
@@ -268,6 +270,98 @@ const DASH_STANDINGS: StandingsRow[] = [
     gamesWon: 0,
     gamesLost: 0,
     rank: 3,
+  },
+];
+// The whole division (groups 1a + 1b, equal size) merged into one table — the
+// division view of the switcher. "me" ranks mid-table among the other group.
+const DASH_DIVISION_STANDINGS: StandingsRow[] = [
+  {
+    userId: "d",
+    name: "Grafaiai",
+    avatarUrl: null,
+    wins: 1,
+    losses: 0,
+    points: 3,
+    gamesWon: 2,
+    gamesLost: 1,
+    rank: 1,
+  },
+  {
+    userId: "me",
+    name: "Testerino",
+    avatarUrl: AVATAR_URL,
+    wins: 1,
+    losses: 0,
+    points: 3,
+    gamesWon: 2,
+    gamesLost: 0,
+    rank: 1,
+  },
+  {
+    userId: "e",
+    name: "Kilowattrel",
+    avatarUrl: null,
+    wins: 1,
+    losses: 0,
+    points: 3,
+    gamesWon: 2,
+    gamesLost: 0,
+    rank: 1,
+  },
+  {
+    userId: "a",
+    name: "Falinks",
+    avatarUrl: null,
+    wins: 0,
+    losses: 1,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 2,
+    rank: 4,
+  },
+  {
+    userId: "f",
+    name: "Maushold",
+    avatarUrl: null,
+    wins: 0,
+    losses: 1,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 2,
+    rank: 4,
+  },
+  {
+    userId: "b",
+    name: "Wooloo",
+    avatarUrl: AVATAR_URL,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 6,
+  },
+  {
+    userId: "c",
+    name: "Pawmi",
+    avatarUrl: null,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 6,
+  },
+  {
+    userId: "g",
+    name: "Tinkatink",
+    avatarUrl: null,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 6,
   },
 ];
 
@@ -580,7 +674,7 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Spieler-Dashboard</h2>
-        <Specimen label="Laufende Saison (Hero · Spielplan · Tabelle)">
+        <Specimen label="Laufende Saison (Tabelle: Gruppe ↔ Division)">
           <InSeasonDashboard
             groupName="Division 1a"
             currentRound={2}
@@ -589,6 +683,23 @@ export function Gallery() {
             matches={DASH_MATCHES}
             resultByMatchId={DASH_RESULTS}
             standings={DASH_STANDINGS}
+            divisionName="Division 1"
+            divisionStandings={DASH_DIVISION_STANDINGS}
+            meId="me"
+            today={DASH_TODAY}
+          />
+        </Specimen>
+        <Specimen label="Laufende Saison (Tabelle: nur Gruppe, ungleiche Größen)">
+          <InSeasonDashboard
+            groupName="Division 1a"
+            currentRound={2}
+            totalRounds={4}
+            next={DASH_MATCHES[1]}
+            matches={DASH_MATCHES}
+            resultByMatchId={DASH_RESULTS}
+            standings={DASH_STANDINGS}
+            divisionName="Division 1"
+            divisionStandings={null}
             meId="me"
             today={DASH_TODAY}
           />

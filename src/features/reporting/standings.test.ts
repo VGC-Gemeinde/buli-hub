@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Identity } from "@/features/season/dashboard";
-import { computeStandings, type ResultForStandings } from "./standings";
+import {
+  computeStandings,
+  divisionStandings,
+  type ResultForStandings,
+} from "./standings";
 
 const id = (userId: string, name: string): Identity => ({
   userId,
@@ -233,5 +237,55 @@ describe("computeStandings", () => {
       ],
     });
     expect(rows.map((r) => r.rank)).toEqual([1, 2, 3]);
+  });
+});
+
+describe("divisionStandings", () => {
+  it("returns null with fewer than two groups (nothing to combine)", () => {
+    const groups = [{ roster: [id("a", "A"), id("b", "B")], results: [] }];
+    expect(divisionStandings(groups)).toBeNull();
+  });
+
+  it("returns null when groups differ in size (unequal matches played)", () => {
+    const groups = [
+      { roster: [id("a", "A"), id("b", "B")], results: [] },
+      { roster: [id("c", "C")], results: [] },
+    ];
+    expect(divisionStandings(groups)).toBeNull();
+  });
+
+  it("merges equal-size groups and ranks players who never met", () => {
+    // Group A: a1 beats a2 2:0 (diff +2). Group B: b1 beats b2 2:1 (diff +1).
+    const groupA = {
+      roster: [id("a1", "A1"), id("a2", "A2")],
+      results: [match("a1", "a2", 0)],
+    };
+    const groupB = {
+      roster: [id("b1", "B1"), id("b2", "B2")],
+      results: [match("b1", "b2", 1)],
+    };
+    const rows = divisionStandings([groupA, groupB]);
+    // Winners ranked by differential (a1 +2 over b1 +1), then losers (b2 −1 over
+    // a2 −2) — all cross-group, opponent-independent.
+    expect(rows?.map((r) => r.userId)).toEqual(["a1", "b1", "b2", "a2"]);
+    expect(rows?.map((r) => r.rank)).toEqual([1, 2, 3, 4]);
+  });
+
+  it("shares a rank across groups for genuinely tied players", () => {
+    // a1 and b1 both sweep 2:0; a2 and b2 both go 0:2 → ranks 1, 1, 3, 3.
+    const groupA = {
+      roster: [id("a1", "A1"), id("a2", "A2")],
+      results: [match("a1", "a2", 0)],
+    };
+    const groupB = {
+      roster: [id("b1", "B1"), id("b2", "B2")],
+      results: [match("b1", "b2", 0)],
+    };
+    const rows = divisionStandings([groupA, groupB]);
+    const rank = (u: string) => rows?.find((r) => r.userId === u)?.rank;
+    expect(rank("a1")).toBe(1);
+    expect(rank("b1")).toBe(1);
+    expect(rank("a2")).toBe(3);
+    expect(rank("b2")).toBe(3);
   });
 });

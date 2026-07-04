@@ -21,7 +21,7 @@ Derived neutrals are all **navy-tinted** (oklch hue 260–265, low chroma) — n
 
 **Mode behavior:** both modes supported, system default (`.dark` class strategy, already wired in globals.css).
 
-**Primary is pawmo-orange in BOTH modes** (decided after comparison): `--primary: #ff7b00`, `--primary-foreground: #021f66`. Falinks-blue is the structural color — headings, logo, dark-mode background tint — not the button color.
+**Primary is pawmo-orange in BOTH modes** (decided after comparison): `--primary: #ff7b00`, `--primary-foreground: #ffffff` (wooloo-white). Falinks-blue is the structural color — headings, logo, dark-mode background tint — not the button color.
 
 Everything else uses the standard shadcn token names — components never hardcode colors; they use `bg-primary`, `text-muted-foreground`, `border-border`, etc. The only raw brand utilities are `bg-brand-blue` / `bg-brand-orange` (defined in globals.css) for decorative accents.
 

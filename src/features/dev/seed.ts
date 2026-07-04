@@ -210,7 +210,10 @@ async function generateDevSchedule(windowId: string): Promise<void> {
 // mixed winners and 2:0/2:1 scores, plus one of each edge state (overdue,
 // pending free win, confirmed free win, double loss); the current round is
 // half-reported (the rest „offen"); future rounds stay open.
-async function seedDevResults(windowId: string): Promise<void> {
+async function seedDevResults(
+  windowId: string,
+  staffId: string,
+): Promise<void> {
   const days = await matchdaysForWindow(windowId);
   const today = new Date().toISOString().slice(0, 10);
   const currentRound = currentMatchday(days, today)?.round ?? 1;
@@ -276,6 +279,7 @@ async function seedDevResults(windowId: string): Promise<void> {
           outcome: "free_win",
           winnerId: a,
           freeWinReason: "Gegner war trotz mehrerer Anfragen nicht erreichbar.",
+          discussedWithId: staffId,
           reportedById: a,
         }); // pending confirmation
         continue;
@@ -286,8 +290,9 @@ async function seedDevResults(windowId: string): Promise<void> {
           outcome: "free_win",
           winnerId: b,
           freeWinReason: "Kein gemeinsamer Termin gefunden.",
+          discussedWithId: staffId,
           reportedById: b,
-          confirmedById: a,
+          confirmedById: staffId,
           confirmedAt: new Date(),
         }); // confirmed → counts
         continue;
@@ -346,6 +351,8 @@ export async function generateSeedData(
     finalize?: boolean;
     schedule?: boolean;
     includeUserId?: string;
+    size?: number;
+    divisionCount?: number;
   } = {},
 ): Promise<number> {
   // A schedule needs a finalized seeding to build from.
@@ -371,10 +378,23 @@ export async function generateSeedData(
     })),
   );
 
-  // A closed window (opened_by one of the fake users), then the registrations.
+  // A staff member: opens the window and is the „besprochen mit" contact on
+  // player-reported free wins. Not registered — staff don't play the season.
+  const staffId = randomUUID();
+  await db.execute(
+    sql`insert into auth.users (id, email) values (${staffId}, ${`${SEED_EMAIL_PREFIX}staff${SEED_EMAIL_DOMAIN}`})`,
+  );
+  await db.insert(profiles).values({
+    userId: staffId,
+    displayName: "Orga Team",
+    username: "orga",
+    role: "staff",
+  });
+
+  // A closed window opened by the staff member, then the registrations.
   const [window] = await db.execute<{ id: string }>(
     sql`insert into registration_windows (opened_at, closes_at, opened_by)
-        values (now() - interval '40 days', now() - interval '1 day', ${ids[0]})
+        values (now() - interval '40 days', now() - interval '1 day', ${staffId})
         returning id`,
   );
 
@@ -412,12 +432,38 @@ export async function generateSeedData(
   }
 
   if (finalize) {
-    await finalizeDevSeeding(window.id, 2, 8);
+    await finalizeDevSeeding(
+      window.id,
+      opts.divisionCount ?? 2,
+      opts.size ?? 8,
+    );
   }
   if (opts.schedule) {
     await generateDevSchedule(window.id);
-    await seedDevResults(window.id);
+    await seedDevResults(window.id, staffId);
   }
 
   return specs.length;
+}
+
+// A running season whose sub-divisions are all the same size, so the division
+// table shows up on the Spieler-Dashboard — it only appears when every group in
+// a division is equal size. Two divisions of 24 players each split into three
+// groups of 8 (…1a / 1b / 1c). The signed-in persona is registered and placed,
+// landing in one of the equal groups. The fake count is chosen so the total —
+// with or without the persona — is 48 and always divides evenly.
+const EVEN_DIVISION_COUNT = 2;
+const EVEN_SUB_DIVISION_SIZE = 8;
+const EVEN_TOTAL_PLAYERS = 48;
+
+export async function generateEvenRunningSeason(
+  includeUserId?: string,
+): Promise<number> {
+  const fakeCount = EVEN_TOTAL_PLAYERS - (includeUserId ? 1 : 0);
+  return generateSeedData(fakeCount, {
+    schedule: true,
+    includeUserId,
+    size: EVEN_SUB_DIVISION_SIZE,
+    divisionCount: EVEN_DIVISION_COUNT,
+  });
 }

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { matchDisplayState, scoreFor } from "@/features/reporting/match-state";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
 import { cn } from "@/lib/utils";
-import { daysUntil, type Identity, type PlayerMatch } from "../dashboard";
+import { daysUntil, type PlayerMatch } from "../dashboard";
+import { PlayerAvatar } from "./player-avatar";
+import { StandingsPanel } from "./standings-panel";
 
 const MONTHS = [
   "Januar",
@@ -21,13 +22,6 @@ const MONTHS = [
   "November",
   "Dezember",
 ];
-
-// Game differential with an explicit sign, e.g. "+11", "0", "−3".
-function formatDiff(diff: number): string {
-  if (diff > 0) return `+${diff}`;
-  if (diff < 0) return `−${-diff}`;
-  return "0";
-}
 
 function day(dateStr: string): number {
   return Number(dateStr.slice(8, 10));
@@ -62,32 +56,6 @@ function SectionHeading({ title, meta }: { title: string; meta?: string }) {
         <span className="text-[13px] text-muted-foreground">{meta}</span>
       ) : null}
     </div>
-  );
-}
-
-function PlayerAvatar({
-  identity,
-  size = "size-7",
-  filled = false,
-}: {
-  identity: Identity;
-  size?: string;
-  filled?: boolean;
-}) {
-  return (
-    <Avatar className={size}>
-      {identity.avatarUrl ? (
-        <AvatarImage src={identity.avatarUrl} alt="" />
-      ) : null}
-      <AvatarFallback
-        className={cn(
-          "font-semibold text-[10px]",
-          filled && "bg-brand-blue text-white",
-        )}
-      >
-        {identity.name.slice(0, 2).toUpperCase()}
-      </AvatarFallback>
-    </Avatar>
   );
 }
 
@@ -237,7 +205,7 @@ function Hero({
               className={cn(
                 "rounded-full px-3 py-1 font-semibold text-[13px]",
                 daysLeft <= 2
-                  ? "bg-brand-orange text-brand-blue"
+                  ? "bg-brand-orange text-white"
                   : "bg-brand-orange/12 text-brand-blue dark:text-white",
               )}
             >
@@ -323,7 +291,7 @@ function ScheduleRow({
           chip,
           "flex items-center justify-center",
           state === "current"
-            ? "bg-brand-orange text-brand-blue"
+            ? "bg-brand-orange text-white"
             : "bg-muted text-muted-foreground",
         )}
       >
@@ -440,6 +408,8 @@ export function InSeasonDashboard({
   matches,
   resultByMatchId,
   standings,
+  divisionName,
+  divisionStandings,
   meId,
   today,
 }: {
@@ -450,6 +420,8 @@ export function InSeasonDashboard({
   matches: PlayerMatch[];
   resultByMatchId: Map<string, MatchResultLite>;
   standings: StandingsRow[];
+  divisionName: string;
+  divisionStandings: StandingsRow[] | null;
   meId: string;
   today: string;
 }) {
@@ -483,91 +455,13 @@ export function InSeasonDashboard({
 
         <section className="flex flex-col gap-3">
           <SectionHeading title="Tabelle" meta={groupName} />
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[400px] border-separate border-spacing-0 text-left [&_tr:last-child_td]:border-b-0">
-              <thead>
-                <tr className="text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
-                  <th className="sticky left-0 z-20 w-[44px] border-b bg-background py-2.5 pr-1 pl-4 font-semibold before:absolute before:inset-0 before:bg-muted/50">
-                    <span className="relative">Pl.</span>
-                  </th>
-                  <th className="sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2 font-semibold before:absolute before:inset-0 before:bg-muted/50">
-                    <span className="relative">Spieler</span>
-                  </th>
-                  <th className="border-b bg-muted/50 py-2.5 pr-3 pl-5 text-right font-semibold">
-                    Bilanz
-                  </th>
-                  <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold">
-                    Diff.
-                  </th>
-                  <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold">
-                    Punkte
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((row) => {
-                  const me = row.userId === meId;
-                  // Sticky columns need an opaque base so scrolled columns don't
-                  // bleed through; the row highlight rides on top via a `before`
-                  // tint so it stays consistent across frozen + scrolling cells.
-                  const tint = me
-                    ? "before:absolute before:inset-0 before:bg-brand-orange/6"
-                    : "";
-                  return (
-                    <tr
-                      key={row.userId}
-                      className={cn(me && "bg-brand-orange/6")}
-                    >
-                      <td
-                        className={cn(
-                          "sticky left-0 z-20 border-b bg-background py-2.5 pr-1 pl-4 font-semibold text-muted-foreground text-sm tabular-nums",
-                          tint,
-                        )}
-                      >
-                        <span className="relative">{row.rank}</span>
-                      </td>
-                      <td
-                        className={cn(
-                          "sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2",
-                          tint,
-                        )}
-                      >
-                        <span className="relative flex min-w-0 items-center gap-2">
-                          <PlayerAvatar
-                            identity={row}
-                            size="size-[26px]"
-                            filled={me}
-                          />
-                          <span
-                            className={cn(
-                              "truncate text-[14.5px]",
-                              me ? "font-semibold" : "font-medium",
-                            )}
-                          >
-                            {row.name}
-                          </span>
-                          {me ? (
-                            <span className="font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
-                              Du
-                            </span>
-                          ) : null}
-                        </span>
-                      </td>
-                      <td className="border-b py-2.5 pr-3 pl-5 text-right text-muted-foreground text-sm tabular-nums">
-                        {row.wins} : {row.losses}
-                      </td>
-                      <td className="border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums">
-                        {formatDiff(row.gamesWon - row.gamesLost)}
-                      </td>
-                      <td className="border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums">
-                        {row.points}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <StandingsPanel
+            groupName={groupName}
+            groupStandings={standings}
+            divisionName={divisionName}
+            divisionStandings={divisionStandings}
+            meId={meId}
+          />
         </section>
       </div>
     </>

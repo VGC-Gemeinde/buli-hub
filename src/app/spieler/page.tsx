@@ -2,8 +2,14 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { getRegistration } from "@/features/registration/queries";
-import { groupResults, subDivisionResults } from "@/features/reporting/queries";
-import { computeStandings } from "@/features/reporting/standings";
+import {
+  divisionGroups,
+  subDivisionResults,
+} from "@/features/reporting/queries";
+import {
+  computeStandings,
+  divisionStandings,
+} from "@/features/reporting/standings";
 import { currentUser } from "@/features/roles/guard";
 import { hasSchedule } from "@/features/schedule/queries";
 import {
@@ -19,13 +25,12 @@ import {
   splitPlayerMatches,
 } from "@/features/season/dashboard";
 import {
-  groupRoster,
   matchdaysForWindow,
   playerPlacement,
   subDivisionMatches,
 } from "@/features/season/queries";
 import { getSeeding } from "@/features/seeding/queries";
-import { subDivisionName } from "@/features/seeding/seeding";
+import { divisionName, subDivisionName } from "@/features/seeding/seeding";
 import { latestWindow } from "@/features/staff/queries";
 import {
   registrationState,
@@ -84,14 +89,19 @@ export default async function SpielerPage() {
 
   if (view === "in_season" && window && placement) {
     const today = new Date().toISOString().slice(0, 10);
-    const [members, matchdays, rawMatches, resultByMatchId, standingsResults] =
-      await Promise.all([
-        groupRoster(placement.subDivisionId),
-        matchdaysForWindow(window.id),
-        subDivisionMatches(placement.subDivisionId),
-        subDivisionResults(placement.subDivisionId),
-        groupResults(placement.subDivisionId),
-      ]);
+    const [groups, matchdays, rawMatches, resultByMatchId] = await Promise.all([
+      divisionGroups(placement.divisionId),
+      matchdaysForWindow(window.id),
+      subDivisionMatches(placement.subDivisionId),
+      subDivisionResults(placement.subDivisionId),
+    ]);
+
+    // The player's own group is one of the division's groups — derive the group
+    // roster + standings from it so the group is loaded only once.
+    const ownGroup = groups.find(
+      (group) => group.subDivisionId === placement.subDivisionId,
+    );
+    const members = ownGroup?.roster ?? [];
 
     const matchdaysByRound = new Map(
       matchdays.map((d) => [
@@ -109,8 +119,9 @@ export default async function SpielerPage() {
     const { next } = splitPlayerMatches(myMatches, today);
     const standings = computeStandings({
       roster: members,
-      results: standingsResults,
+      results: ownGroup?.results ?? [],
     });
+    const division = divisionStandings(groups);
     const totalRounds = matchdays.length;
     const currentRound =
       currentMatchday(matchdays, today)?.round ?? totalRounds;
@@ -142,6 +153,8 @@ export default async function SpielerPage() {
             matches={myMatches}
             resultByMatchId={resultByMatchId}
             standings={standings}
+            divisionName={divisionName(placement.tier)}
+            divisionStandings={division}
             meId={current.userId}
             today={today}
           />

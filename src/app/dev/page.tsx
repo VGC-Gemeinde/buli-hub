@@ -74,6 +74,18 @@ export default function DevPage() {
             </span>
           </a>
           <a
+            href="/dev/seed-registrations?even=1"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Laufende Saison mit gleich großen Gruppen
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Zwei Divisionen mit je drei 8er-Gruppen → die Divisionstabelle
+              erscheint im Spieler-Dashboard
+            </span>
+          </a>
+          <a
             href="/dev/clear-registrations"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >

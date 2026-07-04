@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, inArray } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray } from "drizzle-orm";
 import {
   divisions,
   placements,
@@ -228,12 +228,14 @@ export async function saveSeedingConfig(
 ) {
   await db.transaction(async (tx) => {
     const now = new Date();
+    // Changing the size/division count reshapes the seeding, so any saved
+    // post-season config no longer reflects it — clear the confirmation.
     await tx
       .insert(seedings)
       .values({ windowId, subDivisionSize, updatedAt: now })
       .onConflictDoUpdate({
         target: seedings.windowId,
-        set: { subDivisionSize, updatedAt: now },
+        set: { subDivisionSize, postSeasonConfiguredAt: null, updatedAt: now },
       });
 
     const existing = await tx
@@ -313,6 +315,12 @@ export async function generateSubDivisionsForDivision(
   const groups = generateSubDivisions(divisionPlayers, seeding.subDivisionSize);
 
   await db.transaction(async (tx) => {
+    // Regenerating groups changes their sizes, so a saved post-season config
+    // may no longer be valid — clear the confirmation.
+    await tx
+      .update(seedings)
+      .set({ postSeasonConfiguredAt: null, updatedAt: new Date() })
+      .where(eq(seedings.windowId, windowId));
     // Deleting the old groups resets their players' sub_division_id (FK set
     // null); recreate and re-assign.
     await tx
@@ -369,4 +377,117 @@ export async function finalizeSeeding(windowId: string) {
     .update(seedings)
     .set({ finalizedAt: new Date() })
     .where(eq(seedings.windowId, windowId));
+}
+
+// Every division of a window with its post-season config and the roster size of
+// each of its groups (ordered by position) — the input for post-season
+// validation and the config panel.
+export type DivisionWithGroupSizes = {
+  id: string;
+  tier: number;
+  relevantTable: "sub_division" | "division";
+  guaranteedPromotions: number;
+  guaranteedDemotions: number;
+  promotionPlayoffSlots: number;
+  demotionPlayoffSlots: number;
+  groupSizes: number[];
+};
+
+export async function divisionsWithGroupSizes(
+  windowId: string,
+): Promise<DivisionWithGroupSizes[]> {
+  const divs = await listDivisions(windowId);
+  // One row per group with its player count, in tier/position order.
+  const groups = await db
+    .select({
+      divisionId: subDivisions.divisionId,
+      position: subDivisions.position,
+      size: count(placements.userId),
+    })
+    .from(subDivisions)
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .leftJoin(placements, eq(placements.subDivisionId, subDivisions.id))
+    .where(eq(divisions.windowId, windowId))
+    .groupBy(subDivisions.divisionId, subDivisions.id, subDivisions.position)
+    .orderBy(asc(subDivisions.position));
+
+  const sizesByDivision = new Map<string, number[]>();
+  for (const group of groups) {
+    const list = sizesByDivision.get(group.divisionId) ?? [];
+    list.push(group.size);
+    sizesByDivision.set(group.divisionId, list);
+  }
+
+  return divs.map((division) => ({
+    id: division.id,
+    tier: division.tier,
+    relevantTable: division.relevantTable,
+    guaranteedPromotions: division.guaranteedPromotions,
+    guaranteedDemotions: division.guaranteedDemotions,
+    promotionPlayoffSlots: division.promotionPlayoffSlots,
+    demotionPlayoffSlots: division.demotionPlayoffSlots,
+    groupSizes: sizesByDivision.get(division.id) ?? [],
+  }));
+}
+
+// A single division's post-season config (for the player dashboard's zones).
+export async function divisionPostSeason(divisionId: string): Promise<{
+  relevantTable: "sub_division" | "division";
+  guaranteedPromotions: number;
+  guaranteedDemotions: number;
+  promotionPlayoffSlots: number;
+  demotionPlayoffSlots: number;
+} | null> {
+  const row = await db.query.divisions.findFirst({
+    columns: {
+      relevantTable: true,
+      guaranteedPromotions: true,
+      guaranteedDemotions: true,
+      promotionPlayoffSlots: true,
+      demotionPlayoffSlots: true,
+    },
+    where: eq(divisions.id, divisionId),
+  });
+  return row ?? null;
+}
+
+// Writes each division's post-season columns and stamps (or clears)
+// `post_season_configured_at`: set only when the config is valid, so finalize's
+// "explicitly configured" gate can trust it.
+export async function savePostSeasonConfig(
+  windowId: string,
+  configs: readonly {
+    divisionId: string;
+    relevantTable: "sub_division" | "division";
+    guaranteedPromotions: number;
+    guaranteedDemotions: number;
+    promotionPlayoffSlots: number;
+    demotionPlayoffSlots: number;
+  }[],
+  valid: boolean,
+) {
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    for (const config of configs) {
+      await tx
+        .update(divisions)
+        .set({
+          relevantTable: config.relevantTable,
+          guaranteedPromotions: config.guaranteedPromotions,
+          guaranteedDemotions: config.guaranteedDemotions,
+          promotionPlayoffSlots: config.promotionPlayoffSlots,
+          demotionPlayoffSlots: config.demotionPlayoffSlots,
+        })
+        .where(
+          and(
+            eq(divisions.id, config.divisionId),
+            eq(divisions.windowId, windowId),
+          ),
+        );
+    }
+    await tx
+      .update(seedings)
+      .set({ postSeasonConfiguredAt: valid ? now : null, updatedAt: now })
+      .where(eq(seedings.windowId, windowId));
+  });
 }

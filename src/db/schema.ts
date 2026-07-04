@@ -109,6 +109,12 @@ export const registrations = pgTable(
 export const seedings = pgTable("seedings", {
   windowId: uuid("window_id").primaryKey(),
   subDivisionSize: integer("sub_division_size").notNull(),
+  // Set when staff save a valid post-season config (promotion/demotion rules).
+  // Required for finalize; cleared when the seeding config changes so a stale
+  // confirmation cannot slip through. See docs/plans/post-season-setup.md.
+  postSeasonConfiguredAt: timestamp("post_season_configured_at", {
+    withTimezone: true,
+  }),
   finalizedAt: timestamp("finalized_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -118,14 +124,35 @@ export const seedings = pgTable("seedings", {
     .defaultNow(),
 });
 
+// Which standings table decides a division's post-season movement: one table per
+// sub-division (counts are per group), or the global division table (counts are
+// per division; only selectable when every group is the same size).
+export const relevantTableEnum = pgEnum("relevant_table", [
+  "sub_division",
+  "division",
+]);
+
 // A division = a skill tier within a season (1 = top). Name is derived:
-// „Division {tier}".
+// „Division {tier}". The post-season columns are the promotion/demotion rules
+// (see docs/plans/post-season-setup.md): guaranteed movement + playoff slots,
+// interpreted per group in sub_division mode, per division in division mode.
 export const divisions = pgTable(
   "divisions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     windowId: uuid("window_id").notNull(),
     tier: integer("tier").notNull(),
+    relevantTable: relevantTableEnum("relevant_table")
+      .notNull()
+      .default("sub_division"),
+    guaranteedPromotions: integer("guaranteed_promotions").notNull().default(0),
+    guaranteedDemotions: integer("guaranteed_demotions").notNull().default(0),
+    promotionPlayoffSlots: integer("promotion_playoff_slots")
+      .notNull()
+      .default(0),
+    demotionPlayoffSlots: integer("demotion_playoff_slots")
+      .notNull()
+      .default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

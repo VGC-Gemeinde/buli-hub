@@ -18,6 +18,7 @@ import {
   pollControl,
   releaseControl,
   type SeedingResult,
+  savePostSeason,
 } from "../actions";
 import { CONTROL_HEARTBEAT_MS, type ControlState } from "../control";
 import {
@@ -25,6 +26,7 @@ import {
   seedingReadiness,
   suggestedDivisionCount,
 } from "../placement";
+import type { DivisionWithGroupSizes } from "../queries";
 import {
   assembleSheetRows,
   type DivisionRef,
@@ -34,6 +36,10 @@ import {
 } from "../sheet";
 import { BulkBar } from "./bulk-bar";
 import { ControlBar } from "./control-bar";
+import type {
+  PostSeasonConfigInput,
+  PostSeasonSaveResult,
+} from "./post-season-dialog";
 import { SeedingSheet } from "./seeding-sheet";
 import { SeedingToolbar } from "./seeding-toolbar";
 
@@ -45,6 +51,8 @@ export function SeedingWorkspace({
   subDivisions,
   initialSize,
   initialDivisionCount,
+  postSeason,
+  postSeasonConfigured,
   finalized,
   finalizedAt,
   initialControlState,
@@ -55,6 +63,8 @@ export function SeedingWorkspace({
   subDivisions: SubDivisionRef[];
   initialSize: number | null;
   initialDivisionCount: number;
+  postSeason: DivisionWithGroupSizes[];
+  postSeasonConfigured: boolean;
   finalized: boolean;
   finalizedAt: Date | null;
   initialControlState: ControlState;
@@ -90,11 +100,11 @@ export function SeedingWorkspace({
   // Whether this first render will trigger the lazy auto-init: an un-set-up
   // seeding (no divisions) that has returning players to place. Computed on the
   // client from the props, so we can show the loader from the very first paint.
-  // Auto-init is a mutation, so it only runs for the controller — an observer
-  // opening an un-set-up seeding must not trigger it.
+  // It runs for whoever opens the page first — not just the controller — so the
+  // pre-placement is done before anyone edits. The loader covers the whole
+  // workspace while it runs, so control cannot be taken until it finishes.
   const willAutoInit =
     !finalized &&
-    isController &&
     divisions.length === 0 &&
     suggestedDivisionCount(players) >= 1;
   const [initializing, setInitializing] = useState(willAutoInit);
@@ -105,25 +115,28 @@ export function SeedingWorkspace({
     setOverrides({});
   }, [players]);
 
-  // Lazy auto-init: the first time staff open an un-set-up seeding after close,
+  // Lazy auto-init: the first time an un-set-up seeding is opened after close,
   // prefill the divisions and place returning players — once, via the action
   // (never during render). The loader below covers the work so the sheet only
-  // ever renders in its final, sorted form.
+  // ever renders in its final, sorted form. The action is idempotent, so if two
+  // people open at once the second simply sees the first's result on refresh.
   useEffect(() => {
     if (didInit.current || !willAutoInit) {
       return;
     }
     didInit.current = true;
-    initializeSeeding().then((result) => {
-      if (result.ok && result.initialized) {
-        router.refresh(); // fresh props (divisions + placements) clear the loader
-      } else {
-        if (!result.ok) {
-          setActionError(result.error);
+    initializeSeeding()
+      .then((result) => {
+        // ok — whether this call created the divisions or found them already
+        // there (another opener won the race): fresh props clear the loader.
+        if (result.ok) {
+          router.refresh();
+          return;
         }
+        setActionError(result.error);
         setInitializing(false);
-      }
-    });
+      })
+      .catch(() => setInitializing(false));
   }, [willAutoInit, router]);
 
   // The refreshed, initialized data has arrived — reveal the sorted workspace.
@@ -155,10 +168,14 @@ export function SeedingWorkspace({
   const grouped = effectivePlayers.filter(
     (p) => p.subDivisionId !== null,
   ).length;
-  const ready = seedingReadiness(effectivePlayers).ready;
-  const gateHint = ready
-    ? "Endgültig — kann nicht rückgängig gemacht werden."
-    : `Erst möglich, wenn alle Spieler platziert (${placed}/${total}) und in Gruppen (${grouped}/${total}) sind.`;
+  const placementReady = seedingReadiness(effectivePlayers).ready;
+  // Finalize also needs the post-season rules explicitly configured (valid + saved).
+  const ready = placementReady && postSeasonConfigured;
+  const gateHint = !placementReady
+    ? `Erst möglich, wenn alle Spieler platziert (${placed}/${total}) und in Gruppen (${grouped}/${total}) sind.`
+    : !postSeasonConfigured
+      ? "Erst die Auf- und Abstiegsregeln festlegen und speichern."
+      : "Endgültig — kann nicht rückgängig gemacht werden.";
 
   const rows = useMemo(
     () =>
@@ -368,6 +385,22 @@ export function SeedingWorkspace({
     return result;
   }
 
+  const onSavePostSeason = useCallback(
+    async (configs: PostSeasonConfigInput[]): Promise<PostSeasonSaveResult> => {
+      const result = await savePostSeason({ divisions: configs });
+      if (result.ok) {
+        router.refresh();
+        return { ok: true, issues: result.issues };
+      }
+      if (result.code === "no_control") {
+        refreshControl();
+        router.refresh();
+      }
+      return { ok: false, error: result.error };
+    },
+    [router, refreshControl],
+  );
+
   const finalizedNotice =
     finalized && finalizedAt
       ? new Intl.DateTimeFormat("de-DE", {
@@ -401,6 +434,9 @@ export function SeedingWorkspace({
         generatingAll={generatingAll}
         filter={filter}
         onFilterChange={setFilter}
+        postSeason={postSeason}
+        postSeasonConfigured={postSeasonConfigured}
+        onSavePostSeason={onSavePostSeason}
       />
 
       {finalized ? null : (

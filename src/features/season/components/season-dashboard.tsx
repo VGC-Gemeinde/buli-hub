@@ -6,7 +6,7 @@ import type { StandingsRow } from "@/features/reporting/standings";
 import { cn } from "@/lib/utils";
 import { daysUntil, type PlayerMatch } from "../dashboard";
 import { PlayerAvatar } from "./player-avatar";
-import { StandingsPanel } from "./standings-panel";
+import { StandingsPanel, type ZoneMap } from "./standings-panel";
 
 const MONTHS = [
   "Januar",
@@ -408,8 +408,11 @@ export function InSeasonDashboard({
   matches,
   resultByMatchId,
   standings,
+  groupZones,
   divisionName,
   divisionStandings,
+  divisionZones,
+  defaultScope,
   meId,
   today,
 }: {
@@ -420,8 +423,11 @@ export function InSeasonDashboard({
   matches: PlayerMatch[];
   resultByMatchId: Map<string, MatchResultLite>;
   standings: StandingsRow[];
+  groupZones?: ZoneMap;
   divisionName: string;
   divisionStandings: StandingsRow[] | null;
+  divisionZones?: ZoneMap;
+  defaultScope: "group" | "division";
   meId: string;
   today: string;
 }) {
@@ -458,8 +464,11 @@ export function InSeasonDashboard({
           <StandingsPanel
             groupName={groupName}
             groupStandings={standings}
+            groupZones={groupZones}
             divisionName={divisionName}
             divisionStandings={divisionStandings}
+            divisionZones={divisionZones}
+            defaultScope={defaultScope}
             meId={meId}
           />
         </section>

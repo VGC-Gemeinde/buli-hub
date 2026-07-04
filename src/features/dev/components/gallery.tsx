@@ -29,9 +29,12 @@ import { InSeasonDashboard } from "@/features/season/components/season-dashboard
 import type { PlayerMatch } from "@/features/season/dashboard";
 import { ControlBar } from "@/features/seeding/components/control-bar";
 import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
+import { PostSeasonDialog } from "@/features/seeding/components/post-season-dialog";
 import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
 import { SeedingInitLoader } from "@/features/seeding/components/seeding-workspace";
 import type { SeedingPlayer } from "@/features/seeding/placement";
+import { assignZones } from "@/features/seeding/post-season";
+import type { DivisionWithGroupSizes } from "@/features/seeding/queries";
 import { assembleSheetRows } from "@/features/seeding/sheet";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import {
@@ -225,6 +228,58 @@ const EDITOR_INITIAL = {
 };
 const EDITOR_A = { userId: "ea", name: "Sora", avatarUrl: null };
 const EDITOR_B = { userId: "eb", name: "Kai", avatarUrl: null };
+// Builds a userId → zone map for a standings fixture, so the specimens show the
+// post-season tints without a real config.
+const zoneMap = (
+  rows: StandingsRow[],
+  counts: {
+    promotions: number;
+    promotionPlayoff: number;
+    demotionPlayoff: number;
+    demotions: number;
+  },
+) =>
+  new Map(
+    assignZones({ rowCount: rows.length, ...counts }).map((zone, i) => [
+      rows[i].userId,
+      zone,
+    ]),
+  );
+
+// A balanced three-tier config (equal groups) for the post-season dialog.
+const POST_SEASON_DIVISIONS: DivisionWithGroupSizes[] = [
+  {
+    id: "d1",
+    tier: 1,
+    relevantTable: "sub_division",
+    guaranteedPromotions: 0,
+    guaranteedDemotions: 1,
+    promotionPlayoffSlots: 0,
+    demotionPlayoffSlots: 1,
+    groupSizes: [8, 8],
+  },
+  {
+    id: "d2",
+    tier: 2,
+    relevantTable: "sub_division",
+    guaranteedPromotions: 1,
+    guaranteedDemotions: 1,
+    promotionPlayoffSlots: 1,
+    demotionPlayoffSlots: 1,
+    groupSizes: [8, 8],
+  },
+  {
+    id: "d3",
+    tier: 3,
+    relevantTable: "sub_division",
+    guaranteedPromotions: 1,
+    guaranteedDemotions: 0,
+    promotionPlayoffSlots: 1,
+    demotionPlayoffSlots: 0,
+    groupSizes: [8, 8],
+  },
+];
+
 const DASH_STANDINGS: StandingsRow[] = [
   {
     userId: "me",
@@ -662,6 +717,18 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Einteilung: Auf- & Abstieg</h2>
+        <Specimen label="Dialog (Auf-/Abstiegsregeln pro Division)">
+          <PostSeasonDialog
+            divisions={POST_SEASON_DIVISIONS}
+            readOnly={false}
+            configured
+            onSave={async () => ({ ok: true, issues: [] })}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Spielplan: Erstellen</h2>
         <Specimen label="Dialog (Spielwochen-Deadlines)">
           <CreateScheduleDialog
@@ -674,7 +741,7 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Spieler-Dashboard</h2>
-        <Specimen label="Laufende Saison (Tabelle: Gruppe ↔ Division)">
+        <Specimen label="Gesamttabelle (Division-Modus, Zonen: Auf-/Abstieg + Playoff)">
           <InSeasonDashboard
             groupName="Division 1a"
             currentRound={2}
@@ -685,11 +752,18 @@ export function Gallery() {
             standings={DASH_STANDINGS}
             divisionName="Division 1"
             divisionStandings={DASH_DIVISION_STANDINGS}
+            divisionZones={zoneMap(DASH_DIVISION_STANDINGS, {
+              promotions: 1,
+              promotionPlayoff: 1,
+              demotionPlayoff: 1,
+              demotions: 1,
+            })}
+            defaultScope="division"
             meId="me"
             today={DASH_TODAY}
           />
         </Specimen>
-        <Specimen label="Laufende Saison (Tabelle: nur Gruppe, ungleiche Größen)">
+        <Specimen label="Gruppentabelle (Sub-Division-Modus, Zonen pro Gruppe)">
           <InSeasonDashboard
             groupName="Division 1a"
             currentRound={2}
@@ -698,8 +772,15 @@ export function Gallery() {
             matches={DASH_MATCHES}
             resultByMatchId={DASH_RESULTS}
             standings={DASH_STANDINGS}
+            groupZones={zoneMap(DASH_STANDINGS, {
+              promotions: 1,
+              promotionPlayoff: 0,
+              demotionPlayoff: 0,
+              demotions: 1,
+            })}
             divisionName="Division 1"
             divisionStandings={null}
+            defaultScope="group"
             meId="me"
             today={DASH_TODAY}
           />

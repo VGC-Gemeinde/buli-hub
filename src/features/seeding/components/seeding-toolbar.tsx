@@ -5,8 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type { DivisionWithGroupSizes } from "../queries";
 import type { SheetFilter } from "../sheet";
 import { FinalizeDialog } from "./finalize-dialog";
+import {
+  type PostSeasonConfigInput,
+  PostSeasonDialog,
+  type PostSeasonSaveResult,
+} from "./post-season-dialog";
 
 function Meter({
   label,
@@ -61,6 +67,9 @@ export function SeedingToolbar({
   generatingAll,
   filter,
   onFilterChange,
+  postSeason,
+  postSeasonConfigured,
+  onSavePostSeason,
 }: {
   finalized: boolean;
   // Observer mode: someone else drives. Editing controls are disabled, but
@@ -80,6 +89,11 @@ export function SeedingToolbar({
   generatingAll: boolean;
   filter: SheetFilter;
   onFilterChange: (filter: SheetFilter) => void;
+  postSeason: DivisionWithGroupSizes[];
+  postSeasonConfigured: boolean;
+  onSavePostSeason: (
+    configs: PostSeasonConfigInput[],
+  ) => Promise<PostSeasonSaveResult>;
 }) {
   const spieltage = Number(size) > 1 ? Number(size) - 1 : 0;
 
@@ -114,6 +128,14 @@ export function SeedingToolbar({
           total={total}
           fill="bg-brand-blue dark:bg-white/80"
         />
+        {postSeason.length > 0 ? (
+          <PostSeasonDialog
+            divisions={postSeason}
+            readOnly={readOnly || finalized}
+            configured={postSeasonConfigured}
+            onSave={onSavePostSeason}
+          />
+        ) : null}
         {finalized ? (
           <div className="flex items-center gap-2 rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-3 py-1.5 font-semibold text-[13.5px]">
             <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />

@@ -24,6 +24,30 @@ export function subDivisionShortName(tier: number, position: number): string {
   return `${tier}${String.fromCharCode(97 + position)}`;
 }
 
+// Generous upper bound for a promotion/demotion/playoff count; the real limit is
+// the capacity check in `validatePostSeason` (zones must fit the group/division).
+export const MAX_MOVEMENT = 99;
+
+const movementCount = z.coerce
+  .number({ error: "Ungültige Zahl" })
+  .int()
+  .min(0, "Mindestens 0")
+  .max(MAX_MOVEMENT, `Höchstens ${MAX_MOVEMENT}`);
+
+// One division's post-season config as submitted by the staff panel.
+export const postSeasonDivisionSchema = z.object({
+  divisionId: z.string().uuid(),
+  relevantTable: z.enum(["sub_division", "division"]),
+  guaranteedPromotions: movementCount,
+  guaranteedDemotions: movementCount,
+  promotionPlayoffSlots: movementCount,
+  demotionPlayoffSlots: movementCount,
+});
+
+export const postSeasonConfigSchema = z.array(postSeasonDivisionSchema);
+
+export type PostSeasonDivisionInput = z.output<typeof postSeasonDivisionSchema>;
+
 export const seedingConfigSchema = z.object({
   subDivisionSize: z.coerce
     .number({ error: "Ungültige Zahl" })

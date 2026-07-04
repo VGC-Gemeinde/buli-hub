@@ -11,12 +11,14 @@ import {
   seedingReadiness,
   suggestedDivisionCount,
 } from "./placement";
+import { type PostSeasonIssue, validatePostSeason } from "./post-season";
 import {
   assignPlayersToDivision,
   assignPlayerToDivision,
   bumpHeartbeat,
   createDivisions,
   divisionBelongsToWindow,
+  divisionsWithGroupSizes,
   generateSubDivisionsForDivision,
   getLockWithHolder,
   getSeeding,
@@ -24,13 +26,14 @@ import {
   listSeedingPlayers,
   movePlayerToSubDivision,
   finalizeSeeding as persistFinalize,
+  savePostSeasonConfig as persistPostSeasonConfig,
   placePlayersInGroup,
   releaseLock,
   saveSeedingConfig,
   subDivisionDivisionId,
   upsertLock,
 } from "./queries";
-import { seedingConfigSchema } from "./seeding";
+import { postSeasonConfigSchema, seedingConfigSchema } from "./seeding";
 
 // `code: "no_control"` lets the client tell "you lost control" apart from other
 // failures and flip its UI to read-only instead of only surfacing the error.
@@ -62,6 +65,57 @@ export async function configureSeeding(input: {
   );
   revalidatePath("/staff/seeding");
   return { ok: true };
+}
+
+// Saves the per-division post-season rules. Persists the columns regardless, but
+// only stamps the "configured" confirmation (which gates finalize) when the whole
+// config is valid. Returns the issues so the panel can show why it isn't valid.
+export async function savePostSeason(input: {
+  divisions: unknown;
+}): Promise<
+  | { ok: true; issues: PostSeasonIssue[] }
+  | { ok: false; error: string; code?: "no_control" }
+> {
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
+  }
+
+  const parsed = postSeasonConfigSchema.safeParse(input.divisions);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
+    };
+  }
+
+  const withSizes = await divisionsWithGroupSizes(gate.windowId);
+  const configById = new Map(parsed.data.map((c) => [c.divisionId, c]));
+  const forValidation = [];
+  for (const division of withSizes) {
+    const config = configById.get(division.id);
+    if (!config) {
+      return { ok: false, error: "Konfiguration unvollständig" };
+    }
+    forValidation.push({
+      tier: division.tier,
+      groupSizes: division.groupSizes,
+      relevantTable: config.relevantTable,
+      guaranteedPromotions: config.guaranteedPromotions,
+      guaranteedDemotions: config.guaranteedDemotions,
+      promotionPlayoffSlots: config.promotionPlayoffSlots,
+      demotionPlayoffSlots: config.demotionPlayoffSlots,
+    });
+  }
+
+  const issues = validatePostSeason(forValidation);
+  await persistPostSeasonConfig(
+    gate.windowId,
+    parsed.data,
+    issues.length === 0,
+  );
+  revalidatePath("/staff/seeding");
+  return { ok: true, issues };
 }
 
 export async function assignToDivision(input: {
@@ -127,10 +181,14 @@ async function editableWindow(): Promise<
 // returning players back into their old division (placement/relegation is
 // ignored for now). Idempotent — a no-op once divisions exist, so it never
 // clobbers manual work. `initialized` says whether it changed anything.
+//
+// Runs on first page entry, before anyone takes control — so it uses the
+// control-less gate (staff + closed + not finalized). The UI covers the page
+// with a loader while it runs, so control cannot be taken until it is done.
 export async function initializeSeeding(): Promise<
   { ok: true; initialized: boolean } | { ok: false; error: string }
 > {
-  const gate = await editableWindow();
+  const gate = await controllableWindow();
   if (!gate.ok) {
     return gate;
   }
@@ -297,6 +355,24 @@ export async function finalizeSeeding(): Promise<SeedingResult> {
     return {
       ok: false,
       error: "Alle Spieler müssen einer Gruppe zugeordnet sein",
+    };
+  }
+
+  // The post-season rules must have been explicitly configured (the stamp) and
+  // must still be valid against the current groups.
+  const seeding = await getSeeding(gate.windowId);
+  if (!seeding?.postSeasonConfiguredAt) {
+    return {
+      ok: false,
+      error: "Bitte zuerst die Auf- und Abstiegsregeln festlegen",
+    };
+  }
+  if (
+    validatePostSeason(await divisionsWithGroupSizes(gate.windowId)).length > 0
+  ) {
+    return {
+      ok: false,
+      error: "Die Auf- und Abstiegsregeln sind nicht gültig",
     };
   }
 

@@ -6,6 +6,7 @@ import { MobileWarning } from "@/features/seeding/components/mobile-warning";
 import { SeedingWorkspace } from "@/features/seeding/components/seeding-workspace";
 import { deriveControlState } from "@/features/seeding/control";
 import {
+  divisionsWithGroupSizes,
   getLockWithHolder,
   getSeeding,
   listDivisions,
@@ -41,13 +42,15 @@ export default async function SeedingPage() {
     );
   }
 
-  const [seeding, divisions, players, subDivisions, lock] = await Promise.all([
-    getSeeding(window.id),
-    listDivisions(window.id),
-    listSeedingPlayers(window.id),
-    listSubDivisions(window.id),
-    getLockWithHolder(window.id),
-  ]);
+  const [seeding, divisions, players, subDivisions, postSeason, lock] =
+    await Promise.all([
+      getSeeding(window.id),
+      listDivisions(window.id),
+      listSeedingPlayers(window.id),
+      listSubDivisions(window.id),
+      divisionsWithGroupSizes(window.id),
+      getLockWithHolder(window.id),
+    ]);
 
   const controlState = deriveControlState({
     lock,
@@ -65,6 +68,8 @@ export default async function SeedingPage() {
         subDivisions={subDivisions}
         initialSize={seeding?.subDivisionSize ?? null}
         initialDivisionCount={divisions.length}
+        postSeason={postSeason}
+        postSeasonConfigured={Boolean(seeding?.postSeasonConfiguredAt)}
         finalized={Boolean(seeding?.finalizedAt)}
         finalizedAt={seeding?.finalizedAt ?? null}
         initialControlState={controlState}

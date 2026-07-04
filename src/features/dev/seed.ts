@@ -27,11 +27,17 @@ import {
 import { currentMatchday } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
 import {
+  divisionModeAvailable,
+  validatePostSeason,
+} from "@/features/seeding/post-season";
+import {
   assignPlayersToDivision,
+  divisionsWithGroupSizes,
   finalizeSeeding,
   generateSubDivisionsForDivision,
   listDivisions,
   listSeedingPlayers,
+  savePostSeasonConfig,
   saveSeedingConfig,
 } from "@/features/seeding/queries";
 import { db } from "@/lib/db";
@@ -175,7 +181,68 @@ async function finalizeDevSeeding(
   for (const division of divisions) {
     await generateSubDivisionsForDivision(windowId, division.id);
   }
+  await applyDevPostSeason(windowId);
   await finalizeSeeding(windowId);
+}
+
+// A valid, balanced post-season config so seeded seasons behave like real
+// finalized ones (finalize requires it). Baseline: playoff-only paths (all
+// guaranteed 0 → balances trivially, works for any structure). When there are
+// exactly two divisions with equal-size groups, use a richer demo: the top
+// division demotes one per group and the bottom promotes the same total via its
+// global division table — so the Gesamttabelle + guaranteed zones are exercised.
+async function applyDevPostSeason(windowId: string): Promise<void> {
+  const divs = (await divisionsWithGroupSizes(windowId)).sort(
+    (a, b) => a.tier - b.tier,
+  );
+  if (divs.length === 0) {
+    return;
+  }
+
+  const configs = divs.map((division, i) => ({
+    divisionId: division.id,
+    relevantTable: "sub_division" as "sub_division" | "division",
+    guaranteedPromotions: 0,
+    guaranteedDemotions: 0,
+    promotionPlayoffSlots: i === 0 ? 0 : 1,
+    demotionPlayoffSlots: i === divs.length - 1 ? 0 : 1,
+  }));
+
+  const richDemo =
+    divs.length === 2 && divs.every((d) => divisionModeAvailable(d.groupSizes));
+  if (richDemo) {
+    const demoteTotal = divs[0].groupSizes.length; // 1 per group of the top division
+    configs[0] = {
+      divisionId: divs[0].id,
+      relevantTable: "sub_division",
+      guaranteedPromotions: 0,
+      guaranteedDemotions: 1,
+      promotionPlayoffSlots: 0,
+      demotionPlayoffSlots: 0,
+    };
+    configs[1] = {
+      divisionId: divs[1].id,
+      relevantTable: "division",
+      guaranteedPromotions: demoteTotal,
+      guaranteedDemotions: 0,
+      promotionPlayoffSlots: 0,
+      demotionPlayoffSlots: 0,
+    };
+  }
+
+  const valid =
+    validatePostSeason(
+      divs.map((d, i) => ({
+        tier: d.tier,
+        groupSizes: d.groupSizes,
+        relevantTable: configs[i].relevantTable,
+        guaranteedPromotions: configs[i].guaranteedPromotions,
+        guaranteedDemotions: configs[i].guaranteedDemotions,
+        promotionPlayoffSlots: configs[i].promotionPlayoffSlots,
+        demotionPlayoffSlots: configs[i].demotionPlayoffSlots,
+      })),
+    ).length === 0;
+  await savePostSeasonConfig(windowId, configs, valid);
 }
 
 // Generates the season's schedule from a finalized seeding, starting two weeks

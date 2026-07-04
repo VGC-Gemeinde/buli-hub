@@ -29,7 +29,8 @@ import {
   playerPlacement,
   subDivisionMatches,
 } from "@/features/season/queries";
-import { getSeeding } from "@/features/seeding/queries";
+import { assignZones, type Zone } from "@/features/seeding/post-season";
+import { divisionPostSeason, getSeeding } from "@/features/seeding/queries";
 import { divisionName, subDivisionName } from "@/features/seeding/seeding";
 import { latestWindow } from "@/features/staff/queries";
 import {
@@ -121,7 +122,37 @@ export default async function SpielerPage() {
       roster: members,
       results: ownGroup?.results ?? [],
     });
-    const division = divisionStandings(groups);
+
+    // Post-season zones are shown on the division's *relevant* table only. In
+    // `division` mode the global table carries them and is the default view; in
+    // `sub_division` mode the player's own group table carries them.
+    const config = await divisionPostSeason(placement.divisionId);
+    const divisionMode = config?.relevantTable === "division";
+    const division = divisionMode ? divisionStandings(groups) : null;
+    let groupZones: Map<string, Zone> | undefined;
+    let divisionZones: Map<string, Zone> | undefined;
+    if (division) {
+      // Division mode: counts are the per-division totals.
+      const zones = assignZones({
+        rowCount: division.length,
+        promotions: config?.guaranteedPromotions ?? 0,
+        promotionPlayoff: config?.promotionPlayoffSlots ?? 0,
+        demotionPlayoff: config?.demotionPlayoffSlots ?? 0,
+        demotions: config?.guaranteedDemotions ?? 0,
+      });
+      divisionZones = new Map(division.map((r, i) => [r.userId, zones[i]]));
+    } else {
+      // Sub-division mode: counts are per group, applied to the player's group.
+      const zones = assignZones({
+        rowCount: standings.length,
+        promotions: config?.guaranteedPromotions ?? 0,
+        promotionPlayoff: config?.promotionPlayoffSlots ?? 0,
+        demotionPlayoff: config?.demotionPlayoffSlots ?? 0,
+        demotions: config?.guaranteedDemotions ?? 0,
+      });
+      groupZones = new Map(standings.map((r, i) => [r.userId, zones[i]]));
+    }
+    const defaultScope: "group" | "division" = division ? "division" : "group";
     const totalRounds = matchdays.length;
     const currentRound =
       currentMatchday(matchdays, today)?.round ?? totalRounds;
@@ -153,8 +184,11 @@ export default async function SpielerPage() {
             matches={myMatches}
             resultByMatchId={resultByMatchId}
             standings={standings}
+            groupZones={groupZones}
             divisionName={divisionName(placement.tier)}
             divisionStandings={division}
+            divisionZones={divisionZones}
+            defaultScope={defaultScope}
             meId={current.userId}
             today={today}
           />

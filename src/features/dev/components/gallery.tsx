@@ -231,6 +231,8 @@ const DASH_STANDINGS: StandingsRow[] = [
     wins: 1,
     losses: 0,
     points: 3,
+    gamesWon: 2,
+    gamesLost: 0,
     rank: 1,
   },
   {
@@ -240,8 +242,11 @@ const DASH_STANDINGS: StandingsRow[] = [
     wins: 0,
     losses: 1,
     points: 0,
+    gamesWon: 0,
+    gamesLost: 2,
     rank: 2,
   },
+  // b and c are genuinely tied (no games played) → shared rank 3, no rank 4.
   {
     userId: "b",
     name: "Wooloo",
@@ -249,6 +254,8 @@ const DASH_STANDINGS: StandingsRow[] = [
     wins: 0,
     losses: 0,
     points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
     rank: 3,
   },
   {
@@ -258,7 +265,9 @@ const DASH_STANDINGS: StandingsRow[] = [
     wins: 0,
     losses: 0,
     points: 0,
-    rank: 4,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 3,
   },
 ];
 

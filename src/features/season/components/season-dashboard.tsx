@@ -22,6 +22,13 @@ const MONTHS = [
   "Dezember",
 ];
 
+// Game differential with an explicit sign, e.g. "+11", "0", "−3".
+function formatDiff(diff: number): string {
+  if (diff > 0) return `+${diff}`;
+  if (diff < 0) return `−${-diff}`;
+  return "0";
+}
+
 function day(dateStr: string): number {
   return Number(dateStr.slice(8, 10));
 }
@@ -476,52 +483,90 @@ export function InSeasonDashboard({
 
         <section className="flex flex-col gap-3">
           <SectionHeading title="Tabelle" meta={groupName} />
-          <div className="overflow-hidden rounded-lg border">
-            <div className="grid grid-cols-[48px_1fr_60px_64px] border-b bg-muted/50 px-4 py-2.5 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
-              <span>Platz</span>
-              <span>Spieler</span>
-              <span className="text-right">Bilanz</span>
-              <span className="text-right">Punkte</span>
-            </div>
-            {standings.map((row) => (
-              <div
-                key={row.userId}
-                className={cn(
-                  "grid grid-cols-[48px_1fr_60px_64px] items-center border-b px-4 py-2.5 last:border-b-0",
-                  row.userId === meId && "bg-brand-orange/6",
-                )}
-              >
-                <span className="font-semibold text-muted-foreground text-sm tabular-nums">
-                  {row.rank}
-                </span>
-                <span className="flex min-w-0 items-center gap-2">
-                  <PlayerAvatar
-                    identity={row}
-                    size="size-[26px]"
-                    filled={row.userId === meId}
-                  />
-                  <span
-                    className={cn(
-                      "truncate text-[14.5px]",
-                      row.userId === meId ? "font-semibold" : "font-medium",
-                    )}
-                  >
-                    {row.name}
-                  </span>
-                  {row.userId === meId ? (
-                    <span className="font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
-                      Du
-                    </span>
-                  ) : null}
-                </span>
-                <span className="text-right text-muted-foreground text-sm tabular-nums">
-                  {row.wins} : {row.losses}
-                </span>
-                <span className="text-right font-semibold text-[14.5px] tabular-nums">
-                  {row.points}
-                </span>
-              </div>
-            ))}
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[400px] border-separate border-spacing-0 text-left [&_tr:last-child_td]:border-b-0">
+              <thead>
+                <tr className="text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
+                  <th className="sticky left-0 z-20 w-[44px] border-b bg-background py-2.5 pr-1 pl-4 font-semibold before:absolute before:inset-0 before:bg-muted/50">
+                    <span className="relative">Pl.</span>
+                  </th>
+                  <th className="sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2 font-semibold before:absolute before:inset-0 before:bg-muted/50">
+                    <span className="relative">Spieler</span>
+                  </th>
+                  <th className="border-b bg-muted/50 py-2.5 pr-3 pl-5 text-right font-semibold">
+                    Bilanz
+                  </th>
+                  <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold">
+                    Diff.
+                  </th>
+                  <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold">
+                    Punkte
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((row) => {
+                  const me = row.userId === meId;
+                  // Sticky columns need an opaque base so scrolled columns don't
+                  // bleed through; the row highlight rides on top via a `before`
+                  // tint so it stays consistent across frozen + scrolling cells.
+                  const tint = me
+                    ? "before:absolute before:inset-0 before:bg-brand-orange/6"
+                    : "";
+                  return (
+                    <tr
+                      key={row.userId}
+                      className={cn(me && "bg-brand-orange/6")}
+                    >
+                      <td
+                        className={cn(
+                          "sticky left-0 z-20 border-b bg-background py-2.5 pr-1 pl-4 font-semibold text-muted-foreground text-sm tabular-nums",
+                          tint,
+                        )}
+                      >
+                        <span className="relative">{row.rank}</span>
+                      </td>
+                      <td
+                        className={cn(
+                          "sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2",
+                          tint,
+                        )}
+                      >
+                        <span className="relative flex min-w-0 items-center gap-2">
+                          <PlayerAvatar
+                            identity={row}
+                            size="size-[26px]"
+                            filled={me}
+                          />
+                          <span
+                            className={cn(
+                              "truncate text-[14.5px]",
+                              me ? "font-semibold" : "font-medium",
+                            )}
+                          >
+                            {row.name}
+                          </span>
+                          {me ? (
+                            <span className="font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
+                              Du
+                            </span>
+                          ) : null}
+                        </span>
+                      </td>
+                      <td className="border-b py-2.5 pr-3 pl-5 text-right text-muted-foreground text-sm tabular-nums">
+                        {row.wins} : {row.losses}
+                      </td>
+                      <td className="border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums">
+                        {formatDiff(row.gamesWon - row.gamesLost)}
+                      </td>
+                      <td className="border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums">
+                        {row.points}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </section>
       </div>

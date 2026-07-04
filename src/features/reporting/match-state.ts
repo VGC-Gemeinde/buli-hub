@@ -38,7 +38,8 @@ export function matchDisplayState(input: {
 }
 
 // The score from `userId`'s point of view plus the Sieg/Niederlage label.
-// A free win has no games (nominal 1:0); a double loss is a loss for both.
+// A free win is a walkover, awarded as a 2:0 default win (like a no-show); a
+// double loss is a loss for both.
 export function scoreFor(
   userId: string,
   result: {
@@ -53,8 +54,8 @@ export function scoreFor(
   if (result.outcome === "free_win") {
     const won = result.winnerId === userId;
     return {
-      self: won ? 1 : 0,
-      opponent: won ? 0 : 1,
+      self: won ? 2 : 0,
+      opponent: won ? 0 : 2,
       label: won ? "Sieg" : "Niederlage",
     };
   }

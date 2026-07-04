@@ -168,22 +168,41 @@ export async function groupResults(
 ): Promise<ResultForStandings[]> {
   const rows = await db
     .select({
+      matchId: matches.id,
       playerAId: matches.playerAId,
       playerBId: matches.playerBId,
       outcome: matchResults.outcome,
       winnerId: matchResults.winnerId,
       confirmedAt: matchResults.confirmedAt,
+      gameWinnerId: matchGames.winnerId,
     })
     .from(matches)
     .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
-    .where(eq(matches.subDivisionId, subDivisionId));
-  return rows.map((row) => ({
-    playerAId: row.playerAId,
-    playerBId: row.playerBId,
-    outcome: row.outcome as MatchOutcome | null,
-    winnerId: row.winnerId,
-    confirmedAt: row.confirmedAt,
-  }));
+    .leftJoin(matchGames, eq(matchGames.matchId, matches.id))
+    .where(eq(matches.subDivisionId, subDivisionId))
+    .orderBy(asc(matchGames.gameNumber));
+
+  const byMatch = new Map<string, ResultForStandings>();
+  for (const row of rows) {
+    let entry = byMatch.get(row.matchId);
+    if (!entry) {
+      entry = {
+        playerAId: row.playerAId,
+        playerBId: row.playerBId,
+        outcome: row.outcome as MatchOutcome | null,
+        winnerId: row.winnerId,
+        confirmedAt: row.confirmedAt,
+        games: [],
+      };
+      byMatch.set(row.matchId, entry);
+    }
+    if (row.gameWinnerId) {
+      (entry.games as { winnerId: string }[]).push({
+        winnerId: row.gameWinnerId,
+      });
+    }
+  }
+  return [...byMatch.values()];
 }
 
 // A match's result state keyed for the dashboard schedule (per player match).

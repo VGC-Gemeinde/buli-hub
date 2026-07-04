@@ -75,13 +75,13 @@ describe("scoreFor", () => {
       label: "Niederlage",
     });
   });
-  it("free win: Sieg for the winner, Niederlage for the other", () => {
+  it("free win: 2:0 Sieg for the winner, 0:2 Niederlage for the other", () => {
     expect(
       scoreFor("a", { outcome: "free_win", winnerId: "a", games: [] }),
-    ).toMatchObject({ label: "Sieg" });
+    ).toEqual({ self: 2, opponent: 0, label: "Sieg" });
     expect(
       scoreFor("b", { outcome: "free_win", winnerId: "a", games: [] }),
-    ).toMatchObject({ label: "Niederlage" });
+    ).toEqual({ self: 0, opponent: 2, label: "Niederlage" });
   });
   it("double loss is a Niederlage for both", () => {
     expect(

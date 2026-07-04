@@ -48,6 +48,9 @@
   --color-card: var(--card);
   --color-brand-blue: var(--brand-blue);
   --color-brand-orange: var(--brand-orange);
+  --color-zone-promote: var(--zone-promote);
+  --color-zone-playoff: var(--zone-playoff);
+  --color-zone-demote: var(--zone-demote);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -61,6 +64,11 @@
   /* brand constants (same in both modes) */
   --brand-blue: #021f66; /* falinks-blue */
   --brand-orange: #ff7b00; /* pawmo-orange */
+
+  /* post-season zone colors (same in both modes); navy-compatible chroma */
+  --zone-promote: oklch(0.55 0.12 158); /* guaranteed promotion — green */
+  --zone-playoff: oklch(0.8 0.13 79); /* both playoff bands — amber */
+  --zone-demote: oklch(0.55 0.19 27); /* guaranteed demotion — red */
 
   --background: #ffffff; /* wooloo-white */
   --foreground: oklch(0.28 0.06 264); /* navy-tinted body text */

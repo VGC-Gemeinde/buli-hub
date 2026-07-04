@@ -13,24 +13,28 @@ function formatDiff(diff: number): string {
   return "0";
 }
 
-// Post-season zone tints. Guaranteed spots are green (promotion) / red
-// (demotion); both playoff bands share amber — their position (top vs bottom)
-// tells them apart, and the legend spells it out. Functional colours pending a
-// design pass.
-// Static class strings (Tailwind can't see dynamically built ones): the row
-// background and the matching `before` overlay for the frozen sticky cells.
+// Post-season zone visuals. Guaranteed spots are green (promotion) / red
+// (demotion); both playoff bands share amber — position + legend disambiguate.
+// Each zoned row gets a soft tint plus a 6px rail flush left.
 const ZONE_TINT: Record<Zone, string> = {
-  promote: "bg-emerald-500/12",
-  promotion_playoff: "bg-amber-500/12",
-  demotion_playoff: "bg-amber-500/12",
-  demote: "bg-destructive/10",
+  promote: "bg-zone-promote/7",
+  promotion_playoff: "bg-zone-playoff/10",
+  demotion_playoff: "bg-zone-playoff/10",
+  demote: "bg-zone-demote/6",
   none: "",
 };
 const ZONE_OVERLAY: Record<Zone, string> = {
-  promote: "before:absolute before:inset-0 before:bg-emerald-500/12",
-  promotion_playoff: "before:absolute before:inset-0 before:bg-amber-500/12",
-  demotion_playoff: "before:absolute before:inset-0 before:bg-amber-500/12",
-  demote: "before:absolute before:inset-0 before:bg-destructive/10",
+  promote: "before:absolute before:inset-0 before:bg-zone-promote/7",
+  promotion_playoff: "before:absolute before:inset-0 before:bg-zone-playoff/10",
+  demotion_playoff: "before:absolute before:inset-0 before:bg-zone-playoff/10",
+  demote: "before:absolute before:inset-0 before:bg-zone-demote/6",
+  none: "",
+};
+const ZONE_RAIL: Record<Zone, string> = {
+  promote: "bg-zone-promote",
+  promotion_playoff: "bg-zone-playoff",
+  demotion_playoff: "bg-zone-playoff",
+  demote: "bg-zone-demote",
   none: "",
 };
 const ME_TINT = "bg-brand-orange/6";
@@ -39,19 +43,23 @@ const ME_OVERLAY = "before:absolute before:inset-0 before:bg-brand-orange/6";
 export type ZoneMap = Map<string, Zone>;
 
 // The standings table itself — dumb, view-only. Shared by the group and the
-// division view. Rows can be tinted by post-season zone; the current player is
-// always marked (bold + „Du" + a left accent) even inside a zone. The Platz +
-// Spieler columns stay frozen (sticky) on the left as the score columns scroll on
-// narrow screens, so frozen cells carry an opaque base + a `before` tint to keep
-// the highlight consistent and stop scrolled columns bleeding through.
+// division view. Rows can be tinted by post-season zone (rail + soft tint); the
+// current player is always marked (orange rail/tint when unzoned, plus bold name,
+// „Du" badge and filled avatar). The Platz + Spieler columns stay frozen (sticky)
+// on the left as the score columns scroll; frozen cells carry an opaque base + a
+// `before` tint so scrolled columns don't bleed through, and the rail sits on the
+// rank cell's left edge. `groupLabels` adds a sub-division chip in the division
+// view.
 export function StandingsTable({
   standings,
   meId,
   zones,
+  groupLabels,
 }: {
   standings: StandingsRow[];
   meId: string;
   zones?: ZoneMap;
+  groupLabels?: Map<string, string>;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -80,14 +88,15 @@ export function StandingsTable({
             {standings.map((row) => {
               const me = row.userId === meId;
               const zone = zones?.get(row.userId) ?? "none";
-              // Zone tint takes precedence over the plain „me" highlight; the
-              // current player stays marked by the tint + bold name + „Du" badge.
-              const rowTint =
-                zone !== "none" ? ZONE_TINT[zone] : me ? ME_TINT : "";
-              // Sticky cells need an opaque base, so the tint rides on top via a
-              // `before` overlay to stay consistent across frozen + scrolling cells.
-              const overlay =
-                zone !== "none" ? ZONE_OVERLAY[zone] : me ? ME_OVERLAY : "";
+              const zoned = zone !== "none";
+              const rowTint = zoned ? ZONE_TINT[zone] : me ? ME_TINT : "";
+              const overlay = zoned ? ZONE_OVERLAY[zone] : me ? ME_OVERLAY : "";
+              const rail = zoned
+                ? ZONE_RAIL[zone]
+                : me
+                  ? "bg-brand-orange"
+                  : "";
+              const groupLabel = groupLabels?.get(row.userId);
               return (
                 <tr key={row.userId} className={cn(rowTint)}>
                   <td
@@ -96,6 +105,11 @@ export function StandingsTable({
                       overlay,
                     )}
                   >
+                    {rail ? (
+                      <span
+                        className={cn("absolute inset-y-0 left-0 w-1.5", rail)}
+                      />
+                    ) : null}
                     <span className="relative">{row.rank}</span>
                   </td>
                   <td
@@ -118,8 +132,13 @@ export function StandingsTable({
                       >
                         {row.name}
                       </span>
+                      {groupLabel ? (
+                        <span className="shrink-0 rounded-full bg-muted px-[7px] py-[2px] font-bold text-[10.5px] text-muted-foreground">
+                          {groupLabel}
+                        </span>
+                      ) : null}
                       {me ? (
-                        <span className="font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
+                        <span className="shrink-0 font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
                           Du
                         </span>
                       ) : null}
@@ -145,25 +164,39 @@ export function StandingsTable({
   );
 }
 
-// Legend for whichever zones actually appear in the shown table.
+// Legend for the zones actually present. The two playoff bands are named
+// separately even though they share the amber swatch.
 function ZoneLegend({ zones }: { zones?: ZoneMap }) {
   if (!zones) return null;
   const present = new Set(zones.values());
-  const items: { show: boolean; dot: string; label: string }[] = [
-    { show: present.has("promote"), dot: "bg-emerald-500", label: "Aufstieg" },
+  const items: { show: boolean; bar: string; label: string }[] = [
     {
-      show: present.has("promotion_playoff") || present.has("demotion_playoff"),
-      dot: "bg-amber-500",
-      label: "Playoff",
+      show: present.has("promote"),
+      bar: "bg-zone-promote",
+      label: "Direkter Aufstieg",
     },
-    { show: present.has("demote"), dot: "bg-destructive", label: "Abstieg" },
+    {
+      show: present.has("promotion_playoff"),
+      bar: "bg-zone-playoff",
+      label: "Aufstiegs-Playoff",
+    },
+    {
+      show: present.has("demotion_playoff"),
+      bar: "bg-zone-playoff",
+      label: "Abstiegs-Playoff",
+    },
+    {
+      show: present.has("demote"),
+      bar: "bg-zone-demote",
+      label: "Direkter Abstieg",
+    },
   ].filter((i) => i.show);
   if (items.length === 0) return null;
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[12px] text-muted-foreground">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[12.5px] text-muted-foreground">
       {items.map((item) => (
         <span key={item.label} className="flex items-center gap-1.5">
-          <span className={cn("size-2.5 rounded-full", item.dot)} />
+          <span className={cn("h-[5px] w-3.5 rounded-[3px]", item.bar)} />
           {item.label}
         </span>
       ))}
@@ -182,6 +215,7 @@ export function StandingsPanel({
   divisionName,
   divisionStandings,
   divisionZones,
+  divisionGroupLabels,
   defaultScope,
   meId,
 }: {
@@ -191,53 +225,70 @@ export function StandingsPanel({
   divisionName: string;
   divisionStandings: StandingsRow[] | null;
   divisionZones?: ZoneMap;
+  divisionGroupLabels?: Map<string, string>;
   defaultScope: "group" | "division";
   meId: string;
 }) {
   const [scope, setScope] = useState<"group" | "division">(defaultScope);
+  const divisionMode = divisionStandings !== null;
+  const showDivision = divisionMode && scope === "division";
 
-  if (divisionStandings === null) {
-    return (
-      <StandingsTable
-        standings={groupStandings}
-        meId={meId}
-        zones={groupZones}
-      />
-    );
-  }
+  const context = !divisionMode
+    ? "Auf- und Abstieg wird innerhalb deiner Gruppe entschieden — die markierten Plätze gelten."
+    : showDivision
+      ? "Auf- und Abstieg wird über die Gesamttabelle der Division entschieden — die markierten Plätze gelten."
+      : `Nur zur Orientierung — Auf- und Abstieg wird über die Gesamttabelle (${divisionName}) entschieden.`;
 
-  const showDivision = scope === "division";
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-1 self-start rounded-lg border bg-muted/40 p-1">
-        <Segment
-          active={!showDivision}
-          onClick={() => setScope("group")}
-          label={groupName}
+      <p className="text-[13px] text-muted-foreground">{context}</p>
+
+      {divisionMode ? (
+        <div className="flex gap-1 self-start rounded-full border bg-muted/40 p-[3px]">
+          <Segment
+            active={!showDivision}
+            onClick={() => setScope("group")}
+            label={groupName}
+          />
+          <Segment
+            active={showDivision}
+            onClick={() => setScope("division")}
+            label={divisionName}
+            relevant
+          />
+        </div>
+      ) : null}
+
+      {showDivision ? (
+        <StandingsTable
+          standings={divisionStandings}
+          meId={meId}
+          zones={divisionZones}
+          groupLabels={divisionGroupLabels}
         />
-        <Segment
-          active={showDivision}
-          onClick={() => setScope("division")}
-          label={divisionName}
+      ) : (
+        <StandingsTable
+          standings={groupStandings}
+          meId={meId}
+          zones={groupZones}
         />
-      </div>
-      <StandingsTable
-        standings={showDivision ? divisionStandings : groupStandings}
-        meId={meId}
-        zones={showDivision ? divisionZones : groupZones}
-      />
+      )}
     </div>
   );
 }
 
+// A switcher segment. The relevant table's segment carries a skewed tick — the
+// „this one decides" marker (navy on the active orange fill, orange otherwise).
 function Segment({
   active,
   onClick,
   label,
+  relevant,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
+  relevant?: boolean;
 }) {
   return (
     <button
@@ -245,12 +296,20 @@ function Segment({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-md px-3 py-1.5 font-semibold text-[13px] uppercase tracking-[0.08em] transition-colors",
+        "flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-[13px] uppercase tracking-[0.08em] transition-colors",
         active
           ? "bg-brand-orange text-white"
           : "text-muted-foreground hover:text-foreground",
       )}
     >
+      {relevant ? (
+        <span
+          className={cn(
+            "h-[7px] w-3.5 -skew-x-[18deg]",
+            active ? "bg-brand-blue" : "bg-brand-orange",
+          )}
+        />
+      ) : null}
       {label}
     </button>
   );

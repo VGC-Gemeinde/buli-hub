@@ -261,11 +261,11 @@ const POST_SEASON_DIVISIONS: DivisionWithGroupSizes[] = [
   {
     id: "d2",
     tier: 2,
-    relevantTable: "sub_division",
-    guaranteedPromotions: 1,
-    guaranteedDemotions: 1,
-    promotionPlayoffSlots: 1,
-    demotionPlayoffSlots: 1,
+    relevantTable: "division", // Gesamttabelle — per-division counts, 16 places
+    guaranteedPromotions: 2,
+    guaranteedDemotions: 2,
+    promotionPlayoffSlots: 2,
+    demotionPlayoffSlots: 2,
     groupSizes: [8, 8],
   },
   {
@@ -277,6 +277,31 @@ const POST_SEASON_DIVISIONS: DivisionWithGroupSizes[] = [
     promotionPlayoffSlots: 1,
     demotionPlayoffSlots: 0,
     groupSizes: [8, 8],
+  },
+];
+
+// Unequal small groups with too many spots — exercises the overbooked stripe and
+// an unbalanced seam.
+const POST_SEASON_OVERBOOKED: DivisionWithGroupSizes[] = [
+  {
+    id: "o1",
+    tier: 1,
+    relevantTable: "sub_division",
+    guaranteedPromotions: 0,
+    guaranteedDemotions: 3,
+    promotionPlayoffSlots: 0,
+    demotionPlayoffSlots: 2, // 5 demote spots in a group of 4 → overbooked
+    groupSizes: [4, 4],
+  },
+  {
+    id: "o2",
+    tier: 2,
+    relevantTable: "sub_division",
+    guaranteedPromotions: 1,
+    guaranteedDemotions: 0,
+    promotionPlayoffSlots: 1,
+    demotionPlayoffSlots: 0, // promotes 2, but o1 demotes 6 → unbalanced
+    groupSizes: [4, 4],
   },
 ];
 
@@ -718,11 +743,19 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Einteilung: Auf- & Abstieg</h2>
-        <Specimen label="Dialog (Auf-/Abstiegsregeln pro Division)">
+        <Specimen label="Dialog — gültig (Gruppen- & Gesamttabelle, Seams ausgeglichen)">
           <PostSeasonDialog
             divisions={POST_SEASON_DIVISIONS}
             readOnly={false}
             configured
+            onSave={async () => ({ ok: true, issues: [] })}
+          />
+        </Specimen>
+        <Specimen label="Dialog — überbelegt & unausgeglichen (Fehlerzustände)">
+          <PostSeasonDialog
+            divisions={POST_SEASON_OVERBOOKED}
+            readOnly={false}
+            configured={false}
             onSave={async () => ({ ok: true, issues: [] })}
           />
         </Specimen>

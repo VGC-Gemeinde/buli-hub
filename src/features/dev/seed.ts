@@ -421,7 +421,7 @@ export async function generateSeedData(
     size?: number;
     divisionCount?: number;
   } = {},
-): Promise<number> {
+): Promise<{ windowId: string; staffId: string }> {
   // A schedule needs a finalized seeding to build from.
   const finalize = opts.finalize || opts.schedule;
   await clearSeedData();
@@ -510,7 +510,7 @@ export async function generateSeedData(
     await seedDevResults(window.id, staffId);
   }
 
-  return specs.length;
+  return { windowId: window.id, staffId };
 }
 
 // A running season whose sub-divisions are all the same size, so the division
@@ -525,12 +525,133 @@ const EVEN_TOTAL_PLAYERS = 48;
 
 export async function generateEvenRunningSeason(
   includeUserId?: string,
-): Promise<number> {
+): Promise<void> {
   const fakeCount = EVEN_TOTAL_PLAYERS - (includeUserId ? 1 : 0);
-  return generateSeedData(fakeCount, {
+  await generateSeedData(fakeCount, {
     schedule: true,
     includeUserId,
     size: EVEN_SUB_DIVISION_SIZE,
     divisionCount: EVEN_DIVISION_COUNT,
   });
+}
+
+// A three-division running season with the signed-in persona placed in the
+// **middle** division — the only one that can have all four zones (direct
+// promotion + playoff and direct demotion + playoff). Two variants differ only in
+// how that middle division is decided: its global Gesamttabelle, or one
+// Gruppentabelle per group. Every division has two equal groups of 8 (16 each,
+// 48 total), so the Gesamttabelle option is available.
+const LADDER_SIZE = 8;
+const LADDER_TOTAL_PLAYERS = 48; // 3 divisions × 16
+
+export async function generateLadderSeason(
+  div2Mode: "division" | "sub_division",
+  includeUserId?: string,
+): Promise<void> {
+  const fakeCount = LADDER_TOTAL_PLAYERS - (includeUserId ? 1 : 0);
+  // Registrations only — we drive the placement ourselves so the persona lands
+  // in the middle division.
+  const { windowId, staffId } = await generateSeedData(fakeCount, {
+    includeUserId,
+  });
+
+  await saveSeedingConfig(windowId, LADDER_SIZE, 3);
+  const divisions = await listDivisions(windowId); // tiers 1, 2, 3
+  const byTier = new Map(divisions.map((d) => [d.tier, d.id]));
+  const players = (await listSeedingPlayers(windowId)).map((p) => p.userId);
+
+  // Middle division gets the persona; fill the three divisions to 16 each.
+  const rest = players.filter((id) => id !== includeUserId);
+  const middle = includeUserId
+    ? [includeUserId, ...rest.slice(0, 15)]
+    : rest.slice(0, 16);
+  const remaining = includeUserId ? rest.slice(15) : rest.slice(16);
+  const top = remaining.slice(0, 16);
+  const bottom = remaining.slice(16, 32);
+
+  const topId = byTier.get(1);
+  const middleId = byTier.get(2);
+  const bottomId = byTier.get(3);
+  if (topId && middleId && bottomId) {
+    await assignPlayersToDivision(windowId, top, topId);
+    await assignPlayersToDivision(windowId, middle, middleId);
+    await assignPlayersToDivision(windowId, bottom, bottomId);
+  }
+  for (const division of divisions) {
+    await generateSubDivisionsForDivision(windowId, division.id);
+  }
+
+  await applyLadderPostSeason(windowId, div2Mode);
+  await finalizeSeeding(windowId);
+  await generateDevSchedule(windowId);
+  await seedDevResults(windowId, staffId);
+}
+
+// The ladder's balanced post-season config: top demotes into the middle, the
+// middle fully exchanges both ways, the bottom promotes into the middle. Only the
+// middle division's mode/counts change between the two variants.
+async function applyLadderPostSeason(
+  windowId: string,
+  div2Mode: "division" | "sub_division",
+): Promise<void> {
+  const divs = (await divisionsWithGroupSizes(windowId)).sort(
+    (a, b) => a.tier - b.tier,
+  );
+  if (divs.length !== 3) {
+    return;
+  }
+  const [top, middle, bottom] = divs;
+
+  const middleConfig =
+    div2Mode === "division"
+      ? {
+          divisionId: middle.id,
+          relevantTable: "division" as const,
+          guaranteedPromotions: 2,
+          guaranteedDemotions: 2,
+          promotionPlayoffSlots: 2,
+          demotionPlayoffSlots: 2,
+        }
+      : {
+          divisionId: middle.id,
+          relevantTable: "sub_division" as const,
+          guaranteedPromotions: 1,
+          guaranteedDemotions: 1,
+          promotionPlayoffSlots: 1,
+          demotionPlayoffSlots: 1,
+        };
+
+  const configs = [
+    {
+      divisionId: top.id,
+      relevantTable: "sub_division" as const,
+      guaranteedPromotions: 0,
+      guaranteedDemotions: 1,
+      promotionPlayoffSlots: 0,
+      demotionPlayoffSlots: 1,
+    },
+    middleConfig,
+    {
+      divisionId: bottom.id,
+      relevantTable: "sub_division" as const,
+      guaranteedPromotions: 1,
+      guaranteedDemotions: 0,
+      promotionPlayoffSlots: 1,
+      demotionPlayoffSlots: 0,
+    },
+  ];
+
+  const valid =
+    validatePostSeason(
+      divs.map((d, i) => ({
+        tier: d.tier,
+        groupSizes: d.groupSizes,
+        relevantTable: configs[i].relevantTable,
+        guaranteedPromotions: configs[i].guaranteedPromotions,
+        guaranteedDemotions: configs[i].guaranteedDemotions,
+        promotionPlayoffSlots: configs[i].promotionPlayoffSlots,
+        demotionPlayoffSlots: configs[i].demotionPlayoffSlots,
+      })),
+    ).length === 0;
+  await savePostSeasonConfig(windowId, configs, valid);
 }

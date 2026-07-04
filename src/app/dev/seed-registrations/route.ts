@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import {
   generateEvenRunningSeason,
+  generateLadderSeason,
   generateSeedData,
 } from "@/features/dev/seed";
 import { currentUser } from "@/features/roles/guard";
@@ -13,6 +14,8 @@ import { currentUser } from "@/features/roles/guard";
 //   registers the signed-in persona so their Spieler-Dashboard is populated.
 // - &even=1 is a running season with equal-size sub-divisions, so the division
 //   table appears on the Spieler-Dashboard (ignores count).
+// - &ladder=division|sub_division is a 3-division running season with the persona
+//   in a fully-zoned middle division, decided by the Gesamt- or Gruppentabelle.
 export async function GET(request: Request) {
   if (process.env.NODE_ENV !== "development") {
     return new Response("Not found", { status: 404 });
@@ -20,6 +23,12 @@ export async function GET(request: Request) {
 
   const params = new URL(request.url).searchParams;
   const current = await currentUser();
+
+  const ladder = params.get("ladder");
+  if (ladder === "division" || ladder === "sub_division") {
+    await generateLadderSeason(ladder, current?.userId);
+    redirect("/spieler");
+  }
 
   if (params.get("even") === "1") {
     await generateEvenRunningSeason(current?.userId);

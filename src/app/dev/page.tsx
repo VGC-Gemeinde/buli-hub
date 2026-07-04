@@ -86,6 +86,30 @@ export default function DevPage() {
             </span>
           </a>
           <a
+            href="/dev/seed-registrations?ladder=division"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Auf-/Abstieg testen — Gesamttabelle
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Drei Divisionen; du landest in der mittleren mit allen Zonen
+              (Auf-/Abstieg + Playoffs), entschieden über die Gesamttabelle
+            </span>
+          </a>
+          <a
+            href="/dev/seed-registrations?ladder=sub_division"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Auf-/Abstieg testen — Gruppentabelle
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Wie oben, aber die mittlere Division entscheidet über die
+              Gruppentabelle (Zonen pro Gruppe)
+            </span>
+          </a>
+          <a
             href="/dev/clear-registrations"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >

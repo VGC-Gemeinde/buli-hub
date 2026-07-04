@@ -412,6 +412,7 @@ export function InSeasonDashboard({
   divisionName,
   divisionStandings,
   divisionZones,
+  divisionGroupLabels,
   defaultScope,
   meId,
   today,
@@ -427,6 +428,7 @@ export function InSeasonDashboard({
   divisionName: string;
   divisionStandings: StandingsRow[] | null;
   divisionZones?: ZoneMap;
+  divisionGroupLabels?: Map<string, string>;
   defaultScope: "group" | "division";
   meId: string;
   today: string;
@@ -468,6 +470,7 @@ export function InSeasonDashboard({
             divisionName={divisionName}
             divisionStandings={divisionStandings}
             divisionZones={divisionZones}
+            divisionGroupLabels={divisionGroupLabels}
             defaultScope={defaultScope}
             meId={meId}
           />

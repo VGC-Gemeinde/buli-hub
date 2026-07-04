@@ -31,7 +31,11 @@ import {
 } from "@/features/season/queries";
 import { assignZones, type Zone } from "@/features/seeding/post-season";
 import { divisionPostSeason, getSeeding } from "@/features/seeding/queries";
-import { divisionName, subDivisionName } from "@/features/seeding/seeding";
+import {
+  divisionName,
+  subDivisionName,
+  subDivisionShortName,
+} from "@/features/seeding/seeding";
 import { latestWindow } from "@/features/staff/queries";
 import {
   registrationState,
@@ -153,6 +157,20 @@ export default async function SpielerPage() {
       groupZones = new Map(standings.map((r, i) => [r.userId, zones[i]]));
     }
     const defaultScope: "group" | "division" = division ? "division" : "group";
+    // Sub-division chip labels for the merged division table (e.g. „2a").
+    const divisionGroupLabels = division
+      ? new Map(
+          groups.flatMap((group) =>
+            group.roster.map(
+              (member) =>
+                [
+                  member.userId,
+                  subDivisionShortName(placement.tier, group.position),
+                ] as const,
+            ),
+          ),
+        )
+      : undefined;
     const totalRounds = matchdays.length;
     const currentRound =
       currentMatchday(matchdays, today)?.round ?? totalRounds;
@@ -188,6 +206,7 @@ export default async function SpielerPage() {
             divisionName={divisionName(placement.tier)}
             divisionStandings={division}
             divisionZones={divisionZones}
+            divisionGroupLabels={divisionGroupLabels}
             defaultScope={defaultScope}
             meId={current.userId}
             today={today}

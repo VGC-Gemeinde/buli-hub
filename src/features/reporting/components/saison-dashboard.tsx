@@ -87,25 +87,30 @@ function MatchRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3.5 rounded-lg border px-4 py-2",
+        "flex flex-col gap-2 rounded-lg border px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3.5 sm:py-2",
         dimmed && "opacity-60",
       )}
     >
-      <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
-        {shortGroup(match.groupName)} · S{match.round}
-      </span>
-      <Link
-        href={`/match/${match.matchId}`}
-        className="min-w-0 flex-1 truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
-      >
-        {match.playerA.name} <span className="text-muted-foreground">vs.</span>{" "}
-        {match.playerB.name}
-      </Link>
-      {chip ? <ChipEl chip={chip} /> : null}
-      <span className="w-12 shrink-0 text-right text-[13px] text-muted-foreground tabular-nums">
-        {ddMM(match.endsOn)}
-      </span>
-      {action}
+      <div className="flex min-w-0 items-center gap-3 sm:contents">
+        <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
+          {shortGroup(match.groupName)} · S{match.round}
+        </span>
+        <Link
+          href={`/match/${match.matchId}`}
+          className="min-w-0 flex-1 truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+        >
+          {match.playerA.name}{" "}
+          <span className="text-muted-foreground">vs.</span>{" "}
+          {match.playerB.name}
+        </Link>
+      </div>
+      <div className="flex items-center justify-between gap-3 sm:contents">
+        {chip ? <ChipEl chip={chip} /> : null}
+        <span className="shrink-0 text-right text-[13px] text-muted-foreground tabular-nums sm:w-12">
+          {ddMM(match.endsOn)}
+        </span>
+        {action}
+      </div>
     </div>
   );
 }
@@ -153,7 +158,7 @@ export function SaisonDashboard({
 
   return (
     <div className="flex flex-col gap-8.5">
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Überfällig" value={overdue.length} alert />
         <Stat label="Angefochten" value={disputed.length} alert />
         <Stat label="Offen diese Woche" value={weekOpen.length} />
@@ -198,29 +203,33 @@ export function SaisonDashboard({
             {disputed.map((m) => (
               <div
                 key={m.matchId}
-                className="flex items-center gap-3.5 rounded-lg border border-destructive/30 bg-destructive/[0.03] px-4 py-2"
+                className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.03] px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3.5 sm:py-2"
               >
-                <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
-                  {shortGroup(m.groupName)} · S{m.round}
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <Link
-                    href={`/match/${m.matchId}`}
-                    className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
-                  >
-                    {m.playerA.name}{" "}
-                    <span className="text-muted-foreground">vs.</span>{" "}
-                    {m.playerB.name}
-                  </Link>
-                  {m.dispute ? (
-                    <p className="truncate text-[13px] text-muted-foreground">
-                      „{m.dispute.reason}" — {m.dispute.openedByName ?? "—"}
-                    </p>
-                  ) : null}
+                <div className="flex min-w-0 items-center gap-3 sm:contents">
+                  <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
+                    {shortGroup(m.groupName)} · S{m.round}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <Link
+                      href={`/match/${m.matchId}`}
+                      className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+                    >
+                      {m.playerA.name}{" "}
+                      <span className="text-muted-foreground">vs.</span>{" "}
+                      {m.playerB.name}
+                    </Link>
+                    {m.dispute ? (
+                      <p className="truncate text-[13px] text-muted-foreground">
+                        „{m.dispute.reason}" — {m.dispute.openedByName ?? "—"}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/match/${m.matchId}`}>Prüfen</Link>
-                </Button>
+                <div className="flex justify-end sm:contents">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/match/${m.matchId}`}>Prüfen</Link>
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -237,38 +246,45 @@ export function SaisonDashboard({
             {pendingFreeWins.map((m) => (
               <div
                 key={m.matchId}
-                className="flex items-center gap-3.5 rounded-lg border px-4 py-2"
+                className="flex flex-col gap-2 rounded-lg border px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3.5 sm:py-2"
               >
-                <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
-                  {shortGroup(m.groupName)} · S{m.round}
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <Link
-                    href={`/match/${m.matchId}`}
-                    className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
-                  >
-                    {m.playerA.name}{" "}
-                    <span className="text-muted-foreground">vs.</span>{" "}
-                    {m.playerB.name}
-                  </Link>
-                  {m.freeWinReason ? (
-                    <p className="truncate text-[13px] text-muted-foreground">
-                      „{m.freeWinReason}" — gemeldet von {m.reporterName ?? "—"}
-                      {m.reportedAt ? `, ${reportedAtLabel(m.reportedAt)}` : ""}
-                    </p>
-                  ) : null}
+                <div className="flex min-w-0 items-center gap-3 sm:contents">
+                  <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
+                    {shortGroup(m.groupName)} · S{m.round}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <Link
+                      href={`/match/${m.matchId}`}
+                      className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+                    >
+                      {m.playerA.name}{" "}
+                      <span className="text-muted-foreground">vs.</span>{" "}
+                      {m.playerB.name}
+                    </Link>
+                    {m.freeWinReason ? (
+                      <p className="truncate text-[13px] text-muted-foreground">
+                        „{m.freeWinReason}" — gemeldet von{" "}
+                        {m.reporterName ?? "—"}
+                        {m.reportedAt
+                          ? `, ${reportedAtLabel(m.reportedAt)}`
+                          : ""}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-                <ChipEl
-                  chip={{ label: `Freewin: ${winnerName(m)}`, tone: "free" }}
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={confirming === m.matchId}
-                  onClick={() => confirm(m.matchId)}
-                >
-                  {confirming === m.matchId ? "…" : "Bestätigen"}
-                </Button>
+                <div className="flex items-center justify-between gap-3 sm:contents">
+                  <ChipEl
+                    chip={{ label: `Freewin: ${winnerName(m)}`, tone: "free" }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={confirming === m.matchId}
+                    onClick={() => confirm(m.matchId)}
+                  >
+                    {confirming === m.matchId ? "…" : "Bestätigen"}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -355,36 +371,40 @@ export function SaisonDashboard({
               {resolvedDisputes.map((d) => (
                 <div
                   key={d.matchId}
-                  className="flex items-center gap-3.5 rounded-lg border px-4 py-2 opacity-80"
+                  className="flex flex-col gap-2 rounded-lg border px-4 py-2.5 opacity-80 sm:flex-row sm:items-center sm:gap-3.5 sm:py-2"
                 >
-                  <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
-                    {shortGroup(d.groupName)} · S{d.round}
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <Link
-                      href={`/match/${d.matchId}`}
-                      className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
-                    >
-                      {d.playerA.name}{" "}
-                      <span className="text-muted-foreground">vs.</span>{" "}
-                      {d.playerB.name}
-                    </Link>
-                    <p className="truncate text-[13px] text-muted-foreground">
-                      „{d.reason}" — {d.openedByName ?? "—"}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-3 sm:contents">
+                    <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
+                      {shortGroup(d.groupName)} · S{d.round}
+                    </span>
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <Link
+                        href={`/match/${d.matchId}`}
+                        className="truncate font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+                      >
+                        {d.playerA.name}{" "}
+                        <span className="text-muted-foreground">vs.</span>{" "}
+                        {d.playerB.name}
+                      </Link>
+                      <p className="truncate text-[13px] text-muted-foreground">
+                        „{d.reason}" — {d.openedByName ?? "—"}
+                      </p>
+                    </div>
                   </div>
-                  <ChipEl
-                    chip={{
-                      label:
-                        d.resolution === "corrected"
-                          ? "Korrigiert"
-                          : "Bestätigt",
-                      tone: "done",
-                    }}
-                  />
-                  <span className="w-12 shrink-0 text-right text-[13px] text-muted-foreground tabular-nums">
-                    {reportedAtLabel(d.resolvedAt)}
-                  </span>
+                  <div className="flex items-center justify-between gap-3 sm:contents">
+                    <ChipEl
+                      chip={{
+                        label:
+                          d.resolution === "corrected"
+                            ? "Korrigiert"
+                            : "Bestätigt",
+                        tone: "done",
+                      }}
+                    />
+                    <span className="shrink-0 text-right text-[13px] text-muted-foreground tabular-nums sm:w-12">
+                      {reportedAtLabel(d.resolvedAt)}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

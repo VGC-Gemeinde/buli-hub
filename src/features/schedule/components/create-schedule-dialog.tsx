@@ -152,7 +152,7 @@ export function CreateScheduleDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-[1fr_1fr_1.25fr] gap-4 rounded-lg bg-muted px-4 py-3">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 rounded-lg bg-muted px-4 py-3 sm:grid-cols-[1fr_1fr_1.25fr] sm:gap-y-4">
           <Fact
             label="Spieltage"
             value={String(count)}
@@ -186,34 +186,38 @@ export function CreateScheduleDialog({
                 <div
                   key={`${row.round}-${flashTick}`}
                   className={cn(
-                    "flex h-11 items-center gap-3 border-border/60 border-b px-3.5 last:border-b-0",
+                    "flex flex-col gap-2 border-border/60 border-b px-3.5 py-2.5 last:border-b-0 sm:h-11 sm:flex-row sm:items-center sm:gap-3 sm:py-0",
                     flashing && "animate-[rowflash_0.9s_ease-out]",
                   )}
                 >
-                  <span className="w-[82px] shrink-0 font-semibold text-[13.5px]">
-                    {matchdayName(row.round)}
-                  </span>
-                  <span className="w-[104px] shrink-0 text-[13px] text-muted-foreground">
-                    ab {fmtShort(row.start)}
-                  </span>
-                  <DatePicker
-                    value={row.end}
-                    disabledBefore={minFor}
-                    formatStr="'bis' EEEEEE. dd.MM.yyyy"
-                    onChange={(date) => editDeadline(row.round - 1, date)}
-                    className="h-[30px] w-[172px] justify-between"
-                  />
-                  <div className="flex-1" />
-                  <span
-                    className={cn(
-                      "font-medium text-[12.5px] tabular-nums",
-                      row.days > 7
-                        ? "text-[oklch(0.55_0.13_50)]"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    {row.days} Tage
-                  </span>
+                  <div className="flex items-center gap-3 sm:contents">
+                    <span className="w-[82px] shrink-0 font-semibold text-[13.5px]">
+                      {matchdayName(row.round)}
+                    </span>
+                    <span className="shrink-0 text-[13px] text-muted-foreground sm:w-[104px]">
+                      ab {fmtShort(row.start)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 sm:contents">
+                    <DatePicker
+                      value={row.end}
+                      disabledBefore={minFor}
+                      formatStr="'bis' EEEEEE. dd.MM.yyyy"
+                      onChange={(date) => editDeadline(row.round - 1, date)}
+                      className="h-[30px] min-w-0 flex-1 justify-between sm:w-[172px] sm:flex-none"
+                    />
+                    <div className="hidden flex-1 sm:block" />
+                    <span
+                      className={cn(
+                        "shrink-0 font-medium text-[12.5px] tabular-nums",
+                        row.days > 7
+                          ? "text-[oklch(0.55_0.13_50)]"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {row.days} Tage
+                    </span>
+                  </div>
                 </div>
               );
             })}

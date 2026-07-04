@@ -70,7 +70,7 @@ export function SeasonCard({
         state === "not_started" ? "gap-5" : "gap-2",
       )}
     >
-      <div className="flex items-center gap-3.5">
+      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
         <div className="font-heading font-bold text-2xl uppercase tracking-[0.02em] text-brand-blue dark:text-white">
           {SEASON_NAME}
         </div>

@@ -65,11 +65,11 @@ function SeasonStrip({
           Reguläre Saison
         </span>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="whitespace-nowrap font-semibold text-[13px] tabular-nums">
           Spieltag {currentRound ?? "—"} von {totalRounds}
         </span>
-        <div className="h-1.5 w-40 rounded-full bg-muted">
+        <div className="h-1.5 w-32 max-w-full rounded-full bg-muted sm:w-40">
           <div
             className="h-1.5 rounded-full bg-brand-orange"
             style={{ width: `${pct}%` }}

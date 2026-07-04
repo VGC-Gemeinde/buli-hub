@@ -15,16 +15,16 @@ export function ProfileHeader({
   const name = displayName ?? "Discord-Nutzer";
 
   return (
-    <div className="flex items-center gap-5">
-      <Avatar className="size-20">
+    <div className="flex items-center gap-4 sm:gap-5">
+      <Avatar className="size-16 shrink-0 sm:size-20">
         {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
-        <AvatarFallback className="text-2xl font-semibold">
+        <AvatarFallback className="font-semibold text-2xl">
           {name.slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>
-      <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex min-w-0 items-center gap-3">
-          <h1 className="min-w-0 truncate text-4xl text-brand-blue dark:text-white">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+          <h1 className="min-w-0 break-words text-2xl text-brand-blue sm:text-4xl dark:text-white">
             {name}
           </h1>
           <Badge variant="secondary" className="shrink-0">
@@ -32,7 +32,7 @@ export function ProfileHeader({
           </Badge>
         </div>
         {username ? (
-          <p className="text-muted-foreground text-sm">@{username}</p>
+          <p className="break-all text-muted-foreground text-sm">@{username}</p>
         ) : null}
       </div>
     </div>

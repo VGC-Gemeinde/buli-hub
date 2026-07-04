@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Barlow, Barlow_Condensed, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { SiteFooter } from "@/components/site-footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const barlow = Barlow({
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
+          <SiteFooter />
         </ThemeProvider>
       </body>
     </html>

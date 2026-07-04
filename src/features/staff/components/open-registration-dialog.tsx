@@ -14,17 +14,19 @@ import {
 } from "@/components/ui/dialog";
 import { matchesConfirmationPhrase } from "@/lib/confirm";
 import { openRegistration } from "../actions";
-import { OPEN_CONFIRMATION_PHRASE, SEASON_NAME } from "../registration-window";
+import { OPEN_CONFIRMATION_PHRASE, seasonName } from "../registration-window";
 
-// Confirm-only: the end date is chosen on the card (OpenRegistrationForm) and
-// passed in here as a datetime-local string. The dialog only confirms.
+// Confirm-only: the season number + end date are chosen on the card
+// (OpenRegistrationForm) and passed in here. The dialog only confirms.
 export function OpenRegistrationDialog({
   open,
   onOpenChange,
+  seasonNumber,
   closesAtLocal,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  seasonNumber: string;
   closesAtLocal: string;
 }) {
   const [confirmation, setConfirmation] = useState("");
@@ -51,6 +53,7 @@ export function OpenRegistrationDialog({
     setError(null);
     const result = await openRegistration({
       closesAt: new Date(closesAtLocal).toISOString(),
+      seasonNumber,
     });
     setPending(false);
     if (result.ok) {
@@ -67,7 +70,9 @@ export function OpenRegistrationDialog({
           <DialogTitle>Anmeldung öffnen?</DialogTitle>
           <DialogDescription>
             Die Anmeldung für{" "}
-            <span className="font-semibold text-foreground">{SEASON_NAME}</span>{" "}
+            <span className="font-semibold text-foreground">
+              {seasonName(Number(seasonNumber))}
+            </span>{" "}
             öffnet sofort und schließt automatisch am{" "}
             <span className="font-semibold text-foreground">
               {closesAtLabel}

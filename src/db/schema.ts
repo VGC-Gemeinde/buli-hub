@@ -68,6 +68,10 @@ export const registrationWindows = pgTable("registration_windows", {
     .defaultNow(),
   closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
   openedBy: uuid("opened_by").notNull(),
+  // The season this window belongs to. Chosen once for the first window on the
+  // system; every later window is the previous number + 1. See
+  // docs/plans/season-number.md.
+  seasonNumber: integer("season_number").notNull().default(1),
 });
 
 export const platformEnum = pgEnum("platform", ["showdown", "cartridge"]);

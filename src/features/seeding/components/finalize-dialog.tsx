@@ -13,7 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { SEASON_NAME } from "@/features/staff/registration-window";
 import { matchesConfirmationPhrase } from "@/lib/confirm";
 import { FINALIZE_CONFIRMATION_PHRASE } from "../seeding";
 
@@ -22,10 +21,12 @@ import { FINALIZE_CONFIRMATION_PHRASE } from "../seeding";
 export function FinalizeDialog({
   ready,
   gateHint,
+  season,
   onConfirm,
 }: {
   ready: boolean;
   gateHint: string;
+  season: string;
   onConfirm: () => Promise<{ ok: boolean; error?: string }>;
 }) {
   const [open, setOpen] = useState(false);
@@ -67,8 +68,8 @@ export function FinalizeDialog({
           <DialogTitle>Einteilung finalisieren?</DialogTitle>
           <DialogDescription>
             Die Einteilung für{" "}
-            <span className="font-semibold text-foreground">{SEASON_NAME}</span>{" "}
-            wird finalisiert und kann danach nicht mehr geändert werden.
+            <span className="font-semibold text-foreground">{season}</span> wird
+            finalisiert und kann danach nicht mehr geändert werden.
           </DialogDescription>
         </DialogHeader>
         <TypeToConfirm

@@ -13,6 +13,9 @@ export async function latestWindow(): Promise<RegistrationWindow | null> {
 export async function createWindow(
   closesAt: Date,
   openedBy: string,
+  seasonNumber: number,
 ): Promise<void> {
-  await db.insert(registrationWindows).values({ closesAt, openedBy });
+  await db
+    .insert(registrationWindows)
+    .values({ closesAt, openedBy, seasonNumber });
 }

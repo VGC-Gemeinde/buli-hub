@@ -169,6 +169,13 @@
       "when": 1783160685579,
       "tag": "20260704102445_championship_playoff",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1783166627357,
+      "tag": "20260704120347_season_number",
+      "breakpoints": true
     }
   ]
 }

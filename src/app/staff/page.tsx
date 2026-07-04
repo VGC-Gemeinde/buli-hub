@@ -30,7 +30,7 @@ import {
 import { latestWindow } from "@/features/staff/queries";
 import {
   registrationState,
-  SEASON_NAME,
+  seasonName,
 } from "@/features/staff/registration-window";
 import { seasonPhase } from "@/features/staff/season-phase";
 
@@ -44,10 +44,12 @@ function ddMM(dateStr: string): string {
 // The running-season header strip: identity, progress, and the entry points
 // that replace the pre-season Saison/Einteilung sections.
 function SeasonStrip({
+  season,
   currentRound,
   totalRounds,
   week,
 }: {
+  season: string;
   currentRound: number | null;
   totalRounds: number;
   week: MatchdayLite | null;
@@ -58,7 +60,7 @@ function SeasonStrip({
     <div className="flex flex-wrap items-center justify-between gap-6 rounded-lg border px-5.5 py-3.5">
       <div className="flex items-center gap-3">
         <span className="font-bold font-heading text-[22px] text-brand-blue uppercase leading-none dark:text-white">
-          {SEASON_NAME}
+          {season}
         </span>
         <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
         <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
@@ -135,6 +137,7 @@ export default async function StaffPage() {
           </h1>
           <div className="flex flex-col gap-4.5">
             <SeasonStrip
+              season={seasonName(window.seasonNumber)}
               currentRound={week?.round ?? null}
               totalRounds={matchdays.length}
               week={week}
@@ -201,6 +204,7 @@ export default async function StaffPage() {
             <StaffSectionHeader title="Saison" />
             <SeasonCard
               state={state}
+              season={window ? seasonName(window.seasonNumber) : null}
               registrationUrl={registrationUrl}
               closesAt={window?.closesAt ?? null}
             />

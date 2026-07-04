@@ -14,7 +14,7 @@ import { latestWindow } from "@/features/staff/queries";
 import {
   type RegistrationState,
   registrationState,
-  SEASON_NAME,
+  seasonName,
 } from "@/features/staff/registration-window";
 import { cn } from "@/lib/utils";
 
@@ -25,12 +25,16 @@ function formatDeadline(closesAt: Date): string {
   }).format(closesAt);
 }
 
-function statusLine(state: RegistrationState, closesAt: Date | null): string {
+function statusLine(
+  state: RegistrationState,
+  closesAt: Date | null,
+  season: string,
+): string {
   if (state === "open" && closesAt) {
-    return `${SEASON_NAME} · Läuft bis ${formatDeadline(closesAt)}`;
+    return `${season} · Läuft bis ${formatDeadline(closesAt)}`;
   }
   if (state === "closed") {
-    return `${SEASON_NAME} · Geschlossen`;
+    return `${season} · Geschlossen`;
   }
   return "Noch nicht geöffnet";
 }
@@ -38,10 +42,12 @@ function statusLine(state: RegistrationState, closesAt: Date | null): string {
 function Shell({
   state,
   closesAt,
+  season,
   children,
 }: {
   state: RegistrationState;
   closesAt: Date | null;
+  season: string;
   children: React.ReactNode;
 }) {
   return (
@@ -59,7 +65,7 @@ function Shell({
             )}
           />
           <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
-            {statusLine(state, closesAt)}
+            {statusLine(state, closesAt, season)}
           </span>
         </div>
         {children}
@@ -76,11 +82,12 @@ export default async function AnmeldungPage() {
   const window = await latestWindow();
   const state = window ? registrationState(window, new Date()) : "not_started";
   const closesAt = window?.closesAt ?? null;
+  const seasonLabel = window ? seasonName(window.seasonNumber) : "";
   const current = await currentUser();
 
   if (!current) {
     return (
-      <Shell state={state} closesAt={closesAt}>
+      <Shell state={state} closesAt={closesAt} season={seasonLabel}>
         <div className="flex flex-col items-start gap-4">
           <Message text="Melde dich mit Discord an, um an der nächsten Saison teilzunehmen." />
           <SignInButton size="lg" />
@@ -91,7 +98,7 @@ export default async function AnmeldungPage() {
 
   if (state === "not_started" || !window) {
     return (
-      <Shell state={state} closesAt={closesAt}>
+      <Shell state={state} closesAt={closesAt} season={seasonLabel}>
         <Message text="Die Anmeldung für die nächste Saison ist noch nicht geöffnet." />
       </Shell>
     );
@@ -100,9 +107,10 @@ export default async function AnmeldungPage() {
   const registration = await getRegistration(window.id, current.userId);
   if (registration) {
     return (
-      <Shell state={state} closesAt={closesAt}>
+      <Shell state={state} closesAt={closesAt} season={seasonLabel}>
         <RegistrationConfirmation
           data={registration}
+          seasonName={seasonLabel}
           canWithdraw={state === "open"}
           closesAt={closesAt}
         />
@@ -112,7 +120,7 @@ export default async function AnmeldungPage() {
 
   if (state === "closed") {
     return (
-      <Shell state={state} closesAt={closesAt}>
+      <Shell state={state} closesAt={closesAt} season={seasonLabel}>
         <Message text="Die Anmeldung ist geschlossen. Die nächste Chance kommt — schau im Discord vorbei." />
       </Shell>
     );
@@ -124,7 +132,7 @@ export default async function AnmeldungPage() {
   ]);
 
   return (
-    <Shell state={state} closesAt={closesAt}>
+    <Shell state={state} closesAt={closesAt} season={seasonLabel}>
       <div className="flex flex-col gap-8">
         {shouldShowProfileHint(profile) ? <ProfileHint /> : null}
         <RegistrationForm

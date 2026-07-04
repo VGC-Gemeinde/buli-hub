@@ -1,4 +1,3 @@
-import { SEASON_NAME } from "@/features/staff/registration-window";
 import { PLATFORM_LABELS, type Platform } from "../registration";
 import { WithdrawButton } from "./withdraw-button";
 
@@ -23,11 +22,13 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export function RegistrationConfirmation({
   data,
+  seasonName,
   canWithdraw,
   closesAt,
   note,
 }: {
   data: ConfirmationData;
+  seasonName: string;
   canWithdraw: boolean;
   closesAt: Date | null;
   // Overrides the default subline — e.g. the locked „warte auf deine Paarungen"
@@ -51,7 +52,7 @@ export function RegistrationConfirmation({
           <div className="flex items-center gap-2">
             <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
             <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
-              {SEASON_NAME}
+              {seasonName}
             </span>
           </div>
         </div>

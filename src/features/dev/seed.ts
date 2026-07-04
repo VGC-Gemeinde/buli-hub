@@ -465,8 +465,8 @@ export async function generateSeedData(
 
   // A closed window opened by the staff member, then the registrations.
   const [window] = await db.execute<{ id: string }>(
-    sql`insert into registration_windows (opened_at, closes_at, opened_by)
-        values (now() - interval '40 days', now() - interval '1 day', ${staffId})
+    sql`insert into registration_windows (opened_at, closes_at, opened_by, season_number)
+        values (now() - interval '40 days', now() - interval '1 day', ${staffId}, 9)
         returning id`,
   );
 

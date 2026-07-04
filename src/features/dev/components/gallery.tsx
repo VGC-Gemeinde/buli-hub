@@ -692,6 +692,7 @@ export function Gallery() {
           <Specimen key={state} label={state}>
             <SeasonCard
               state={state}
+              season={state === "not_started" ? null : "Saison 9"}
               registrationUrl="http://localhost:3000/anmeldung"
               closesAt={closesAt}
             />
@@ -734,6 +735,7 @@ export function Gallery() {
         <Specimen label="Neuer Spieler (mit Abmelden)">
           <RegistrationConfirmation
             canWithdraw
+            seasonName="Saison 9"
             closesAt={new Date("2100-01-01T18:00:00Z")}
             data={{
               platform: "showdown",
@@ -749,6 +751,7 @@ export function Gallery() {
         <Specimen label="Veteran (geschlossen, kein Abmelden)">
           <RegistrationConfirmation
             canWithdraw={false}
+            seasonName="Saison 9"
             closesAt={null}
             data={{
               platform: "cartridge",
@@ -836,12 +839,14 @@ export function Gallery() {
           <FinalizeDialog
             ready
             gateHint="Endgültig — kann nicht rückgängig gemacht werden."
+            season="Saison 9"
             onConfirm={async () => ({ ok: true })}
           />
         </Specimen>
         <Specimen label="Gesperrt">
           <FinalizeDialog
             ready={false}
+            season="Saison 9"
             gateHint="Erst wenn alle Spieler platziert und in Gruppen sind."
             onConfirm={async () => ({ ok: true })}
           />

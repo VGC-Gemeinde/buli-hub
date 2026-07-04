@@ -1,7 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { RegistrationState } from "../registration-window";
-import { SEASON_NAME } from "../registration-window";
 import { CopyLinkButton } from "./copy-link-button";
 import { OpenRegistrationForm } from "./open-registration-form";
 
@@ -50,12 +49,16 @@ function formatCloses(closesAt: Date): string {
 
 export function SeasonCard({
   state,
+  season,
   registrationUrl,
   closesAt,
   statusLabel,
   accent,
 }: {
   state: RegistrationState;
+  // The season name once a window exists; null before the first is opened (its
+  // number is chosen in the open form below).
+  season: string | null;
   registrationUrl: string;
   closesAt: Date | null;
   // Overrides for later phases the registration state alone cannot express
@@ -72,7 +75,7 @@ export function SeasonCard({
     >
       <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
         <div className="font-heading font-bold text-2xl uppercase tracking-[0.02em] text-brand-blue dark:text-white">
-          {SEASON_NAME}
+          {season ?? "Nächste Saison"}
         </div>
         <div className="flex items-center gap-2">
           <div

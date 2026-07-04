@@ -25,8 +25,8 @@ beforeAll(async () => {
     sql`insert into auth.users (id) values (${userId}), (${otherUserId})`,
   );
   // An earlier window (for prior-registration detection) and the current one.
-  await createWindow(new Date("2026-01-31T18:00:00Z"), userId);
-  await createWindow(new Date("2026-08-31T18:00:00Z"), userId);
+  await createWindow(new Date("2026-01-31T18:00:00Z"), userId, 1);
+  await createWindow(new Date("2026-08-31T18:00:00Z"), userId, 1);
   const windows = await db.query.registrationWindows.findMany();
   const sorted = windows.sort(
     (a, b) => a.openedAt.getTime() - b.openedAt.getTime(),

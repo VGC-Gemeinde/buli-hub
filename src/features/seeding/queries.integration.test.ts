@@ -30,7 +30,7 @@ let windowId: string;
 beforeAll(async () => {
   await db.execute(sql`delete from registration_windows`);
   await db.execute(sql`insert into auth.users (id) values (${userId})`);
-  await createWindow(new Date("2026-08-31T18:00:00Z"), userId);
+  await createWindow(new Date("2026-08-31T18:00:00Z"), userId, 1);
   const window = await latestWindow();
   if (!window) throw new Error("window setup failed");
   windowId = window.id;
@@ -148,7 +148,7 @@ describe("auto-init from registration history", () => {
     for (const id of [initUser, returner1, returner3, newcomer]) {
       await db.execute(sql`insert into auth.users (id) values (${id})`);
     }
-    await createWindow(new Date("2026-09-30T18:00:00Z"), initUser);
+    await createWindow(new Date("2026-09-30T18:00:00Z"), initUser, 1);
     const windows = await db.execute<{ id: string }>(
       sql`select id from registration_windows where opened_by = ${initUser}`,
     );
@@ -215,7 +215,7 @@ describe("control lock", () => {
     await db.execute(
       sql`insert into profiles (user_id, display_name) values (${opener}, 'Drivername')`,
     );
-    await createWindow(new Date("2026-11-30T18:00:00Z"), opener);
+    await createWindow(new Date("2026-11-30T18:00:00Z"), opener, 1);
     const windows = await db.execute<{ id: string }>(
       sql`select id from registration_windows where opened_by = ${opener}`,
     );
@@ -304,7 +304,7 @@ describe("control lock", () => {
   it("is torn down when the window is deleted", async () => {
     const throwaway = randomUUID();
     await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
-    await createWindow(new Date("2026-12-31T18:00:00Z"), throwaway);
+    await createWindow(new Date("2026-12-31T18:00:00Z"), throwaway, 1);
     const rows = await db.execute<{ id: string }>(
       sql`select id from registration_windows where opened_by = ${throwaway}`,
     );

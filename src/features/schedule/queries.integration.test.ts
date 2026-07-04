@@ -39,7 +39,7 @@ beforeAll(async () => {
       sql`, `,
     )}`,
   );
-  await createWindow(new Date("2026-08-31T18:00:00Z"), groupA[0]);
+  await createWindow(new Date("2026-08-31T18:00:00Z"), groupA[0], 1);
   const window = await latestWindow();
   if (!window) {
     throw new Error("window setup failed");

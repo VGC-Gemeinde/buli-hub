@@ -39,7 +39,7 @@ import {
 import { latestWindow } from "@/features/staff/queries";
 import {
   registrationState,
-  SEASON_NAME,
+  seasonName,
 } from "@/features/staff/registration-window";
 import { seasonPhase } from "@/features/staff/season-phase";
 
@@ -192,7 +192,7 @@ export default async function SpielerPage() {
                 {groupName}
               </span>
               <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
-                · {SEASON_NAME}
+                · {seasonName(window.seasonNumber)}
               </span>
             </div>
           </div>
@@ -219,19 +219,22 @@ export default async function SpielerPage() {
   }
 
   const closesAt = window?.closesAt ?? null;
+  const seasonLabel = window ? seasonName(window.seasonNumber) : "";
   return (
     <Shell>
       {view === "register_cta" ? (
-        <RegisterCtaPanel seasonName={SEASON_NAME} />
+        <RegisterCtaPanel seasonName={seasonLabel} />
       ) : view === "registered_open" && registration ? (
         <RegistrationConfirmation
           data={registration}
+          seasonName={seasonLabel}
           canWithdraw
           closesAt={closesAt}
         />
       ) : view === "registered_closed" && registration ? (
         <RegistrationConfirmation
           data={registration}
+          seasonName={seasonLabel}
           canWithdraw={false}
           closesAt={closesAt}
           note="Die Anmeldung ist geschlossen. Du kannst deine Angaben nicht mehr ändern — warte auf deine Paarungen."

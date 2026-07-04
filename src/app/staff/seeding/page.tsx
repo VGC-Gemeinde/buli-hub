@@ -14,7 +14,10 @@ import {
   listSubDivisions,
 } from "@/features/seeding/queries";
 import { latestWindow } from "@/features/staff/queries";
-import { registrationState } from "@/features/staff/registration-window";
+import {
+  registrationState,
+  seasonName,
+} from "@/features/staff/registration-window";
 
 export default async function SeedingPage() {
   const current = await currentUser();
@@ -68,6 +71,7 @@ export default async function SeedingPage() {
         subDivisions={subDivisions}
         initialSize={seeding?.subDivisionSize ?? null}
         initialDivisionCount={divisions.length}
+        season={seasonName(window.seasonNumber)}
         postSeason={postSeason}
         postSeasonConfigured={Boolean(seeding?.postSeasonConfiguredAt)}
         finalized={Boolean(seeding?.finalizedAt)}

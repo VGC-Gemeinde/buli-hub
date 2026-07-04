@@ -21,7 +21,7 @@ import {
   subDivisionName,
   subDivisionShortName,
 } from "@/features/seeding/seeding";
-import { SEASON_NAME } from "@/features/staff/registration-window";
+import { seasonName } from "@/features/staff/registration-window";
 
 export type ZoneByUser = Map<string, Zone>;
 
@@ -99,6 +99,7 @@ function zoneMap(
 // zones, and the current matchday's pairings/results per group.
 export async function publicLeagueOverview(
   windowId: string,
+  seasonNumber: number,
   today: string,
 ): Promise<PublicOverview> {
   const [configs, matchdays] = await Promise.all([
@@ -114,7 +115,7 @@ export async function publicLeagueOverview(
   );
 
   return {
-    seasonName: SEASON_NAME,
+    seasonName: seasonName(seasonNumber),
     currentRound,
     totalRounds: matchdays.length,
     divisions,

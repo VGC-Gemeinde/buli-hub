@@ -29,7 +29,7 @@ describe("registration windows", () => {
 
   it("creates and reads back the latest window", async () => {
     const closesAt = new Date("2026-08-01T18:00:00Z");
-    await createWindow(closesAt, userId);
+    await createWindow(closesAt, userId, 1);
 
     const window = await latestWindow();
     expect(window).not.toBeNull();

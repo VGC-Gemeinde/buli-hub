@@ -53,6 +53,7 @@ const STATUS_PILLS: { value: SheetFilter["status"]; label: string }[] = [
 export function SeedingToolbar({
   finalized,
   readOnly,
+  season,
   divisionCount,
   size,
   configError,
@@ -75,6 +76,7 @@ export function SeedingToolbar({
   // Observer mode: someone else drives. Editing controls are disabled, but
   // search + filter stay usable so observers can look around.
   readOnly: boolean;
+  season: string;
   divisionCount: string;
   size: string;
   configError: string | null;
@@ -112,7 +114,7 @@ export function SeedingToolbar({
             Divisionen einteilen
           </h1>
           <span className="pt-0.5 font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
-            Saison 1
+            {season}
           </span>
         </div>
         <div className="flex-1" />
@@ -145,6 +147,7 @@ export function SeedingToolbar({
           <FinalizeDialog
             ready={ready}
             gateHint={gateHint}
+            season={season}
             onConfirm={onFinalize}
           />
         )}

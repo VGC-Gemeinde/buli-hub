@@ -51,6 +51,7 @@ export function SeedingWorkspace({
   subDivisions,
   initialSize,
   initialDivisionCount,
+  season,
   postSeason,
   postSeasonConfigured,
   finalized,
@@ -63,6 +64,7 @@ export function SeedingWorkspace({
   subDivisions: SubDivisionRef[];
   initialSize: number | null;
   initialDivisionCount: number;
+  season: string;
   postSeason: DivisionWithGroupSizes[];
   postSeasonConfigured: boolean;
   finalized: boolean;
@@ -420,6 +422,7 @@ export function SeedingWorkspace({
       <SeedingToolbar
         finalized={finalized}
         readOnly={readOnly}
+        season={season}
         divisionCount={divisionCount}
         size={size}
         configError={configError}

@@ -50,7 +50,7 @@ beforeAll(async () => {
     { userId: staff, displayName: "Staffi", role: "staff" },
   ]);
 
-  await createWindow(new Date("2026-06-30T18:00:00Z"), alice);
+  await createWindow(new Date("2026-06-30T18:00:00Z"), alice, 1);
   const rows = await db.execute<{ id: string }>(
     sql`select id from registration_windows where opened_by = ${alice}`,
   );

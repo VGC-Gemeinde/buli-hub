@@ -5,6 +5,7 @@ export type RegistrationWindow = {
   openedAt: Date;
   closesAt: Date;
   openedBy: string;
+  seasonNumber: number;
 };
 
 export type RegistrationState = "not_started" | "open" | "closed";
@@ -22,9 +23,22 @@ export function registrationState(
   return window.closesAt.getTime() > now.getTime() ? "open" : "closed";
 }
 
-// The next season. Hardcoded until a seasons feature models it; the system
-// knows the season, staff only open its registration.
-export const SEASON_NAME = "Saison 1";
+// The season's display name from its number.
+export function seasonName(seasonNumber: number): string {
+  return `Saison ${seasonNumber}`;
+}
+
+export const MIN_SEASON_NUMBER = 1;
+export const MAX_SEASON_NUMBER = 999;
+
+// The starting season number, entered once when the first window on the system
+// is opened. Later windows derive their number (previous + 1), so this is not
+// used for them.
+export const seasonNumberSchema = z.coerce
+  .number({ error: "Ungültige Zahl" })
+  .int()
+  .min(MIN_SEASON_NUMBER, `Mindestens ${MIN_SEASON_NUMBER}`)
+  .max(MAX_SEASON_NUMBER, `Höchstens ${MAX_SEASON_NUMBER}`);
 
 // Type-to-confirm phrase for opening the registration — names the action. The
 // phrase is a client-side deliberateness gate (see src/components/

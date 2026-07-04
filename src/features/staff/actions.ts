@@ -6,7 +6,10 @@ import { roleAtLeast } from "@/features/roles/roles";
 import { getRole } from "@/features/roles/sync";
 import { createClient } from "@/lib/supabase/server";
 import { createWindow, latestWindow } from "./queries";
-import { openRegistrationSchema } from "./registration-window";
+import {
+  openRegistrationSchema,
+  seasonNumberSchema,
+} from "./registration-window";
 
 export type OpenRegistrationResult =
   | { ok: true }
@@ -14,6 +17,7 @@ export type OpenRegistrationResult =
 
 export async function openRegistration(input: {
   closesAt: string;
+  seasonNumber?: unknown;
 }): Promise<OpenRegistrationResult> {
   const supabase = await createClient();
   const {
@@ -39,11 +43,28 @@ export async function openRegistration(input: {
 
   // A registration window is opened at most once (reopening belongs to the
   // seasons feature).
-  if ((await latestWindow()) !== null) {
+  const latest = await latestWindow();
+  if (latest !== null) {
     return { ok: false, error: "Die Anmeldung wurde bereits geöffnet" };
   }
 
-  await createWindow(parsed.data.closesAt, user.id);
+  // The season number is chosen once, for the first window on the system. Every
+  // later window (once the seasons feature allows opening one) takes the previous
+  // number + 1 and is never editable.
+  const number =
+    latest === null ? seasonNumberSchema.safeParse(input.seasonNumber) : null;
+  if (number && !number.success) {
+    return {
+      ok: false,
+      error: number.error.issues[0]?.message ?? "Ungültige Saison",
+    };
+  }
+  const seasonNumber = number?.success
+    ? number.data
+    : // biome-ignore lint/style/noNonNullAssertion: latest is non-null here
+      latest!.seasonNumber + 1;
+
+  await createWindow(parsed.data.closesAt, user.id, seasonNumber);
   revalidatePath("/staff");
   return { ok: true };
 }

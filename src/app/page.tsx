@@ -36,7 +36,7 @@ export default async function Home({
   if (phase === "regular_season" && window) {
     const today = new Date().toISOString().slice(0, 10);
     const [overview, current] = await Promise.all([
-      publicLeagueOverview(window.id, today),
+      publicLeagueOverview(window.id, window.seasonNumber, today),
       currentUser(),
     ]);
     return (

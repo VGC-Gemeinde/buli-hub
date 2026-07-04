@@ -4,6 +4,8 @@ import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
+import { PublicLeague } from "@/features/public-league/components/public-league";
+import type { PublicOverview } from "@/features/public-league/queries";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
@@ -451,6 +453,105 @@ const DASH_DIVISION_STANDINGS: StandingsRow[] = [
   },
 ];
 
+// Public league overview: Division 1 in Gesamttabelle mode (with zones) plus a
+// current-matchday match list.
+const asIdentity = (row: StandingsRow) => ({
+  userId: row.userId,
+  name: row.name,
+  avatarUrl: row.avatarUrl,
+});
+const PUBLIC_OVERVIEW: PublicOverview = {
+  seasonName: "Saison 1",
+  currentRound: 2,
+  totalRounds: 4,
+  divisions: [
+    {
+      tier: 1,
+      name: "Division 1",
+      mode: "division",
+      divisionStandings: DASH_DIVISION_STANDINGS,
+      divisionZones: zoneMap(DASH_DIVISION_STANDINGS, {
+        champion: 1,
+        promotions: 1,
+        promotionPlayoff: 1,
+        demotionPlayoff: 1,
+        demotions: 1,
+      }),
+      divisionGroupLabels: new Map(
+        DASH_DIVISION_STANDINGS.map((r, i) => [
+          r.userId,
+          i % 2 === 0 ? "1a" : "1b",
+        ]),
+      ),
+      groups: [
+        {
+          subDivisionId: "1a",
+          name: "Division 1a",
+          shortName: "1a",
+          standings: DASH_STANDINGS,
+          zones: null,
+          matches: [
+            {
+              matchId: "pm1",
+              playerA: asIdentity(DASH_STANDINGS[0]),
+              playerB: asIdentity(DASH_STANDINGS[1]),
+              reported: true,
+              pending: false,
+              scoreA: 2,
+              scoreB: 0,
+              winnerId: DASH_STANDINGS[0].userId,
+            },
+            {
+              matchId: "pm2",
+              playerA: asIdentity(DASH_STANDINGS[2]),
+              playerB: asIdentity(DASH_STANDINGS[3]),
+              reported: false,
+              pending: false,
+              scoreA: null,
+              scoreB: null,
+              winnerId: null,
+            },
+            {
+              matchId: "pm3",
+              playerA: asIdentity(DASH_STANDINGS[0]),
+              playerB: null,
+              reported: false,
+              pending: false,
+              scoreA: null,
+              scoreB: null,
+              winnerId: null,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      tier: 2,
+      name: "Division 2",
+      mode: "sub_division",
+      divisionStandings: null,
+      divisionZones: null,
+      divisionGroupLabels: null,
+      groups: [
+        {
+          subDivisionId: "2a",
+          name: "Division 2a",
+          shortName: "2a",
+          standings: DASH_STANDINGS,
+          zones: zoneMap(DASH_STANDINGS, {
+            champion: 0,
+            promotions: 1,
+            promotionPlayoff: 0,
+            demotionPlayoff: 0,
+            demotions: 1,
+          }),
+          matches: [],
+        },
+      ],
+    },
+  ],
+};
+
 // Identity variants exercise the name/username/avatar fallbacks and, via
 // roleLabel, all four role badges.
 const IDENTITIES: {
@@ -744,6 +845,13 @@ export function Gallery() {
             gateHint="Erst wenn alle Spieler platziert und in Gruppen sind."
             onConfirm={async () => ({ ok: true })}
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Öffentliche Liga-Übersicht</h2>
+        <Specimen label="Laufende Saison (Divisions-Umschalter · Tabellen · Spieltag)">
+          <PublicLeague overview={PUBLIC_OVERVIEW} meId="me" />
         </Specimen>
       </section>
 

@@ -35,12 +35,14 @@ Rudimentary-but-intentional design; hand-off + design pass come later.
   round is the current Spieltag: the pairing with division/group context, a
   "Watch on YouTube" button once the link exists, and the result behind
   click-to-reveal once reported. No MotW for the current round → no block.
-- **Spoiler protection, permanent**: the MotW result is never shown openly.
-  In the Spieltag match list (current *and* past rounds) the row shows a
-  "Match of the Week" badge instead of the score. On `/match/[matchId]`
-  neutral viewers get the result behind a click-to-reveal (participants and
-  staff see everything, as today). Reveal state is client-side only — the
-  score may exist in the payload; this is a courtesy spoiler tag, not
+- **Spoiler protection, permanent**: the MotW result is never shown openly
+  and ignores the global spoiler switch. In the Spieltag match list (current
+  *and* past rounds) the row shows the orange "MotW" cover pill instead of
+  the score (tap reveals in place — the pill is the row's only marker, see
+  `design/SPOILER-SCHUTZ.md` §2.3). On `/match/[matchId]` neutral viewers
+  get the inline-masked result page with the MotW notice copy (participants
+  and staff see everything, as today). Reveal state is client-side only —
+  the score may exist in the payload; this is a courtesy spoiler tag, not
   security. The standings include the result immediately (accepted leak).
 
 **Out (deferred):**
@@ -106,8 +108,9 @@ and round.
   additionally fetches `motwForWindow`; `PublicMatch` gains `isMotw` (scores
   stay filled — the block's reveal uses them); `PublicOverview` gains the
   current round's block data (or null). `<MotwBlock>` renders above the
-  division switcher; `<MatchRow>` renders the `<MotwBadge>` pill instead of
-  any score for `isMotw` rows — every round, permanently.
+  division switcher; `<MatchRow>` renders the orange MotW cover pill instead
+  of any score for `isMotw` rows — every round, permanently (`<MotwBadge>`
+  itself lives on in the match-page banner and the staff manager).
 - **Match page** (`/app/match/[matchId]`): a `<MotwMatchBanner>` (badge +
   Spieltag + YouTube button) for every viewer; neutral viewers get the result
   summary wrapped in `<MotwSpoiler>` (pairing header + cover card,

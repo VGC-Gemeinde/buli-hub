@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PLATFORM_LABELS } from "@/features/registration/registration";
 import type { Identity } from "@/features/season/dashboard";
+import { SpoilerPill } from "@/features/spoilers/components/spoiler-score";
 import { cn } from "@/lib/utils";
 import type { StoredResult } from "../queries";
 
@@ -65,6 +69,13 @@ function BackAndEyebrow({
   );
 }
 
+// Spoiler protection on the result page (design/SPOILER-SCHUTZ.md §3): with
+// `spoilerMode` active, neutral viewers get this normal layout with masked
+// slots — replays, teamsheets and the match video stay usable without being
+// spoiled. "motw" only changes the notice copy; the exemption from the global
+// switch is decided by the page. All reveals are client-side per page load.
+export type SpoilerMode = "none" | "default" | "motw";
+
 // Read-only view of a recorded result. A participant sees it from their own
 // perspective („Du" / „Sieg für dich"); a neutral observer (viewerId null or not
 // a participant) sees the objective Player A vs Player B view. Corrections go
@@ -81,6 +92,7 @@ export function ReportSummary({
   disputed = false,
   backHref = "/spieler",
   backLabel = "Zurück zur Übersicht",
+  spoilerMode = "none",
 }: {
   result: StoredResult;
   playerA: Identity;
@@ -96,7 +108,23 @@ export function ReportSummary({
   disputed?: boolean;
   backHref?: string;
   backLabel?: string;
+  spoilerMode?: SpoilerMode;
 }) {
+  const [pageRevealed, setPageRevealed] = useState(false);
+  const [revealedGames, setRevealedGames] = useState<ReadonlySet<number>>(
+    new Set(),
+  );
+  const spoilerActive = spoilerMode !== "none";
+  const covered = spoilerActive && !pageRevealed;
+  const reveal = () => setPageRevealed(true);
+  // Re-covering also resets per-game reveals — a fresh cover.
+  const cover = () => {
+    setPageRevealed(false);
+    setRevealedGames(new Set());
+  };
+  const revealGame = (gameNumber: number) =>
+    setRevealedGames((prev) => new Set(prev).add(gameNumber));
+
   const isParticipant =
     viewerId === playerA.userId || viewerId === playerB.userId;
   // Participant B is framed as the viewer; everyone else (participant A or a
@@ -110,41 +138,65 @@ export function ReportSummary({
         ? playerB.name
         : "—";
 
+  // Covered headline: the pairing, in the result headline's own metrics — the
+  // reveal swaps text without costing a pixel of height.
+  const pairingHeadline = (
+    <>
+      <span className="break-words">{playerA.name}</span>{" "}
+      <span className="text-[oklch(0.68_0.025_263)]">vs.</span>{" "}
+      <span className="break-words">{playerB.name}</span>
+    </>
+  );
+
+  // One quiet line between headline and scoreboard: state + reveal/re-cover
+  // link. Copy stays short so the line never wraps (§3.3).
+  const notice = spoilerActive ? (
+    <p className="mb-6 flex min-h-5 items-baseline gap-2.5 text-[13px] text-muted-foreground">
+      <span>
+        {covered
+          ? spoilerMode === "motw"
+            ? "Match of the Week — Ergebnis verdeckt, erst das VOD ansehen."
+            : "Spoiler-Schutz aktiv — Sieger und Endstand sind verdeckt."
+          : "Ergebnis aufgedeckt — nur für dich, hier auf dieser Seite."}
+      </span>
+      <button
+        type="button"
+        onClick={covered ? reveal : cover}
+        className="whitespace-nowrap font-semibold text-brand-blue underline underline-offset-[3px] hover:text-brand-orange dark:text-white dark:hover:text-brand-orange"
+      >
+        {covered ? "Ergebnis aufdecken" : "Wieder verdecken"}
+      </button>
+    </p>
+  ) : null;
+
   if (result.outcome === "free_win") {
     // Neutral observers only ever reach this branch for a confirmed free win
-    // (the page hides pending ones); it is shown as the walkover 2:0.
+    // (the page hides pending ones); it is shown as the walkover 2:0. While
+    // covered, nothing may say „Freewin" — the eyebrow and headline show the
+    // neutral pairing (§3.2).
     const pending = result.confirmedAt === null;
     const self = result.winnerId === viewer.userId ? 2 : 0;
     return (
       <>
         <BackAndEyebrow
-          label={`Freewin · Spieltag ${round} · ${groupName}`}
+          label={`${covered ? "Ergebnis" : "Freewin"} · Spieltag ${round} · ${groupName}`}
           backHref={backHref}
           backLabel={backLabel}
         />
-        <div className="mt-3 mb-6 flex items-center gap-3">
+        <div
+          className={cn(
+            "mt-3 flex items-center gap-3",
+            spoilerActive ? "mb-2.5" : "mb-6",
+          )}
+        >
           <h1 className="text-[38px] text-brand-blue leading-[1.1] dark:text-white">
-            Freewin für {nameOf(result.winnerId)}
+            {covered
+              ? pairingHeadline
+              : `Freewin für ${nameOf(result.winnerId)}`}
           </h1>
-          <span
-            className={cn(
-              "flex items-center justify-center rounded-full px-3.5 py-1 font-semibold text-xs uppercase tracking-[0.08em]",
-              disputed
-                ? "bg-destructive/[0.09] text-destructive"
-                : pending
-                  ? "bg-brand-orange/14 text-brand-blue dark:text-white"
-                  : "bg-brand-blue/7 text-brand-blue dark:text-white",
-            )}
-          >
-            <span className="-mr-[0.08em] leading-none">
-              {disputed
-                ? "Angefochten"
-                : pending
-                  ? "Wartet auf Staff"
-                  : "Final"}
-            </span>
-          </span>
+          <StatusChip disputed={disputed} pending={pending} />
         </div>
+        {notice}
         {pending && privileged ? (
           <div className="mb-8 flex flex-col gap-1.5 rounded-xl border border-brand-orange/45 bg-brand-orange/5 px-6 py-5">
             <p className="font-semibold text-[15px] text-brand-blue dark:text-white">
@@ -164,6 +216,9 @@ export function ReportSummary({
           opp={2 - self}
           winnerId={result.winnerId}
           isParticipant={isParticipant}
+          covered={covered}
+          reserveMarkers={spoilerActive}
+          onReveal={reveal}
         />
         {privileged ? (
           <div className="mt-4.5 flex flex-col gap-4.5">
@@ -197,6 +252,33 @@ export function ReportSummary({
         ? "Sieg für dich"
         : `Sieg für ${nameOf(result.winnerId)}`;
 
+  // The rendered game list. While the spoiler mode is active, a Bo3 that
+  // ended 2:0 must not betray itself by its row count (§3.6): a phantom third
+  // row renders as a normal covered row — its replay button links game 2's
+  // replay as a dummy — and becomes the „Nicht gespielt" ghost on reveal.
+  const games: {
+    gameNumber: number;
+    winnerName: string | null;
+    replayUrl: string | null;
+    phantom: boolean;
+  }[] = result.games.map((game) => ({
+    gameNumber: game.gameNumber,
+    winnerName: nameOf(game.winnerId),
+    replayUrl: game.replayUrl ?? null,
+    phantom: false,
+  }));
+  if (spoilerActive && result.games.length === 2) {
+    games.push({
+      gameNumber: 3,
+      winnerName: null,
+      replayUrl:
+        result.platform === "showdown"
+          ? (result.games[1]?.replayUrl ?? null)
+          : null,
+      phantom: true,
+    });
+  }
+
   return (
     <>
       <BackAndEyebrow
@@ -204,23 +286,18 @@ export function ReportSummary({
         backHref={backHref}
         backLabel={backLabel}
       />
-      <div className="mt-3 mb-6 flex items-center gap-3">
+      <div
+        className={cn(
+          "mt-3 flex items-center gap-3",
+          spoilerActive ? "mb-2.5" : "mb-6",
+        )}
+      >
         <h1 className="text-[38px] text-brand-blue leading-[1.1] dark:text-white">
-          {title}
+          {covered ? pairingHeadline : title}
         </h1>
-        <span
-          className={cn(
-            "flex items-center justify-center rounded-full px-3.5 py-1 font-semibold text-xs uppercase tracking-[0.08em]",
-            disputed
-              ? "bg-destructive/[0.09] text-destructive"
-              : "bg-brand-blue/7 text-brand-blue dark:text-white",
-          )}
-        >
-          <span className="-mr-[0.08em] leading-none">
-            {disputed ? "Angefochten" : "Final"}
-          </span>
-        </span>
+        <StatusChip disputed={disputed} />
       </div>
+      {notice}
 
       <ScoreBoard
         viewer={viewer}
@@ -229,6 +306,9 @@ export function ReportSummary({
         opp={oppScore}
         winnerId={result.winnerId}
         isParticipant={isParticipant}
+        covered={covered}
+        reserveMarkers={spoilerActive}
+        onReveal={reveal}
       />
 
       <p className="mt-3.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
@@ -245,33 +325,82 @@ export function ReportSummary({
         <span>{formatReportedAt(result.reportedAt)}</span>
       </p>
 
-      {result.games.length > 0 ? (
+      {games.length > 0 ? (
         <section className="mt-9 flex flex-col gap-3">
-          <SectionHead title="Spiele" />
+          <div className="flex items-baseline justify-between">
+            <SectionHead title="Spiele" />
+            {covered ? (
+              <span className="text-[12.5px] text-muted-foreground">
+                Replays spoilerfrei ansehen
+              </span>
+            ) : null}
+          </div>
           <div className="flex flex-col gap-2">
-            {result.games.map((game) => (
-              <div
-                key={game.gameNumber}
-                className="flex items-center gap-3.5 rounded-lg border px-4 py-3"
-              >
-                <span className="w-[58px] shrink-0 whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.08em]">
-                  Spiel {game.gameNumber}
-                </span>
-                <span className="flex-1 font-semibold text-brand-blue text-sm dark:text-white">
-                  Sieger: {nameOf(game.winnerId)}
-                </span>
-                {game.replayUrl ? (
-                  <a
-                    href={game.replayUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-md border px-3 py-1.5 font-semibold text-[13px] hover:border-brand-orange hover:bg-brand-orange/5"
+            {games.map((game) => {
+              const gameCovered =
+                covered && !revealedGames.has(game.gameNumber);
+              if (game.phantom && !gameCovered) {
+                // Ghost variant: the phantom row after reveal (§3.6).
+                return (
+                  <div
+                    key={game.gameNumber}
+                    className="flex items-center gap-3.5 rounded-lg border border-[oklch(0.87_0.015_262)] border-dashed bg-muted/30 px-4 py-3 dark:border-white/15"
                   >
-                    Replay ansehen ↗
-                  </a>
-                ) : null}
-              </div>
-            ))}
+                    <span className="w-[58px] shrink-0 whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.08em]">
+                      Spiel {game.gameNumber}
+                    </span>
+                    <span className="flex min-h-[31px] flex-1 items-center text-[13px] text-muted-foreground">
+                      Nicht gespielt — die Serie war nach zwei Spielen
+                      entschieden.
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={game.gameNumber}
+                  className="flex items-center gap-3.5 rounded-lg border px-4 py-3"
+                >
+                  <span className="w-[58px] shrink-0 whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.08em]">
+                    Spiel {game.gameNumber}
+                  </span>
+                  <span className="flex min-h-[31px] flex-1 items-center gap-2 font-semibold text-sm">
+                    <span
+                      className={
+                        gameCovered
+                          ? "text-muted-foreground"
+                          : "text-brand-blue dark:text-white"
+                      }
+                    >
+                      Sieger:
+                    </span>
+                    {gameCovered ? (
+                      // Each game reveals independently — watch replay 1,
+                      // peek game 1, stay unspoiled for the series.
+                      <SpoilerPill
+                        title="Sieger verdeckt — antippen zum Aufdecken"
+                        onReveal={() => revealGame(game.gameNumber)}
+                        className="h-[13px] w-[88px]"
+                      />
+                    ) : (
+                      <span className="text-brand-blue dark:text-white">
+                        {game.winnerName}
+                      </span>
+                    )}
+                  </span>
+                  {game.replayUrl ? (
+                    <a
+                      href={game.replayUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border px-3 py-1.5 font-semibold text-[13px] hover:border-brand-orange hover:bg-brand-orange/5"
+                    >
+                      Replay ansehen ↗
+                    </a>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -306,6 +435,31 @@ export function ReportSummary({
   );
 }
 
+function StatusChip({
+  disputed,
+  pending = false,
+}: {
+  disputed: boolean;
+  pending?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "flex items-center justify-center rounded-full px-3.5 py-1 font-semibold text-xs uppercase tracking-[0.08em]",
+        disputed
+          ? "bg-destructive/[0.09] text-destructive"
+          : pending
+            ? "bg-brand-orange/14 text-brand-blue dark:text-white"
+            : "bg-brand-blue/7 text-brand-blue dark:text-white",
+      )}
+    >
+      <span className="-mr-[0.08em] leading-none">
+        {disputed ? "Angefochten" : pending ? "Wartet auf Staff" : "Final"}
+      </span>
+    </span>
+  );
+}
+
 function SectionHead({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-2.5">
@@ -336,6 +490,9 @@ function Field({
 
 // The score block, shared by normal results and free wins (walkover 2:0). Scores
 // are given from the `viewer`'s side; the winner marker is driven by `winnerId`.
+// While covered, the center becomes the masked `– : –` button in a fixed slot
+// and the winner markers stay blank in their reserved rows — revealing never
+// moves a pixel (§3.4).
 function ScoreBoard({
   viewer,
   other,
@@ -343,6 +500,9 @@ function ScoreBoard({
   opp,
   winnerId,
   isParticipant,
+  covered = false,
+  reserveMarkers = false,
+  onReveal = () => {},
 }: {
   viewer: Identity;
   other: Identity;
@@ -350,7 +510,11 @@ function ScoreBoard({
   opp: number;
   winnerId: string | null;
   isParticipant: boolean;
+  covered?: boolean;
+  reserveMarkers?: boolean;
+  onReveal?: () => void;
 }) {
+  const shownWinnerId = covered ? null : winnerId;
   return (
     <>
       {/* Mobile: each player on their own row with their score — no truncation. */}
@@ -358,15 +522,19 @@ function ScoreBoard({
         <PlayerRow
           identity={viewer}
           score={self}
-          winner={winnerId === viewer.userId}
+          winner={shownWinnerId === viewer.userId}
           sub={isParticipant ? "Du" : undefined}
           filled={isParticipant}
+          covered={covered}
+          onReveal={onReveal}
         />
         <PlayerRow
           identity={other}
           score={opp}
-          winner={winnerId === other.userId}
+          winner={shownWinnerId === other.userId}
           sub={isParticipant ? "Gegner" : undefined}
+          covered={covered}
+          onReveal={onReveal}
         />
       </div>
 
@@ -376,18 +544,50 @@ function ScoreBoard({
           identity={viewer}
           filled={isParticipant}
           sub={isParticipant ? "Du" : undefined}
-          winner={winnerId === viewer.userId}
+          winner={shownWinnerId === viewer.userId}
+          reserveMarker={reserveMarkers}
         />
-        <span className="font-bold font-heading text-[56px] text-brand-blue leading-none dark:text-white">
-          {self}
-          <span className="px-2 text-border">:</span>
-          {opp}
+        <span className="flex h-14 w-32 items-center justify-center">
+          {covered ? (
+            <button
+              type="button"
+              title="Ergebnis verdeckt — antippen zum Aufdecken"
+              aria-label="Ergebnis aufdecken"
+              onClick={onReveal}
+              className="cursor-pointer font-bold font-heading text-[56px] text-[oklch(0.82_0.015_263)] leading-none transition-colors hover:text-[oklch(0.65_0.03_263)] dark:text-white/25 dark:hover:text-white/45"
+            >
+              –<span className="px-2 text-[38px]">:</span>–
+            </button>
+          ) : (
+            <span className="font-bold font-heading text-[56px] leading-none tabular-nums">
+              <span
+                className={
+                  shownWinnerId === viewer.userId
+                    ? "text-brand-blue dark:text-white"
+                    : "text-muted-foreground"
+                }
+              >
+                {self}
+              </span>
+              <span className="px-2 text-[38px] text-border">:</span>
+              <span
+                className={
+                  shownWinnerId === other.userId
+                    ? "text-brand-blue dark:text-white"
+                    : "text-muted-foreground"
+                }
+              >
+                {opp}
+              </span>
+            </span>
+          )}
         </span>
         <ScoreSide
           identity={other}
           align="right"
           sub={isParticipant ? "Gegner" : undefined}
-          winner={winnerId === other.userId}
+          winner={shownWinnerId === other.userId}
+          reserveMarker={reserveMarkers}
         />
       </div>
     </>
@@ -395,19 +595,24 @@ function ScoreBoard({
 }
 
 // One player as a full-width row (mobile scoreboard): avatar, name + marker, and
-// their score. The name gets the whole row, so it never has to truncate.
+// their score. The name gets the whole row, so it never has to truncate. Row
+// height is fixed by the avatar, so masking needs no reserved rows here.
 function PlayerRow({
   identity,
   score,
   winner,
   sub,
   filled,
+  covered = false,
+  onReveal = () => {},
 }: {
   identity: Identity;
   score: number;
   winner: boolean;
   sub?: string;
   filled?: boolean;
+  covered?: boolean;
+  onReveal?: () => void;
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
@@ -429,14 +634,28 @@ function PlayerRow({
           </span>
         ) : null}
       </div>
-      <span
-        className={cn(
-          "font-bold font-heading text-[32px] leading-none tabular-nums",
-          winner ? "text-brand-blue dark:text-white" : "text-muted-foreground",
-        )}
-      >
-        {score}
-      </span>
+      {covered ? (
+        <button
+          type="button"
+          title="Ergebnis verdeckt — antippen zum Aufdecken"
+          aria-label="Ergebnis aufdecken"
+          onClick={onReveal}
+          className="cursor-pointer font-bold font-heading text-[32px] text-[oklch(0.82_0.015_263)] leading-none transition-colors hover:text-[oklch(0.65_0.03_263)] dark:text-white/25 dark:hover:text-white/45"
+        >
+          –
+        </button>
+      ) : (
+        <span
+          className={cn(
+            "font-bold font-heading text-[32px] leading-none tabular-nums",
+            winner
+              ? "text-brand-blue dark:text-white"
+              : "text-muted-foreground",
+          )}
+        >
+          {score}
+        </span>
+      )}
     </div>
   );
 }
@@ -447,13 +666,28 @@ function ScoreSide({
   winner,
   filled,
   align,
+  reserveMarker = false,
 }: {
   identity: Identity;
   sub?: string;
   winner: boolean;
   filled?: boolean;
   align?: "right";
+  reserveMarker?: boolean;
 }) {
+  const marker = winner ? (
+    <span className="flex items-center gap-1.5">
+      <span className="h-[7px] w-3.5 -skew-x-[18deg] bg-brand-orange" />
+      <span className="font-bold text-[11px] text-brand-orange uppercase tracking-[0.12em]">
+        Sieger
+      </span>
+    </span>
+  ) : sub ? (
+    <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
+      {sub}
+    </span>
+  ) : null;
+
   return (
     <div
       className={cn(
@@ -476,18 +710,13 @@ function ScoreSide({
         >
           {identity.name}
         </span>
-        {winner ? (
-          <span className="flex items-center gap-1.5">
-            <span className="h-[7px] w-3.5 -skew-x-[18deg] bg-brand-orange" />
-            <span className="font-bold text-[11px] text-brand-orange uppercase tracking-[0.12em]">
-              Sieger
-            </span>
-          </span>
-        ) : sub ? (
-          <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
-            {sub}
-          </span>
-        ) : null}
+        {reserveMarker ? (
+          // Reserved marker row: empty while covered, holds the „Sieger"
+          // marker after reveal — the names never move (§3.4).
+          <span className="flex h-[15px] items-center">{marker}</span>
+        ) : (
+          marker
+        )}
       </div>
     </div>
   );

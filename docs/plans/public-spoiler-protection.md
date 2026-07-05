@@ -1,9 +1,15 @@
 # Public spoiler protection
 
 **Status: done** (2026-07-05) — `src/features/spoilers/` + overview switch,
-covered score chips, match-page cover; MotW cover refactored onto the shared
-shell. Verified via unit tests and a seeded season in both cookie states
-(overview chips, per-chip reveal, match-page cover/summary, MotW exemption).
+covered scores, match-page protection. Verified via unit tests and a seeded
+season in both cookie states.
+**Design pass done** (2026-07-06) per `design/SPOILER-SCHUTZ.md` — in-place
+placeholder pills instead of dark chips, the orange MotW cover pill as the
+row's only marker, and inline match-page masking (pairing headline, notice
+line with reveal/re-cover, masked scoreboard with reserved marker rows,
+per-game pills, phantom third game with ghost row). The full-page cover
+components (`SpoilerCoverShell`, `MotwSpoiler`) are retired; `ReportSummary`
+carries a `spoilerMode` instead.
 
 ## Context
 

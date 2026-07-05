@@ -15,7 +15,6 @@ import {
   type MotwWeek,
 } from "@/features/motw/components/motw-manager";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
-import { MotwSpoiler } from "@/features/motw/components/motw-spoiler";
 import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
 import type { MotwBlockData } from "@/features/motw/motw";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
@@ -58,7 +57,6 @@ import type { SeedingPlayer } from "@/features/seeding/placement";
 import { assignZones } from "@/features/seeding/post-season";
 import type { DivisionWithGroupSizes } from "@/features/seeding/queries";
 import { assembleSheetRows } from "@/features/seeding/sheet";
-import { SpoilerCoverShell } from "@/features/spoilers/components/spoiler-cover-shell";
 import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
 import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
@@ -147,6 +145,46 @@ const SUMMARY_RESULT: StoredResult = {
       winnerId: "me",
       replayUrl: "https://replay.pokemonshowdown.com/z",
     },
+  ],
+};
+// A 2:0 sweep (two games): under an active spoiler mode the page renders a
+// phantom third row that turns into the „Nicht gespielt" ghost on reveal.
+const SWEEP_RESULT: StoredResult = {
+  outcome: "normal",
+  winnerId: "me",
+  platform: "showdown",
+  playerATeamUrl: "https://pokepast.es/aaaa",
+  playerBTeamUrl: "https://pokepast.es/bbbb",
+  videoUrl: null,
+  freeWinReason: null,
+  discussedWithId: null,
+  discussedWithName: null,
+  reportedById: "me",
+  reportedAt: new Date("2026-07-06T18:00:00Z"),
+  confirmedAt: null,
+  correctedAt: null,
+  games: [
+    {
+      gameNumber: 1,
+      winnerId: "me",
+      replayUrl: "https://replay.pokemonshowdown.com/x",
+    },
+    {
+      gameNumber: 2,
+      winnerId: "me",
+      replayUrl: "https://replay.pokemonshowdown.com/y",
+    },
+  ],
+};
+// Cartridge: no replays anywhere; the match video is the spoiler-free content.
+const CARTRIDGE_RESULT: StoredResult = {
+  ...SWEEP_RESULT,
+  platform: "cartridge",
+  videoUrl: "https://youtu.be/QbxY2WuzCrU",
+  games: [
+    { gameNumber: 1, winnerId: "me", replayUrl: null },
+    { gameNumber: 2, winnerId: "opp", replayUrl: null },
+    { gameNumber: 3, winnerId: "me", replayUrl: null },
   ],
 };
 const FREEWIN_RESULT: StoredResult = {
@@ -626,6 +664,19 @@ const PUBLIC_OVERVIEW: PublicOverview = {
               winnerId: null,
               isMotw: false,
             },
+            // A foreign reported match — covered pill in the overview specimen.
+            {
+              matchId: "pm4",
+              round: 2,
+              playerA: asIdentity(DASH_STANDINGS[1]),
+              playerB: asIdentity(DASH_STANDINGS[3]),
+              reported: true,
+              pending: false,
+              scoreA: 2,
+              scoreB: 1,
+              winnerId: DASH_STANDINGS[1].userId,
+              isMotw: false,
+            },
             {
               matchId: "pm3",
               round: 2,
@@ -719,6 +770,7 @@ function SpoilerSwitchDemo() {
 
 function SpoilerScoreDemo() {
   const [revealed, setRevealed] = useState(false);
+  const [motwRevealed, setMotwRevealed] = useState(false);
   return (
     <div className="flex items-center gap-5 font-semibold text-muted-foreground text-xs tabular-nums">
       <SpoilerScore
@@ -726,6 +778,13 @@ function SpoilerScoreDemo() {
         scoreB={1}
         covered={!revealed}
         onReveal={() => setRevealed(true)}
+      />
+      <SpoilerScore
+        scoreA={2}
+        scoreB={0}
+        covered={!motwRevealed}
+        motw
+        onReveal={() => setMotwRevealed(true)}
       />
       <SpoilerScore scoreA={2} scoreB={0} covered={false} onReveal={() => {}} />
     </div>
@@ -1060,20 +1119,41 @@ export function Gallery() {
         <Specimen label="Verdeckter Score — antippen deckt auf">
           <SpoilerScoreDemo />
         </Specimen>
-        <Specimen label="Match-Seite: allgemeine Spoiler-Abdeckung (Klick zeigt den Inhalt)">
-          <SpoilerCoverShell
+        <Specimen label="Match-Seite verdeckt — Showdown 2:1 (Maske, Notiz-Zeile, Spiele-Pills)">
+          <ReportSummary
+            result={SUMMARY_RESULT}
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+            viewerId={null}
+            privileged={false}
             round={2}
             groupName="Division 1a"
-            seasonLabel="Saison 1"
-            playerAName={SUMMARY_A.name}
-            playerBName={SUMMARY_B.name}
-            title="Ergebnis versteckt"
-            copy="Der Spoiler-Schutz ist aktiv — deck das Ergebnis auf, wenn du es sehen willst. Auf der Übersicht kannst du den Schutz komplett ausschalten."
-          >
-            <p className="text-sm">
-              Hier stünde die vollständige Ergebnis-Ansicht.
-            </p>
-          </SpoilerCoverShell>
+            spoilerMode="default"
+          />
+        </Specimen>
+        <Specimen label="Match-Seite verdeckt — Showdown 2:0 (Phantom-Spiel 3 → Ghost nach Aufdecken)">
+          <ReportSummary
+            result={SWEEP_RESULT}
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+            viewerId={null}
+            privileged={false}
+            round={2}
+            groupName="Division 1a"
+            spoilerMode="default"
+          />
+        </Specimen>
+        <Specimen label="Match-Seite verdeckt — Cartridge (keine Replays, Video frei)">
+          <ReportSummary
+            result={CARTRIDGE_RESULT}
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+            viewerId={null}
+            privileged={false}
+            round={2}
+            groupName="Division 1a"
+            spoilerMode="default"
+          />
         </Specimen>
       </section>
 
@@ -1100,18 +1180,17 @@ export function Gallery() {
             />
           </div>
         </Specimen>
-        <Specimen label="Match-Seite: Spoiler-Abdeckung (Klick zeigt den Inhalt)">
-          <MotwSpoiler
+        <Specimen label="Match-Seite verdeckt — MotW-Variante (eigene Notiz, ignoriert den Schalter)">
+          <ReportSummary
+            result={SUMMARY_RESULT}
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+            viewerId={null}
+            privileged={false}
             round={2}
             groupName="Division 1a"
-            seasonLabel="Saison 1"
-            playerAName={SUMMARY_A.name}
-            playerBName={SUMMARY_B.name}
-          >
-            <p className="text-sm">
-              Hier stünde die vollständige Ergebnis-Ansicht.
-            </p>
-          </MotwSpoiler>
+            spoilerMode="motw"
+          />
         </Specimen>
         <Specimen label="Staff-Todo — nächste Woche (Hinweis)">
           <MotwTodoCard todo={{ round: 3, urgency: "warning" }} />

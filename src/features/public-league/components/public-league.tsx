@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ActionLink } from "@/components/links";
+import { useEffect, useState } from "react";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
-import { MotwBadge } from "@/features/motw/components/motw-badge";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { StandingsTable } from "@/features/season/components/standings-panel";
@@ -108,18 +106,13 @@ export function PublicLeague({
             · {overview.seasonName}
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5">
           {overview.currentRound ? (
             <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
               Spieltag {overview.currentRound} / {overview.totalRounds}
             </span>
           ) : null}
           <SpoilerSwitch spoilersOff={spoilersOff} onChange={setSpoilersOff} />
-          {meId ? (
-            <ActionLink href="/spieler" className="text-sm">
-              Zum Spieler-Dashboard
-            </ActionLink>
-          ) : null}
         </div>
       </div>
 
@@ -364,55 +357,59 @@ function MatchRow({
 }) {
   const mine = match.playerA.userId === meId || match.playerB?.userId === meId;
   // Foreign reported results are covered until revealed in place (or via the
-  // global switch). The MotW is exempt from all of this — it renders its
-  // badge permanently, never a score.
-  const hidden =
-    !match.isMotw &&
-    scoreHidden({ reported: match.reported, isMine: mine, spoilersOff });
+  // global switch). The MotW ignores the switch: its orange cover pill is the
+  // row's only marker and stays until tapped (courtesy tag, not security).
+  const hidden = match.isMotw
+    ? match.reported
+    : scoreHidden({ reported: match.reported, isMine: mine, spoilersOff });
   const [revealed, setRevealed] = useState(false);
+  // Turning protection back on clears per-row reveals — a fresh cover, no
+  // half-revealed leftovers (design/SPOILER-SCHUTZ.md §2.1).
+  useEffect(() => {
+    if (!spoilersOff) {
+      setRevealed(false);
+    }
+  }, [spoilersOff]);
   const covered = hidden && !revealed;
   const className = cn(
     "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
     mine && "border-brand-orange/40 bg-brand-orange/5",
     match.playerB && "transition-colors hover:border-brand-orange/50",
-    // The featured row gets a quiet highlight to match its badge.
-    match.isMotw && "border-brand-orange/50 bg-brand-orange/[0.045]",
   );
   const content = (
     <>
       <Side
         identity={match.playerA}
-        // Winner bolding on a covered (or featured) row would leak the result.
-        winner={
-          !match.isMotw && !covered && match.winnerId === match.playerA.userId
-        }
+        // Winner bolding on a covered row would leak the result; it returns
+        // once the row is revealed (also on the MotW row).
+        winner={!covered && match.winnerId === match.playerA.userId}
         align="left"
       />
-      <span className="shrink-0 text-center font-semibold text-muted-foreground text-xs tabular-nums">
-        {match.playerB === null ? (
-          "spielfrei"
-        ) : match.isMotw ? (
-          // The featured match never shows its score here — permanent spoiler
-          // protection; the result lives behind the block/match-page reveal.
-          <MotwBadge title="Ergebnis verdeckt — Match of the Week" />
-        ) : match.reported ? (
-          // A pending free win is not shown publicly until confirmed → „offen".
-          <SpoilerScore
-            scoreA={match.scoreA}
-            scoreB={match.scoreB}
-            covered={covered}
-            onReveal={() => setRevealed(true)}
-          />
-        ) : (
-          "offen"
-        )}
-      </span>
+      {match.playerB === null ? (
+        <span className="shrink-0 text-center font-semibold text-muted-foreground text-xs tabular-nums">
+          spielfrei
+        </span>
+      ) : (
+        // Fixed-width slot: pill ⇄ score ⇄ „offen" swap without any shift.
+        <span className="flex w-12 shrink-0 items-center justify-center font-semibold text-muted-foreground text-xs tabular-nums">
+          {match.reported ? (
+            // A pending free win is not shown publicly until confirmed → „offen".
+            <SpoilerScore
+              scoreA={match.scoreA}
+              scoreB={match.scoreB}
+              covered={covered}
+              motw={match.isMotw}
+              onReveal={() => setRevealed(true)}
+            />
+          ) : (
+            "offen"
+          )}
+        </span>
+      )}
       {match.playerB ? (
         <Side
           identity={match.playerB}
-          winner={
-            !match.isMotw && !covered && match.winnerId === match.playerB.userId
-          }
+          winner={!covered && match.winnerId === match.playerB.userId}
           align="right"
         />
       ) : (

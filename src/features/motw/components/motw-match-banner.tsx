@@ -5,7 +5,7 @@ import { MotwBadge } from "./motw-badge";
 // The Match-of-the-Week strip on the match page (design/MATCH-OF-THE-WEEK.md
 // §4.1): marks the featured match for every viewer and carries the VOD link
 // once it exists — no placeholder here, the overview billboard holds that
-// slot. Server-renderable; the spoiler reveal lives in MotwSpoiler.
+// slot. Server-renderable; the spoiler reveal lives inline in ReportSummary.
 export function MotwMatchBanner({
   round,
   youtubeUrl,

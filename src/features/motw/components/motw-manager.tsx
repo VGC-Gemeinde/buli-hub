@@ -1,5 +1,6 @@
 "use client";
 
+import { Play } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import { SectionHeader } from "@/components/section-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { removeMotw, saveMotwYoutubeUrl, selectMotw } from "../actions";
 import { MotwBadge } from "./motw-badge";
 
@@ -47,12 +49,23 @@ function ddMM(dateStr: string): string {
   }).format(new Date(`${dateStr}T00:00:00Z`));
 }
 
+function chipLabel(groupName: string): string {
+  return groupName.replace("Division ", "Div. ");
+}
+
 function shortGroup(groupName: string): string {
   return groupName.replace("Division ", "Div ");
 }
 
-// The staff manager for the Match of the Week: pick/replace/remove for the
-// current and next Spieltag, plus VOD links for every pick.
+// Display form of a VOD link: no scheme/www, hard-cut with an ellipsis.
+function shortUrl(url: string): string {
+  const stripped = url.replace(/^https:\/\/(www\.)?/, "");
+  return stripped.length > 24 ? `${stripped.slice(0, 24)}…` : stripped;
+}
+
+// The staff manager for the Match of the Week (design/MATCH-OF-THE-WEEK.md
+// §5): pick/replace/remove for the current and next Spieltag, plus VOD links
+// for every pick.
 export function MotwManager({
   weeks,
   past,
@@ -94,6 +107,7 @@ export function MotwManager({
 function WeekCard({ week }: { week: MotwWeek }) {
   const router = useRouter();
   const [picking, setPicking] = useState(false);
+  const [filter, setFilter] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +116,12 @@ function WeekCard({ week }: { week: MotwWeek }) {
     ? (week.matches.find((m) => m.matchId === week.selection?.matchId) ?? null)
     : null;
   const showList = picking || !week.selection;
+  // Division filter chips, derived from the round's matches — with a dozen or
+  // more groups the flat list is unusable without them.
+  const groupNames = [...new Set(week.matches.map((m) => m.groupName))];
+  const shownMatches = filter
+    ? week.matches.filter((m) => m.groupName === filter)
+    : week.matches;
 
   async function pick(matchId: string) {
     setPendingId(matchId);
@@ -130,34 +150,39 @@ function WeekCard({ week }: { week: MotwWeek }) {
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border px-5 py-4.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <div className="flex items-baseline gap-2.5">
-          <h2 className="font-bold font-heading text-[20px] text-brand-blue uppercase leading-none dark:text-white">
-            Spieltag {week.round}
-          </h2>
-          <span className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.08em]">
-            {week.current ? "Aktuelle Woche" : "Nächste Woche"}
-          </span>
-        </div>
-        <span className="text-[13px] text-muted-foreground tabular-nums">
+    <section className="flex flex-col gap-4 rounded-xl border px-5 py-5">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 className="font-bold font-heading text-[21px] text-brand-blue uppercase leading-none dark:text-white">
+          Spieltag {week.round}
+        </h2>
+        <span
+          className={cn(
+            "rounded-full border px-2.5 py-[3px] font-bold text-[11px] uppercase leading-none tracking-[0.06em]",
+            week.current
+              ? "border-brand-orange/50 bg-brand-orange/12 text-[#9a4b00] dark:text-brand-orange"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          {week.current ? "Aktuelle Woche" : "Nächste Woche"}
+        </span>
+        <span className="ml-auto text-[13px] text-muted-foreground tabular-nums">
           {ddMM(week.startsOn)} – {ddMM(week.endsOn)}
         </span>
       </div>
 
       {week.selection ? (
-        <div className="flex flex-col gap-2.5 rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-3">
-          <MotwBadge />
+        <div className="flex flex-col gap-2.5 rounded-[10px] border border-brand-orange/40 bg-brand-orange/5 px-4 py-3.5">
+          <MotwBadge>Gewählt</MotwBadge>
           <Link
             href={`/match/${week.selection.matchId}`}
-            className="font-medium text-sm hover:text-brand-blue dark:hover:text-white"
+            className="font-semibold text-[15px] hover:text-brand-blue dark:hover:text-white"
           >
             {selected ? (
               <>
                 {selected.playerAName}{" "}
-                <span className="text-muted-foreground">vs.</span>{" "}
+                <span className="font-normal text-muted-foreground">vs.</span>{" "}
                 {selected.playerBName}
-                <span className="text-muted-foreground">
+                <span className="font-normal text-muted-foreground">
                   {" "}
                   · {shortGroup(selected.groupName)}
                 </span>
@@ -194,44 +219,70 @@ function WeekCard({ week }: { week: MotwWeek }) {
       )}
 
       {showList ? (
-        <div className="flex max-h-80 flex-col gap-1.5 overflow-y-auto pr-1">
-          {week.matches.length === 0 ? (
-            <p className="text-[13px] text-muted-foreground">
-              Für diesen Spieltag liegen keine Paarungen vor.
-            </p>
-          ) : (
-            week.matches.map((match) => (
-              <div
-                key={match.matchId}
-                className="flex items-center gap-3 rounded-lg border px-3.5 py-2"
-              >
-                <span className="w-16 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
-                  {shortGroup(match.groupName)}
-                </span>
-                <span className="min-w-0 flex-1 truncate font-medium text-sm">
-                  {match.playerAName}{" "}
-                  <span className="text-muted-foreground">vs.</span>{" "}
-                  {match.playerBName}
-                </span>
-                <Button
+        <div className="flex flex-col gap-2.5">
+          {groupNames.length > 1 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {[null, ...groupNames].map((name) => (
+                <button
+                  key={name ?? "alle"}
                   type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={
-                    pendingId !== null ||
-                    match.matchId === week.selection?.matchId
-                  }
-                  onClick={() => pick(match.matchId)}
+                  aria-pressed={filter === name}
+                  onClick={() => setFilter(name)}
+                  className={cn(
+                    "rounded-full border px-3 py-1 font-medium text-[12.5px] transition-colors",
+                    filter === name
+                      ? "border-brand-blue bg-brand-blue text-white"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
                 >
-                  {pendingId === match.matchId
-                    ? "Wird gewählt…"
-                    : match.matchId === week.selection?.matchId
-                      ? "Gewählt"
-                      : "Wählen"}
-                </Button>
-              </div>
-            ))
-          )}
+                  {name === null ? "Alle" : chipLabel(name)}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="flex max-h-[300px] flex-col gap-1.5 overflow-y-auto pr-1">
+            {shownMatches.length === 0 ? (
+              <p className="text-[13px] text-muted-foreground">
+                Für diesen Spieltag liegen keine Paarungen vor.
+              </p>
+            ) : (
+              shownMatches.map((match) => {
+                const isPicked = match.matchId === week.selection?.matchId;
+                return (
+                  <div
+                    key={match.matchId}
+                    className="flex items-center gap-3 rounded-lg border px-3 py-2"
+                  >
+                    <span className="w-16 shrink-0 whitespace-nowrap font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.06em]">
+                      {shortGroup(match.groupName)}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[13.5px]">
+                      {match.playerAName}{" "}
+                      <span className="text-muted-foreground">vs.</span>{" "}
+                      {match.playerBName}
+                    </span>
+                    {isPicked ? (
+                      <span className="rounded-md border border-brand-orange/55 bg-brand-orange/12 px-2.5 py-1 font-semibold text-[#9a4b00] text-[13px] dark:text-brand-orange">
+                        ✓ Gewählt
+                      </span>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={pendingId !== null}
+                        onClick={() => pick(match.matchId)}
+                      >
+                        {pendingId === match.matchId
+                          ? "Wird gewählt…"
+                          : "Wählen"}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       ) : null}
 
@@ -249,10 +300,20 @@ function WeekCard({ week }: { week: MotwWeek }) {
 }
 
 function PastRow({ pick }: { pick: MotwPastPick }) {
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLink = pick.youtubeUrl !== null;
+  const showField = editing || !hasLink;
+
   return (
-    <div className="flex flex-col gap-3 rounded-lg border px-4 py-3">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+    <div
+      className={cn(
+        "flex flex-col gap-3 rounded-[10px] border px-4 py-3",
+        // A past pick without a VOD is the open task — visible at a glance.
+        !hasLink && "border-brand-orange/45 bg-brand-orange/[0.04]",
+      )}
+    >
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
         <span className="w-24 shrink-0 whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.06em]">
           Spieltag {pick.round}
         </span>
@@ -267,12 +328,39 @@ function PastRow({ pick }: { pick: MotwPastPick }) {
             · {shortGroup(pick.groupName)}
           </span>
         </Link>
+        {hasLink && !editing ? (
+          <span className="flex items-center gap-2">
+            <a
+              href={pick.youtubeUrl ?? undefined}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1 text-[12.5px] hover:text-brand-blue dark:hover:text-white"
+            >
+              <Play
+                aria-hidden
+                className="size-3 fill-brand-orange text-brand-orange"
+              />
+              {shortUrl(pick.youtubeUrl ?? "")}
+            </a>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setEditing(true)}
+            >
+              Ändern
+            </Button>
+          </span>
+        ) : null}
       </div>
-      <YoutubeField
-        round={pick.round}
-        initial={pick.youtubeUrl}
-        onError={setError}
-      />
+      {showField ? (
+        <YoutubeField
+          round={pick.round}
+          initial={pick.youtubeUrl}
+          onError={setError}
+          onSaved={() => setEditing(false)}
+        />
+      ) : null}
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
     </div>
   );
@@ -283,10 +371,12 @@ function YoutubeField({
   round,
   initial,
   onError,
+  onSaved,
 }: {
   round: number;
   initial: string | null;
   onError: (error: string | null) => void;
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(initial ?? "");
@@ -306,13 +396,14 @@ function YoutubeField({
       onError(result.error);
       return;
     }
+    onSaved?.();
     router.refresh();
   }
 
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={`youtube-${round}`} className="text-[13px]">
-        YouTube-Link
+        YouTube-VOD
       </Label>
       <div className="flex gap-2">
         <Input
@@ -326,6 +417,11 @@ function YoutubeField({
           {saving ? "Wird gespeichert…" : "Speichern"}
         </Button>
       </div>
+      <p className="text-[12px] text-muted-foreground">
+        {initial
+          ? "Link gesetzt — Feld leeren und speichern entfernt ihn."
+          : "Noch kein VOD verlinkt."}
+      </p>
     </div>
   );
 }

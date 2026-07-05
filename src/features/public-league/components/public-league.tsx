@@ -338,12 +338,15 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
     "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
     mine && "border-brand-orange/40 bg-brand-orange/5",
     match.playerB && "transition-colors hover:border-brand-orange/50",
+    // The featured row gets a quiet highlight to match its badge.
+    match.isMotw && "border-brand-orange/50 bg-brand-orange/[0.045]",
   );
   const content = (
     <>
       <Side
         identity={match.playerA}
-        winner={match.winnerId === match.playerA.userId}
+        // Winner bolding on the featured row would leak the hidden result.
+        winner={!match.isMotw && match.winnerId === match.playerA.userId}
         align="left"
       />
       <span className="shrink-0 text-center font-semibold text-muted-foreground text-xs tabular-nums">
@@ -352,7 +355,7 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
         ) : match.isMotw ? (
           // The featured match never shows its score here — permanent spoiler
           // protection; the result lives behind the block/match-page reveal.
-          <MotwBadge />
+          <MotwBadge title="Ergebnis verdeckt — Match of the Week" />
         ) : match.reported ? (
           // A pending free win is not shown publicly until confirmed → „offen".
           <span className="text-foreground">
@@ -365,7 +368,7 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
       {match.playerB ? (
         <Side
           identity={match.playerB}
-          winner={match.winnerId === match.playerB.userId}
+          winner={!match.isMotw && match.winnerId === match.playerB.userId}
           align="right"
         />
       ) : (

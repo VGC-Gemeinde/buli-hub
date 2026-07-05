@@ -1,16 +1,20 @@
 "use client";
 
+import { Eye, Play } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Tick } from "@/components/tick";
-import { Button } from "@/components/ui/button";
-import { PlayerAvatar } from "@/features/season/components/player-avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { Identity } from "@/features/season/dashboard";
+import { cn } from "@/lib/utils";
 import type { MotwBlockData } from "../motw";
 
-// The prominent Match-of-the-Week block on the public overview, shown only
-// while its Spieltag is the current one. The result is spoiler-protected: it
-// stays behind a click-to-reveal so visitors can watch the VOD first (the
-// reveal is client-side only — a courtesy spoiler tag, not security).
+// The Match-of-the-Week billboard on the public overview (design/
+// MATCH-OF-THE-WEEK.md §2): the league's one editorial moment per week, the
+// only dark panel on the page. Shown only while its round is the current
+// Spieltag. The result stays behind a click-to-reveal so visitors can watch
+// the VOD first (client-side reveal — a courtesy spoiler tag, not security).
+// Desktop is the A · state · B broadcast row; mobile stacks the players with
+// the state box between them.
 export function MotwBlock({ motw }: { motw: MotwBlockData }) {
   const [revealed, setRevealed] = useState(false);
   const { match, groupName, youtubeUrl } = motw;
@@ -20,77 +24,144 @@ export function MotwBlock({ motw }: { motw: MotwBlockData }) {
   }
 
   return (
-    <div className="mt-7 flex flex-col gap-5 rounded-xl border border-brand-orange/40 bg-brand-orange/5 px-5 py-4.5 sm:px-7 sm:py-5.5">
-      <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-        <div className="flex items-center gap-2.5">
-          <Tick size="m" />
-          <h2 className="font-bold font-heading text-[22px] text-brand-blue uppercase leading-none tracking-[0.03em] dark:text-white">
-            Match of the Week
-          </h2>
-        </div>
-        <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
-          Spieltag {match.round} · {groupName}
-        </span>
-      </div>
+    <div className="relative mt-7 overflow-hidden rounded-xl bg-brand-blue text-white">
+      {/* Signature elements: orange top strip + logo watermark. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[3px] bg-brand-orange"
+      />
+      {/* biome-ignore lint/performance/noImgElement: decorative watermark; next/image adds nothing for a local SVG */}
+      <img
+        src="/logo.svg"
+        alt=""
+        aria-hidden
+        className="-right-[70px] -bottom-[60px] pointer-events-none absolute w-[320px] -rotate-[10deg] rounded-[36px] opacity-[0.08]"
+      />
 
-      {/* Pairing: stacked on mobile, A · state · B on desktop. */}
-      <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:gap-4.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <PlayerAvatar identity={match.playerA} size="size-10" />
-          <span className="min-w-0 break-words font-bold font-heading text-[20px] text-brand-blue uppercase leading-[1.1] dark:text-white">
-            {match.playerA.name}
+      <div className="relative flex flex-col gap-5 px-5 py-5 sm:gap-6 sm:px-8 sm:py-6">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <div className="flex items-center gap-2.5">
+            <span
+              aria-hidden
+              className="h-2.5 w-5 -skew-x-[18deg] shrink-0 bg-brand-orange"
+            />
+            <h2 className="whitespace-nowrap font-bold font-heading text-[20px] text-white uppercase leading-none tracking-[0.04em] sm:text-[25px]">
+              Match of the Week
+            </h2>
+          </div>
+          <span className="font-semibold text-[12px] text-white/60 uppercase tracking-[0.14em]">
+            Spieltag {match.round} · {groupName}
           </span>
         </div>
-        <div className="flex items-center gap-2 pl-[52px] sm:flex-col sm:gap-1 sm:pl-0">
-          {match.reported ? (
-            revealed ? (
-              <span className="font-bold font-heading text-[24px] text-brand-blue leading-none tabular-nums dark:text-white">
-                {match.scoreA} : {match.scoreB}
-              </span>
+
+        <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:gap-6">
+          <Side identity={match.playerA} rank={motw.rankA} align="left" />
+          {/* Fixed footprint so state changes never relayout the card. */}
+          <div className="flex h-[74px] min-w-0 flex-col items-center justify-center gap-[7px] sm:min-w-[190px]">
+            {!match.reported ? (
+              <>
+                <span className="whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-4 py-1.5 font-semibold text-[12px] uppercase tracking-[0.1em]">
+                  Läuft diese Woche
+                </span>
+                <span className="text-[11.5px] text-white/55">Best of 3</span>
+              </>
+            ) : revealed ? (
+              <>
+                <span className="font-bold font-heading text-[34px] leading-none tabular-nums sm:text-[46px]">
+                  {match.scoreA} : {match.scoreB}
+                </span>
+                <span className="text-[11.5px] text-white/55">
+                  Best of 3 · gemeldet
+                </span>
+              </>
             ) : (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="border-brand-orange/50"
-                onClick={() => setRevealed(true)}
-              >
-                Ergebnis anzeigen
-              </Button>
-            )
-          ) : (
-            <span className="whitespace-nowrap rounded-full bg-muted px-3 py-[3px] font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.08em]">
-              Offen
-            </span>
-          )}
-          <span className="font-medium text-[11px] text-muted-foreground">
-            {match.reported && !revealed ? "Spoiler-geschützt" : "Best of 3"}
-          </span>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setRevealed(true)}
+                  className="flex items-center gap-2 rounded-[10px] border border-brand-orange/65 bg-white/8 px-5 py-[11px] font-semibold text-sm text-white transition-colors hover:bg-brand-orange/18"
+                >
+                  <Eye aria-hidden className="size-4 text-brand-orange" />
+                  Ergebnis aufdecken
+                </button>
+                <span className="text-center text-[11.5px] text-white/55">
+                  Spoiler-Schutz — erst das VOD ansehen
+                </span>
+              </>
+            )}
+          </div>
+          <Side identity={match.playerB} rank={motw.rankB} align="right" />
         </div>
-        <div className="flex min-w-0 items-center gap-3 sm:justify-end">
-          <span className="order-2 min-w-0 break-words font-bold font-heading text-[20px] text-brand-blue uppercase leading-[1.1] sm:order-1 sm:text-right dark:text-white">
-            {match.playerB.name}
-          </span>
-          <span className="order-1 sm:order-2">
-            <PlayerAvatar identity={match.playerB} size="size-10" />
-          </span>
-        </div>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {youtubeUrl ? (
-          <Button asChild size="sm">
-            <a href={youtubeUrl} target="_blank" rel="noreferrer">
+        <div className="flex flex-wrap items-center gap-3.5">
+          {youtubeUrl ? (
+            <a
+              href={youtubeUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 rounded-lg bg-brand-orange px-[18px] py-[9px] font-semibold text-sm text-white transition-colors hover:bg-[#ff8d24]"
+            >
+              <Play aria-hidden className="size-3.5 fill-current" />
               Auf YouTube ansehen
             </a>
-          </Button>
+          ) : (
+            // Same footprint as the button — when the link lands, only the
+            // fill changes. "VOD folgt" makes no timing promise.
+            <span className="flex items-center gap-2 rounded-lg border border-white/35 border-dashed px-[18px] py-2 font-medium text-sm text-white/55">
+              <Play aria-hidden className="size-3.5" />
+              VOD folgt
+            </span>
+          )}
+          <Link
+            href={`/match/${match.matchId}`}
+            className="ml-auto font-medium text-[13.5px] text-white/70 transition-colors hover:text-white"
+          >
+            Zum Match →
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Side({
+  identity,
+  rank,
+  align,
+}: {
+  identity: Identity;
+  rank: number | null;
+  align: "left" | "right";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-3.5",
+        align === "right" && "sm:flex-row-reverse",
+      )}
+    >
+      <Avatar className="size-11 border border-white/22 sm:size-[50px]">
+        {identity.avatarUrl ? (
+          <AvatarImage src={identity.avatarUrl} alt="" />
         ) : null}
-        <Link
-          href={`/match/${match.matchId}`}
-          className="font-medium text-[13.5px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
-        >
-          Zum Match →
-        </Link>
+        <AvatarFallback className="bg-white/10 font-semibold text-white">
+          {identity.name.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      <div
+        className={cn(
+          "flex min-w-0 flex-col gap-0.5",
+          align === "right" && "sm:items-end sm:text-right",
+        )}
+      >
+        <span className="break-words font-bold font-heading text-[22px] text-white uppercase leading-[1.02] sm:text-[32px]">
+          {identity.name}
+        </span>
+        {rank !== null ? (
+          <span className="font-medium text-[12px] text-white/55">
+            Platz {rank}
+          </span>
+        ) : null}
       </div>
     </div>
   );

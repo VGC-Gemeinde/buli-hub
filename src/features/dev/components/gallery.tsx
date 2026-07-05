@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { MotwBlock } from "@/features/motw/components/motw-block";
+import {
+  MotwManager,
+  type MotwPastPick,
+  type MotwWeek,
+} from "@/features/motw/components/motw-manager";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
 import { MotwSpoiler } from "@/features/motw/components/motw-spoiler";
 import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
@@ -494,6 +499,8 @@ const MOTW_REPORTED: MotwBlockData = {
   match: MOTW_MATCH,
   groupName: "Division 1a",
   youtubeUrl: null,
+  rankA: 1,
+  rankB: 4,
 };
 const MOTW_WITH_VOD: MotwBlockData = {
   ...MOTW_REPORTED,
@@ -509,7 +516,59 @@ const MOTW_OPEN: MotwBlockData = {
   },
   groupName: "Division 1a",
   youtubeUrl: null,
+  rankA: 1,
+  rankB: 4,
 };
+
+// Staff manager fixtures: a picked current week, an unpicked next week (open
+// picker with division filter), and past picks with and without a VOD link.
+const MOTW_WEEK_MATCHES: MotwWeek["matches"] = [
+  ["Division 1a", "Wooloo", "Falinks"],
+  ["Division 1a", "Pawmi", "Tinkatink"],
+  ["Division 1b", "Mika", "Nico"],
+  ["Division 2a", "Luca", "Finn"],
+].map(([groupName, playerAName, playerBName], i) => ({
+  matchId: `wm${i}`,
+  groupName,
+  playerAName,
+  playerBName,
+}));
+const MOTW_WEEKS: MotwWeek[] = [
+  {
+    round: 2,
+    current: true,
+    startsOn: "2026-01-12",
+    endsOn: "2026-01-18",
+    matches: MOTW_WEEK_MATCHES,
+    selection: { matchId: "wm0", youtubeUrl: null },
+  },
+  {
+    round: 3,
+    current: false,
+    startsOn: "2026-01-19",
+    endsOn: "2026-01-25",
+    matches: MOTW_WEEK_MATCHES,
+    selection: null,
+  },
+];
+const MOTW_PAST: MotwPastPick[] = [
+  {
+    round: 1,
+    matchId: "wm1",
+    youtubeUrl: "https://youtu.be/xK92dQvgc",
+    groupName: "Division 1a",
+    playerAName: "Pawmi",
+    playerBName: "Tinkatink",
+  },
+  {
+    round: 0,
+    matchId: "wm2",
+    youtubeUrl: null,
+    groupName: "Division 1b",
+    playerAName: "Mika",
+    playerBName: "Nico",
+  },
+];
 
 const PUBLIC_OVERVIEW: PublicOverview = {
   seasonName: "Saison 1",
@@ -964,14 +1023,17 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Match of the Week</h2>
-        <Specimen label="Block — noch offen">
+        <Specimen label="Billboard — noch offen (VOD-folgt-Platzhalter)">
           <MotwBlock motw={MOTW_OPEN} />
         </Specimen>
-        <Specimen label="Block — gemeldet, Ergebnis spoiler-geschützt (Klick zeigt es)">
+        <Specimen label="Billboard — gemeldet, verdeckt (Klick deckt auf), ohne VOD">
           <MotwBlock motw={MOTW_REPORTED} />
         </Specimen>
-        <Specimen label="Block — mit VOD-Link">
+        <Specimen label="Billboard — gemeldet, verdeckt, mit VOD-Button">
           <MotwBlock motw={MOTW_WITH_VOD} />
+        </Specimen>
+        <Specimen label="Staff-Manager — Wochenkarten (gewählt / offen mit Filter) + frühere Spieltage (mit/ohne Link; Aktionen ohne Staff-Login wirkungslos)">
+          <MotwManager weeks={MOTW_WEEKS} past={MOTW_PAST} />
         </Specimen>
         <Specimen label="Match-Seite: Banner (ohne / mit VOD)">
           <div className="flex flex-col">

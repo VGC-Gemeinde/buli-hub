@@ -26,7 +26,20 @@ export function MotwSpoiler({
 }) {
   const [revealed, setRevealed] = useState(false);
   if (revealed) {
-    return <>{children}</>;
+    // The summary is rendered untouched; the re-cover link sits right-aligned
+    // on its top (back-link) row so nothing shifts when it appears.
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setRevealed(false)}
+          className="absolute top-0 right-0 font-medium text-[12.5px] text-muted-foreground underline underline-offset-2 hover:text-brand-blue dark:hover:text-white"
+        >
+          Wieder verdecken
+        </button>
+        {children}
+      </div>
+    );
   }
 
   return (

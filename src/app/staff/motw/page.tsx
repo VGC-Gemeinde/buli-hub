@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { Tick } from "@/components/tick";
 import {
   MotwManager,
   type MotwPastPick,
@@ -85,14 +87,21 @@ export default async function StaffMotwPage() {
         breadcrumbRoot={{ href: "/staff", label: "Staff-Bereich" }}
       />
       <main className="mx-auto w-full max-w-[900px] flex-1 px-6 py-12 sm:px-8">
-        <h1 className="mb-3 text-[40px] text-brand-blue dark:text-white">
-          Match of the Week
-        </h1>
-        <p className="mb-9 max-w-[640px] text-muted-foreground text-sm">
-          Ein Match pro Spieltag wird auf der öffentlichen Übersicht
-          hervorgehoben — mit Spoiler-Schutz für das Ergebnis. Wähle zu
-          Wochenbeginn das Match der laufenden oder nächsten Woche; der
-          YouTube-Link folgt, sobald das VOD hochgeladen ist.
+        <Link
+          href="/staff"
+          className="mb-4.5 inline-block font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
+        >
+          ← Staff-Bereich
+        </Link>
+        <div className="flex items-center gap-3">
+          <Tick size="l" />
+          <h1 className="text-[30px] text-brand-blue dark:text-white">
+            Match of the Week
+          </h1>
+        </div>
+        <p className="mt-2 mb-9 max-w-[640px] text-muted-foreground text-sm">
+          Ein Match pro Spieltag, ligaweit über alle Divisionen. Die Auswahl
+          gilt für den aktuellen und den nächsten Spieltag.
         </p>
         <MotwManager weeks={weeks} past={past} />
       </main>

@@ -78,11 +78,15 @@ export function selectableRounds(
 }
 
 // Everything the public prominent block renders. `match.playerB` is guaranteed
-// non-null (a bye cannot be selected).
+// non-null (a bye cannot be selected). The ranks are the players' current
+// standings ("Platz {n}" sub-lines) — taken from the table that decides the
+// division (the Gesamttabelle in division mode, the group table otherwise).
 export type MotwBlockData = {
   match: PublicMatch;
   groupName: string;
   youtubeUrl: string | null;
+  rankA: number | null;
+  rankB: number | null;
 };
 
 // Locates the selected match inside the built overview divisions — the block
@@ -96,11 +100,25 @@ export function findMotw(
   for (const division of divisions) {
     for (const group of division.groups) {
       const match = group.matches.find((m) => m.matchId === selection.matchId);
-      if (match) {
-        return match.playerB === null
-          ? null
-          : { match, groupName: group.name, youtubeUrl: selection.youtubeUrl };
+      if (!match) {
+        continue;
       }
+      if (match.playerB === null) {
+        return null;
+      }
+      const table =
+        division.mode === "division" && division.divisionStandings
+          ? division.divisionStandings
+          : group.standings;
+      const rankOf = (userId: string) =>
+        table.find((row) => row.userId === userId)?.rank ?? null;
+      return {
+        match,
+        groupName: group.name,
+        youtubeUrl: selection.youtubeUrl,
+        rankA: rankOf(match.playerA.userId),
+        rankB: rankOf(match.playerB.userId),
+      };
     }
   }
   return null;

@@ -113,6 +113,17 @@ describe("youtubeUrlSchema", () => {
 
 describe("findMotw", () => {
   const identity = (id: string) => ({ userId: id, name: id, avatarUrl: null });
+  const standing = (userId: string, rank: number) => ({
+    userId,
+    name: userId,
+    avatarUrl: null,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank,
+  });
   const match = (matchId: string, playerB: string | null): PublicMatch => ({
     matchId,
     round: 2,
@@ -138,7 +149,7 @@ describe("findMotw", () => {
           subDivisionId: "sd1",
           name: "Division 1a",
           shortName: "1a",
-          standings: [],
+          standings: [standing("c", 1), standing("a", 4)],
           zones: null,
           matches: [match("m1", "b"), match("m2", "c")],
         },
@@ -146,7 +157,7 @@ describe("findMotw", () => {
     },
   ];
 
-  it("finds the selected match with its group name", () => {
+  it("finds the selected match with its group name and standings ranks", () => {
     const found = findMotw(divisions, {
       matchId: "m2",
       youtubeUrl: "https://youtu.be/x",
@@ -154,6 +165,27 @@ describe("findMotw", () => {
     expect(found?.match.matchId).toBe("m2");
     expect(found?.groupName).toBe("Division 1a");
     expect(found?.youtubeUrl).toBe("https://youtu.be/x");
+    expect(found?.rankA).toBe(4);
+    expect(found?.rankB).toBe(1);
+  });
+
+  it("falls back to null ranks when a player is not in the table", () => {
+    const found = findMotw(divisions, { matchId: "m1", youtubeUrl: null });
+    expect(found?.rankA).toBe(4);
+    expect(found?.rankB).toBeNull();
+  });
+
+  it("ranks from the Gesamttabelle in division mode", () => {
+    const divisionMode: PublicDivision[] = [
+      {
+        ...divisions[0],
+        mode: "division",
+        divisionStandings: [standing("a", 7), standing("c", 2)],
+      },
+    ];
+    const found = findMotw(divisionMode, { matchId: "m2", youtubeUrl: null });
+    expect(found?.rankA).toBe(7);
+    expect(found?.rankB).toBe(2);
   });
 
   it("returns null for an unknown match", () => {

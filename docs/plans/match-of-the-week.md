@@ -4,6 +4,10 @@
 row badge, match-page spoiler, `/staff/motw` manager and dashboard todo.
 Verified via unit/integration tests and a seeded running season (public
 overview, featured match page, staff persona on `/staff` + `/staff/motw`).
+**Design pass done** (2026-07-05) per `design/MATCH-OF-THE-WEEK.md` — navy
+billboard, badge anatomy, manager filter chips/VOD chips, mobile stacking;
+views only, plus `findMotw` now also carrying the players' standings ranks
+for the billboard's "Platz {n}" sub-lines.
 
 ## Context
 

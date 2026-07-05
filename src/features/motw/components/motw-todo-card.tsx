@@ -13,13 +13,16 @@ export function MotwTodoCard({ todo }: { todo: NonNullable<MotwTodo> }) {
       className={cn(
         "flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg border px-5 py-4",
         urgent
-          ? "border-destructive/40 bg-destructive/5"
+          ? "border-destructive/45 bg-destructive/5"
           : "border-brand-orange/40 bg-brand-orange/5",
       )}
     >
       <div className="flex flex-col gap-0.5">
         <p
-          className={cn("font-semibold text-sm", urgent && "text-destructive")}
+          className={cn(
+            "font-semibold text-[14.5px]",
+            urgent && "text-destructive",
+          )}
         >
           Match of the Week für Spieltag {todo.round} wählen
         </p>

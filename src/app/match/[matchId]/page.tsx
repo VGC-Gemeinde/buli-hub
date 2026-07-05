@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
+import { MotwSpoiler } from "@/features/motw/components/motw-spoiler";
+import { motwByMatchId } from "@/features/motw/queries";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { PublicMatchView } from "@/features/reporting/components/public-match-view";
 import { ReportForm } from "@/features/reporting/components/report-form";
@@ -41,6 +44,9 @@ export default async function MatchReportPage({
   const privileged = isParticipant || isStaff;
 
   const result = await getMatchResult(matchId);
+  // Match of the Week: banner for everyone; the result is spoiler-protected
+  // for neutral viewers (participants and staff see it as usual).
+  const motw = await motwByMatchId(matchId);
   // A pending (unconfirmed) free win is not public — neutral observers see the
   // match as still open until it is confirmed.
   const pendingFreeWinHidden =
@@ -90,6 +96,21 @@ export default async function MatchReportPage({
       ? match.playerA.name
       : match.playerB.name
     : null;
+  // The result summary, wrapped in the MotW spoiler below for neutral viewers.
+  const summary = shownResult ? (
+    <ReportSummary
+      result={shownResult}
+      playerA={match.playerA}
+      playerB={match.playerB}
+      viewerId={current?.userId ?? null}
+      privileged={privileged}
+      round={match.round}
+      groupName={match.groupName}
+      disputed={dispute !== null}
+      backHref={back.href}
+      backLabel={back.label}
+    />
+  ) : null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -102,20 +123,23 @@ export default async function MatchReportPage({
         }
       />
       <main className="mx-auto w-full max-w-[760px] flex-1 px-6 pt-9 pb-[168px] sm:px-8 sm:pb-[140px]">
-        {shownResult ? (
-          <ReportSummary
-            result={shownResult}
-            playerA={match.playerA}
-            playerB={match.playerB}
-            viewerId={current?.userId ?? null}
-            privileged={privileged}
+        {motw ? (
+          <MotwMatchBanner round={motw.round} youtubeUrl={motw.youtubeUrl} />
+        ) : null}
+
+        {summary && motw && !privileged ? (
+          <MotwSpoiler
             round={match.round}
             groupName={match.groupName}
-            disputed={dispute !== null}
-            backHref={back.href}
-            backLabel={back.label}
-          />
-        ) : null}
+            seasonLabel={seasonLabel}
+            playerAName={match.playerA.name}
+            playerBName={match.playerB.name}
+          >
+            {summary}
+          </MotwSpoiler>
+        ) : (
+          summary
+        )}
 
         {result && dispute ? (
           // Disputed: the result stays final in the tables; this banner records

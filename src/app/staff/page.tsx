@@ -5,6 +5,9 @@ import { SectionHeader } from "@/components/section-header";
 import { SiteHeader } from "@/components/site-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
+import { motwTodo } from "@/features/motw/motw";
+import { motwForWindow } from "@/features/motw/queries";
 import { listRegistrations } from "@/features/registration/queries";
 import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
 import {
@@ -85,14 +88,24 @@ function SeasonStrip({
           </span>
         ) : null}
       </div>
-      <Button
-        asChild
-        variant="outline"
-        size="sm"
-        className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
-      >
-        <Link href="/staff/seeding">Divisionen</Link>
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
+        >
+          <Link href="/staff/motw">Match of the Week</Link>
+        </Button>
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
+        >
+          <Link href="/staff/seeding">Divisionen</Link>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -120,16 +133,23 @@ export default async function StaffPage() {
   // work, no separate page.
   if (phase === "regular_season" && window) {
     const today = new Date().toISOString().slice(0, 10);
-    const [overview, matchdays, resolvedDisputes] = await Promise.all([
-      windowMatchOverview(window.id),
-      matchdaysForWindow(window.id),
-      windowResolvedDisputes(window.id),
-    ]);
+    const [overview, matchdays, resolvedDisputes, motwSelections] =
+      await Promise.all([
+        windowMatchOverview(window.id),
+        matchdaysForWindow(window.id),
+        windowResolvedDisputes(window.id),
+        motwForWindow(window.id),
+      ]);
     const week = currentMatchday(matchdays, today);
     const { overdue, thisWeek, pendingFreeWins, disputed } = bucketMatches({
       matches: overview,
       currentRound: week?.round ?? null,
       today,
+    });
+    const todo = motwTodo({
+      currentRound: week?.round ?? null,
+      totalRounds: matchdays.length,
+      selectedRounds: new Set(motwSelections.map((s) => s.round)),
     });
 
     return (
@@ -146,6 +166,7 @@ export default async function StaffPage() {
               totalRounds={matchdays.length}
               week={week}
             />
+            {todo ? <MotwTodoCard todo={todo} /> : null}
             <SaisonDashboard
               overdue={overdue}
               thisWeek={thisWeek}

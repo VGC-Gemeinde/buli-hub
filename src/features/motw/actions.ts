@@ -1,0 +1,145 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { currentUser } from "@/features/roles/guard";
+import { roleAtLeast } from "@/features/roles/roles";
+import { currentMatchday } from "@/features/season/dashboard";
+import { matchdaysForWindow } from "@/features/season/queries";
+import { latestWindow } from "@/features/staff/queries";
+import { selectableRounds, youtubeUrlSchema } from "./motw";
+import {
+  deleteMotw,
+  matchSelectionContext,
+  setMotwYoutubeUrl,
+  upsertMotw,
+} from "./queries";
+
+export type MotwActionResult = { ok: true } | { ok: false; error: string };
+
+// The MotW shows up on the public overview, the match page, and both staff
+// screens.
+function revalidate(matchId: string | null) {
+  revalidatePath("/");
+  revalidatePath("/staff");
+  revalidatePath("/staff/motw");
+  if (matchId) {
+    revalidatePath(`/match/${matchId}`);
+  }
+}
+
+async function staffGate() {
+  const current = await currentUser();
+  if (!current || !roleAtLeast(current.role, "staff")) {
+    return { ok: false as const, error: "Keine Berechtigung" };
+  }
+  return { ok: true as const, staffId: current.userId };
+}
+
+// The rounds currently open for picking in a window (current + next Spieltag).
+async function openRounds(windowId: string): Promise<Set<number>> {
+  const matchdays = await matchdaysForWindow(windowId);
+  const today = new Date().toISOString().slice(0, 10);
+  const current = currentMatchday(matchdays, today)?.round ?? null;
+  return selectableRounds(current, matchdays.length);
+}
+
+// Picks (or replaces) the Match of the Week of the match's own Spieltag.
+export async function selectMotw(input: {
+  matchId: string;
+}): Promise<MotwActionResult> {
+  const gate = await staffGate();
+  if (!gate.ok) {
+    return gate;
+  }
+  const context = await matchSelectionContext(input.matchId);
+  if (!context) {
+    return { ok: false, error: "Match nicht gefunden" };
+  }
+  if (context.isBye) {
+    return {
+      ok: false,
+      error: "Ein Spielfrei kann nicht Match of the Week sein",
+    };
+  }
+  const rounds = await openRounds(context.windowId);
+  if (!rounds.has(context.round)) {
+    return {
+      ok: false,
+      error:
+        "Nur Matches des aktuellen oder nächsten Spieltags können gewählt werden",
+    };
+  }
+  await upsertMotw({
+    windowId: context.windowId,
+    round: context.round,
+    matchId: input.matchId,
+    staffId: gate.staffId,
+  });
+  revalidate(input.matchId);
+  return { ok: true };
+}
+
+// Clears the pick of a (current or next) round.
+export async function removeMotw(input: {
+  round: number;
+}): Promise<MotwActionResult> {
+  const gate = await staffGate();
+  if (!gate.ok) {
+    return gate;
+  }
+  const window = await latestWindow();
+  if (!window) {
+    return { ok: false, error: "Keine laufende Saison" };
+  }
+  const rounds = await openRounds(window.id);
+  if (!rounds.has(input.round)) {
+    return {
+      ok: false,
+      error: "Nur der aktuelle oder nächste Spieltag kann geändert werden",
+    };
+  }
+  const matchId = await deleteMotw(window.id, input.round);
+  revalidate(matchId);
+  return { ok: true };
+}
+
+// Attaches, replaces, or (url null/empty) removes a pick's YouTube link —
+// allowed for any round, since VOD uploads can lag the Spieltag.
+export async function saveMotwYoutubeUrl(input: {
+  round: number;
+  url: string | null;
+}): Promise<MotwActionResult> {
+  const gate = await staffGate();
+  if (!gate.ok) {
+    return gate;
+  }
+  const window = await latestWindow();
+  if (!window) {
+    return { ok: false, error: "Keine laufende Saison" };
+  }
+  const trimmed = input.url?.trim() ?? "";
+  let url: string | null = null;
+  if (trimmed !== "") {
+    const parsed = youtubeUrlSchema.safeParse(trimmed);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: parsed.error.issues[0]?.message ?? "Ungültiger Link",
+      };
+    }
+    url = parsed.data;
+  }
+  const matchId = await setMotwYoutubeUrl({
+    windowId: window.id,
+    round: input.round,
+    url,
+  });
+  if (!matchId) {
+    return {
+      ok: false,
+      error: "Für diesen Spieltag ist kein Match of the Week gewählt",
+    };
+  }
+  revalidate(matchId);
+  return { ok: true };
+}

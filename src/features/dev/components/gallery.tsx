@@ -7,10 +7,18 @@ import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
+import { MotwBlock } from "@/features/motw/components/motw-block";
+import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
+import { MotwSpoiler } from "@/features/motw/components/motw-spoiler";
+import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
+import type { MotwBlockData } from "@/features/motw/motw";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { PublicLeague } from "@/features/public-league/components/public-league";
-import type { PublicOverview } from "@/features/public-league/queries";
+import type {
+  PublicMatch,
+  PublicOverview,
+} from "@/features/public-league/queries";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
@@ -466,6 +474,43 @@ const asIdentity = (row: StandingsRow) => ({
   name: row.name,
   avatarUrl: row.avatarUrl,
 });
+
+// Match of the Week: the featured pairing in all three block states. The
+// reported match doubles as the overview's featured row (badge instead of
+// score).
+const MOTW_MATCH: PublicMatch = {
+  matchId: "pm1",
+  round: 2,
+  playerA: asIdentity(DASH_STANDINGS[0]),
+  playerB: asIdentity(DASH_STANDINGS[1]),
+  reported: true,
+  pending: false,
+  scoreA: 2,
+  scoreB: 0,
+  winnerId: DASH_STANDINGS[0].userId,
+  isMotw: true,
+};
+const MOTW_REPORTED: MotwBlockData = {
+  match: MOTW_MATCH,
+  groupName: "Division 1a",
+  youtubeUrl: null,
+};
+const MOTW_WITH_VOD: MotwBlockData = {
+  ...MOTW_REPORTED,
+  youtubeUrl: "https://www.youtube.com/watch?v=vgc-bundesliga",
+};
+const MOTW_OPEN: MotwBlockData = {
+  match: {
+    ...MOTW_MATCH,
+    reported: false,
+    scoreA: null,
+    scoreB: null,
+    winnerId: null,
+  },
+  groupName: "Division 1a",
+  youtubeUrl: null,
+};
+
 const PUBLIC_OVERVIEW: PublicOverview = {
   seasonName: "Saison 1",
   currentRound: 2,
@@ -503,17 +548,7 @@ const PUBLIC_OVERVIEW: PublicOverview = {
           standings: DASH_STANDINGS,
           zones: null,
           matches: [
-            {
-              matchId: "pm1",
-              round: 2,
-              playerA: asIdentity(DASH_STANDINGS[0]),
-              playerB: asIdentity(DASH_STANDINGS[1]),
-              reported: true,
-              pending: false,
-              scoreA: 2,
-              scoreB: 0,
-              winnerId: DASH_STANDINGS[0].userId,
-            },
+            MOTW_MATCH,
             {
               matchId: "pm2",
               round: 2,
@@ -524,6 +559,7 @@ const PUBLIC_OVERVIEW: PublicOverview = {
               scoreA: null,
               scoreB: null,
               winnerId: null,
+              isMotw: false,
             },
             {
               matchId: "pm3",
@@ -535,6 +571,7 @@ const PUBLIC_OVERVIEW: PublicOverview = {
               scoreA: null,
               scoreB: null,
               winnerId: null,
+              isMotw: false,
             },
           ],
         },
@@ -565,6 +602,7 @@ const PUBLIC_OVERVIEW: PublicOverview = {
       ],
     },
   ],
+  motw: MOTW_WITH_VOD,
 };
 
 // Identity variants exercise the name/username/avatar fallbacks and, via
@@ -919,8 +957,49 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Öffentliche Liga-Übersicht</h2>
-        <Specimen label="Laufende Saison (Divisions-Umschalter · Tabellen · Spieltag)">
+        <Specimen label="Laufende Saison (MotW-Block · Divisions-Umschalter · Tabellen · Spieltag)">
           <PublicLeague overview={PUBLIC_OVERVIEW} meId="me" />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Match of the Week</h2>
+        <Specimen label="Block — noch offen">
+          <MotwBlock motw={MOTW_OPEN} />
+        </Specimen>
+        <Specimen label="Block — gemeldet, Ergebnis spoiler-geschützt (Klick zeigt es)">
+          <MotwBlock motw={MOTW_REPORTED} />
+        </Specimen>
+        <Specimen label="Block — mit VOD-Link">
+          <MotwBlock motw={MOTW_WITH_VOD} />
+        </Specimen>
+        <Specimen label="Match-Seite: Banner (ohne / mit VOD)">
+          <div className="flex flex-col">
+            <MotwMatchBanner round={2} youtubeUrl={null} />
+            <MotwMatchBanner
+              round={2}
+              youtubeUrl="https://www.youtube.com/watch?v=vgc-bundesliga"
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Match-Seite: Spoiler-Abdeckung (Klick zeigt den Inhalt)">
+          <MotwSpoiler
+            round={2}
+            groupName="Division 1a"
+            seasonLabel="Saison 1"
+            playerAName={SUMMARY_A.name}
+            playerBName={SUMMARY_B.name}
+          >
+            <p className="text-sm">
+              Hier stünde die vollständige Ergebnis-Ansicht.
+            </p>
+          </MotwSpoiler>
+        </Specimen>
+        <Specimen label="Staff-Todo — nächste Woche (Hinweis)">
+          <MotwTodoCard todo={{ round: 3, urgency: "warning" }} />
+        </Specimen>
+        <Specimen label="Staff-Todo — aktuelle Woche (dringend)">
+          <MotwTodoCard todo={{ round: 2, urgency: "urgent" }} />
         </Specimen>
       </section>
 

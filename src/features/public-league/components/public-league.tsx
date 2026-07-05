@@ -5,6 +5,8 @@ import { useState } from "react";
 import { ActionLink } from "@/components/links";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
+import { MotwBadge } from "@/features/motw/components/motw-badge";
+import { MotwBlock } from "@/features/motw/components/motw-block";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { StandingsTable } from "@/features/season/components/standings-panel";
 import type { MatchdayLite } from "@/features/season/dashboard";
@@ -111,6 +113,8 @@ export function PublicLeague({
           ) : null}
         </div>
       </div>
+
+      {overview.motw ? <MotwBlock motw={overview.motw} /> : null}
 
       <div className="mt-6">
         <Switcher
@@ -345,6 +349,10 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
       <span className="shrink-0 text-center font-semibold text-muted-foreground text-xs tabular-nums">
         {match.playerB === null ? (
           "spielfrei"
+        ) : match.isMotw ? (
+          // The featured match never shows its score here — permanent spoiler
+          // protection; the result lives behind the block/match-page reveal.
+          <MotwBadge />
         ) : match.reported ? (
           // A pending free win is not shown publicly until confirmed → „offen".
           <span className="text-foreground">

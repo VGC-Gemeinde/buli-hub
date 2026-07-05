@@ -1,0 +1,144 @@
+# Match of the Week
+
+**Status: done** (2026-07-05) — schema + `src/features/motw/` + public block,
+row badge, match-page spoiler, `/staff/motw` manager and dashboard todo.
+Verified via unit/integration tests and a seeded running season (public
+overview, featured match page, staff persona on `/staff` + `/staff/motw`).
+
+## Context
+
+Each Spieltag (one week) the league features one match: the **Match of the
+Week** — always called exactly that, never translated. Staff pick it at the
+start of the week; it gets a prominent block on the public overview, later a
+YouTube VOD link, and its result is never shown openly anywhere — spoiler
+protection lets viewers watch the VOD first.
+
+Rudimentary-but-intentional design; hand-off + design pass come later.
+
+## Scope
+
+**In:**
+- **Selection** (staff+): pick one match per Spieltag — one MotW per
+  `(window, round)`, league-wide across all divisions. Selectable rounds are
+  the **current and the next** Spieltag; a pick can be replaced or removed.
+- **Staff todo**: on the staff season dashboard, a todo item when the *next*
+  round has no MotW yet (warning character); if the *current* round has none,
+  it is replaced by a more urgent item for this week. Purely informational —
+  it never blocks anything (pairings etc.).
+- **YouTube link**: staff attach/edit/remove a YouTube URL on any MotW,
+  including past rounds (uploads can lag the Spieltag).
+- **Public prominent block**: shown on the public overview only while its
+  round is the current Spieltag: the pairing with division/group context, a
+  "Watch on YouTube" button once the link exists, and the result behind
+  click-to-reveal once reported. No MotW for the current round → no block.
+- **Spoiler protection, permanent**: the MotW result is never shown openly.
+  In the Spieltag match list (current *and* past rounds) the row shows a
+  "Match of the Week" badge instead of the score. On `/match/[matchId]`
+  neutral viewers get the result behind a click-to-reveal (participants and
+  staff see everything, as today). Reveal state is client-side only — the
+  score may exist in the payload; this is a courtesy spoiler tag, not
+  security. The standings include the result immediately (accepted leak).
+
+**Out (deferred):**
+- Discord announcement of the MotW / VOD.
+- MotW history/archive page.
+- Any casting/scheduling workflow around the featured match.
+
+## Data — new table `motw_selections`
+
+```
+id              uuid PK default random
+window_id       uuid FK → registration_windows (cascade)
+round           integer
+match_id        uuid FK → matches (cascade), unique
+youtube_url     text null
+selected_by_id  uuid (FK → auth.users in the custom migration, cascade)
+created_at      timestamptz default now
+updated_at      timestamptz default now
+unique (window_id, round)      -- one MotW per Spieltag
+```
+
+Migrations: `motw` (generated) + `motw_fk_rls` (custom: auth FK, RLS
+public-read/deny-write as defense in depth, matching existing tables). The
+server action validates that the match actually belongs to the given window
+and round.
+
+## Feature folder — `src/features/motw/`
+
+**Pure logic (`motw.ts`, unit-tested):**
+- `youtubeUrlSchema` / `isYoutubeUrl` — Zod: https, host is a YouTube domain
+  (`youtube.com`, `www./m.youtube.com`, `youtu.be`).
+- `motwTodo({ currentRound, totalRounds, selectedRounds })` →
+  `null | { round, urgency: "warning" | "urgent" }` — urgent when the current
+  round is unselected, else warning when a next round exists and is
+  unselected. `null` outside the regular season / after the last round.
+- `selectableRounds(currentRound, totalRounds)` — the rounds open for picking
+  (current + next); shared by the actions' round gate and the staff page.
+- `findMotw(divisions, selection)` — locate the featured `PublicMatch` plus
+  its group name inside the already-built overview divisions (no extra
+  identity queries) for the prominent block.
+
+**Queries (`queries.ts`, integration-tested):**
+- `motwForWindow(windowId)` — all selections `{ round, matchId, youtubeUrl }`;
+  feeds overview flagging, the block, and the staff view.
+- `motwByMatchId(matchId)` — for the match page.
+- `matchSelectionContext(matchId)` — window/round/bye of a match, the
+  selection action's validation input.
+- `upsertMotw` (replace clears the YouTube URL), `deleteMotw`,
+  `setMotwYoutubeUrl` — persistence helpers; the latter two return the
+  affected match id for revalidation.
+
+**Actions (`actions.ts`, staff+ gate on each, `{ ok } | { ok:false, error }`,
+`revalidatePath` on `/`, `/match/[matchId]`, `/staff`, `/staff/motw`):**
+- `selectMotw({ matchId })` — derives window/round from the match, rejects
+  byes and rounds other than current/next, upserts (replace allowed).
+- `removeMotw({ round })` — clears the pick (current/next round only).
+- `saveMotwYoutubeUrl({ round, url })` — validates via `youtubeUrlSchema`;
+  `url: null` removes the link; allowed for any round.
+
+## Views
+
+- **Public overview** (`src/features/public-league/`): `publicLeagueOverview`
+  additionally fetches `motwForWindow`; `PublicMatch` gains `isMotw` (scores
+  stay filled — the block's reveal uses them); `PublicOverview` gains the
+  current round's block data (or null). `<MotwBlock>` renders above the
+  division switcher; `<MatchRow>` renders the `<MotwBadge>` pill instead of
+  any score for `isMotw` rows — every round, permanently.
+- **Match page** (`/app/match/[matchId]`): a `<MotwMatchBanner>` (badge +
+  Spieltag + YouTube button) for every viewer; neutral viewers get the result
+  summary wrapped in `<MotwSpoiler>` (pairing header + cover card,
+  click-to-reveal). Participants and staff see the result as usual.
+- **Staff** — new page `/staff/motw` (staff+ gate, redirects to `/staff`
+  without a schedule): `<MotwManager>` shows the current and next Spieltag
+  side by side — each with the pick (or none), a picker listing that round's
+  matches, replace/remove, and the YouTube URL field. Past rounds with a MotW
+  are listed below with editable YouTube URLs.
+- **Staff season dashboard**: `<MotwTodoCard>` from `motwTodo` — warning
+  variant ("Match of the Week für Spieltag N wählen") or urgent variant for
+  the current round — linking to `/staff/motw`; the season strip carries a
+  permanent "Match of the Week" button as the entry point once the todo is
+  gone.
+
+## Dev tooling
+
+- Running-season seed: mark one match of the current round as MotW (with
+  result, without YouTube link) so block, badge, and reveal are visible.
+- Gallery: MotwBlock states (unplayed, result hidden, revealed, with/without
+  YouTube button), MotW badge row, todo item in both urgencies.
+
+## Tests
+
+- Unit: `motwTodo` (unselected current → urgent; unselected next → warning;
+  both unselected → urgent only; all selected / last round / off-season →
+  null), `selectableRounds` (the actions' round gate), `youtubeUrlSchema`
+  (https-only, domain allowlist, suffix-trick host), `findMotw` (found /
+  unknown / bye).
+- Integration: unique `(window_id, round)` constraint; `upsertMotw` insert +
+  replace (clears the URL); `setMotwYoutubeUrl` set/clear/no-pick;
+  `deleteMotw`; `matchSelectionContext`; `motwForWindow` shape.
+- Manual: seed a running season; pick a MotW as staff persona; verify block,
+  badge, match-page reveal, todo transitions, YouTube button.
+
+## Delivery
+
+Branch `feat/match-of-the-week`, squash-merged to main as one commit.

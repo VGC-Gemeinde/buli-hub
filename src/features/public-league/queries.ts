@@ -1,3 +1,5 @@
+import { findMotw, type MotwBlockData } from "@/features/motw/motw";
+import { motwForWindow } from "@/features/motw/queries";
 import { scoreFor } from "@/features/reporting/match-state";
 import {
   divisionGroups,
@@ -41,6 +43,10 @@ export type PublicMatch = {
   scoreA: number | null;
   scoreB: number | null;
   winnerId: string | null;
+  // Match of the Week: the row shows a badge instead of the score, permanently
+  // (spoiler protection). The score fields stay filled — the prominent block's
+  // click-to-reveal uses them.
+  isMotw: boolean;
 };
 
 export type PublicGroup = {
@@ -70,6 +76,9 @@ export type PublicOverview = {
   totalRounds: number;
   matchdays: MatchdayLite[];
   divisions: PublicDivision[];
+  // The current Spieltag's Match of the Week for the prominent block, or null
+  // (none picked / between rounds). Past picks only keep their row badge.
+  motw: MotwBlockData | null;
 };
 
 // Maps a division's post-season config to the counts `assignZones` expects.
@@ -111,15 +120,24 @@ export async function publicLeagueOverview(
   seasonNumber: number,
   today: string,
 ): Promise<PublicOverview> {
-  const [configs, matchdays] = await Promise.all([
+  const [configs, matchdays, motwSelections] = await Promise.all([
     divisionsWithGroupSizes(windowId),
     matchdaysForWindow(windowId),
+    motwForWindow(windowId),
   ]);
   const currentRound = currentMatchday(matchdays, today)?.round ?? null;
 
+  const motwMatchIds = new Set(motwSelections.map((s) => s.matchId));
   const divisions = await Promise.all(
-    [...configs].sort((a, b) => a.tier - b.tier).map(buildDivision),
+    [...configs]
+      .sort((a, b) => a.tier - b.tier)
+      .map((config) => buildDivision(config, motwMatchIds)),
   );
+
+  // The prominent block features only the running Spieltag's pick.
+  const currentSelection =
+    motwSelections.find((s) => s.round === currentRound) ?? null;
+  const motw = currentSelection ? findMotw(divisions, currentSelection) : null;
 
   return {
     seasonName: seasonName(seasonNumber),
@@ -127,11 +145,13 @@ export async function publicLeagueOverview(
     totalRounds: matchdays.length,
     matchdays,
     divisions,
+    motw,
   };
 }
 
 async function buildDivision(
   config: Awaited<ReturnType<typeof divisionsWithGroupSizes>>[number],
+  motwMatchIds: ReadonlySet<string>,
 ): Promise<PublicDivision> {
   const groups = await divisionGroups(config.id);
   const counts = zoneCounts(config);
@@ -156,7 +176,9 @@ async function buildDivision(
     : null;
 
   const publicGroups = await Promise.all(
-    groups.map((group) => buildGroup(config.tier, group, mode, counts)),
+    groups.map((group) =>
+      buildGroup(config.tier, group, mode, counts, motwMatchIds),
+    ),
   );
 
   return {
@@ -175,6 +197,7 @@ async function buildGroup(
   group: Awaited<ReturnType<typeof divisionGroups>>[number],
   mode: "sub_division" | "division",
   counts: ReturnType<typeof zoneCounts>,
+  motwMatchIds: ReadonlySet<string>,
 ): Promise<PublicGroup> {
   const standings = computeStandings({
     roster: group.roster,
@@ -184,7 +207,11 @@ async function buildGroup(
   const zones = mode === "sub_division" ? zoneMap(standings, counts) : null;
 
   const identityById = new Map(group.roster.map((m) => [m.userId, m]));
-  const matches = await allMatches(group.subDivisionId, identityById);
+  const matches = await allMatches(
+    group.subDivisionId,
+    identityById,
+    motwMatchIds,
+  );
 
   return {
     subDivisionId: group.subDivisionId,
@@ -199,6 +226,7 @@ async function buildGroup(
 async function allMatches(
   subDivisionId: string,
   identityById: Map<string, Identity>,
+  motwMatchIds: ReadonlySet<string>,
 ): Promise<PublicMatch[]> {
   const [matches, resultByMatch] = await Promise.all([
     subDivisionMatches(subDivisionId),
@@ -237,6 +265,7 @@ async function allMatches(
       scoreA,
       scoreB,
       winnerId: reported ? (result?.winnerId ?? null) : null,
+      isMotw: motwMatchIds.has(match.id),
     };
   });
 }

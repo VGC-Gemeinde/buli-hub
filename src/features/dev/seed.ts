@@ -6,6 +6,7 @@ import {
   matches,
   matchGames,
   matchResults,
+  motwSelections,
   profiles,
   registrations,
   subDivisions,
@@ -335,6 +336,9 @@ async function seedDevResults(
 
   // Reported normal matches (matchId + participants) to hang disputes on.
   const reportedNormal: { matchId: string; a: string; b: string }[] = [];
+  // The current round's Match of the Week (first reported current-round match,
+  // so block + badge + spoiler reveal all have something to show).
+  let motwMatchId: string | null = null;
 
   let past = 0;
   let current = 0;
@@ -387,10 +391,23 @@ async function seedDevResults(
       const k = current++;
       if (k % 2 === 0) {
         await reportNormal(match.id, a, b, k % 4 === 0 ? a : b, false);
+        motwMatchId ??= match.id;
       }
       // odd → left „offen" this week
     }
     // future rounds stay open
+  }
+
+  // Feature it as the Match of the Week — with a VOD link, so the public
+  // block shows both the YouTube button and the spoiler-protected result.
+  if (motwMatchId) {
+    await db.insert(motwSelections).values({
+      windowId,
+      round: currentRound,
+      matchId: motwMatchId,
+      youtubeUrl: "https://www.youtube.com/watch?v=vgc-bundesliga",
+      selectedById: staffId,
+    });
   }
 
   // One open dispute (loser contests the result) and one already resolved, so

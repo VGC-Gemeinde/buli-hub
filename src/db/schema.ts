@@ -327,6 +327,31 @@ export const matchGames = pgTable(
   (table) => [unique().on(table.matchId, table.gameNumber)],
 );
 
+// The Match of the Week (never translated): one featured match per Spieltag
+// (window + round), picked by staff at the start of the week. Its result is
+// spoiler-protected in every public view; the optional YouTube URL is attached
+// once the VOD is uploaded (possibly after the Spieltag). Replacing the pick
+// clears the URL — it belongs to the previous match. FKs + RLS in a custom
+// migration.
+export const motwSelections = pgTable(
+  "motw_selections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    windowId: uuid("window_id").notNull(),
+    round: integer("round").notNull(),
+    matchId: uuid("match_id").notNull().unique(),
+    youtubeUrl: text("youtube_url"),
+    selectedById: uuid("selected_by_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.windowId, table.round)],
+);
+
 export const disputeStatusEnum = pgEnum("dispute_status", ["open", "resolved"]);
 export const disputeResolutionEnum = pgEnum("dispute_resolution", [
   "upheld", // the reported result stands

@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
@@ -8,6 +9,10 @@ import { PublicLeague } from "@/features/public-league/components/public-league"
 import { publicLeagueOverview } from "@/features/public-league/queries";
 import { currentUser } from "@/features/roles/guard";
 import { currentSeason } from "@/features/season/season-status";
+import {
+  parseSpoilersOff,
+  SPOILERS_OFF_COOKIE,
+} from "@/features/spoilers/spoilers";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home({
@@ -22,14 +27,22 @@ export default async function Home({
 
   if (phase === "regular_season" && window) {
     const today = new Date().toISOString().slice(0, 10);
-    const [overview, current] = await Promise.all([
+    const [overview, current, cookieStore] = await Promise.all([
       publicLeagueOverview(window.id, window.seasonNumber, today),
       currentUser(),
+      cookies(),
     ]);
+    const spoilersOff = parseSpoilersOff(
+      cookieStore.get(SPOILERS_OFF_COOKIE)?.value,
+    );
     return (
       <div className="flex flex-1 flex-col">
         <SiteHeader />
-        <PublicLeague overview={overview} meId={current?.userId ?? ""} />
+        <PublicLeague
+          overview={overview}
+          meId={current?.userId ?? ""}
+          initialSpoilersOff={spoilersOff}
+        />
       </div>
     );
   }

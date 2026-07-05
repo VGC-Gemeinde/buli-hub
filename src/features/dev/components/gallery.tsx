@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { ActionLink, InlineLink } from "@/components/links";
 import { SectionHeader } from "@/components/section-header";
@@ -57,6 +58,9 @@ import type { SeedingPlayer } from "@/features/seeding/placement";
 import { assignZones } from "@/features/seeding/post-season";
 import type { DivisionWithGroupSizes } from "@/features/seeding/queries";
 import { assembleSheetRows } from "@/features/seeding/sheet";
+import { SpoilerCoverShell } from "@/features/spoilers/components/spoiler-cover-shell";
+import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
+import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import {
   PlayerGrid,
@@ -707,6 +711,27 @@ const IDENTITIES: {
 
 const SAVE_STATES = ["idle", "saving", "saved", "error"] as const;
 
+// Stateful wrappers for the controlled spoiler components.
+function SpoilerSwitchDemo() {
+  const [off, setOff] = useState(false);
+  return <SpoilerSwitch spoilersOff={off} onChange={setOff} />;
+}
+
+function SpoilerScoreDemo() {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="flex items-center gap-5 font-semibold text-muted-foreground text-xs tabular-nums">
+      <SpoilerScore
+        scoreA={2}
+        scoreB={1}
+        covered={!revealed}
+        onReveal={() => setRevealed(true)}
+      />
+      <SpoilerScore scoreA={2} scoreB={0} covered={false} onReveal={() => {}} />
+    </div>
+  );
+}
+
 function Specimen({
   label,
   children,
@@ -1018,8 +1043,37 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Öffentliche Liga-Übersicht</h2>
-        <Specimen label="Laufende Saison (MotW-Block · Divisions-Umschalter · Tabellen · Spieltag)">
-          <PublicLeague overview={PUBLIC_OVERVIEW} meId="me" />
+        <Specimen label="Laufende Saison (MotW-Block · Divisions-Umschalter · Tabellen · Spieltag · Spoiler-Schutz)">
+          <PublicLeague
+            overview={PUBLIC_OVERVIEW}
+            meId="me"
+            initialSpoilersOff={false}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Spoiler-Schutz</h2>
+        <Specimen label="Globaler Schalter (schreibt das Cookie)">
+          <SpoilerSwitchDemo />
+        </Specimen>
+        <Specimen label="Verdeckter Score — antippen deckt auf">
+          <SpoilerScoreDemo />
+        </Specimen>
+        <Specimen label="Match-Seite: allgemeine Spoiler-Abdeckung (Klick zeigt den Inhalt)">
+          <SpoilerCoverShell
+            round={2}
+            groupName="Division 1a"
+            seasonLabel="Saison 1"
+            playerAName={SUMMARY_A.name}
+            playerBName={SUMMARY_B.name}
+            title="Ergebnis versteckt"
+            copy="Der Spoiler-Schutz ist aktiv — deck das Ergebnis auf, wenn du es sehen willst. Auf der Übersicht kannst du den Schutz komplett ausschalten."
+          >
+            <p className="text-sm">
+              Hier stünde die vollständige Ergebnis-Ansicht.
+            </p>
+          </SpoilerCoverShell>
         </Specimen>
       </section>
 

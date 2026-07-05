@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
@@ -16,6 +17,11 @@ import {
 } from "@/features/reporting/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { SpoilerCoverShell } from "@/features/spoilers/components/spoiler-cover-shell";
+import {
+  parseSpoilersOff,
+  SPOILERS_OFF_COOKIE,
+} from "@/features/spoilers/spoilers";
 import { latestWindow } from "@/features/staff/queries";
 import { seasonName } from "@/features/staff/registration-window";
 
@@ -47,6 +53,11 @@ export default async function MatchReportPage({
   // Match of the Week: banner for everyone; the result is spoiler-protected
   // for neutral viewers (participants and staff see it as usual).
   const motw = await motwByMatchId(matchId);
+  // The global spoiler preference (cookie): with protection on, neutral
+  // viewers get a cover instead of the summary; the MotW ignores the switch.
+  const spoilersOff = parseSpoilersOff(
+    (await cookies()).get(SPOILERS_OFF_COOKIE)?.value,
+  );
   // A pending (unconfirmed) free win is not public — neutral observers see the
   // match as still open until it is confirmed.
   const pendingFreeWinHidden =
@@ -137,6 +148,18 @@ export default async function MatchReportPage({
           >
             {summary}
           </MotwSpoiler>
+        ) : summary && !privileged && !spoilersOff ? (
+          <SpoilerCoverShell
+            round={match.round}
+            groupName={match.groupName}
+            seasonLabel={seasonLabel}
+            playerAName={match.playerA.name}
+            playerBName={match.playerB.name}
+            title="Ergebnis versteckt"
+            copy="Der Spoiler-Schutz ist aktiv — deck das Ergebnis auf, wenn du es sehen willst. Auf der Übersicht kannst du den Schutz komplett ausschalten."
+          >
+            {summary}
+          </SpoilerCoverShell>
         ) : (
           summary
         )}

@@ -10,6 +10,9 @@ import { MotwBlock } from "@/features/motw/components/motw-block";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { StandingsTable } from "@/features/season/components/standings-panel";
 import type { MatchdayLite } from "@/features/season/dashboard";
+import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
+import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
+import { scoreHidden } from "@/features/spoilers/spoilers";
 import { cn } from "@/lib/utils";
 import type { PublicDivision, PublicMatch, PublicOverview } from "../queries";
 
@@ -80,11 +83,16 @@ function Switcher({
 export function PublicLeague({
   overview,
   meId,
+  initialSpoilersOff,
 }: {
   overview: PublicOverview;
   meId: string;
+  initialSpoilersOff: boolean;
 }) {
   const [tier, setTier] = useState(overview.divisions[0]?.tier ?? 1);
+  // The global spoiler preference: cookie-backed (the server rendered this
+  // state), toggled here, honored by the match pages.
+  const [spoilersOff, setSpoilersOff] = useState(initialSpoilersOff);
   const division =
     overview.divisions.find((d) => d.tier === tier) ?? overview.divisions[0];
 
@@ -106,6 +114,7 @@ export function PublicLeague({
               Spieltag {overview.currentRound} / {overview.totalRounds}
             </span>
           ) : null}
+          <SpoilerSwitch spoilersOff={spoilersOff} onChange={setSpoilersOff} />
           {meId ? (
             <ActionLink href="/spieler" className="text-sm">
               Zum Spieler-Dashboard
@@ -135,6 +144,7 @@ export function PublicLeague({
           currentRound={overview.currentRound}
           totalRounds={overview.totalRounds}
           meId={meId}
+          spoilersOff={spoilersOff}
         />
       ) : null}
     </div>
@@ -147,12 +157,14 @@ function DivisionView({
   currentRound,
   totalRounds,
   meId,
+  spoilersOff,
 }: {
   division: PublicDivision;
   matchdays: MatchdayLite[];
   currentRound: number | null;
   totalRounds: number;
   meId: string;
+  spoilersOff: boolean;
 }) {
   // Selection is either a sub-division id or „gesamt" (only offered when the
   // division has a merged Gesamttabelle, i.e. in division mode). Gesamt shows the
@@ -232,6 +244,7 @@ function DivisionView({
                   <MatchdayList
                     matches={g.matches.filter((m) => m.round === round)}
                     meId={meId}
+                    spoilersOff={spoilersOff}
                   />
                 </div>
               ))}
@@ -240,6 +253,7 @@ function DivisionView({
             <MatchdayList
               matches={group.matches.filter((m) => m.round === round)}
               meId={meId}
+              spoilersOff={spoilersOff}
             />
           ) : null}
         </section>
@@ -312,9 +326,11 @@ function SpieltagTimeline({
 function MatchdayList({
   matches,
   meId,
+  spoilersOff,
 }: {
   matches: PublicMatch[];
   meId: string;
+  spoilersOff: boolean;
 }) {
   if (matches.length === 0) {
     return (
@@ -326,14 +342,35 @@ function MatchdayList({
   return (
     <div className="flex flex-col gap-2">
       {matches.map((match) => (
-        <MatchRow key={match.matchId} match={match} meId={meId} />
+        <MatchRow
+          key={match.matchId}
+          match={match}
+          meId={meId}
+          spoilersOff={spoilersOff}
+        />
       ))}
     </div>
   );
 }
 
-function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
+function MatchRow({
+  match,
+  meId,
+  spoilersOff,
+}: {
+  match: PublicMatch;
+  meId: string;
+  spoilersOff: boolean;
+}) {
   const mine = match.playerA.userId === meId || match.playerB?.userId === meId;
+  // Foreign reported results are covered until revealed in place (or via the
+  // global switch). The MotW is exempt from all of this — it renders its
+  // badge permanently, never a score.
+  const hidden =
+    !match.isMotw &&
+    scoreHidden({ reported: match.reported, isMine: mine, spoilersOff });
+  const [revealed, setRevealed] = useState(false);
+  const covered = hidden && !revealed;
   const className = cn(
     "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
     mine && "border-brand-orange/40 bg-brand-orange/5",
@@ -345,8 +382,10 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
     <>
       <Side
         identity={match.playerA}
-        // Winner bolding on the featured row would leak the hidden result.
-        winner={!match.isMotw && match.winnerId === match.playerA.userId}
+        // Winner bolding on a covered (or featured) row would leak the result.
+        winner={
+          !match.isMotw && !covered && match.winnerId === match.playerA.userId
+        }
         align="left"
       />
       <span className="shrink-0 text-center font-semibold text-muted-foreground text-xs tabular-nums">
@@ -358,9 +397,12 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
           <MotwBadge title="Ergebnis verdeckt — Match of the Week" />
         ) : match.reported ? (
           // A pending free win is not shown publicly until confirmed → „offen".
-          <span className="text-foreground">
-            {match.scoreA} : {match.scoreB}
-          </span>
+          <SpoilerScore
+            scoreA={match.scoreA}
+            scoreB={match.scoreB}
+            covered={covered}
+            onReveal={() => setRevealed(true)}
+          />
         ) : (
           "offen"
         )}
@@ -368,7 +410,9 @@ function MatchRow({ match, meId }: { match: PublicMatch; meId: string }) {
       {match.playerB ? (
         <Side
           identity={match.playerB}
-          winner={!match.isMotw && match.winnerId === match.playerB.userId}
+          winner={
+            !match.isMotw && !covered && match.winnerId === match.playerB.userId
+          }
           align="right"
         />
       ) : (

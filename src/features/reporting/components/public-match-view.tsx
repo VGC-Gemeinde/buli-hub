@@ -1,0 +1,110 @@
+import Link from "next/link";
+import { EmptyStateCard } from "@/components/empty-state-card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { Identity } from "@/features/season/dashboard";
+
+// Public, result-less match page for neutral visitors (guests and non-
+// participant players): the pairing with an „Offen" chip and an informational
+// edge-state card. Replaces the bare „Noch kein Ergebnis gemeldet." line
+// (GO-LIVE-POLISH §4.4). Once reported, the normal ReportSummary is shown.
+function Face({ identity }: { identity: Identity }) {
+  return (
+    <Avatar className="size-10 sm:size-[46px]">
+      {identity.avatarUrl ? (
+        <AvatarImage src={identity.avatarUrl} alt="" />
+      ) : null}
+      <AvatarFallback>{identity.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+    </Avatar>
+  );
+}
+
+export function PublicMatchView({
+  round,
+  groupName,
+  seasonLabel,
+  playerA,
+  playerB,
+}: {
+  round: number;
+  groupName: string;
+  seasonLabel: string;
+  playerA: Identity;
+  playerB: Identity;
+}) {
+  return (
+    <>
+      <Link
+        href="/"
+        className="mb-4.5 inline-block font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
+      >
+        ← Zur Übersicht
+      </Link>
+      <p className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
+        Spieltag {round} · {groupName} · {seasonLabel}
+      </p>
+      <h1 className="mt-2 text-[34px] text-brand-blue leading-[1.1] sm:text-[40px] dark:text-white">
+        <span className="break-words">{playerA.name}</span>{" "}
+        <span className="text-muted-foreground">vs.</span>{" "}
+        <span className="break-words">{playerB.name}</span>
+      </h1>
+
+      {/* Mobile: each player on their own row, name never truncated — mirrors
+          the reported result view. */}
+      <div className="mt-6 flex flex-col divide-y rounded-xl border bg-muted/30 sm:hidden">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Face identity={playerA} />
+          <span className="min-w-0 flex-1 break-words font-bold font-heading text-[18px] text-brand-blue uppercase leading-[1.15] dark:text-white">
+            {playerA.name}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 py-2.5 pr-4 pl-[68px]">
+          <span className="rounded-full bg-muted px-3 py-[3px] font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.08em]">
+            Offen
+          </span>
+          <span className="text-[12px] text-muted-foreground">Best of 3</span>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Face identity={playerB} />
+          <span className="min-w-0 flex-1 break-words font-bold font-heading text-[18px] text-brand-blue uppercase leading-[1.15] dark:text-white">
+            {playerB.name}
+          </span>
+        </div>
+      </div>
+
+      {/* Desktop: A · B with the status centred between them. */}
+      <div className="mt-6 hidden grid-cols-[1fr_auto_1fr] items-center gap-4.5 rounded-xl border bg-muted/30 px-[30px] py-5 sm:grid">
+        <div className="flex min-w-0 items-center gap-3">
+          <Face identity={playerA} />
+          <span className="truncate font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] dark:text-white">
+            {playerA.name}
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <span className="whitespace-nowrap rounded-full bg-muted px-3 py-[3px] font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.08em]">
+            Offen
+          </span>
+          <span className="font-medium text-[11px] text-muted-foreground">
+            Best of 3
+          </span>
+        </div>
+        <div className="flex min-w-0 items-center justify-end gap-3">
+          <span className="truncate text-right font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] dark:text-white">
+            {playerB.name}
+          </span>
+          <Face identity={playerB} />
+        </div>
+      </div>
+
+      <p className="mt-3.5 text-[13px] text-muted-foreground">
+        Ergebnis wird nach der Meldung hier angezeigt.
+      </p>
+
+      <div className="mt-8">
+        <EmptyStateCard title="Noch kein Ergebnis" informational>
+          Die beiden Spieler haben ihr Match noch nicht gemeldet. Sobald ein
+          Ergebnis vorliegt, findest du hier Spiele, Replays und Teamsheets.
+        </EmptyStateCard>
+      </div>
+    </>
+  );
+}

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { EmptyStateCard } from "@/components/empty-state-card";
 import { SiteHeader } from "@/components/site-header";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
@@ -36,10 +37,10 @@ export default async function SeedingPage() {
           <h1 className="mb-9 text-4xl text-brand-blue dark:text-white">
             Divisionen einteilen
           </h1>
-          <p className="text-muted-foreground">
+          <EmptyStateCard title="Anmeldung läuft noch" informational>
             Die Einteilung ist erst möglich, sobald die Anmeldung geschlossen
             ist.
-          </p>
+          </EmptyStateCard>
         </main>
       </div>
     );

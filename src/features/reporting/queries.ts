@@ -14,6 +14,7 @@ import type { Identity } from "@/features/season/dashboard";
 import { groupRoster } from "@/features/season/queries";
 import { subDivisionName } from "@/features/seeding/seeding";
 import { db } from "@/lib/db";
+import { PLAYER_NAME_FALLBACK, playerName } from "@/lib/player-name";
 import type { GameRow, MatchOutcome, ResultRow } from "./report";
 import type { ResultForStandings } from "./standings";
 
@@ -25,7 +26,7 @@ function toIdentity(row: {
 }): Identity {
   return {
     userId: row.userId,
-    name: row.displayName ?? row.username ?? "Unbekannt",
+    name: playerName(row.displayName, row.username),
     avatarUrl: row.avatarUrl ?? null,
   };
 }
@@ -89,7 +90,7 @@ export async function getMatchForReport(matchId: string): Promise<{
     const row = rows.find((r) => r.userId === id);
     return row
       ? toIdentity(row)
-      : { userId: id, name: "Unbekannt", avatarUrl: null };
+      : { userId: id, name: PLAYER_NAME_FALLBACK, avatarUrl: null };
   };
   return {
     matchId: match.id,

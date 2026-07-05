@@ -48,8 +48,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
-        <h1 className="mb-9 text-4xl text-brand-blue dark:text-white">
+      <main className="mx-auto w-full max-w-[640px] flex-1 px-6 py-12 sm:px-8">
+        <h1 className="mb-9 text-[32px] text-brand-blue sm:text-[40px] dark:text-white">
           Spieler-Dashboard
         </h1>
         {children}
@@ -183,7 +183,7 @@ export default async function SpielerPage() {
         <SiteHeader />
         <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 pt-11 pb-18">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <h1 className="text-[38px] text-brand-blue leading-[1.1] dark:text-white">
+            <h1 className="text-[28px] text-brand-blue leading-[1.1] sm:text-[34px] dark:text-white">
               Deine Saison
             </h1>
             <div className="flex items-center gap-2.5">

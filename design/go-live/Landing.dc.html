@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+<div data-screen-label="Landing" style="min-height: 100vh; background: #ffffff; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264); display: flex; flex-direction: column; position: relative; overflow: hidden;">
+  <div style="height: 3px; background: #ff7b00; flex-shrink: 0;"></div>
+  <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px; position: relative; z-index: 2;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="public/logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block;">
+      <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Buli Hub</span>
+    </div>
+    <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ true }}">
+      <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); background: transparent; font-size: 14px; font-weight: 500; color: oklch(0.28 0.06 264); cursor: pointer;">Mit Discord anmelden</button>
+    </sc-if>
+    <sc-if value="{{ isSignedIn }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px;">
+        <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600;">KU</div>
+        <span style="font-size: 14px; font-weight: 500;">Kuro</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </div>
+    </sc-if>
+  </header>
+
+  <!-- Unified hero: identical logo + h1 in both states; only the CTA block swaps -->
+  <main style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 48px 40px; text-align: center; position: relative; z-index: 2;">
+    <img src="public/logo.svg" alt="" style="width: 148px; border-radius: 16px; display: block; box-shadow: 0 8px 28px oklch(0.2 0.06 264 / 0.25); margin-bottom: 36px;">
+    <h1 style="margin: 0 0 36px; font-family: 'Barlow Condensed', sans-serif; font-size: 68px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; color: #021f66;">VGC Bundesliga</h1>
+
+    <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ true }}">
+      <button style="height: 46px; padding: 0 28px; border-radius: 8px; border: none; background: #ff7b00; color: #ffffff; font-size: 15px; font-weight: 600; cursor: pointer;">Mit Discord anmelden</button>
+      <sc-if value="{{ showError }}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 20px 0 0; font-size: 14px; color: oklch(0.55 0.22 27);">Anmeldung fehlgeschlagen. Bitte versuche es erneut.</p>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ isSignedIn }}" hint-placeholder-val="{{ false }}">
+      <p style="margin: -14px 0 28px; font-size: 17px; line-height: 1.55; color: oklch(0.52 0.035 263); max-width: 440px;">Deine Gruppe, dein Spielplan und deine nächste Paarung — alles im Spieler-Dashboard.</p>
+      <button style="height: 46px; padding: 0 28px; border-radius: 8px; border: none; background: #ff7b00; color: #ffffff; font-size: 15px; font-weight: 600; cursor: pointer;">Zum Spieler-Dashboard</button>
+    </sc-if>
+  </main>
+
+  <div style="position: absolute; bottom: 26px; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 12px; z-index: 2;">
+    <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+    <span style="font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: oklch(0.52 0.035 263);">Ausgerichtet von der VGC Gemeinde</span>
+    <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+  </div>
+
+  <img src="public/logo.svg" alt="" style="position: absolute; right: -90px; bottom: -110px; width: 560px; opacity: 0.05; transform: rotate(-10deg); border-radius: 48px; z-index: 1; pointer-events: none;">
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 800}, &quot;state&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;guest&quot;, &quot;signed_in&quot;], &quot;default&quot;: &quot;guest&quot;, &quot;tsType&quot;: &quot;\&quot;guest\&quot; | \&quot;signed_in\&quot;&quot;, &quot;section&quot;: &quot;Zustand&quot;}, &quot;authError&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Zustand&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? "guest";
+    return {
+      isGuest: state === "guest",
+      isSignedIn: state === "signed_in",
+      showError: (this.props.authError ?? false) && state === "guest",
+    };
+  }
+}
+</script>
+</body>
+</html>

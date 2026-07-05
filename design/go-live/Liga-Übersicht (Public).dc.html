@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+<div data-screen-label="Liga-Übersicht (öffentlich)" style="min-height: 100vh; background: #ffffff; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264); display: flex; flex-direction: column;">
+  <div style="height: 3px; background: #ff7b00;"></div>
+  <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="public/logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block;">
+      <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Buli Hub</span>
+    </div>
+    <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); background: transparent; font-size: 14px; font-weight: 500; color: oklch(0.28 0.06 264); cursor: pointer;">Mit Discord anmelden</button>
+  </header>
+
+  <main style="width: 100%; max-width: 1040px; margin: 0 auto; padding: 40px 28px 72px; display: flex; flex-direction: column; flex: 1;">
+
+    <!-- Title row -->
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div style="height: 11px; width: 22px; transform: skewX(-18deg); background: #ff7b00;"></div>
+        <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 34px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.1; color: #021f66;">VGC Bundesliga</h1>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">· Saison 1</span>
+      </div>
+      <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Spieltag {{ curRound }} / 7</span>
+    </div>
+
+    <!-- Division switcher -->
+    <div style="display: flex; gap: 4px; border: 1px solid oklch(0.91 0.012 262); border-radius: 999px; padding: 3px; width: fit-content; max-width: 100%; flex-wrap: wrap; margin-top: 24px;">
+      <sc-for list="{{ divisionPills }}" as="p" hint-placeholder-count="2">
+        <button onClick="{{ p.pick }}" style="{{ p.style }}">{{ p.label }}</button>
+      </sc-for>
+    </div>
+
+    <!-- Group switcher (short labels — the division is already named above) -->
+    <div style="display: flex; gap: 4px; border: 1px solid oklch(0.91 0.012 262); border-radius: 999px; padding: 3px; width: fit-content; max-width: 100%; flex-wrap: wrap; margin-top: 12px;">
+      <sc-for list="{{ groupPills }}" as="p" hint-placeholder-count="7">
+        <button onClick="{{ p.pick }}" style="{{ p.style }}">{{ p.label }}</button>
+      </sc-for>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 32px; align-items: start; margin-top: 30px;">
+
+      <!-- Tabelle -->
+      <section style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+            <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">Tabelle</h2>
+          </div>
+          <span style="font-size: 13px; color: oklch(0.52 0.035 263);">Division {{ groupName }}</span>
+        </div>
+        <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; overflow: hidden;">
+          <div style="display: grid; grid-template-columns: 6px 44px 1fr 64px 58px 64px; padding: 10px 16px 10px 0; border-bottom: 1px solid oklch(0.91 0.012 262); background: oklch(0.975 0.006 262);">
+            <span></span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-left: 10px;">Pl.</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Spieler</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); text-align: right;">Bilanz</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); text-align: right;">Diff.</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); text-align: right;">Punkte</span>
+          </div>
+          <sc-for list="{{ table }}" as="row" hint-placeholder-count="7">
+            <div style="display: grid; grid-template-columns: 6px 44px 1fr 64px 58px 64px; align-items: stretch; border-bottom: 1px solid {{ row.divider }}; background: {{ row.bg }};">
+              <span style="background: {{ row.rail }};"></span>
+              <span style="display: flex; align-items: center; font-size: 14px; font-weight: 600; color: oklch(0.52 0.035 263); padding: 9px 0 9px 10px;">{{ row.rank }}</span>
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 0;">
+                <div style="width: 26px; height: 26px; flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); border: 1px solid oklch(0.91 0.012 262); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: oklch(0.52 0.035 263);">{{ row.initials }}</div>
+                <span style="font-size: 14.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.name }}</span>
+              </div>
+              <span style="display: flex; align-items: center; justify-content: flex-end; font-size: 14px; color: oklch(0.52 0.035 263); padding: 9px 0;">{{ row.record }}</span>
+              <span style="display: flex; align-items: center; justify-content: flex-end; font-size: 14px; font-weight: 600; padding: 9px 0;">{{ row.diff }}</span>
+              <span style="display: flex; align-items: center; justify-content: flex-end; font-size: 14.5px; font-weight: 600; padding: 9px 16px 9px 0;">{{ row.points }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0 4px;">
+          <span style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: oklch(0.52 0.035 263);"><span style="width: 14px; height: 5px; border-radius: 3px; background: oklch(0.85 0.16 90);"></span>Meister-Playoff</span>
+          <span style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: oklch(0.52 0.035 263);"><span style="width: 14px; height: 5px; border-radius: 3px; background: oklch(0.78 0.13 78);"></span>Abstiegs-Playoff</span>
+        </div>
+      </section>
+
+      <!-- Spielplan -->
+      <section style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+            <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">Spielplan</h2>
+          </div>
+          <span style="font-size: 13px; color: oklch(0.52 0.035 263);">Division {{ groupName }}</span>
+        </div>
+
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+          <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Spieltag {{ selRound }} von 7</span>
+          <span style="font-size: 13px; color: oklch(0.52 0.035 263);">{{ selWeek }}</span>
+        </div>
+        <div style="display: flex; gap: 5px;">
+          <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="7">
+            <button onClick="{{ t.pick }}" aria-label="{{ t.aria }}" style="flex: 1; padding: 6px 0; border: none; background: transparent; cursor: pointer;">
+              <span style="display: block; height: 8px; border-radius: 3px; background: {{ t.bg }};"></span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <sc-for list="{{ matches }}" as="m" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 10px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 14px;">
+              <div style="display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0;">
+                <div style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); border: 1px solid oklch(0.91 0.012 262); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: oklch(0.52 0.035 263);">{{ m.aInitials }}</div>
+                <span style="font-size: 14px; font-weight: {{ m.aWeight }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ m.a }}</span>
+              </div>
+              <span style="flex-shrink: 0; font-size: 13px; font-weight: 600; color: {{ m.scoreColor }}; font-variant-numeric: tabular-nums;">{{ m.score }}</span>
+              <div style="display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; flex-direction: row-reverse;">
+                <div style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); border: 1px solid oklch(0.91 0.012 262); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: oklch(0.52 0.035 263);">{{ m.bInitials }}</div>
+                <span style="font-size: 14px; font-weight: {{ m.bWeight }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ m.b }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer style="border-top: 1px solid oklch(0.91 0.012 262); padding: 12px 24px;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 12.5px; color: oklch(0.52 0.035 263);">
+      <span>© 2026 VGC Gemeinde</span>
+      <span style="color: oklch(0.88 0.015 262);">·</span>
+      <span>Impressum</span>
+      <span>Datenschutz</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;spieltag&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 2, &quot;min&quot;: 1, &quot;max&quot;: 7, &quot;step&quot;: 1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Saison&quot;, &quot;description&quot;: &quot;Aktueller Spieltag&quot;}}">
+class Component extends DCLogic {
+  state = { division: 1, group: 0, round: null };
+
+  renderVals() {
+    const s = this.state;
+    const curRound = Math.min(7, Math.max(1, Math.round(this.props.spieltag ?? 2)));
+    const round = s.round ?? curRound;
+    const groupsPerDivision = { 1: 7, 2: 7 };
+
+    const pool = ["Nyra", "MetaMace", "Sandrock", "Tessa", "Feuerlord92", "Lars", "Silberzahn", "Blitzkralle", "Anni", "Mira", "Sturmvogel", "Wolkenbruch", "Timo", "Dario", "Nox", "Lumen", "Fee", "Kaya", "Grim", "Rex", "Palina", "Kuro", "Jella", "Basti", "Yuki", "Paula", "Amara", "Finn"];
+    const seed = (s.division - 1) * 7 + s.group;
+    const roster = Array.from({ length: 7 }, (_, i) => pool[(seed * 5 + i * 3) % pool.length] + ((seed + i) % 9));
+    const initials = (n) => n.replace(/[^A-Za-zÄÖÜäöü0-9]/g, "").slice(0, 2).toUpperCase();
+
+    // deterministic round robin for 7 players (one bye per round)
+    const rr = [];
+    const idx = [0, 1, 2, 3, 4, 5, 6];
+    for (let r = 0; r < 7; r++) {
+      const arr = [idx[0], ...idx.slice(1)];
+      const rot = [arr[0], ...arr.slice(1).map((_, i, a) => a[(i + r) % a.length])];
+      const pairs = [];
+      for (let i = 0; i < 3; i++) pairs.push([rot[i], rot[6 - i]]);
+      rr.push(pairs);
+    }
+
+    const winnerOf = (r, a, b) => ((r + a * 2 + b * 3 + seed) % 2 === 0 ? a : b);
+    const played = (r) => r < curRound;
+
+    // standings from played rounds
+    const stats = roster.map(() => ({ w: 0, l: 0, d: 0 }));
+    for (let r = 0; r < 7; r++) {
+      if (!played(r + 1)) continue;
+      for (const [a, b] of rr[r]) {
+        const w = winnerOf(r, a, b);
+        const l = w === a ? b : a;
+        stats[w].w++; stats[l].l++;
+        stats[w].d += ((r + w) % 2) + 1; stats[l].d -= ((r + w) % 2) + 1;
+      }
+    }
+    const order = roster.map((_, i) => i).sort((a, b) => stats[b].w * 3 - stats[a].w * 3 || stats[b].d - stats[a].d || roster[a].localeCompare(roster[b]));
+
+    const yellow = "oklch(0.85 0.16 90)";
+    const amber = "oklch(0.78 0.13 78)";
+    const table = order.map((pi, rank) => {
+      const zone = rank < 2 ? "meister" : rank >= 5 ? "abpf" : "none";
+      return {
+        rank: rank + 1,
+        name: roster[pi],
+        initials: initials(roster[pi]),
+        record: stats[pi].w + " : " + stats[pi].l,
+        diff: stats[pi].d > 0 ? "+" + stats[pi].d : stats[pi].d < 0 ? "−" + -stats[pi].d : "0",
+        points: stats[pi].w * 3,
+        rail: zone === "meister" ? yellow : zone === "abpf" ? amber : "transparent",
+        bg: zone === "meister" ? "oklch(0.85 0.16 90 / 0.1)" : zone === "abpf" ? "oklch(0.78 0.13 78 / 0.1)" : "transparent",
+        divider: rank === 6 ? "transparent" : "oklch(0.94 0.008 262)",
+      };
+    });
+
+    const weeks = ["22.–28. Juni", "29. Juni – 5. Juli", "6.–12. Juli", "13.–19. Juli", "20.–26. Juli", "27. Juli – 2. Aug.", "3.–9. Aug."];
+
+    const matches = rr[round - 1].map(([a, b]) => {
+      const done = played(round);
+      const w = winnerOf(round - 1, a, b);
+      const sw = 2, sl = (round + a) % 2;
+      return {
+        a: roster[a], b: roster[b],
+        aInitials: initials(roster[a]), bInitials: initials(roster[b]),
+        aWeight: done && w === a ? 600 : 500,
+        bWeight: done && w === b ? 600 : 500,
+        score: done ? (w === a ? sw + " : " + sl : sl + " : " + sw) : "offen",
+        scoreColor: done ? "oklch(0.28 0.06 264)" : "oklch(0.52 0.035 263)",
+      };
+    });
+
+    const pill = (active) =>
+      "height: 30px; padding: 0 14px; border: none; border-radius: 999px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; " +
+      (active ? "background: #ff7b00; color: #ffffff; cursor: default;" : "background: transparent; color: oklch(0.52 0.035 263); cursor: pointer;");
+
+    const divisionPills = [1, 2].map((d) => ({
+      label: "Division " + d,
+      style: pill(d === s.division),
+      pick: () => this.setState({ division: d, group: 0 }),
+    }));
+    const groupPills = Array.from({ length: groupsPerDivision[s.division] }, (_, g) => ({
+      label: s.division + String.fromCharCode(65 + g),
+      style: pill(g === s.group),
+      pick: () => this.setState({ group: g }),
+    }));
+
+    const timeline = Array.from({ length: 7 }, (_, i) => {
+      const r = i + 1;
+      const isSel = r === round;
+      const isCur = r === curRound;
+      return {
+        aria: "Spieltag " + r,
+        bg: isSel ? "#ff7b00" : isCur ? "rgba(255,123,0,0.45)" : r < curRound ? "rgba(2,31,102,0.3)" : "oklch(0.94 0.008 262)",
+        pick: () => this.setState({ round: r }),
+      };
+    });
+
+    return {
+      curRound,
+      selRound: round,
+      selWeek: weeks[round - 1],
+      groupName: s.division + String.fromCharCode(97 + s.group),
+      divisionPills,
+      groupPills,
+      table,
+      matches,
+      timeline,
+    };
+  }
+}
+</script>
+</body>
+</html>

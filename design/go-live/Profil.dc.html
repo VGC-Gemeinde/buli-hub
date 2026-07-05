@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+<div data-screen-label="Profil" style="min-height: 100vh; background: #ffffff; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264); display: flex; flex-direction: column;">
+  <div style="height: 3px; background: #ff7b00;"></div>
+  <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px;">
+    <div style="display: flex; align-items: center; gap: 28px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="public/logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block;">
+        <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Buli Hub</span>
+      </div>
+      <nav style="display: flex; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="height: 8px; width: 16px; transform: skewX(-18deg); background: #ff7b00;"></div>
+          <span style="font-size: 14px; font-weight: 500; color: oklch(0.52 0.035 263);">Spieler-Dashboard</span>
+        </div>
+        <span style="font-size: 13px; color: oklch(0.88 0.015 262);">/</span>
+        <span style="font-size: 14px; font-weight: 600; color: #021f66;">Profil</span>
+      </nav>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px;">
+      <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600;">KU</div>
+      <span style="font-size: 14px; font-weight: 500;">Kuro</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+    </div>
+  </header>
+
+  <main style="width: 100%; max-width: 640px; margin: 0 auto; padding: 48px 24px 72px; display: flex; flex-direction: column; flex: 1;">
+
+    <!-- Identity -->
+    <div style="display: flex; align-items: center; gap: 22px;">
+      <div style="width: 84px; height: 84px; border-radius: 50%; background: oklch(0.93 0.02 262); color: #021f66; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 600; flex-shrink: 0;">KU</div>
+      <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 40px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1; color: #021f66; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Kuro</h1>
+          <span style="display: inline-flex; align-items: center; gap: 7px; border: 1px solid oklch(0.88 0.015 262); border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.45 0.05 264);">
+            <span style="display: block; width: 12px; height: 6px; background: #ff7b00; transform: skewX(-18deg);"></span>
+            {{ roleLabel }}
+          </span>
+        </div>
+        <span style="font-size: 14px; color: oklch(0.52 0.035 263);">@kuro_discord</span>
+      </div>
+    </div>
+
+    <!-- Settings section -->
+    <section style="display: flex; flex-direction: column; margin-top: 46px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+          <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">Für die Orga</h2>
+        </div>
+        <sc-if value="{{ showSave }}" hint-placeholder-val="{{ true }}">
+          <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: {{ saveColor }};">
+            <span style="display: block; width: 6px; height: 6px; border-radius: 50%; background: {{ saveDot }};"></span>
+            {{ saveText }}
+          </span>
+        </sc-if>
+      </div>
+      <p style="margin: 12px 0 0; font-size: 14px; line-height: 1.5; color: oklch(0.52 0.035 263);">Alle Angaben hier sind freiwillig — sie helfen uns bei Social-Media-Posts und Liga-Content.</p>
+
+      <!-- handles -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 26px;">
+        <div style="display: grid; gap: 8px;">
+          <label style="font-size: 14px; font-weight: 500;">Twitter/X-Handle</label>
+          <div style="display: flex; align-items: center; height: 38px; border: 1px solid oklch(0.88 0.015 262); border-radius: 8px; padding: 0 12px; gap: 6px;">
+            <span style="font-size: 14px; color: oklch(0.52 0.035 263);">@</span>
+            <span style="font-size: 14px;">kuro_vgc</span>
+          </div>
+        </div>
+        <div style="display: grid; gap: 8px;">
+          <label style="font-size: 14px; font-weight: 500;">Bluesky-Handle</label>
+          <div style="display: flex; align-items: center; height: 38px; border: 1px solid oklch(0.88 0.015 262); border-radius: 8px; padding: 0 12px;">
+            <span style="font-size: 14px;">kuro.bsky.social</span>
+          </div>
+        </div>
+        <p style="grid-column: 1 / -1; margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.52 0.035 263);">Über deine Handles können wir dich in Social-Media-Posts erwähnen.</p>
+      </div>
+
+      <!-- origin -->
+      <div style="display: grid; gap: 8px; margin-top: 24px;">
+        <label style="font-size: 14px; font-weight: 500;">Herkunft</label>
+        <div style="display: flex; align-items: center; justify-content: space-between; height: 38px; border: 1px solid oklch(0.88 0.015 262); border-radius: 8px; padding: 0 12px;">
+          <span style="font-size: 14px;">Nordrhein-Westfalen</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+        </div>
+        <p style="margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.52 0.035 263);">Zeigen wir in Content wie YouTube-Videos oder Twitch-Streams.</p>
+      </div>
+
+      <!-- capture card -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 28px; border-top: 1px solid oklch(0.91 0.012 262); padding-top: 22px;">
+        <div style="display: grid; gap: 4px;">
+          <span style="font-size: 14px; font-weight: 500;">Capture Card</span>
+          <p style="margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.52 0.035 263);">Du besitzt eine Capture Card, um Gameplay aufzunehmen.</p>
+        </div>
+        <button onClick="{{ toggleCapture }}" aria-label="Capture Card umschalten" style="width: 40px; height: 22px; border-radius: 9999px; border: none; padding: 2px; cursor: pointer; background: {{ switchBg }}; display: flex; justify-content: {{ switchAlign }}; transition: background 0.15s;">
+          <span style="display: block; width: 18px; height: 18px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px oklch(0.2 0.04 264 / 0.3);"></span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer style="border-top: 1px solid oklch(0.91 0.012 262); padding: 12px 24px;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 12.5px; color: oklch(0.52 0.035 263);">
+      <span>© 2026 VGC Gemeinde</span>
+      <span style="color: oklch(0.88 0.015 262);">·</span>
+      <span>Impressum</span>
+      <span>Datenschutz</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 860}, &quot;saveStatus&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;idle&quot;, &quot;saving&quot;, &quot;saved&quot;, &quot;error&quot;], &quot;default&quot;: &quot;saved&quot;, &quot;tsType&quot;: &quot;\&quot;idle\&quot; | \&quot;saving\&quot; | \&quot;saved\&quot; | \&quot;error\&quot;&quot;, &quot;section&quot;: &quot;Zustand&quot;}, &quot;role&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;spieler&quot;, &quot;staff&quot;, &quot;admin&quot;], &quot;default&quot;: &quot;spieler&quot;, &quot;tsType&quot;: &quot;\&quot;spieler\&quot; | \&quot;staff\&quot; | \&quot;admin\&quot;&quot;, &quot;section&quot;: &quot;Zustand&quot;}}">
+class Component extends DCLogic {
+  state = { capture: true };
+  renderVals() {
+    const status = this.props.saveStatus ?? "saved";
+    const map = {
+      idle: ["", "", false],
+      saving: ["Speichern…", "#ff7b00", true],
+      saved: ["Gespeichert", "oklch(0.55 0.13 155)", true],
+      error: ["Fehler beim Speichern", "oklch(0.55 0.22 27)", true],
+    };
+    const [saveText, saveDot, showSave] = map[status] ?? map.saved;
+    const role = this.props.role ?? "spieler";
+    const on = this.state.capture;
+    return {
+      roleLabel: role === "staff" ? "Staff" : role === "admin" ? "Admin" : "Spieler",
+      saveText,
+      saveDot,
+      saveColor: status === "error" ? "oklch(0.55 0.22 27)" : "oklch(0.52 0.035 263)",
+      showSave,
+      switchBg: on ? "#ff7b00" : "oklch(0.88 0.015 262)",
+      switchAlign: on ? "flex-end" : "flex-start",
+      toggleCapture: () => this.setState(s => ({ capture: !s.capture })),
+    };
+  }
+}
+</script>
+</body>
+</html>

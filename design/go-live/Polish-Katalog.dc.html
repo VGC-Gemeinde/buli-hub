@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+<div data-screen-label="Polish-Katalog" style="min-height: 100vh; background: #ffffff; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264);">
+  <div style="height: 3px; background: #ff7b00;"></div>
+  <main style="max-width: 860px; margin: 0 auto; padding: 56px 32px 96px; display: flex; flex-direction: column;">
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+      <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+      <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Buli Hub · Produktions-Polish · Juli 2026</span>
+    </div>
+    <h1 style="margin: 0 0 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 46px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; color: #021f66;">Polish-Katalog</h1>
+    <p style="margin: 0; font-size: 16px; line-height: 1.6; color: oklch(0.52 0.035 263); max-width: 640px;">Alle Konsistenz-Fixes für den Produktionsstart, geprüft gegen die Live-Screenshots vom 04.07.2026. Das Dokument ist die vollständige Arbeitsliste bis zum Go-Live: §0 Bugs, §1 umzusetzende Neu-Designs, §2–4 Konsistenz-Specs und Detail-Fixes, §5 die Checkliste in Umsetzungsreihenfolge, §6 der Status aller Design-Dateien.</p>
+
+    <!-- ============ 0 BUGS ============ -->
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px; margin-top: 52px;">
+      <div style="width: 18px; height: 9px; background: oklch(0.55 0.22 27); transform: skewX(-18deg);"></div>
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">0 · Muss vor Launch: echte Bugs</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 20px;">
+      <div style="border: 1px solid oklch(0.55 0.22 27 / 0.35); background: oklch(0.55 0.22 27 / 0.04); border-radius: 10px; padding: 18px 22px;">
+        <p style="margin: 0 0 6px; font-size: 15px; font-weight: 600; color: #021f66;">Ergebnis-melden-Formular: Sticky-Bar überlappt Teamsheets</p>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: oklch(0.45 0.05 264);">Die fixierte Leiste („Noch offen … / Ergebnis melden") liegt über den beiden pokepast-Eingabefeldern; die Überschrift „Teamsheets" fehlt komplett. Fix siehe <strong style="font-weight: 600;">Ergebnis melden.dc.html</strong>: Teamsheets als reguläre Sektion im Fluss, Inhalt bekommt 140px Bottom-Padding, Leiste ist <span style="font-family: monospace; font-size: 13px;">position: sticky; bottom: 0</span> mit Blur-Hintergrund — nichts wird je verdeckt.</p>
+      </div>
+      <div style="border: 1px solid oklch(0.55 0.22 27 / 0.35); background: oklch(0.55 0.22 27 / 0.04); border-radius: 10px; padding: 18px 22px;">
+        <p style="margin: 0 0 6px; font-size: 15px; font-weight: 600; color: #021f66;">Deaktivierte Orange-Buttons wirken kaputt</p>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: oklch(0.45 0.05 264);">„Anmeldung absenden" / „Ergebnis melden" disabled = ausgewaschenes Orange mit weißem Text (zu wenig Kontrast, sieht aktiv-aber-blass aus). Neu: disabled = neutraler Chip <span style="font-family: monospace; font-size: 13px;">bg oklch(0.92 0.01 262), text oklch(0.6 0.02 262)</span> — Orange ist ausschließlich klickbaren Buttons vorbehalten.</p>
+      </div>
+      <div style="border: 1px solid oklch(0.55 0.22 27 / 0.35); background: oklch(0.55 0.22 27 / 0.04); border-radius: 10px; padding: 18px 22px;">
+        <p style="margin: 0 0 6px; font-size: 15px; font-weight: 600; color: #021f66;">Anzeigename-Feld rendert leer</p>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: oklch(0.45 0.05 264);">Im Anmeldeformular ist das disabled Anzeigename-Feld eine leere graue Box (Testdaten ohne displayName). Fallback anzeigen: Discord-Username, sonst „Discord-Nutzer" — nie leer.</p>
+      </div>
+    </div>
+
+    <!-- ============ 1 NEU-DESIGNS ============ -->
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px; margin-top: 52px;">
+      <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">1 · Neu gestaltet — muss implementiert werden</h2>
+    </div>
+    <p style="margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: oklch(0.52 0.035 263);">Diese Designs existieren fertig als Datei, weichen aber vom Produktionsstand ab. Jede Zeile ist ein Implementierungs-Ticket; die Datei ist die Spezifikation.</p>
+    <div style="display: flex; flex-direction: column; margin-top: 8px;">
+      <sc-for list="{{ redesigns }}" as="r" hint-placeholder-count="9">
+        <div style="display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 14px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+          <span style="font-size: 13px; font-weight: 600; color: #021f66; padding-top: 1px;">{{ r.file }}</span>
+          <p style="margin: 0; font-size: 14px; line-height: 1.55;">{{ r.what }}</p>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- ============ 1 BRAND ============ -->
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px; margin-top: 52px;">
+      <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">2 · Brand-Entscheidungen (DESIGN.md aktualisieren)</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0; margin-top: 8px;">
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+        <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-top: 2px;">Text auf Orange</span>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;"><strong style="font-weight: 600;">Weiß, überall.</strong> Ersetzt die alte Regel „falinks-blue auf Orange" (DESIGN.md §1). Gilt für Buttons, aktive Tabs/Pills, Zähler-Chips. Bei Labels ≤ 12px: Schriftgewicht 600+, nie Regular.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+        <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-top: 2px;">Tick-Größen</span>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 14px; height: 7px; background: #ff7b00; transform: skewX(-18deg); flex-shrink: 0;"></div>
+            <p style="margin: 0; font-size: 14px;"><strong style="font-weight: 600;">S · 14×7</strong> — neben Micro-Labels (12–13px uppercase): Statuszeilen, Kicker, Menüeinträge</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg); flex-shrink: 0;"></div>
+            <p style="margin: 0; font-size: 14px;"><strong style="font-weight: 600;">M · 18×9</strong> — neben Sektions-Überschriften (h2) und Panel-Titeln</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 22px; height: 11px; background: #ff7b00; transform: skewX(-18deg); flex-shrink: 0;"></div>
+            <p style="margin: 0; font-size: 14px;"><strong style="font-weight: 600;">L · 22×11</strong> — neben Seiten-Überschriften (h1), Landing-Credit</p>
+          </div>
+          <p style="margin: 2px 0 0; font-size: 13px; color: oklch(0.52 0.035 263);">Immer skewX(-18deg). Ersetzt die aktuell fünf verschiedenen Maße (16×8, 18×9, 22×11, 14×7, 20×9). Inaktiv/neutral: Tick in <span style="font-family: monospace; font-size: 12.5px;">border</span>-Farbe statt Orange.</p>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+        <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-top: 2px;">Sektions-Header</span>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;"><strong style="font-weight: 600;">Eine Komponente statt drei.</strong> Tick M + h2 condensed uppercase <strong style="font-weight: 600;">24px</strong>, tracking 0.03em · border-bottom · padding-bottom <strong style="font-weight: 600;">12px</strong> · Meta rechts 13px muted. Ersetzt StaffSectionHeader (26px/pb-14), SectionHeading (24px/pb-12) und SectionHead (20px/pb-10).</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+        <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-top: 2px;">Seitentitel</span>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;">Genau zwei Größen: <strong style="font-weight: 600;">40px</strong> Standard (Anmeldung, Profil, Staff, Match) · <strong style="font-weight: 600;">34px</strong> kompakt, wenn rechts Meta-Elemente sitzen (öffentliche Übersicht, „Deine Saison"). Ersetzt text-4xl / 38px / 28–34px / text-3xl.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+        <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-top: 2px;">Container</span>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;">Drei Breiten: <strong style="font-weight: 600;">640px</strong> schmal (Profil, Anmeldung, Spieler-Wartezustände) · <strong style="font-weight: 600;">760px</strong> Lesen (Match, Legal) · <strong style="font-weight: 600;">1040px</strong> breit (Dashboards, öffentliche Übersicht, Staff). Einheitlich px-24/32, py-48. Footer-Innenbreite folgt der Seite.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+        <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-top: 2px;">Micro-Labels</span>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;">Uppercase-Labels: <strong style="font-weight: 600;">tracking 0.12em</strong>, 12–13px, weight 600 — überall. Einzige Ausnahme: Landing-Credit behält 0.16em. Ersetzt den Mix aus 0.1 / 0.12 / 0.14 / 0.16em.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+        <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-top: 2px;">Links</span>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;">Zwei Stile: <strong style="font-weight: 600;">Inline</strong> = brand-blue, underline, offset 3px (Legal-Seiten: orange Links → blau ändern). <strong style="font-weight: 600;">Aktion</strong> = semibold brand-blue mit „→", hover underline („Zum Spieler-Dashboard →", „Ansehen →"). Nackte Textlinks wie „Divisionen" im Saison-Strip werden Outline-Buttons oder Aktions-Links.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px;">
+        <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-top: 2px;">Leere Zustände</span>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;"><strong style="font-weight: 600;">Ein Muster:</strong> Karte (border, radius 12, padding 30/32) mit Tick M (orange = Handlung möglich, border-grau = nur Info) + condensed Titel 24px + Body 15px muted + optional eine Aktion. Referenz: <strong style="font-weight: 600;">Anmeldung.dc.html, Screens 1e</strong>. Ersetzt nackte Sätze (Anmeldung, Seeding-Sperre, Match-Gast) und den dashed-Border-Sonderfall.</p>
+      </div>
+    </div>
+
+    <!-- ============ 2 NAV ============ -->
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px; margin-top: 52px;">
+      <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">3 · Header &amp; Navigation</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; font-size: 14px; line-height: 1.6;">
+      <p style="margin: 0;"><strong style="font-weight: 600;">Staff-Link in den Header.</strong> Staff/Admins sehen neben „Spieler-Dashboard" einen zweiten Nav-Eintrag „Staff-Bereich" (mit Tick S). Aktueller Zustand: Auf /staff heißt der einzige Nav-Punkt „Spieler-Dashboard" — Staff wirkt auf der falschen Seite. Der Eintrag im Avatar-Menü bleibt zusätzlich.</p>
+      <p style="margin: 0;"><strong style="font-weight: 600;">Aktiver Zustand konsequent:</strong> aktive Seite semibold brand-blue, inaktive medium muted (Hover → blau). Auf Unterseiten (Match, Seeding) Breadcrumb wie bisher, aber überall mit demselben Trenner „/" in border-Farbe.</p>
+      <p style="margin: 0;"><strong style="font-weight: 600;">Öffentliche Übersicht:</strong> Eingeloggte Spieler sehen in der Saison auf „/" keinen Nav-Hinweis, wo sie sind — „Liga" als dritten Nav-Punkt aufnehmen (Gäste sehen nur Logo + Sign-in).</p>
+    </div>
+
+    <!-- ============ 3 PER VIEW ============ -->
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px; margin-top: 52px;">
+      <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">4 · Fixes je View</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: 8px;">
+      <sc-for list="{{ viewFixes }}" as="v" hint-placeholder-count="8">
+        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262);">
+          <span style="font-size: 13px; font-weight: 600; color: #021f66; padding-top: 1px;">{{ v.view }}</span>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <sc-for list="{{ v.items }}" as="it" hint-placeholder-count="2">
+              <div style="display: flex; gap: 10px; align-items: baseline;">
+                <span style="display: block; width: 10px; height: 5px; background: #ff7b00; transform: skewX(-18deg); flex-shrink: 0; position: relative; top: -2px;"></span>
+                <p style="margin: 0; font-size: 14px; line-height: 1.55;">{{ it }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- ============ 5 GO-LIVE ============ -->
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px; margin-top: 52px;">
+      <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">5 · Go-Live-Checkliste</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: 8px;">
+      <sc-for list="{{ checklist }}" as="c" hint-placeholder-count="5">
+        <div style="display: grid; grid-template-columns: 64px 1fr; gap: 20px; padding: 16px 4px; border-bottom: 1px solid oklch(0.94 0.008 262); align-items: start;">
+          <span style="display: inline-flex; justify-self: start; align-items: center; border-radius: 9999px; padding: 3px 12px; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; background: {{ c.bg }}; color: {{ c.fg }};">{{ c.prio }}</span>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font-size: 14px; font-weight: 600; color: #021f66;">{{ c.title }}</span>
+            <sc-for list="{{ c.items }}" as="it" hint-placeholder-count="3">
+              <div style="display: flex; gap: 10px; align-items: baseline;">
+                <span style="display: block; width: 10px; height: 5px; background: #ff7b00; transform: skewX(-18deg); flex-shrink: 0; position: relative; top: -2px;"></span>
+                <p style="margin: 0; font-size: 14px; line-height: 1.55;">{{ it }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- ============ 4 FILES ============ -->
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px; margin-top: 52px;">
+      <div style="width: 18px; height: 9px; background: #ff7b00; transform: skewX(-18deg);"></div>
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">6 · Dateien &amp; Status</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: 8px;">
+      <sc-for list="{{ files }}" as="f" hint-placeholder-count="10">
+        <div style="display: grid; grid-template-columns: 1fr 130px 1fr; gap: 16px; padding: 12px 4px; border-bottom: 1px solid oklch(0.94 0.008 262); align-items: baseline;">
+          <span style="font-size: 14px; font-weight: 500;">{{ f.name }}</span>
+          <span style="display: inline-flex; justify-self: start; align-items: center; border-radius: 9999px; padding: 3px 12px; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; background: {{ f.badgeBg }}; color: {{ f.badgeFg }};">{{ f.status }}</span>
+          <span style="font-size: 13px; color: oklch(0.52 0.035 263);">{{ f.note }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const orange = { badgeBg: "#ff7b00", badgeFg: "#ffffff" };
+    const blue = { badgeBg: "#021f66", badgeFg: "#ffffff" };
+    const grey = { badgeBg: "oklch(0.94 0.01 262)", badgeFg: "oklch(0.45 0.05 264)" };
+    const p0 = { bg: "oklch(0.55 0.22 27)", fg: "#ffffff" };
+    const p1 = { bg: "#ff7b00", fg: "#ffffff" };
+    const p2 = { bg: "#021f66", fg: "#ffffff" };
+    const p3 = { bg: "oklch(0.94 0.01 262)", fg: "oklch(0.45 0.05 264)" };
+    return {
+      redesigns: [
+        { file: "Profil.dc.html", what: "Komplettes Redesign: Identitätsblock (Name, @username, Rollen-Badge), einheitliche 38px-Felder, Save-Status-Pill, gestalteter Capture-Card-Switch mit Trenner." },
+        { file: "Anmeldung.dc.html · Screens 1e", what: "Randzustände als Karten: ausgeloggt (Saison-Karte mit CTA + Frist), geschlossen (mit Zeitpunkt), noch nicht geöffnet (Discord-Verweis). Ersetzt die nackten Ein-Satz-Seiten." },
+        { file: "Ergebnis melden.dc.html", what: "Öffentliche Match-Ansicht für Gäste (Match-Karte + „Noch kein Ergebnis\u201c-Panel), Anfechten-Button + Dialog, Angefochten-Banner und -Chip, Staff-Panel mit „Anfechtung entscheiden\u201c-Dialog. Props: viewer / angefochten / dialog." },
+        { file: "Auf- & Abstieg (Staff).dc.html", what: "Als Dialog neu aufgebaut (wie produktiv): Zonen-Vorschau-Chips, ±-Stepper, Tabellen-Toggle, Ausgeglichen-Prüfung, „Regeln gültig\u201c-Footer. Alte Stepper-Vollseite ist verworfen." },
+        { file: "Liga-Übersicht (Public).dc.html", what: "Neu: öffentliche Saison-Startseite. Kurze Gruppen-Pills (1A–1G), Zonen-Palette (Gelb/Amber) getrennt von Brand-Orange, klickbare Spieltag-Timeline." },
+        { file: "Landing.dc.html", what: "Ein Hero für beide Zustände: Logo 148px + h1 68px konstant, nur der CTA-Block wechselt (Sign-in vs. Tagline + Dashboard-Button)." },
+        { file: "Spieler-Dashboard.dc.html", what: "Neu dazu: alle Vor-Saison-Zustände (Anmeldung offen / keine Saison / nicht platziert, Prop zustand) und der Hero-Ergebniszustand (Prop heroGemeldet)." },
+        { file: "Saison-Dashboard (Staff).dc.html", what: "Neu dazu: Angefochten-KPI-Karte (4er-Raster), Angefochten-Sektion mit Zitat + Prüfen-Button, „Erledigte Anfechtungen\u201c-Zeile." },
+        { file: "Legal.dc.html", what: "Neu: Impressum + Datenschutz mit Prose-Spec (h2 condensed 20px, Body 14,5px/1.65), blaue Links, ohne „Zur Startseite\u201c-Sonderfall." },
+        { file: "Staff-Bereich.dc.html · Header", what: "Staff/Admins bekommen „Staff-Bereich\u201c als zweiten Nav-Eintrag mit Tick S — nicht mehr nur im Avatar-Menü (Spec §3)." },
+      ],
+      checklist: [
+        { prio: "P0", ...p0, title: "Launch-Blocker (Bugs, §0)", items: [
+          "Sticky-Bar-Überlappung im Ergebnis-Formular beheben — Teamsheets als Sektion im Fluss, 140px Bottom-Padding, Leiste sticky.",
+          "Disabled-Buttons auf neutralen Chip umstellen (überall: Anmeldung, Ergebnis melden, Dialoge).",
+          "Anzeigename-Fallback: Discord-Username, sonst „Discord-Nutzer\u201c — nie ein leeres Feld. Gleiches Muster für „Unbekannt\u201c-Spielernamen prüfen.",
+        ]},
+        { prio: "P1", ...p1, title: "Neu-Designs umsetzen (§1)", items: [
+          "Reihenfolge nach Sichtbarkeit: Liga-Übersicht (öffentlich) → Ergebnis melden (Gast/Anfechtung/Staff) → Profil → Anmeldung-Randzustände → Spieler-Dashboard-Zustände → Saison-Dashboard Angefochten → Landing → Legal → Header-Nav → Auf-&-Abstieg-Feinschliff.",
+          "Jede Datei ist interaktiv — Zustände über das Tweaks-Panel durchschalten und 1:1 übernehmen.",
+        ]},
+        { prio: "P2", ...p2, title: "Konsistenz-Sweep (§2–4)", items: [
+          "Tick-Größen S/M/L, Sektions-Header-Komponente (24px/pb-12), Seitentitel 40/34px, Container 640/760/1040.",
+          "Weiß auf Orange überall; Links auf die zwei Stile reduzieren; Leere-Zustands-Karte als eine Komponente.",
+          "Detail-Fixes aus §4 Zeile für Zeile abarbeiten (Switcher-Labels, Zonen-Farben, Ansehen-Links, KPI-Neutralzustand …).",
+        ]},
+        { prio: "P3", ...p3, title: "Absicherung vor dem Launch", items: [
+          "design/DESIGN.md aktualisieren: Weiß-auf-Orange, Tick-Größen, Header-Spec, Container, Link-Stile — sonst „korrigiert\u201c jemand zurück.",
+          "Dark-Mode-Pass über alle neu umgesetzten Views (Token-Mapping aus globals.css reicht, aber jede Seite einmal ansehen).",
+          "Mobile-Spot-Check bei 390px: Anmeldung, Profil, Liga-Übersicht, Ergebnis melden, Spieler-Dashboard.",
+          "Edge-Cases mit echten Daten: lange Namen (Truncation), 0 Anmeldungen, leere Spieltage, Spieler ohne Avatar.",
+          "A11y-Basics: orangener Fokusring überall, aria-pressed auf Pills, Kontrast der kleinen Weiß-auf-Orange-Labels (≥ Weight 600).",
+          "Screenshot-Matrix nach der Umsetzung erneut generieren und gegen die Design-Dateien diffen — gleiche Methode wie dieses Audit.",
+        ]},
+      ],
+      viewFixes: [
+        { view: "Landing (Vor-Saison)", items: [
+          "Eingeloggt und ausgeloggt auf einen Hero vereinheitlichen: Logo 148px, h1 68px — nur der CTA-Block wechselt (Sign-in vs. Tagline + „Zum Spieler-Dashboard\u201c).",
+        ]},
+        { view: "Öffentliche Übersicht (/)", items: [
+          "Zweite Switcher-Reihe kürzen: „1A · 1B · 1C\u201c statt „Division 1A \u2026\u201c — die Division steht bereits in Reihe eins.",
+          "Meta-Angaben einheitlich: „Division 1a\u201c links wie rechts (aktuell „Division 1a\u201c vs. „1a\u201c).",
+          "Zonen-Streifen: Gelb (Meister-Playoff) und Orange (Abstiegs-Playoff) liegen nahe an Brand-Orange — Abstiegs-Playoff auf ein kühles Amber oklch(0.72 0.13 60) schieben, damit Orange „aktiv/du\u201c vorbehalten bleibt.",
+        ]},
+        { view: "Spieler-Dashboard", items: [
+          "„Ansehen \u2192\u201c als Aktions-Link-Stil (semibold blau) statt 13px muted.",
+          "Hero-Ergebniszustand: Score-Block rechts bekommt dieselbe vertikale Ausrichtung wie der Deadline-Block (aktuell springt die Höhe je Zustand).",
+        ]},
+        { view: "Staff-Bereich (Saison)", items: [
+          "„Divisionen\u201c im Saison-Strip: Outline-Button statt nacktem Textlink.",
+          "h1-Abstand vereinheitlichen: mb-36 wie im Vor-Saison-Zustand (aktuell mb-24 vs. mb-36).",
+          "KPI-Karten: Zahl und Label auch bei 0 in Neutralfarbe zeigen — rote Tönung nur bei Wert > 0 (bereits so gebaut? gegen Live-Verhalten prüfen).",
+        ]},
+        { view: "Staff-Bereich (Vor-Saison)", items: [
+          "„Anmeldungen\u201c-Chips: Grid ist gut — nur Chip-Höhe auf 36px normieren und Avatar-Fallback-Initialen in avatarFg statt muted.",
+        ]},
+        { view: "Seeding-Workspace", items: [
+          "Gesperrt-Zustand (Anmeldung offen): Leere-Zustands-Karte nach Muster §2 statt nacktem Satz.",
+          "Sonst nur Katalog-Globals (Tick-Größen, Header-Spec) — der Workspace ist konsistent umgesetzt.",
+        ]},
+        { view: "Match (Ergebnis-Ansicht)", items: [
+          "„Ergebnis anfechten\u201c: Outline-Button mit destruktiver Textfarbe (wie „Anmeldung zurückziehen\u201c) statt neutral — die Aktion ist eine Eskalation.",
+          "Meta-Zeile unter der Score-Karte (Plattform · Gemeldet von · Datum): Trenner in border-Farbe, nicht muted.",
+        ]},
+        { view: "Legal (Impressum/Datenschutz)", items: [
+          "Links blau statt orange (§1 Links).",
+          "„\u2190 Zur Startseite\u201c entfernen — Header-Logo + Footer decken das ab; kein Seiten-Sonderfall.",
+        ]},
+        { view: "Dialoge", items: [
+          "Konsistent und gut — nur disabled-Button-Spec (§0) übernehmen: „Anfechtung senden\u201c / „Spielplan erstellen\u201c disabled aktuell ausgewaschen-orange.",
+        ]},
+      ],
+      files: [
+        { name: "Landing.dc.html", status: "Kanonisch", ...blue, note: "Vereinheitlichter Hero, Gast + eingeloggt (state-Prop)." },
+        { name: "Anmeldung.dc.html", status: "Kanonisch", ...blue, note: "Formular-Varianten + neu gestaltete Randzustände (1e)." },
+        { name: "Profil.dc.html", status: "Kanonisch", ...orange, note: "Redesign: Identität, einheitliche Felder, Save-Status." },
+        { name: "Spieler-Dashboard.dc.html", status: "Kanonisch", ...blue, note: "Fixes + alle Vor-Saison-Zustände (zustand-Prop)." },
+        { name: "Divisionstabelle (Spieler).dc.html", status: "Kanonisch", ...blue, note: "Tabellen-Modi im Spieler-Dashboard; Weiß-auf-Orange korrigiert." },
+        { name: "Liga-Übersicht (Public).dc.html", status: "Kanonisch", ...orange, note: "Öffentliche Saison-Startseite: Divisionen, Gruppen, Tabelle + Spielplan." },
+        { name: "Ergebnis melden.dc.html", status: "Kanonisch", ...orange, note: "Sticky-Bar-Referenz + Gast-Ansicht, Anfechtung, Staff-Panel, Dialoge (viewer/angefochten/dialog-Props)." },
+        { name: "Staff-Bereich.dc.html", status: "Kanonisch", ...blue, note: "Vor-Saison-Zustände 2a–2d; Explorationen entfernt." },
+        { name: "Saison-Dashboard (Staff).dc.html", status: "Kanonisch", ...blue, note: "In-Saison-Dashboard + Match-Staff-Ansichten." },
+        { name: "Divisions-Einteilung.dc.html", status: "Kanonisch", ...blue, note: "Seeding-Workspace (vormals v2)." },
+        { name: "Spielplan-Erstellung.dc.html", status: "Kanonisch", ...blue, note: "Inkl. Dialog; disabled-Spec umgesetzt." },
+        { name: "Auf- & Abstieg (Staff).dc.html", status: "Kanonisch", ...orange, note: "Als Dialog neu aufgebaut (wie in Produktion) — Stepper-Vollseite verworfen." },
+        { name: "Legal.dc.html", status: "Kanonisch", ...orange, note: "Impressum + Datenschutz (seite-Prop), blaue Links, kein Back-Link." },
+        { name: "Polish-Katalog.dc.html", status: "Spec", ...blue, note: "Dieses Dokument. Gelöscht: AppFrame, App Screens ×2, LandingFrame, Landing Page, Divisions-Einteilung v1, Seeding-Aktuell, beide (Polished)-Zwischenstände." },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

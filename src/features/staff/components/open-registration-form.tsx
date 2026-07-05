@@ -38,7 +38,7 @@ export function OpenRegistrationForm() {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="grid gap-2">
           <Label htmlFor="season-number">Saisonnummer</Label>
           <Input
@@ -48,7 +48,7 @@ export function OpenRegistrationForm() {
             placeholder="z. B. 9"
             value={seasonNumber}
             onChange={(e) => setSeasonNumber(e.target.value)}
-            className="w-28"
+            className="h-9 w-28"
           />
         </div>
         <div className="grid gap-2">
@@ -59,8 +59,12 @@ export function OpenRegistrationForm() {
             onChange={setClosesAtLocal}
           />
         </div>
-        <Button type="button" onClick={tryOpen}>
-          Anmeldung öffnen
+        <Button
+          type="button"
+          onClick={tryOpen}
+          className="h-9 w-full px-4 text-[14px] sm:w-auto"
+        >
+          Anmeldung öffnen…
         </Button>
       </div>
       <p className="text-[12.5px] text-muted-foreground">

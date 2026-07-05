@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+<div data-screen-label="Spieler-Dashboard" style="min-height: 100vh; background: #ffffff; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264);">
+  <div style="height: 3px; background: #ff7b00;"></div>
+  <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px;">
+    <div style="display: flex; align-items: center; gap: 28px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="public/logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block;">
+        <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Buli Hub</span>
+      </div>
+      <nav style="display: flex; align-items: center; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00;"></div>
+          <span style="font-size: 14px; font-weight: 600; color: #021f66;">Spieler-Dashboard</span>
+        </div>
+      </nav>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px;">
+      <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600;">KU</div>
+      <span style="font-size: 14px; font-weight: 500;">Kuro</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+    </div>
+  </header>
+
+  <main style="max-width: 1040px; margin: 0 auto; width: 100%; padding: 44px 32px 72px; display: flex; flex-direction: column;">
+
+    <sc-if value="{{ placed }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 38px; line-height: 1.1; color: #021f66;">Deine Saison</h1>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 20px; color: #021f66;">Division 1a</span>
+          <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">· Saison 1</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 14px; margin-top: 18px; margin-bottom: 32px;">
+        <div style="display: flex; gap: 5px; flex: 1;">
+          <sc-for list="{{ progress }}" as="seg" hint-placeholder-count="7">
+            <div style="flex: 1; height: 6px; border-radius: 3px; background: {{ seg.bg }};"></div>
+          </sc-for>
+        </div>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); white-space: nowrap;">Spieltag {{ curRound }} von 7</span>
+      </div>
+
+      <sc-if value="{{ heroIsMatch }}" hint-placeholder-val="{{ true }}">
+        <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 26px 30px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+          <div style="display: flex; flex-direction: column; gap: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00;"></div>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263);">Nächstes Match · Spieltag {{ curRound }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 18px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 46px; height: 46px; border-radius: 999px; background: #021f66; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #ffffff;">KU</div>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 28px; line-height: 1.05; color: #021f66;">Kuro</span>
+                  <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Du</span>
+                </div>
+              </div>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: #ff7b00; transform: skewX(-10deg); padding: 0 4px;">VS</span>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 46px; height: 46px; border-radius: 999px; background: oklch(0.965 0.008 262); border: 1px solid oklch(0.91 0.012 262); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: oklch(0.52 0.035 263);">{{ heroOppInitials }}</div>
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 28px; line-height: 1.05; color: #021f66;">{{ heroOpponent }}</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 28px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px;">
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263);">Deadline</span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; color: #021f66;">{{ heroDeadline }}</span>
+              <div style="padding: 4px 12px; border-radius: 999px; background: {{ chipBg }}; display: flex; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600; color: {{ chipColor }};">{{ daysLabel }}</span>
+              </div>
+            </div>
+            <button type="button" style="height: 44px; padding: 0 24px; border-radius: 8px; border: none; background: #ff7b00; font-family: 'Barlow', sans-serif; font-size: 15px; font-weight: 600; color: #ffffff; cursor: pointer; white-space: nowrap;" style-hover="background: rgba(255,123,0,0.85);">Ergebnis melden</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ heroIsResult }}" hint-placeholder-val="{{ false }}">
+        <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 26px 30px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+          <div style="display: flex; flex-direction: column; gap: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00;"></div>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263);">Ergebnis · Spieltag {{ curRound }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 18px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 46px; height: 46px; border-radius: 999px; background: #021f66; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #ffffff;">KU</div>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 28px; line-height: 1.05; color: #021f66;">Kuro</span>
+                  <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Du</span>
+                </div>
+              </div>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: #ff7b00; transform: skewX(-10deg); padding: 0 4px;">VS</span>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 46px; height: 46px; border-radius: 999px; background: oklch(0.965 0.008 262); border: 1px solid oklch(0.91 0.012 262); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: oklch(0.52 0.035 263);">{{ heroOppInitials }}</div>
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 28px; line-height: 1.05; color: #021f66;">{{ heroOpponent }}</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="padding: 4px 12px; border-radius: 999px; background: {{ heroResultBg }}; display: flex; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600; color: {{ heroResultColor }};">{{ heroResultLabel }}</span>
+              </div>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: 0.04em; color: #021f66;">{{ heroResultScore }}</span>
+            </div>
+            <span style="font-size: 13.5px; font-weight: 600; color: #021f66; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Ansehen →</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ heroIsBye }}" hint-placeholder-val="{{ false }}">
+        <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 26px 30px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00;"></div>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263);">Spieltag {{ curRound }}</span>
+            </div>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 32px; line-height: 1.05; color: #021f66;">Spielfrei</span>
+            <p style="margin: 0; font-size: 14px; color: oklch(0.52 0.035 263);">Diese Woche hast du kein Match — Zeit zum Vorbereiten.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263);">Danach</span>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 20px; color: #021f66;">{{ byeNextLine }}</span>
+            <span style="font-size: 13px; color: oklch(0.52 0.035 263);">Deadline {{ byeNextDeadline }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 28px; margin-top: 40px; align-items: start;">
+
+        <section style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; color: #021f66;">Dein Spielplan</h2>
+            </div>
+            <span style="font-size: 13px; color: oklch(0.52 0.035 263);">7 Spieltage</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <sc-for list="{{ schedule }}" as="m" hint-placeholder-count="7">
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid {{ m.border }}; background: {{ m.bg }}; border-radius: 10px; padding: 10px 16px 10px 10px; opacity: {{ m.opacity }};">
+                <div style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 8px; background: {{ m.numBg }}; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px; color: {{ m.numColor }};">{{ m.round }}</div>
+                <sc-if value="{{ m.isBye }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                    <div style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 999px; border: 1px dashed oklch(0.85 0.015 262);"></div>
+                    <span style="font-size: 14.5px; font-weight: 500; color: oklch(0.52 0.035 263);">Spielfrei</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ m.isMatch }}" hint-placeholder-val="{{ true }}">
+                  <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                    <div style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); border: 1px solid oklch(0.91 0.012 262); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: oklch(0.52 0.035 263);">{{ m.oppInitials }}</div>
+                    <span style="font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ m.opponent }}</span>
+                  </div>
+                </sc-if>
+                <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                  <sc-if value="{{ m.isCurrent }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #ff7b00;">Diese Woche</span>
+                  </sc-if>
+                  <sc-if value="{{ m.isOverdue }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding: 3px 10px; border-radius: 999px; background: rgba(220,38,38,0.1); display: flex; align-items: center;">
+                      <span style="font-size: 12px; font-weight: 600; color: oklch(0.505 0.19 27);">Überfällig</span>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ m.hasResult }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding: 3px 10px; border-radius: 999px; background: {{ m.outcomeBg }}; display: flex; align-items: center;">
+                      <span style="font-size: 12px; font-weight: 600; color: {{ m.outcomeColor }};">{{ m.outcome }}</span>
+                    </div>
+                    <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: 0.04em; color: #021f66; min-width: 34px; text-align: right;">{{ m.score }}</span>
+                  </sc-if>
+                  <sc-if value="{{ m.showWeek }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-size: 13px; color: oklch(0.52 0.035 263); white-space: nowrap;">{{ m.week }}</span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; color: #021f66;">Tabelle</h2>
+            </div>
+            <span style="font-size: 13px; color: oklch(0.52 0.035 263);">Division 1a</span>
+          </div>
+          <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; overflow: hidden;">
+            <div style="display: grid; grid-template-columns: 48px 1fr 60px 64px; padding: 10px 16px; border-bottom: 1px solid oklch(0.91 0.012 262); background: oklch(0.975 0.006 262);">
+              <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Platz</span>
+              <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Spieler</span>
+              <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); text-align: right;">Bilanz</span>
+              <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); text-align: right;">Punkte</span>
+            </div>
+            <sc-for list="{{ table }}" as="row" hint-placeholder-count="7">
+              <div style="display: grid; grid-template-columns: 48px 1fr 60px 64px; align-items: center; padding: 9px 16px; border-bottom: 1px solid {{ row.divider }}; background: {{ row.bg }};">
+                <span style="font-size: 14px; font-weight: 600; color: oklch(0.52 0.035 263);">{{ row.rank }}</span>
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                  <div style="width: 26px; height: 26px; flex-shrink: 0; border-radius: 999px; background: {{ row.avBg }}; border: 1px solid {{ row.avBorder }}; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: {{ row.avColor }};">{{ row.initials }}</div>
+                  <span style="font-size: 14.5px; font-weight: {{ row.weight }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.name }}</span>
+                  <sc-if value="{{ row.isMe }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #ff7b00;">Du</span>
+                  </sc-if>
+                </div>
+                <span style="font-size: 14px; text-align: right; color: oklch(0.52 0.035 263);">{{ row.record }}</span>
+                <span style="font-size: 14.5px; font-weight: 600; text-align: right;">{{ row.points }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ notPlaced }}" hint-placeholder-val="{{ false }}">
+      <h1 style="margin: 0 0 36px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; line-height: 1.1; color: #021f66;">Spieler-Dashboard</h1>
+      <div style="max-width: 640px; border: 1px solid oklch(0.91 0.012 262); border-radius: 12px; padding: 26px 28px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: oklch(0.88 0.015 262);"></div>
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 22px; color: #021f66;">Du bist in der laufenden Saison nicht dabei</span>
+        </div>
+        <p style="margin: 0; font-size: 15px; line-height: 1.55; color: oklch(0.52 0.035 263);">Für diese Saison liegt keine Einteilung für dich vor. Die nächste Anmeldung wird im Discord angekündigt.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isRegisterCta }}" hint-placeholder-val="{{ false }}">
+      <h1 style="margin: 0 0 36px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; line-height: 1.1; color: #021f66;">Spieler-Dashboard</h1>
+      <div style="max-width: 640px; border: 1px solid rgba(255,123,0,0.4); background: rgba(255,123,0,0.05); border-radius: 12px; padding: 26px 28px; display: flex; flex-direction: column; gap: 16px; align-items: flex-start;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 22px; color: #021f66;">Die Anmeldung läuft</span>
+          </div>
+          <p style="margin: 0; font-size: 15px; line-height: 1.55; color: oklch(0.52 0.035 263);">Melde dich für Saison 1 an, um in der nächsten Saison dabei zu sein.</p>
+        </div>
+        <a href="Anmeldung.dc.html" style="display: inline-flex; height: 40px; align-items: center; justify-content: center; border-radius: 8px; background: #ff7b00; color: #ffffff; padding: 0 20px; font-size: 14px; font-weight: 600; text-decoration: none;">Jetzt anmelden</a>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isComingSoon }}" hint-placeholder-val="{{ false }}">
+      <h1 style="margin: 0 0 36px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; line-height: 1.1; color: #021f66;">Spieler-Dashboard</h1>
+      <div style="max-width: 640px; border: 1px solid oklch(0.91 0.012 262); border-radius: 12px; padding: 26px 28px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: oklch(0.88 0.015 262);"></div>
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 22px; color: #021f66;">Gerade läuft keine Saison</span>
+        </div>
+        <p style="margin: 0; font-size: 15px; line-height: 1.55; color: oklch(0.52 0.035 263);">Sobald die nächste Saison startet, findest du hier deinen Spielplan, deine Gruppe und deine nächste Paarung.</p>
+      </div>
+    </sc-if>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;zustand&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;saison&quot;, &quot;anmeldung_offen&quot;, &quot;keine_saison&quot;, &quot;nicht_platziert&quot;], &quot;default&quot;: &quot;saison&quot;, &quot;tsType&quot;: &quot;\&quot;saison\&quot; | \&quot;anmeldung_offen\&quot; | \&quot;keine_saison\&quot; | \&quot;nicht_platziert\&quot;&quot;, &quot;section&quot;: &quot;Zustand&quot;}, &quot;heroGemeldet&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Zustand&quot;, &quot;description&quot;: &quot;Hero zeigt das gemeldete Ergebnis statt der Deadline&quot;}, &quot;currentRound&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 4, &quot;min&quot;: 1, &quot;max&quot;: 7, &quot;step&quot;: 1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Saison&quot;, &quot;description&quot;: &quot;Aktueller Spieltag (5 = Spielfrei-Woche)&quot;}, &quot;daysLeft&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 3, &quot;min&quot;: 0, &quot;max&quot;: 7, &quot;step&quot;: 1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Saison&quot;, &quot;description&quot;: &quot;Tage bis zur Deadline&quot;}, &quot;overdue&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Saison&quot;, &quot;description&quot;: &quot;Überfälliges Match an Spieltag 2 anzeigen&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const cur = Math.min(7, Math.max(1, Math.round(this.props.currentRound ?? 4)));
+    const daysLeft = Math.max(0, Math.round(this.props.daysLeft ?? 3));
+    const zustand = this.props.zustand ?? "saison";
+    const heroGemeldet = this.props.heroGemeldet ?? false;
+    const notPlaced = zustand === "nicht_platziert";
+
+    const weeks = [
+      ["22.–28. Juni", "So., 28. Juni"],
+      ["29. Juni – 5. Juli", "So., 5. Juli"],
+      ["6.–12. Juli", "So., 12. Juli"],
+      ["13.–19. Juli", "So., 19. Juli"],
+      ["20.–26. Juli", "So., 26. Juli"],
+      ["27. Juli – 2. Aug.", "So., 2. Aug."],
+      ["3.–9. Aug.", "So., 9. Aug."],
+    ];
+    const opponents = ["Nyra", "MetaMace", "Sandrock", "Tessa", null, "Feuerlord92", "Lars"];
+    const initials = (n) => n.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase();
+
+    const muted = "oklch(0.52 0.035 263)";
+    const border = "oklch(0.91 0.012 262)";
+
+    // hero
+    const heroOpp = opponents[cur - 1];
+    const heroIsBye = heroOpp === null;
+    let byeNextLine = "";
+    let byeNextDeadline = "";
+    if (heroIsBye) {
+      for (let r = cur + 1; r <= 7; r++) {
+        if (opponents[r - 1]) {
+          byeNextLine = "Spieltag " + r + " · vs. " + opponents[r - 1];
+          byeNextDeadline = weeks[r - 1][1];
+          break;
+        }
+      }
+    }
+    const urgent = daysLeft <= 2;
+    const daysLabel = daysLeft === 0 ? "Heute fällig" : daysLeft === 1 ? "Noch 1 Tag" : "Noch " + daysLeft + " Tage";
+
+    // progress
+    const progress = [];
+    for (let r = 1; r <= 7; r++) {
+      progress.push({
+        bg: r < cur ? "oklch(0.82 0.045 263)" : r === cur ? "#ff7b00" : "oklch(0.94 0.008 262)",
+      });
+    }
+
+    // schedule
+    const scores = [[2, 0], [1, 2], [2, 1], [2, 0], null, [0, 2], [2, 1]];
+    const schedule = opponents.map((opp, i) => {
+      const r = i + 1;
+      const isCurrent = r === cur;
+      const isPast = r < cur;
+      const isOverdue = (this.props.overdue ?? true) && r === 2 && isPast && opp !== null;
+      const result = isPast && opp !== null && !isOverdue ? scores[i] : null;
+      const won = result ? result[0] > result[1] : false;
+      return {
+        round: r,
+        isBye: opp === null,
+        isMatch: opp !== null,
+        opponent: opp ?? "",
+        oppInitials: opp ? initials(opp) : "",
+        week: weeks[i][0],
+        isCurrent,
+        isOverdue,
+        hasResult: result !== null,
+        showWeek: result === null,
+        score: result ? result[0] + " : " + result[1] : "",
+        outcome: won ? "Sieg" : "Niederlage",
+        outcomeBg: won ? "rgba(255,123,0,0.12)" : "oklch(0.965 0.008 262)",
+        outcomeColor: won ? "#021f66" : "oklch(0.52 0.035 263)",
+        opacity: isPast && result === null && !isOverdue ? 0.55 : 1,
+        bg: isOverdue ? "rgba(220,38,38,0.04)" : isCurrent ? "rgba(255,123,0,0.05)" : "transparent",
+        border: isOverdue ? "rgba(220,38,38,0.35)" : isCurrent ? "rgba(255,123,0,0.45)" : border,
+        numBg: isCurrent ? "#ff7b00" : "oklch(0.965 0.008 262)",
+        numColor: isCurrent ? "#021f66" : muted,
+      };
+    });
+
+    // table — standings computed from finished rounds
+    const roster = ["Feuerlord92", "Kuro", "Lars", "MetaMace", "Nyra", "Sandrock", "Tessa"];
+    const roundResults = [
+      { w: ["Kuro", "Lars", "MetaMace"], l: ["Nyra", "Tessa", "Feuerlord92"] },
+      { w: ["MetaMace", "Sandrock", "Nyra"], l: ["Kuro", "Feuerlord92", "Lars"] },
+      { w: ["Kuro", "Tessa", "Feuerlord92"], l: ["Sandrock", "MetaMace", "Nyra"] },
+      { w: ["Kuro", "Lars", "MetaMace"], l: ["Tessa", "Nyra", "Sandrock"] },
+      { w: ["Feuerlord92", "Sandrock", "Nyra"], l: ["Lars", "MetaMace", "Tessa"] },
+      { w: ["Feuerlord92", "Tessa", "Lars"], l: ["Kuro", "Nyra", "Sandrock"] },
+      { w: ["Kuro", "Tessa", "Sandrock"], l: ["Lars", "Feuerlord92", "MetaMace"] },
+    ];
+    const overdueActive = (this.props.overdue ?? true) && cur > 2;
+    const stats = new Map(roster.map((n) => [n, { w: 0, l: 0 }]));
+    for (let r = 1; r < cur; r++) {
+      const skip = overdueActive && r === 2 ? ["Kuro", "MetaMace"] : [];
+      for (const n of roundResults[r - 1].w) if (!skip.includes(n)) stats.get(n).w++;
+      for (const n of roundResults[r - 1].l) if (!skip.includes(n)) stats.get(n).l++;
+    }
+    const sorted = roster
+      .map((name) => ({ name, ...stats.get(name), pts: stats.get(name).w * 3 }))
+      .sort((a, b) => b.pts - a.pts || a.l - b.l || a.name.localeCompare(b.name));
+    const table = sorted.map((p, i) => {
+      const isMe = p.name === "Kuro";
+      return {
+        name: p.name,
+        rank: i + 1,
+        record: p.w + " : " + p.l,
+        points: p.pts,
+        initials: initials(p.name),
+        isMe,
+        weight: isMe ? 600 : 500,
+        bg: isMe ? "rgba(255,123,0,0.06)" : "transparent",
+        divider: i === sorted.length - 1 ? "transparent" : border,
+        avBg: isMe ? "#021f66" : "oklch(0.965 0.008 262)",
+        avBorder: isMe ? "#021f66" : border,
+        avColor: isMe ? "#ffffff" : muted,
+      };
+    });
+
+    return {
+      placed: zustand === "saison",
+      notPlaced,
+      isRegisterCta: zustand === "anmeldung_offen",
+      isComingSoon: zustand === "keine_saison",
+      curRound: cur,
+      progress,
+      heroIsMatch: !heroIsBye && !heroGemeldet,
+      heroIsResult: !heroIsBye && heroGemeldet,
+      heroResultLabel: "Sieg",
+      heroResultScore: "2 : 1",
+      heroResultBg: "rgba(255,123,0,0.12)",
+      heroResultColor: "#021f66",
+      heroIsBye,
+      heroOpponent: heroOpp ?? "",
+      heroOppInitials: heroOpp ? initials(heroOpp) : "",
+      heroDeadline: weeks[cur - 1][1],
+      daysLabel,
+      chipBg: urgent ? "#ff7b00" : "rgba(255,123,0,0.12)",
+      chipColor: urgent ? "#ffffff" : "#021f66",
+      byeNextLine,
+      byeNextDeadline,
+      schedule,
+      table,
+    };
+  }
+}
+</script>
+</body>
+</html>

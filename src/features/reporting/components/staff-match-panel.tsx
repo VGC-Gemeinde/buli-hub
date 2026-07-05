@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +38,8 @@ export function StaffMatchPanel({
   pendingWinnerName,
   editorInitial,
   disputeOpen,
+  disputeReason,
+  disputeOpenedByName,
 }: {
   matchId: string;
   round: number;
@@ -49,6 +52,8 @@ export function StaffMatchPanel({
   // Prefill for the „bearbeiten" editor — only for a reported normal result.
   editorInitial?: NormalEditorInitial | null;
   disputeOpen?: boolean;
+  disputeReason?: string | null;
+  disputeOpenedByName?: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -101,11 +106,16 @@ export function StaffMatchPanel({
 
   return (
     <section className="mt-9 rounded-xl border border-brand-blue/25 bg-brand-blue/[0.03] px-6 pt-5 pb-2 dark:bg-muted/20">
-      <div className="flex items-center gap-2.5">
-        <div className="h-2 w-4 -skew-x-[18deg] bg-brand-blue dark:bg-white" />
-        <h2 className="font-bold font-heading text-brand-blue text-xl uppercase tracking-[0.03em] dark:text-white">
-          Staff-Aktionen
-        </h2>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <Tick size="m" color="navy" />
+          <h2 className="font-bold font-heading text-brand-blue text-xl uppercase tracking-[0.03em] dark:text-white">
+            Staff
+          </h2>
+        </div>
+        <span className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.12em]">
+          Nur für Staff sichtbar
+        </span>
       </div>
       <p className="mt-1.5 text-[13.5px] text-muted-foreground">{context}</p>
 
@@ -114,7 +124,11 @@ export function StaffMatchPanel({
           title="Anfechtung offen"
           consequence="Ein Spieler hat das Ergebnis angefochten. Prüfen und entscheiden."
         >
-          <DisputeResolveDialog matchId={matchId} />
+          <DisputeResolveDialog
+            matchId={matchId}
+            reason={disputeReason ?? null}
+            openedByName={disputeOpenedByName ?? null}
+          />
         </ActionRow>
       ) : null}
 

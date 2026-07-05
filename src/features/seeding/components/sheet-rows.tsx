@@ -1,5 +1,6 @@
 "use client";
 
+import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Platform } from "@/features/registration/registration";
+import { playerName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
 import { type SeedingPlayer, seedingCaveats } from "../placement";
 import { divisionName, subDivisionShortName } from "../seeding";
@@ -53,7 +55,7 @@ export function SheetColumnHeader() {
 export function UnplacedSeparator({ count }: { count: number }) {
   return (
     <div className="flex h-10 items-center gap-3 border-b bg-muted/40 pr-7 pl-5">
-      <div className="h-2.5 w-5 -skew-x-[18deg] bg-brand-orange" />
+      <Tick size="m" />
       <span className="font-heading font-bold text-brand-blue text-lg uppercase tracking-[0.04em] dark:text-white">
         Nicht platziert
       </span>
@@ -88,7 +90,7 @@ export function DivisionSeparator({
     : `${count} Spieler · → ${groupCount} Gruppen bei Größe ${size}`;
   return (
     <div className="flex h-10 items-center gap-3 bg-brand-blue pr-7 pl-5 dark:bg-[oklch(0.26_0.06_265)]">
-      <div className="h-2.5 w-5 -skew-x-[18deg] bg-brand-orange" />
+      <Tick size="m" />
       <span className="font-heading font-bold text-lg text-white uppercase tracking-[0.04em]">
         {divisionName(division.tier)}
       </span>
@@ -202,7 +204,7 @@ export function PlayerRow({
   onAssignDivision: (userId: string, divisionId: string | null) => void;
   onMoveGroup: (userId: string, subDivisionId: string) => void;
 }) {
-  const name = player.displayName ?? player.username ?? "Unbekannt";
+  const name = playerName(player.displayName, player.username);
   const platform = PLATFORM_SHORT[player.platform];
   const divisionSubs = subDivisions.filter(
     (sd) => sd.divisionId === player.divisionId,

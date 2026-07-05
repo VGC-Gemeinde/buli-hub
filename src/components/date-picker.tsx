@@ -46,7 +46,7 @@ export function DatePicker({
           id={id}
           type="button"
           variant="outline"
-          className={cn("h-8 justify-start gap-2 font-normal", className)}
+          className={cn("h-9 justify-start gap-2 font-normal", className)}
         >
           <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
           {selected ? (
@@ -103,12 +103,15 @@ export function DateTimePicker({
         className="w-[150px]"
       />
       <Input
+        // Native time field; `lang` hints a 24-hour German display (the actual
+        // format still follows the browser locale). Wide enough not to clip.
         type="time"
+        lang="de-DE"
         value={time}
         onChange={(event) =>
           datePart && onChange(`${datePart}T${event.target.value}`)
         }
-        className="h-8 w-[110px]"
+        className="h-9 w-[132px]"
       />
     </div>
   );

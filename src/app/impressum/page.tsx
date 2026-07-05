@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal";
+import { InlineLink } from "@/components/links";
 
 export const metadata: Metadata = {
   title: "Impressum · Buli Hub",
@@ -24,7 +25,9 @@ export default function ImpressumPage() {
       <h2>Kontakt</h2>
       <p>
         E-Mail:{" "}
-        <a href="mailto:webmaster@vgcgemein.de">webmaster@vgcgemein.de</a>
+        <InlineLink href="mailto:webmaster@vgcgemein.de">
+          webmaster@vgcgemein.de
+        </InlineLink>
       </p>
 
       <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>

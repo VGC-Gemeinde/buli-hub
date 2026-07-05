@@ -26,6 +26,7 @@ import {
   subDivisionShortName,
 } from "@/features/seeding/seeding";
 import { seasonName } from "@/features/staff/registration-window";
+import { PLAYER_NAME_FALLBACK } from "@/lib/player-name";
 
 export type ZoneByUser = Map<string, Zone>;
 
@@ -204,7 +205,11 @@ async function allMatches(
     subDivisionResults(subDivisionId),
   ]);
   const unknown = (id: string): Identity =>
-    identityById.get(id) ?? { userId: id, name: "Unbekannt", avatarUrl: null };
+    identityById.get(id) ?? {
+      userId: id,
+      name: PLAYER_NAME_FALLBACK,
+      avatarUrl: null,
+    };
 
   return matches.map((match): PublicMatch => {
     const result = resultByMatch.get(match.id) ?? null;

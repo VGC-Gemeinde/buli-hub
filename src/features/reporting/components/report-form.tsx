@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,8 +39,8 @@ function formatDeadline(dateStr: string): string {
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
-      <span className="whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
+      <Tick size="s" />
+      <span className="whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
         {children}
       </span>
     </div>
@@ -48,15 +49,15 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 
 function SectionHead({ title, meta }: { title: string; meta?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3">
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
       <div className="flex items-center gap-2.5">
-        <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
-        <h2 className="whitespace-nowrap font-bold font-heading text-[21px] text-brand-blue uppercase tracking-[0.03em] dark:text-white">
+        <Tick size="m" />
+        <h2 className="font-bold font-heading text-[21px] text-brand-blue uppercase tracking-[0.03em] dark:text-white">
           {title}
         </h2>
       </div>
       {meta ? (
-        <span className="whitespace-nowrap font-medium text-[12.5px] text-muted-foreground">
+        <span className="font-medium text-[12.5px] text-muted-foreground sm:whitespace-nowrap">
           {meta}
         </span>
       ) : null}
@@ -66,7 +67,7 @@ function SectionHead({ title, meta }: { title: string; meta?: string }) {
 
 function Face({ identity, filled }: { identity: Identity; filled?: boolean }) {
   return (
-    <Avatar className="size-[46px]">
+    <Avatar className="size-10 sm:size-[46px]">
       {identity.avatarUrl ? (
         <AvatarImage src={identity.avatarUrl} alt="" />
       ) : null}
@@ -95,11 +96,11 @@ function Scoreboard({
   decided: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4.5 rounded-xl border bg-muted/30 px-[30px] py-[22px]">
-      <div className="flex items-center gap-3">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border bg-muted/30 px-4 py-4 sm:gap-4.5 sm:px-[30px] sm:py-[22px]">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <Face identity={reporter} filled />
         <div className="flex min-w-0 flex-col">
-          <span className="truncate font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] dark:text-white">
+          <span className="truncate font-bold font-heading text-[17px] text-brand-blue uppercase leading-[1.05] sm:text-[22px] dark:text-white">
             {reporter.name}
           </span>
           <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
@@ -108,13 +109,15 @@ function Scoreboard({
         </div>
       </div>
       <div className="flex flex-col items-center gap-1">
-        <span className="font-bold font-heading text-[46px] text-brand-blue leading-none dark:text-white">
+        <span className="whitespace-nowrap font-bold font-heading text-[34px] text-brand-blue leading-none sm:text-[46px] dark:text-white">
           {picked ? self : "–"}
-          <span className="px-1.5 text-[32px] text-border">:</span>
+          <span className="px-1.5 text-[24px] text-border sm:text-[32px]">
+            :
+          </span>
           {picked ? opp : "–"}
         </span>
         {decided ? (
-          <span className="whitespace-nowrap rounded-full bg-brand-orange/14 px-3 py-[3px] font-semibold text-brand-blue text-xs dark:text-white">
+          <span className="rounded-full bg-brand-orange/14 px-3 py-[3px] text-center font-semibold text-brand-blue text-xs dark:text-white">
             {self > opp ? "Sieg für dich" : `Sieg für ${opponent.name}`}
           </span>
         ) : (
@@ -123,9 +126,9 @@ function Scoreboard({
           </span>
         )}
       </div>
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
         <div className="flex min-w-0 flex-col items-end">
-          <span className="truncate font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] dark:text-white">
+          <span className="truncate font-bold font-heading text-[17px] text-brand-blue uppercase leading-[1.05] sm:text-[22px] dark:text-white">
             {opponent.name}
           </span>
           <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
@@ -155,9 +158,9 @@ function StickyBar({
 }) {
   const complete = missing.length === 0;
   return (
-    <div className="fixed inset-x-0 bottom-0 border-t bg-background/94 backdrop-blur-lg">
-      <div className="mx-auto flex max-w-[760px] items-center justify-between gap-6 px-8 py-3.5">
-        <div className="flex flex-col">
+    <div className="fixed inset-x-0 bottom-0 border-t bg-background/94 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg">
+      <div className="mx-auto flex max-w-[760px] flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8">
+        <div className="flex min-w-0 flex-col">
           <span
             className={cn(
               "font-semibold text-[13.5px]",
@@ -173,6 +176,7 @@ function StickyBar({
         <Button
           type="button"
           size="lg"
+          className="w-full sm:w-auto"
           disabled={!complete || pending}
           onClick={onSubmit}
         >
@@ -334,7 +338,7 @@ export function ReportForm({
         <div className="flex flex-col gap-9">
           <section className="flex flex-col gap-3">
             <SectionHead title="Wer erhält den Freewin?" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[reporter, opponent].map((p) => (
                 // biome-ignore lint/a11y/noStaticElementInteractions: pick card
                 <button
@@ -428,7 +432,7 @@ export function ReportForm({
         <section className="flex flex-col gap-3">
           <SectionHead title="Wo habt ihr gespielt?" />
           <RadioGroup
-            className="grid grid-cols-2 gap-3"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2"
             value={platform}
             onValueChange={(v) => setPlatform(v as Platform)}
           >
@@ -509,7 +513,7 @@ export function ReportForm({
             title="Teamsheets"
             meta="Beide Teams als Pokepaste-Link"
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <TeamInput
               label="Dein Team"
               value={teamMine}
@@ -628,7 +632,7 @@ function GameRow({
       type="button"
       onClick={() => onPick(p.userId)}
       className={cn(
-        "h-10 whitespace-nowrap rounded-md border font-semibold text-sm",
+        "flex h-10 min-w-0 items-center justify-center gap-1 rounded-md border px-2 font-semibold text-sm",
         picked === p.userId && isReporter
           ? "border-brand-orange bg-brand-orange/12 text-brand-blue dark:text-white"
           : picked === p.userId
@@ -636,9 +640,9 @@ function GameRow({
             : "border-border bg-background text-muted-foreground",
       )}
     >
-      {p.name}
+      <span className="truncate">{p.name}</span>
       {isReporter ? (
-        <span className="font-medium opacity-65"> · Du</span>
+        <span className="shrink-0 font-medium opacity-65">· Du</span>
       ) : null}
     </button>
   );
@@ -649,7 +653,7 @@ function GameRow({
         <span className="w-[58px] shrink-0 whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.08em]">
           Spiel {index + 1}
         </span>
-        <div className="grid flex-1 grid-cols-2 gap-2">
+        <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
           {segment(reporter, true)}
           {segment(opponent, false)}
         </div>

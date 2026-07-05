@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SectionHeader } from "@/components/section-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { updateProfile } from "../actions";
 import { GERMAN_STATES, NEIGHBOR_COUNTRIES } from "../regions";
 import { originToFormState } from "../settings";
@@ -99,24 +101,24 @@ export function SettingsForm({ initial }: SettingsFormProps) {
 
   return (
     <section aria-label="Für die Orga" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2.5">
-        <div className="flex items-baseline justify-between border-b pb-3.5">
-          <div className="flex items-center gap-2.5">
-            <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
-            <h2 className="text-[26px] tracking-[0.03em]">Für die Orga</h2>
-          </div>
-          <SaveIndicator status={status} />
-        </div>
-        <p className="text-muted-foreground text-sm">
-          Alle Angaben hier sind freiwillig.
+      <div className="flex flex-col gap-3">
+        <SectionHeader meta={<SaveIndicator status={status} />}>
+          Für die Orga
+        </SectionHeader>
+        <p className="text-muted-foreground text-sm leading-normal">
+          Alle Angaben hier sind freiwillig — sie helfen uns bei
+          Social-Media-Posts und Liga-Content.
         </p>
       </div>
 
-      <div className="flex flex-col gap-3.5">
+      {/* Twitter + Bluesky sit side by side; the shared helper spans both
+          columns and the grid collapses to one column on narrow screens. */}
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="twitter-handle">Twitter/X-Handle</Label>
-          {/* Input look-alike wrapper so the static @ prefix sits inside the field. */}
-          <div className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+          {/* Input look-alike wrapper so the static @ prefix sits inside the
+              field; height matches the 38px inputs exactly. */}
+          <div className="flex h-[38px] w-full items-center rounded-lg border border-input bg-transparent px-3 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
             <span className="text-base text-muted-foreground md:text-sm">
               @
             </span>
@@ -141,10 +143,11 @@ export function SettingsForm({ initial }: SettingsFormProps) {
             onChange={(event) => change({ blueskyHandle: event.target.value })}
             placeholder="name.bsky.social"
             autoComplete="off"
+            className="h-[38px]"
           />
         </div>
 
-        <p className="text-[13px] text-muted-foreground leading-snug">
+        <p className="text-[13px] text-muted-foreground leading-snug sm:col-span-2">
           Über deine Handles können wir dich in Social-Media-Posts erwähnen.
         </p>
       </div>
@@ -155,7 +158,10 @@ export function SettingsForm({ initial }: SettingsFormProps) {
           value={values.originSelect}
           onValueChange={(value) => change({ originSelect: value })}
         >
-          <SelectTrigger id="origin" className="w-full">
+          <SelectTrigger
+            id="origin"
+            className="w-full data-[size=default]:h-[38px]"
+          >
             <SelectValue placeholder="Bitte wählen" />
           </SelectTrigger>
           <SelectContent>
@@ -186,6 +192,7 @@ export function SettingsForm({ initial }: SettingsFormProps) {
             placeholder="Woher kommst du?"
             aria-label="Herkunft (Freitext)"
             autoComplete="off"
+            className="h-[38px]"
           />
         ) : null}
         <p className="text-[13px] text-muted-foreground leading-snug">
@@ -193,37 +200,56 @@ export function SettingsForm({ initial }: SettingsFormProps) {
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 border-t pt-5">
         <div className="grid gap-1">
           <Label htmlFor="capture-card">Capture Card</Label>
           <p className="text-[13px] text-muted-foreground leading-snug">
             Du besitzt eine Capture Card, um Gameplay aufzunehmen.
           </p>
         </div>
+        {/* Track 40×22, white 18px knob, orange when on (§4.1). The shared
+            Switch already uses the orange primary for its checked state; the
+            dimensions and thumb translate are tuned here via className. */}
         <Switch
           id="capture-card"
           checked={values.hasCaptureCard}
           onCheckedChange={(checked) => change({ hasCaptureCard: checked })}
+          className="h-[22px] w-[40px] p-0.5 [&_[data-slot=switch-thumb]]:size-[18px]! [&_[data-slot=switch-thumb]]:translate-x-0! [&_[data-slot=switch-thumb]]:bg-white! data-checked:[&_[data-slot=switch-thumb]]:translate-x-[18px]!"
         />
       </div>
     </section>
   );
 }
 
+// Save indicator sitting in the section-header meta slot (§4.1): a 6px dot +
+// 13px label. idle renders nothing; saving = orange dot, saved = green dot,
+// error = destructive dot and destructive text.
 export function SaveIndicator({ status }: { status: SaveStatus }) {
   if (status === "idle") {
     return null;
   }
-  if (status === "error") {
-    return (
-      <span aria-live="polite" className="text-destructive text-sm">
-        Fehler beim Speichern
-      </span>
-    );
-  }
+  const dot =
+    status === "saving"
+      ? "bg-brand-orange"
+      : status === "saved"
+        ? "bg-[oklch(0.55_0.13_155)]"
+        : "bg-destructive";
+  const label =
+    status === "saving"
+      ? "Speichern…"
+      : status === "saved"
+        ? "Gespeichert"
+        : "Fehler beim Speichern";
   return (
-    <span aria-live="polite" className="text-muted-foreground text-sm">
-      {status === "saving" ? "Speichern…" : "Gespeichert"}
+    <span
+      aria-live="polite"
+      className={cn(
+        "inline-flex items-center gap-[7px] text-[13px]",
+        status === "error" ? "text-destructive" : "text-muted-foreground",
+      )}
+    >
+      <span className={cn("size-1.5 rounded-full", dot)} />
+      {label}
     </span>
   );
 }

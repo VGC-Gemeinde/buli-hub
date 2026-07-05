@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+<div data-screen-label="Legal" style="min-height: 100vh; background: #ffffff; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264); display: flex; flex-direction: column;">
+  <div style="height: 3px; background: #ff7b00;"></div>
+  <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="public/logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block;">
+      <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Buli Hub</span>
+    </div>
+    <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); background: transparent; font-size: 14px; font-weight: 500; color: oklch(0.28 0.06 264); cursor: pointer;">Mit Discord anmelden</button>
+  </header>
+
+  <main style="width: 100%; max-width: 760px; margin: 0 auto; padding: 48px 32px 72px; display: flex; flex-direction: column; flex: 1;">
+    <h1 style="margin: 0 0 32px; font-family: 'Barlow Condensed', sans-serif; font-size: 40px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; color: #021f66;">{{ pageTitle }}</h1>
+
+    <sc-if value="{{ isImpressum }}" hint-placeholder-val="{{ true }}">
+      <article style="display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; line-height: 1.65; color: oklch(0.45 0.045 263);">
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">Angaben gemäß § 5 DDG</h2>
+        <p style="margin: 0;">VGC Gemeinde<br>Ansprechpartner: Alexander Kampf<br>Krafftstr. 8<br>63065 Offenbach am Main<br>Deutschland</p>
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">Kontakt</h2>
+        <p style="margin: 0;">E-Mail: <span style="color: #021f66; font-weight: 500; text-decoration: underline; text-underline-offset: 3px;">webmaster@vgcgemein.de</span></p>
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+        <p style="margin: 0;">Alexander Kampf<br>Krafftstr. 8<br>63065 Offenbach am Main</p>
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">Haftung für Inhalte</h2>
+        <p style="margin: 0;">Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 DDG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">Urheberrecht</h2>
+        <p style="margin: 0;">Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Pokémon sowie zugehörige Namen und Marken sind Eigentum der jeweiligen Rechteinhaber; dieses Projekt steht in keiner offiziellen Verbindung zu diesen.</p>
+      </article>
+    </sc-if>
+
+    <sc-if value="{{ isDatenschutz }}" hint-placeholder-val="{{ false }}">
+      <article style="display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; line-height: 1.65; color: oklch(0.45 0.045 263);">
+        <p style="margin: 0; font-size: 13px; color: oklch(0.52 0.035 263);">Stand: Juli 2026</p>
+        <p style="margin: 0;">Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten bei der Nutzung von Buli Hub, der Turnierplattform der VGC Bundesliga.</p>
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">1. Verantwortlicher</h2>
+        <p style="margin: 0;">VGC Gemeinde<br>Alexander Kampf<br>Krafftstr. 8, 63065 Offenbach am Main, Deutschland<br>E-Mail: <span style="color: #021f66; font-weight: 500; text-decoration: underline; text-underline-offset: 3px;">webmaster@vgcgemein.de</span></p>
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">2. Zugriffsdaten / Server-Logfiles</h2>
+        <p style="margin: 0;">Beim Aufruf der Plattform werden durch die Hosting-Infrastruktur automatisch technische Zugriffsdaten verarbeitet (u. a. IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene Seite, übertragene Datenmenge, Browsertyp). Rechtsgrundlage ist das berechtigte Interesse gemäß Art. 6 Abs. 1 lit. f DSGVO.</p>
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">3. Anmeldung über Discord</h2>
+        <p style="margin: 0;">Die Anmeldung erfolgt ausschließlich über dein Discord-Konto (OAuth). Bei der Anmeldung erhalten wir von Discord deine Discord-ID, deinen Benutzernamen, deinen Anzeigenamen und dein Profilbild und speichern diese, um dein Konto auf der Plattform zu führen.</p>
+        <h2 style="margin: 24px 0 0; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">4. Teilnahme am Spielbetrieb</h2>
+        <ul style="margin: 0; display: flex; flex-direction: column; gap: 6px; padding-left: 20px;">
+          <li>deine Anmeldeangaben (gewählte Plattform, Selbsteinschätzung, freiwillige Angaben zu früheren Saisons),</li>
+          <li>deine Einteilung in Divisionen und Gruppen sowie deine Paarungen,</li>
+          <li>gemeldete Ergebnisse, Tabellenstände, Freewins und etwaige Anfechtungen.</li>
+        </ul>
+        <p style="margin: 12px 0 0; font-size: 13px; color: oklch(0.52 0.035 263); border-top: 1px solid oklch(0.94 0.008 262); padding-top: 14px;">Abschnitte 5–11 (Öffentliche Anzeige, Cookies, Auftragsverarbeiter, Speicherdauer, Rechte, Beschwerderecht, Änderungen) folgen exakt demselben Muster: h2 condensed 20px navy + Absätze 14,5px / lh 1.65 muted + Listen mit 6px Abstand.</p>
+      </article>
+    </sc-if>
+  </main>
+
+  <footer style="border-top: 1px solid oklch(0.91 0.012 262); padding: 12px 24px;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 12.5px; color: oklch(0.52 0.035 263);">
+      <span>© 2026 VGC Gemeinde</span>
+      <span style="color: oklch(0.88 0.015 262);">·</span>
+      <span style="color: #021f66; font-weight: 500;">Impressum</span>
+      <span>Datenschutz</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 900}, &quot;seite&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;impressum&quot;, &quot;datenschutz&quot;], &quot;default&quot;: &quot;impressum&quot;, &quot;tsType&quot;: &quot;\&quot;impressum\&quot; | \&quot;datenschutz\&quot;&quot;, &quot;section&quot;: &quot;Seite&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const seite = this.props.seite ?? "impressum";
+    return {
+      isImpressum: seite === "impressum",
+      isDatenschutz: seite === "datenschutz",
+      pageTitle: seite === "impressum" ? "Impressum" : "Datenschutzerklärung",
+    };
+  }
+}
+</script>
+</body>
+</html>

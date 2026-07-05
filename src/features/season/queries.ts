@@ -8,6 +8,7 @@ import {
   subDivisions,
 } from "@/db/schema";
 import { db } from "@/lib/db";
+import { playerName } from "@/lib/player-name";
 import type { Identity, MatchdayLite } from "./dashboard";
 
 // The player's placement in a season, with the group's tier + position for
@@ -66,7 +67,7 @@ export async function groupRoster(subDivisionId: string): Promise<Identity[]> {
   return rows
     .map((row) => ({
       userId: row.userId,
-      name: row.displayName ?? row.username ?? "Unbekannt",
+      name: playerName(row.displayName, row.username),
       avatarUrl: row.avatarUrl ?? null,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "de"));

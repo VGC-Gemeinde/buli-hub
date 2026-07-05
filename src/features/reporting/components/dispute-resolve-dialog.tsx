@@ -34,8 +34,17 @@ const OPTIONS: { value: Resolution; title: string; body: string }[] = [
 ];
 
 // Staff decide an open dispute: uphold the result or mark it corrected (after
-// editing via the result editor). An optional note records the reasoning.
-export function DisputeResolveDialog({ matchId }: { matchId: string }) {
+// editing via the result editor). An optional note records the reasoning. The
+// quoted dispute is shown in a destructive-tinted box for context (§4.4).
+export function DisputeResolveDialog({
+  matchId,
+  reason,
+  openedByName,
+}: {
+  matchId: string;
+  reason?: string | null;
+  openedByName?: string | null;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [resolution, setResolution] = useState<Resolution>("upheld");
@@ -72,6 +81,15 @@ export function DisputeResolveDialog({ matchId }: { matchId: string }) {
         </DialogHeader>
 
         <div className="flex flex-col gap-5">
+          {reason ? (
+            <div className="flex flex-col gap-1 rounded-lg border border-destructive/35 bg-destructive/[0.06] px-4 py-3">
+              <span className="font-semibold text-[12px] text-destructive uppercase tracking-[0.1em]">
+                Anfechtung von {openedByName ?? "—"}
+              </span>
+              <p className="text-[13.5px] text-muted-foreground">„{reason}"</p>
+            </div>
+          ) : null}
+
           <RadioGroup
             className="grid gap-2"
             value={resolution}

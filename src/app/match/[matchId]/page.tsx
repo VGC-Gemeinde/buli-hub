@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
+import { PublicMatchView } from "@/features/reporting/components/public-match-view";
 import { ReportForm } from "@/features/reporting/components/report-form";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
 import { StaffMatchPanel } from "@/features/reporting/components/staff-match-panel";
@@ -12,6 +13,8 @@ import {
 } from "@/features/reporting/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { latestWindow } from "@/features/staff/queries";
+import { seasonName } from "@/features/staff/registration-window";
 
 // Public, read-only for neutral observers; participants get the report form +
 // dispute option and staff get the staff panel. Disputes are never shown to
@@ -76,6 +79,10 @@ export default async function MatchReportPage({
           videoUrl: result.videoUrl,
         }
       : null;
+  // Season label for the public kicker (go-live has a single season; the match
+  // belongs to the latest window).
+  const window = await latestWindow();
+  const seasonLabel = window ? seasonName(window.seasonNumber) : "Saison";
   const isPendingFreeWin =
     result?.outcome === "free_win" && result.confirmedAt === null;
   const pendingWinnerName = isPendingFreeWin
@@ -86,8 +93,15 @@ export default async function MatchReportPage({
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader breadcrumb={breadcrumb} />
-      <main className="mx-auto w-full max-w-[760px] flex-1 px-8 pt-9 pb-[140px]">
+      <SiteHeader
+        breadcrumb={breadcrumb}
+        breadcrumbRoot={
+          isStaff && !isParticipant
+            ? { href: "/staff", label: "Staff-Bereich" }
+            : { href: "/spieler", label: "Spieler-Dashboard" }
+        }
+      />
+      <main className="mx-auto w-full max-w-[760px] flex-1 px-6 pt-9 pb-[168px] sm:px-8 sm:pb-[140px]">
         {shownResult ? (
           <ReportSummary
             result={shownResult}
@@ -97,22 +111,33 @@ export default async function MatchReportPage({
             privileged={privileged}
             round={match.round}
             groupName={match.groupName}
+            disputed={dispute !== null}
             backHref={back.href}
             backLabel={back.label}
           />
         ) : null}
 
         {result && dispute ? (
-          <div className="mt-8 flex flex-col gap-1.5 rounded-lg border border-destructive/35 bg-destructive/5 px-5 py-4">
+          // Disputed: the result stays final in the tables; this banner records
+          // the open case for participants + staff (§4.4).
+          <div className="mt-8 flex flex-col gap-1.5 rounded-xl border border-destructive/35 bg-destructive/[0.06] px-6 py-5">
             <p className="font-semibold text-destructive text-sm">
               Angefochten — in Prüfung
             </p>
             <p className="text-muted-foreground text-sm">
               „{dispute.reason}" — {dispute.openedByName ?? "—"}
             </p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Das gemeldete Ergebnis zählt vorerst weiter, bis der Staff
+              entschieden hat.
+            </p>
           </div>
         ) : result && isParticipant ? (
-          <div className="mt-8">
+          <div className="mt-10 border-t pt-5">
+            <p className="mb-3 text-[13.5px] text-muted-foreground">
+              Stimmt etwas nicht? Ergebnisse sind final — eine Anfechtung wird
+              vom Staff geprüft.
+            </p>
             <DisputeDialog matchId={match.matchId} />
           </div>
         ) : null}
@@ -130,17 +155,13 @@ export default async function MatchReportPage({
               staffOptions={staffOptions}
             />
           ) : (
-            <>
-              <p className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
-                Spieltag {match.round} · {match.groupName}
-              </p>
-              <h1 className="mt-2 text-3xl text-brand-blue dark:text-white">
-                {match.playerA.name} vs. {match.playerB.name}
-              </h1>
-              <p className="mt-3 text-muted-foreground">
-                Noch kein Ergebnis gemeldet.
-              </p>
-            </>
+            <PublicMatchView
+              round={match.round}
+              groupName={match.groupName}
+              seasonLabel={seasonLabel}
+              playerA={match.playerA}
+              playerB={match.playerB}
+            />
           )
         ) : null}
 
@@ -156,6 +177,8 @@ export default async function MatchReportPage({
             pendingWinnerName={pendingWinnerName}
             editorInitial={editorInitial}
             disputeOpen={dispute !== null}
+            disputeReason={dispute?.reason ?? null}
+            disputeOpenedByName={dispute?.openedByName ?? null}
           />
         ) : null}
       </main>

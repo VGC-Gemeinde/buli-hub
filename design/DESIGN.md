@@ -76,7 +76,11 @@ const barlowCondensed = Barlow_Condensed({
 Reuse these across future pages — they are the brand identity beyond colors:
 
 1. **Top accent line** — 3px solid pawmo-orange strip at the very top of the viewport, full width. On every page.
-2. **Skewed orange ticks** — small orange rectangles with `skewX(-18deg)`, flanking uppercase labels: `<div className="h-2.5 w-[22px] -skew-x-[18deg] bg-brand-orange" />`. On the landing page they flank the Gemeinde credit line (§5); reuse for section labels on future pages.
+2. **Skewed orange ticks** — small orange rectangles with `skewX(-18deg)`,
+   flanking uppercase labels. Use the shared `<Tick>` component
+   (`src/components/tick.tsx`) with one of the three **sanctioned sizes** (§8.1);
+   do not hand-roll ad-hoc sizes. On the landing page they flank the Gemeinde
+   credit line (§5); reuse for section labels across pages.
 3. **Logo watermark** — faint oversized rotated badge in a corner (spec in §3).
 4. **Uppercase condensed headings** — every h1–h3.
 
@@ -165,3 +169,91 @@ Anchored 26px from the bottom of the viewport, centered: two skewed orange ticks
 5. Update `src/app/page.tsx` per §5
 6. Forward `variant`/`size` props in `sign-in-button.tsx`
 7. Verify both modes (`.dark` on `<html>`), run `npx biome check --write .` + `npx tsc --noEmit`
+
+---
+
+## 8. Go-live component system (the shared brand primitives)
+
+These are the canonical decisions from the go-live design pass
+(`design/go-live/GO-LIVE-POLISH.md` §2). They supersede the earlier ad-hoc
+treatments; the listed shared components are the single source and must be used
+instead of re-implementing the pattern per view.
+
+### 8.1 Ticks — `<Tick>` (`src/components/tick.tsx`)
+
+Always `skewX(-18deg)`. Exactly three sizes:
+
+| Size | px (w×h) | Next to |
+|---|---|---|
+| S | 14×7 | micro labels 12–13px uppercase: status lines, kickers, nav, menu entries |
+| M | 18×9 | section headers (h2), panel titles, empty-state cards |
+| L | 22×11 | page titles (h1), landing credit |
+
+Color: `orange` (active / you) · `neutral` = `bg-border` (informational /
+inactive) · `navy` (staff / officiating).
+
+### 8.2 Text on orange is white
+
+`--primary-foreground: #ffffff`, for buttons, active pills/tabs, solid chips and
+counters. Labels ≤ 12px sitting on solid orange are `font-semibold` minimum
+(contrast). Orange is reserved for **actionable** surfaces — a disabled primary
+button is a neutral chip, never washed-out orange (`Button` handles this).
+
+### 8.3 Section header — `<SectionHeader>` (`src/components/section-header.tsx`)
+
+The one component; replaced `StaffSectionHeader` / `SectionHeading` /
+`SectionHead`. Tick M + h2 (`font-heading` bold uppercase `tracking-[0.03em]`
+24px, `text-brand-blue dark:text-white`) + `border-b pb-3`, optional `meta`
+(right, 13px muted) and `count` badge (`rounded-full bg-muted` pill, tabular).
+
+### 8.4 Page titles
+
+Two sizes only, `font-heading` condensed uppercase: **40px** standard · **34px**
+compact when meta elements sit beside it. Dense tool headers (seeding workspace,
+Auf-&-Abstieg dialog) stay **28px** — workspace chrome, not page titles.
+
+### 8.5 Containers
+
+Three widths, uniform `px-6`/`px-8`, `py-12`: **640px** narrow (Profil,
+Anmeldung, Spieler wait states) · **760px** reading (Match, Legal) · **1040px**
+wide (dashboards, Liga-Übersicht, Staff). Footer inner width follows the page
+container.
+
+### 8.6 Micro labels
+
+Uppercase labels: `tracking-[0.12em]`, 12–13px, `font-semibold` everywhere.
+Single exception: the landing credit keeps `tracking-[0.16em]`.
+
+### 8.7 Links — `<InlineLink>` / `<ActionLink>` (`src/components/links.tsx`)
+
+Two styles only. **Inline** (prose): brand-blue, `underline
+underline-offset-[3px]`. **Action** (standalone): `font-semibold
+text-brand-blue dark:text-white` + trailing „→", hover underline. Bare text
+links that behave like buttons become outline buttons instead.
+
+### 8.8 Empty / edge state — `<EmptyStateCard>` (`src/components/empty-state-card.tsx`)
+
+One pattern: card `rounded-xl border px-8 py-7`, tick M (orange = action
+available, neutral = informational) + condensed title 22–24px + relaxed muted
+body + optional single action. Replaces bare sentences and the dashed-border
+special case.
+
+### 8.9 Zone palette (standings) — tokens in `globals.css`
+
+Decoupled from brand orange so orange keeps meaning „active / you":
+
+| Zone | Token | Value |
+|---|---|---|
+| Meister-Playoff | `--zone-champion` | `oklch(0.85 0.16 90)` (yellow) |
+| Aufstieg direkt | `--zone-promote` | `oklch(0.6 0.12 158)` (green) |
+| Auf-/Abstiegs-Playoff | `--zone-playoff` | `oklch(0.78 0.13 78)` (amber) |
+| Abstieg direkt | `--zone-demote` | `oklch(0.55 0.19 27)` (red) |
+
+Row treatment: 6px left rail + row tint at /7–/10 alpha; legend below the table
+(14×5px swatches, 12.5px labels). Zone information is never color-only — legend
+text + rail position carry it too.
+
+### 8.10 Name fallback — `playerName()` (`src/lib/player-name.ts`)
+
+Every player-name render uses the chain `displayName → username →
+„Discord-Nutzer"`; never an empty cell or ad-hoc „Unbekannt".

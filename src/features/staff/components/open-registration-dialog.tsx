@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { matchesConfirmationPhrase } from "@/lib/confirm";
 import { openRegistration } from "../actions";
-import { OPEN_CONFIRMATION_PHRASE, seasonName } from "../registration-window";
+import { seasonName } from "../registration-window";
 
 // Confirm-only: the season number + end date are chosen on the card
 // (OpenRegistrationForm) and passed in here. The dialog only confirms.
@@ -32,6 +32,11 @@ export function OpenRegistrationDialog({
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // Type-to-confirm phrase names what is opened: „Saison 1" (design §10) —
+  // shorter and clearer than the action name. Purely a client-side gate; the
+  // server action re-checks role + state.
+  const confirmationPhrase = seasonName(Number(seasonNumber));
 
   const closesAtLabel = closesAtLocal
     ? new Intl.DateTimeFormat("de-DE", {
@@ -83,7 +88,7 @@ export function OpenRegistrationDialog({
 
         <TypeToConfirm
           id="confirmation"
-          phrase={OPEN_CONFIRMATION_PHRASE}
+          phrase={confirmationPhrase}
           value={confirmation}
           onChange={setConfirmation}
           error={error}
@@ -98,10 +103,8 @@ export function OpenRegistrationDialog({
           <Button
             type="button"
             disabled={
-              !matchesConfirmationPhrase(
-                confirmation,
-                OPEN_CONFIRMATION_PHRASE,
-              ) || pending
+              !matchesConfirmationPhrase(confirmation, confirmationPhrase) ||
+              pending
             }
             onClick={submit}
           >

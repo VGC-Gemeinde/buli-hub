@@ -14,7 +14,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { matchesConfirmationPhrase } from "@/lib/confirm";
-import { FINALIZE_CONFIRMATION_PHRASE } from "../seeding";
 
 // Type-to-confirm finalize. Trigger is the toolbar's gated button; the caller
 // runs the finalize action and reports failure back.
@@ -59,7 +58,7 @@ export function FinalizeDialog({
       <DialogTrigger asChild>
         <div title={gateHint}>
           <Button type="button" disabled={!ready}>
-            Einteilung finalisieren
+            Finalisieren…
           </Button>
         </div>
       </DialogTrigger>
@@ -74,7 +73,7 @@ export function FinalizeDialog({
         </DialogHeader>
         <TypeToConfirm
           id="finalize-confirmation"
-          phrase={FINALIZE_CONFIRMATION_PHRASE}
+          phrase={season}
           value={confirmation}
           onChange={setConfirmation}
           error={error}
@@ -88,14 +87,11 @@ export function FinalizeDialog({
           <Button
             type="button"
             disabled={
-              !matchesConfirmationPhrase(
-                confirmation,
-                FINALIZE_CONFIRMATION_PHRASE,
-              ) || pending
+              !matchesConfirmationPhrase(confirmation, season) || pending
             }
             onClick={submit}
           >
-            {pending ? "Wird finalisiert…" : "Einteilung finalisieren"}
+            {pending ? "Wird finalisiert…" : "Finalisieren"}
           </Button>
         </DialogFooter>
       </DialogContent>

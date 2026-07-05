@@ -1,3 +1,5 @@
+import { EmptyStateCard } from "@/components/empty-state-card";
+import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { RegistrationState } from "../registration-window";
@@ -17,28 +19,6 @@ const STATUS_LABEL: Record<RegistrationState, string> = {
   open: "Anmeldung offen",
   closed: "Anmeldung geschlossen",
 };
-
-// Section header per DESIGN.md: skewed orange tick + condensed uppercase h2,
-// with a bottom border and an optional right-aligned meta slot.
-export function StaffSectionHeader({
-  title,
-  meta,
-}: {
-  title: string;
-  meta?: string;
-}) {
-  return (
-    <div className="flex items-baseline justify-between border-b pb-3.5">
-      <div className="flex items-center gap-2.5">
-        <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
-        <h2 className="text-[26px] tracking-[0.03em]">{title}</h2>
-      </div>
-      {meta ? (
-        <span className="text-muted-foreground text-sm">{meta}</span>
-      ) : null}
-    </div>
-  );
-}
 
 function formatCloses(closesAt: Date): string {
   return new Intl.DateTimeFormat("de-DE", {
@@ -78,11 +58,9 @@ export function SeasonCard({
           {season ?? "Nächste Saison"}
         </div>
         <div className="flex items-center gap-2">
-          <div
-            className={cn(
-              "h-2 w-4 -skew-x-[18deg]",
-              state === "open" || accent ? "bg-brand-orange" : "bg-border",
-            )}
+          <Tick
+            size="s"
+            color={state === "open" || accent ? "orange" : "neutral"}
           />
           <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
             {statusLabel ?? STATUS_LABEL[state]}
@@ -128,9 +106,10 @@ export function SeasonCard({
 export function PlayerGrid({ players }: { players: RegisteredPlayer[] }) {
   if (players.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed px-4 py-8 text-center text-muted-foreground text-sm">
-        Noch keine Anmeldungen.
-      </p>
+      <EmptyStateCard title="Noch keine Anmeldungen" informational>
+        Sobald sich die ersten Spieler über den Anmeldelink registrieren,
+        erscheinen sie hier.
+      </EmptyStateCard>
     );
   }
 
@@ -143,17 +122,17 @@ export function PlayerGrid({ players }: { players: RegisteredPlayer[] }) {
       {sorted.map((player) => (
         <div
           key={player.id}
-          className="flex min-w-0 items-center gap-2 rounded-lg border py-1 pr-2.5 pl-1"
+          className="flex h-9 min-w-0 items-center gap-2 rounded-lg border pr-2.5 pl-1"
         >
           <Avatar className="size-6">
             {player.avatarUrl ? (
               <AvatarImage src={player.avatarUrl} alt="" />
             ) : null}
-            <AvatarFallback className="text-[10px] font-semibold">
+            <AvatarFallback className="font-semibold text-[10px] text-foreground">
               {player.name.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="truncate text-sm font-medium">{player.name}</span>
+          <span className="truncate font-medium text-sm">{player.name}</span>
         </div>
       ))}
     </div>

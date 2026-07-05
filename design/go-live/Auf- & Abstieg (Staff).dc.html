@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+<div data-screen-label="Dialog: Auf- & Abstieg festlegen" style="min-height: 100vh; background: oklch(0.94 0.01 262); font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264); position: relative;">
+
+  <!-- dimmed backdrop hinting at the seeding workspace behind the dialog -->
+  <div style="position: absolute; inset: 0; background: rgba(2,10,30,0.45); z-index: 1;"></div>
+
+  <!-- dialog -->
+  <div style="position: relative; z-index: 2; width: 1080px; max-width: calc(100vw - 48px); margin: 40px auto; background: #ffffff; border-radius: 14px; box-shadow: 0 20px 60px rgba(2,10,30,0.35); display: flex; flex-direction: column;">
+    <button type="button" aria-label="Schließen" style="position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; border: none; background: transparent; border-radius: 6px; color: oklch(0.52 0.035 263); cursor: pointer; font-size: 16px;">✕</button>
+
+    <div style="padding: 26px 32px 0; display: flex; flex-direction: column; gap: 8px;">
+      <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #021f66;">Auf- und Abstieg festlegen</h1>
+      <p style="margin: 0; font-size: 14px; line-height: 1.55; color: oklch(0.52 0.035 263); max-width: 880px;">Lege pro Division fest, wie viele Spieler fest auf- und absteigen, wie viele Playoff-Plätze es gibt und über welche Tabelle entschieden wird. Abstiege und Aufstiege benachbarter Divisionen müssen sich decken — erst dann kann die Einteilung finalisiert werden.</p>
+    </div>
+
+    <div style="padding: 22px 32px 0; display: flex; flex-direction: column; gap: 0;">
+
+      <!-- ===== Division 1 ===== -->
+      <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #021f66;"></div>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">Division 1</span>
+            <span style="font-size: 13px; color: oklch(0.52 0.035 263);">7 Gruppen · 8 / 8 / 7 / 7 / 7 / 7 / 7 Spieler</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Massgebliche Tabelle</span>
+            <div style="display: flex; gap: 4px; border: 1px solid oklch(0.91 0.012 262); border-radius: 999px; padding: 3px;">
+              <button style="height: 27px; padding: 0 13px; border: none; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: #021f66; color: #ffffff; cursor: default;">Gruppentabelle</button>
+              <button style="height: 27px; padding: 0 13px; border: none; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: transparent; color: oklch(0.52 0.035 263); cursor: pointer;">Gesamttabelle</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Zonen-Vorschau · pro Gruppe (7 Plätze)</span>
+          <div style="display: flex; gap: 6px;">
+            <sc-for list="{{ d1Chips }}" as="ch" hint-placeholder-count="7">
+              <span style="width: 40px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 14px; font-weight: 600; background: {{ ch.bg }}; color: {{ ch.fg }}; border: 1px solid {{ ch.border }};">{{ ch.n }}</span>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr 1fr; gap: 24px; align-items: start;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: oklch(0.85 0.16 90);"></span>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Meister-Playoff</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; width: fit-content; overflow: hidden;">
+              <button onClick="{{ d1MeisterMinus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">−</button>
+              <span style="width: 44px; text-align: center; font-size: 15px; font-weight: 600;">{{ d1Meister }}</span>
+              <button onClick="{{ d1MeisterPlus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">+</button>
+            </div>
+            <span style="font-size: 12.5px; color: oklch(0.52 0.035 263);">× 7 Gruppen = {{ d1MeisterTotal }} gesamt</span>
+          </div>
+          <div style="display: flex; align-items: center; height: 100%; padding-top: 26px;">
+            <span style="font-size: 13.5px; color: oklch(0.52 0.035 263); white-space: nowrap;">{{ d1KlassenerhaltLabel }}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: oklch(0.78 0.13 78);"></span>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Abstiegs-Playoff</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; width: fit-content; overflow: hidden;">
+              <button onClick="{{ d1AbPfMinus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">−</button>
+              <span style="width: 44px; text-align: center; font-size: 15px; font-weight: 600;">{{ d1AbPf }}</span>
+              <button onClick="{{ d1AbPfPlus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">+</button>
+            </div>
+            <span style="font-size: 12.5px; color: oklch(0.52 0.035 263);">× 7 Gruppen = {{ d1AbPfTotal }} gesamt</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: oklch(0.55 0.19 27);"></span>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Direkter Abstieg</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; width: fit-content; overflow: hidden;">
+              <button onClick="{{ d1AbMinus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">−</button>
+              <span style="width: 44px; text-align: center; font-size: 15px; font-weight: 600;">{{ d1Ab }}</span>
+              <button onClick="{{ d1AbPlus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">+</button>
+            </div>
+            <span style="font-size: 12.5px; color: oklch(0.52 0.035 263);">× 7 Gruppen = {{ d1AbTotal }} gesamt</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- balance row between divisions -->
+      <div style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 0; flex-wrap: wrap;">
+        <span style="font-size: 13.5px; color: oklch(0.52 0.035 263);"><span style="color: oklch(0.55 0.19 27); font-weight: 600;">↓ {{ downTotal }}</span> steigen ab ({{ d1Ab }} je Gruppe × 7 Gruppen)</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; border: 1px solid {{ balanceBorder }}; border-radius: 999px; padding: 5px 14px; font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: {{ balanceColor }}; background: {{ balanceBg }};">{{ balanceLabel }}</span>
+        <span style="font-size: 13.5px; color: oklch(0.52 0.035 263);"><span style="color: oklch(0.55 0.13 155); font-weight: 600;">↑ {{ upTotal }}</span> steigen auf ({{ d2Auf }} je Gruppe × 7 Gruppen)</span>
+      </div>
+
+      <!-- ===== Division 2 (unterste) ===== -->
+      <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #021f66;"></div>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #021f66;">Division 2</span>
+            <span style="font-size: 13px; color: oklch(0.52 0.035 263);">7 Gruppen · 8 / 7 / 7 / 7 / 7 / 7 / 7 Spieler</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Massgebliche Tabelle</span>
+            <div style="display: flex; gap: 4px; border: 1px solid oklch(0.91 0.012 262); border-radius: 999px; padding: 3px;">
+              <button style="height: 27px; padding: 0 13px; border: none; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: #021f66; color: #ffffff; cursor: default;">Gruppentabelle</button>
+              <button style="height: 27px; padding: 0 13px; border: none; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: transparent; color: oklch(0.52 0.035 263); cursor: pointer;">Gesamttabelle</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">Zonen-Vorschau · pro Gruppe (7 Plätze)</span>
+          <div style="display: flex; gap: 6px;">
+            <sc-for list="{{ d2Chips }}" as="ch" hint-placeholder-count="7">
+              <span style="width: 40px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 14px; font-weight: 600; background: {{ ch.bg }}; color: {{ ch.fg }}; border: 1px solid {{ ch.border }};">{{ ch.n }}</span>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; gap: 20px; align-items: start;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: oklch(0.6 0.12 158);"></span>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Direkter Aufstieg</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; width: fit-content; overflow: hidden;">
+              <button onClick="{{ d2AufMinus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">−</button>
+              <span style="width: 44px; text-align: center; font-size: 15px; font-weight: 600;">{{ d2Auf }}</span>
+              <button onClick="{{ d2AufPlus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">+</button>
+            </div>
+            <span style="font-size: 12.5px; color: oklch(0.52 0.035 263);">× 7 Gruppen = {{ upTotal }} gesamt</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: oklch(0.85 0.16 90);"></span>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Aufstiegs-Playoff</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; width: fit-content; overflow: hidden;">
+              <button onClick="{{ d2AufPfMinus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">−</button>
+              <span style="width: 44px; text-align: center; font-size: 15px; font-weight: 600;">{{ d2AufPf }}</span>
+              <button onClick="{{ d2AufPfPlus }}" style="width: 34px; height: 34px; border: none; background: transparent; font-size: 16px; color: oklch(0.52 0.035 263); cursor: pointer;">+</button>
+            </div>
+            <span style="font-size: 12.5px; color: oklch(0.52 0.035 263);">× 7 Gruppen = {{ d2AufPfTotal }} gesamt</span>
+          </div>
+          <div style="display: flex; align-items: center; height: 100%; padding-top: 26px;">
+            <span style="font-size: 13.5px; color: oklch(0.52 0.035 263); white-space: nowrap;">{{ d2KlassenerhaltLabel }}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: oklch(0.78 0.13 78);"></span>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Abstiegs-Playoff</span>
+            </div>
+            <span style="font-size: 13px; line-height: 1.45; color: oklch(0.52 0.035 263);">Unterste Division — kein Abstieg</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: oklch(0.55 0.19 27);"></span>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Direkter Abstieg</span>
+            </div>
+            <span style="font-size: 13px; line-height: 1.45; color: oklch(0.52 0.035 263);">Unterste Division — kein Abstieg</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- footer -->
+    <div style="margin-top: 22px; border-top: 1px solid oklch(0.94 0.008 262); background: oklch(0.985 0.004 262); border-radius: 0 0 14px 14px; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="width: 20px; height: 20px; border-radius: 50%; background: {{ footBg }}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">{{ footIcon }}</span>
+        <span style="font-size: 14px; color: oklch(0.4 0.045 264);">{{ footText }}</span>
+      </div>
+      <button type="button" style="height: 38px; padding: 0 18px; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); background: #ffffff; font-size: 14px; font-weight: 500; color: oklch(0.28 0.06 264); cursor: pointer;">Schließen</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 980}}">
+class Component extends DCLogic {
+  state = { d1Meister: 2, d1AbPf: 1, d1Ab: 0, d2Auf: 0, d2AufPf: 1 };
+
+  renderVals() {
+    const s = this.state;
+    const clamp = (v) => Math.max(0, Math.min(4, v));
+    const step = (key, delta) => () => this.setState((p) => ({ [key]: clamp(p[key] + delta) }));
+
+    const yellow = { bg: "oklch(0.85 0.16 90)", fg: "#021f66", border: "oklch(0.78 0.15 90)" };
+    const amber = { bg: "oklch(0.78 0.13 78)", fg: "#021f66", border: "oklch(0.72 0.13 78)" };
+    const red = { bg: "oklch(0.55 0.19 27)", fg: "#ffffff", border: "oklch(0.5 0.19 27)" };
+    const green = { bg: "oklch(0.6 0.12 158)", fg: "#ffffff", border: "oklch(0.54 0.12 158)" };
+    const grey = { bg: "oklch(0.97 0.006 262)", fg: "oklch(0.52 0.035 263)", border: "oklch(0.91 0.012 262)" };
+
+    const chips = (n, top, bottom) => {
+      const out = [];
+      for (let i = 1; i <= n; i++) {
+        const fromTop = top[i - 1];
+        const fromBottom = bottom[n - i];
+        out.push({ n: i, ...(fromTop ?? fromBottom ?? grey) });
+      }
+      return out;
+    };
+
+    // Division 1: top = meister (yellow); bottom = direct demotion (red) then abstiegs-playoff (amber)
+    const d1Top = Array.from({ length: s.d1Meister }, () => yellow);
+    const d1Bottom = [...Array.from({ length: s.d1Ab }, () => red), ...Array.from({ length: s.d1AbPf }, () => amber)];
+    // Division 2: top = direct promotion (green) then aufstiegs-playoff (yellow)
+    const d2Top = [...Array.from({ length: s.d2Auf }, () => green), ...Array.from({ length: s.d2AufPf }, () => yellow)];
+
+    const d1Keep = 7 - s.d1Meister - s.d1AbPf - s.d1Ab;
+    const d2Keep = 7 - s.d2Auf - s.d2AufPf;
+    const downTotal = s.d1Ab * 7;
+    const upTotal = s.d2Auf * 7;
+    const balanced = s.d1Ab === s.d2Auf;
+
+    return {
+      d1Chips: chips(7, d1Top, d1Bottom),
+      d2Chips: chips(7, d2Top, []),
+      d1Meister: s.d1Meister, d1AbPf: s.d1AbPf, d1Ab: s.d1Ab,
+      d2Auf: s.d2Auf, d2AufPf: s.d2AufPf,
+      d1MeisterTotal: s.d1Meister * 7, d1AbPfTotal: s.d1AbPf * 7, d1AbTotal: s.d1Ab * 7,
+      d2AufPfTotal: s.d2AufPf * 7,
+      d1MeisterMinus: step("d1Meister", -1), d1MeisterPlus: step("d1Meister", 1),
+      d1AbPfMinus: step("d1AbPf", -1), d1AbPfPlus: step("d1AbPf", 1),
+      d1AbMinus: step("d1Ab", -1), d1AbPlus: step("d1Ab", 1),
+      d2AufMinus: step("d2Auf", -1), d2AufPlus: step("d2Auf", 1),
+      d2AufPfMinus: step("d2AufPf", -1), d2AufPfPlus: step("d2AufPf", 1),
+      d1KlassenerhaltLabel: d1Keep + " Plätze Klassenerhalt",
+      d2KlassenerhaltLabel: d2Keep + " Plätze Klassenerhalt",
+      downTotal, upTotal,
+      balanceLabel: balanced ? "✓ Ausgeglichen" : "✕ Nicht ausgeglichen",
+      balanceColor: balanced ? "oklch(0.5 0.12 155)" : "oklch(0.55 0.22 27)",
+      balanceBorder: balanced ? "oklch(0.7 0.1 155)" : "oklch(0.55 0.22 27 / 0.45)",
+      balanceBg: balanced ? "oklch(0.6 0.12 158 / 0.08)" : "oklch(0.55 0.22 27 / 0.05)",
+      footBg: balanced ? "oklch(0.55 0.12 155)" : "oklch(0.55 0.22 27)",
+      footIcon: balanced ? "✓" : "!",
+      footText: balanced
+        ? "Regeln gültig — nach dem Speichern kann die Einteilung finalisiert werden."
+        : "Abstiege aus Division 1 und Aufstiege aus Division 2 müssen sich decken.",
+    };
+  }
+}
+</script>
+</body>
+</html>

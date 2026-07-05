@@ -1,5 +1,10 @@
 "use client";
 
+import { EmptyStateCard } from "@/components/empty-state-card";
+import { ActionLink, InlineLink } from "@/components/links";
+import { SectionHeader } from "@/components/section-header";
+import { Tick } from "@/components/tick";
+import { Button } from "@/components/ui/button";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
@@ -10,6 +15,7 @@ import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { DisputeResolveDialog } from "@/features/reporting/components/dispute-resolve-dialog";
+import { PublicMatchView } from "@/features/reporting/components/public-match-view";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
 import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
 import { StaffResultEditor } from "@/features/reporting/components/staff-result-editor";
@@ -621,6 +627,55 @@ export function Gallery() {
   return (
     <div className="flex flex-col gap-10">
       <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Design-Grundbausteine</h2>
+        <Specimen label="Tick — Größen S / M / L (orange · neutral · navy)">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-4">
+              <Tick size="s" />
+              <Tick size="m" />
+              <Tick size="l" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Tick size="m" color="neutral" />
+              <Tick size="m" color="navy" />
+            </div>
+          </div>
+        </Specimen>
+        <Specimen label="SectionHeader (mit Meta, Count, navy Tick)">
+          <div className="flex flex-col gap-4">
+            <SectionHeader meta="Division 1a">Tabelle</SectionHeader>
+            <SectionHeader count={3}>Überfällig</SectionHeader>
+            <SectionHeader tickColor="navy" meta="Nur für Staff sichtbar">
+              Staff
+            </SectionHeader>
+          </div>
+        </Specimen>
+        <Specimen label="EmptyStateCard (Aktion · informativ)">
+          <div className="flex flex-col gap-4">
+            <EmptyStateCard
+              title="Noch nicht geöffnet"
+              action={<Button>Mit Discord anmelden</Button>}
+            >
+              Die Anmeldung startet in Kürze — sie wird im Discord angekündigt.
+            </EmptyStateCard>
+            <EmptyStateCard title="Noch kein Ergebnis" informational>
+              Sobald das Ergebnis gemeldet ist, erscheinen hier Spiele, Replays
+              und Teamsheets.
+            </EmptyStateCard>
+          </div>
+        </Specimen>
+        <Specimen label="Links — Action (→) · Inline (Prosa)">
+          <div className="flex flex-col gap-2">
+            <ActionLink href="#">Zum Spieler-Dashboard</ActionLink>
+            <p className="text-sm text-muted-foreground">
+              Mehr dazu in der{" "}
+              <InlineLink href="#">Datenschutzerklärung</InlineLink>.
+            </p>
+          </div>
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-2xl">ProfileHeader</h2>
         {IDENTITIES.map(
           ({ label, displayName, username, avatarUrl, roleLabel }) => (
@@ -996,6 +1051,27 @@ export function Gallery() {
             groupName="Division 1a"
           />
         </Specimen>
+        <Specimen label="Angefochten (Chip Final → Angefochten)">
+          <ReportSummary
+            result={SUMMARY_RESULT}
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+            viewerId="me"
+            privileged
+            disputed
+            round={2}
+            groupName="Division 1a"
+          />
+        </Specimen>
+        <Specimen label="Öffentliche Sicht (Gast, ohne Ergebnis)">
+          <PublicMatchView
+            round={2}
+            groupName="Division 1a"
+            seasonLabel="Saison 1"
+            playerA={SUMMARY_A}
+            playerB={SUMMARY_B}
+          />
+        </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">
@@ -1018,7 +1094,11 @@ export function Gallery() {
           <DisputeDialog matchId="demo" />
         </Specimen>
         <Specimen label="Staff: Anfechtung entscheiden">
-          <DisputeResolveDialog matchId="demo" />
+          <DisputeResolveDialog
+            matchId="demo"
+            reason="Spiel 2 ging an mich, nicht an Sora."
+            openedByName="Kai"
+          />
         </Specimen>
         <Specimen label="Staff: Ergebnis bearbeiten">
           <StaffResultEditor

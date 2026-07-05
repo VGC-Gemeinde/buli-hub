@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { EmptyStateCard } from "@/components/empty-state-card";
+import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DisputeRow, StaffMatchRow } from "../queries";
@@ -43,8 +45,8 @@ function winnerName(match: StaffMatchRow): string {
 function SectionHead({ title, count }: { title: string; count: number }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="h-[11px] w-[22px] -skew-x-[18deg] bg-brand-orange" />
-      <h2 className="font-bold font-heading text-[22px] text-brand-blue uppercase tracking-[0.03em] dark:text-white">
+      <Tick size="m" />
+      <h2 className="font-bold font-heading text-[24px] text-brand-blue uppercase tracking-[0.03em] dark:text-white">
         {title}
       </h2>
       <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-[12.5px] text-muted-foreground tabular-nums">
@@ -226,7 +228,12 @@ export function SaisonDashboard({
                   </div>
                 </div>
                 <div className="flex justify-end sm:contents">
-                  <Button asChild size="sm" variant="outline">
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="border-destructive/35 text-destructive"
+                  >
                     <Link href={`/match/${m.matchId}`}>Prüfen</Link>
                   </Button>
                 </div>
@@ -292,18 +299,10 @@ export function SaisonDashboard({
       ) : null}
 
       {allClear ? (
-        <div className="flex items-center gap-4 rounded-lg border border-dashed px-6 py-5">
-          <div className="h-2.5 w-5 -skew-x-[18deg] bg-brand-orange" />
-          <div>
-            <p className="font-bold font-heading text-brand-blue text-xl uppercase dark:text-white">
-              Alles erledigt
-            </p>
-            <p className="text-[13.5px] text-muted-foreground">
-              Alle {thisWeek.length} Matches dieser Woche sind gemeldet, nichts
-              ist überfällig, keine Freewins offen, keine Anfechtungen.
-            </p>
-          </div>
-        </div>
+        <EmptyStateCard title="Alles erledigt" informational>
+          Alle {thisWeek.length} Matches dieser Woche sind gemeldet, nichts ist
+          überfällig, keine Freewins offen, keine Anfechtungen.
+        </EmptyStateCard>
       ) : null}
 
       <section className="flex flex-col gap-3">
@@ -318,7 +317,7 @@ export function SaisonDashboard({
           </button>
         </div>
         {weekShown.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-4 py-4 text-center text-muted-foreground text-sm">
+          <p className="rounded-lg border px-4 py-4 text-center text-muted-foreground text-sm">
             {showAllWeek
               ? "Diese Woche sind keine Matches angesetzt."
               : "Diese Woche ist alles gemeldet."}

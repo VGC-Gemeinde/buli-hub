@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { SectionHeader } from "@/components/section-header";
 import { SiteHeader } from "@/components/site-header";
+import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { listRegistrations } from "@/features/registration/queries";
 import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
@@ -25,7 +27,6 @@ import {
   PlayerGrid,
   type RegisteredPlayer,
   SeasonCard,
-  StaffSectionHeader,
 } from "@/features/staff/components/registration-status";
 import { latestWindow } from "@/features/staff/queries";
 import {
@@ -33,6 +34,7 @@ import {
   seasonName,
 } from "@/features/staff/registration-window";
 import { seasonPhase } from "@/features/staff/season-phase";
+import { playerName } from "@/lib/player-name";
 
 function ddMM(dateStr: string): string {
   return new Intl.DateTimeFormat("de-DE", {
@@ -62,7 +64,7 @@ function SeasonStrip({
         <span className="font-bold font-heading text-[22px] text-brand-blue uppercase leading-none dark:text-white">
           {season}
         </span>
-        <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
+        <Tick size="s" />
         <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
           Reguläre Saison
         </span>
@@ -83,12 +85,14 @@ function SeasonStrip({
           </span>
         ) : null}
       </div>
-      <Link
-        href="/staff/seeding"
-        className="font-semibold text-[13.5px] text-brand-blue dark:text-white hover:underline"
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
       >
-        Divisionen
-      </Link>
+        <Link href="/staff/seeding">Divisionen</Link>
+      </Button>
     </div>
   );
 }
@@ -131,8 +135,8 @@ export default async function StaffPage() {
     return (
       <div className="flex flex-1 flex-col">
         <SiteHeader />
-        <main className="mx-auto w-full max-w-[960px] flex-1 px-8 py-12">
-          <h1 className="mb-6 text-4xl text-brand-blue dark:text-white">
+        <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 py-12">
+          <h1 className="mb-9 text-[40px] text-brand-blue dark:text-white">
             Staff-Bereich
           </h1>
           <div className="flex flex-col gap-4.5">
@@ -164,7 +168,7 @@ export default async function StaffPage() {
   const players: RegisteredPlayer[] = window
     ? (await listRegistrations(window.id)).map((row) => ({
         id: row.id,
-        name: row.displayName ?? row.username ?? "Unbekannt",
+        name: playerName(row.displayName, row.username),
         avatarUrl: row.avatarUrl ?? undefined,
       }))
     : [];
@@ -195,13 +199,13 @@ export default async function StaffPage() {
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[960px] flex-1 px-8 py-12">
-        <h1 className="mb-9 text-4xl text-brand-blue dark:text-white">
+      <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 py-12">
+        <h1 className="mb-9 text-[40px] text-brand-blue dark:text-white">
           Staff-Bereich
         </h1>
         <div className="flex flex-col gap-10">
           <section className="flex flex-col gap-5">
-            <StaffSectionHeader title="Saison" />
+            <SectionHeader>Saison</SectionHeader>
             <SeasonCard
               state={state}
               season={window ? seasonName(window.seasonNumber) : null}
@@ -212,17 +216,16 @@ export default async function StaffPage() {
 
           {state !== "not_started" ? (
             <section className="flex flex-col gap-5">
-              <StaffSectionHeader
-                title="Anmeldungen"
-                meta={`${players.length} gesamt`}
-              />
+              <SectionHeader meta={`${players.length} gesamt`}>
+                Anmeldungen
+              </SectionHeader>
               <PlayerGrid players={players} />
             </section>
           ) : null}
 
           {state === "closed" ? (
             <section className="flex flex-col gap-5">
-              <StaffSectionHeader title="Einteilung & Spielplan" />
+              <SectionHeader>Einteilung &amp; Spielplan</SectionHeader>
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap gap-3">
                   <Button

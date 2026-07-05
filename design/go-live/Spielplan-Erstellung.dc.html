@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+    button { font-family: inherit; }
+    input { font-family: inherit; }
+    @keyframes rowflashA { from { background: rgba(255,123,0,0.14); } to { background: transparent; } }
+    @keyframes rowflashB { from { background: rgba(255,123,0,0.14); } to { background: transparent; } }
+    @keyframes dlgin { from { opacity: 0; transform: translate(-50%,-49%) scale(0.98); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+    @keyframes backdropin { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</helmet>
+<div data-screen-label="Staff-Bereich" style="min-height: 100vh; background: #ffffff; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264); position: relative;">
+  <div style="height: 3px; background: #ff7b00;"></div>
+  <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="public/logo.svg" alt="Buli Hub" width="41" height="28" style="border-radius: 6px; display: block;">
+      <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em;">Buli Hub</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.965 0.008 262); border: 1px solid oklch(0.91 0.012 262); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: oklch(0.52 0.035 263);">KU</div>
+    </div>
+  </header>
+
+  <main style="max-width: 960px; margin: 0 auto; width: 100%; padding: 48px 32px; display: flex; flex-direction: column;">
+    <h1 style="margin: 0 0 36px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; line-height: 1.1; color: #021f66;">Staff-Bereich</h1>
+
+    <div style="display: flex; flex-direction: column; gap: 40px;">
+
+      <section style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+            <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; color: #021f66;">Saison</h2>
+          </div>
+        </div>
+        <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 20px 24px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; color: #021f66;">Saison 1</div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: {{ statusTick }};"></div>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263);">{{ statusLabel }}</span>
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 14px; color: oklch(0.52 0.035 263);">{{ seasonMeta }}</p>
+        </div>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+            <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; color: #021f66;">Anmeldungen</h2>
+          </div>
+          <span style="font-size: 14px; color: oklch(0.52 0.035 263);">{{ playerTotal }} gesamt</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+          <sc-for list="{{ players }}" as="player" hint-placeholder-count="12">
+            <div style="display: flex; min-width: 0; align-items: center; gap: 8px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 4px 10px 4px 4px;">
+              <div style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: oklch(0.52 0.035 263);">{{ player.initials }}</div>
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500;">{{ player.name }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+            <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; color: #021f66;">Einteilung &amp; Spielplan</h2>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+            <button type="button" style="height: 36px; padding: 0 16px; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; font-size: 14px; font-weight: 500; color: oklch(0.28 0.06 264); cursor: pointer;" style-hover="background: oklch(0.965 0.008 262);">Divisionen ansehen</button>
+            <sc-if value="{{ isSeeded }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ openDialog }}" style="height: 36px; padding: 0 16px; border-radius: 10px; border: none; background: #ff7b00; font-size: 14px; font-weight: 600; color: #ffffff; cursor: pointer;" style-hover="background: rgba(255,123,0,0.8);">Spielplan erstellen</button>
+            </sc-if>
+            <sc-if value="{{ isRunning }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,123,0,0.4); background: rgba(255,123,0,0.05); border-radius: 10px; padding: 7px 12px;">
+                <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00;"></div>
+                <span style="font-size: 13.5px; font-weight: 600;">Spielplan erstellt — die Saison läuft</span>
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ isSeeded }}" hint-placeholder-val="{{ true }}">
+            <p style="margin: 0; font-size: 13px; color: oklch(0.52 0.035 263);">{{ previewLine }}</p>
+          </sc-if>
+        </div>
+      </section>
+
+      <sc-if value="{{ isRunning }}" hint-placeholder-val="{{ false }}">
+        <section style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; color: #021f66;">Reguläre Saison</h2>
+            </div>
+          </div>
+          <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 20px 24px;">
+            <p style="margin: 0; font-size: 15px; color: oklch(0.52 0.035 263);">Die reguläre Saison läuft. Das Dashboard mit Spielplan, Ergebnissen und Tabellen folgt in Kürze.</p>
+          </div>
+        </section>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <sc-if value="{{ isRunning }}" hint-placeholder-val="{{ false }}">
+    <button type="button" onClick="{{ resetDemo }}" style="position: fixed; bottom: 16px; right: 16px; z-index: 40; border: 1px dashed oklch(0.91 0.012 262); background: #ffffff; border-radius: 8px; padding: 5px 10px; font-size: 12px; color: oklch(0.52 0.035 263); cursor: pointer;" style-hover="color: oklch(0.28 0.06 264);">Demo zurücksetzen</button>
+  </sc-if>
+
+  <sc-if value="{{ dialogOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDialog }}" style="position: fixed; inset: 0; z-index: 50; background: rgba(2,10,30,0.5); animation: backdropin 0.15s ease-out;"></div>
+    <div data-screen-label="Dialog: Spielplan erstellen" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 51; width: 640px; max-width: calc(100vw - 32px); max-height: 90vh; display: flex; flex-direction: column; background: #ffffff; border-radius: 12px; box-shadow: 0 0 0 1px rgba(20,30,70,0.1), 0 25px 50px -12px rgba(2,31,102,0.3); animation: dlgin 0.16s ease-out; overflow: hidden;">
+
+      <button type="button" onClick="{{ closeDialog }}" aria-label="Schließen" style="position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border: none; background: transparent; border-radius: 8px; font-size: 14px; color: oklch(0.52 0.035 263); cursor: pointer; line-height: 1;" style-hover="background: oklch(0.965 0.008 262); color: oklch(0.28 0.06 264);">✕</button>
+
+      <div style="padding: 20px 24px 0; display: flex; flex-direction: column; gap: 6px;">
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 22px; color: #021f66;">Spielplan erstellen?</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 1.45; color: oklch(0.52 0.035 263);">Für jede Gruppe wird ein einfaches Rundenturnier erzeugt und die reguläre Saison startet sofort. Das kann nicht rückgängig gemacht werden.</p>
+      </div>
+
+      <div style="margin: 16px 24px 0; display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 16px; background: oklch(0.965 0.008 262); border-radius: 10px; padding: 12px 16px;">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263);">Spieltage</span>
+          <span style="font-size: 15px; font-weight: 600;">{{ factSpieltage }}</span>
+          <span style="font-size: 12px; color: oklch(0.52 0.035 263); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ factSpieltageSub }}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263);">Saisonstart</span>
+          <span style="font-size: 15px; font-weight: 600;">Heute</span>
+          <span style="font-size: 12px; color: oklch(0.52 0.035 263);">{{ factStartSub }}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263);">Saisonende</span>
+          <span style="font-size: 15px; font-weight: 600;">{{ factEnd }}</span>
+          <span style="font-size: 12px; color: oklch(0.52 0.035 263);">{{ factEndSub }}</span>
+        </div>
+      </div>
+
+      <div style="margin: 14px 24px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00; flex-shrink: 0;"></div>
+        <p style="margin: 0; font-size: 12.5px; color: oklch(0.52 0.035 263);">Eine spätere Deadline verschiebt alle folgenden Spieltage mit — so planst du Feiertage und Pausen ein.</p>
+      </div>
+
+      <div style="margin: 8px 24px 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px;">
+        <sc-for list="{{ rows }}" as="row" hint-placeholder-count="7">
+          <div style="border-bottom: 1px solid oklch(0.94 0.008 262);">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 7px 14px; animation: {{ row.anim }};">
+              <span style="width: 82px; flex-shrink: 0; font-size: 13.5px; font-weight: 600;">{{ row.name }}</span>
+              <span style="width: 104px; flex-shrink: 0; font-size: 13px; color: oklch(0.52 0.035 263);">ab {{ row.startLabel }}</span>
+              <button type="button" onClick="{{ row.togglePicker }}" style="height: 30px; width: 172px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px; border-radius: 8px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; font-size: 13px; font-weight: 500; color: oklch(0.28 0.06 264); cursor: pointer;" style-hover="background: oklch(0.965 0.008 262);">
+                <span>bis {{ row.endLabel }}</span>
+                <span style="color: oklch(0.52 0.035 263); font-size: 10px;">▾</span>
+              </button>
+              <div style="flex: 1 1 auto;"></div>
+              <span style="font-size: 12.5px; font-weight: 500; font-variant-numeric: tabular-nums; color: {{ row.daysColor }};">{{ row.daysLabel }}</span>
+            </div>
+            <sc-if value="{{ row.pickerOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="margin: 2px 14px 12px 198px; width: 276px; border: 1px solid oklch(0.91 0.012 262); border-radius: 12px; box-shadow: 0 10px 24px -8px rgba(2,31,102,0.18); background: #ffffff; padding: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <button type="button" onClick="{{ calPrev }}" style="width: 28px; height: 28px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; border-radius: 8px; cursor: pointer; font-size: 14px; color: oklch(0.52 0.035 263);" style-hover="background: oklch(0.965 0.008 262);">‹</button>
+                  <span style="font-size: 13.5px; font-weight: 600;">{{ calLabel }}</span>
+                  <button type="button" onClick="{{ calNext }}" style="width: 28px; height: 28px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; border-radius: 8px; cursor: pointer; font-size: 14px; color: oklch(0.52 0.035 263);" style-hover="background: oklch(0.965 0.008 262);">›</button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(7, 36px); justify-content: center; margin-bottom: 2px;">
+                  <span style="text-align: center; font-size: 11px; color: oklch(0.52 0.035 263);">Mo</span>
+                  <span style="text-align: center; font-size: 11px; color: oklch(0.52 0.035 263);">Di</span>
+                  <span style="text-align: center; font-size: 11px; color: oklch(0.52 0.035 263);">Mi</span>
+                  <span style="text-align: center; font-size: 11px; color: oklch(0.52 0.035 263);">Do</span>
+                  <span style="text-align: center; font-size: 11px; color: oklch(0.52 0.035 263);">Fr</span>
+                  <span style="text-align: center; font-size: 11px; color: oklch(0.52 0.035 263);">Sa</span>
+                  <span style="text-align: center; font-size: 11px; color: oklch(0.52 0.035 263);">So</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(7, 36px); justify-content: center;">
+                  <sc-for list="{{ calCells }}" as="cell" hint-placeholder-count="42">
+                    <button type="button" onClick="{{ cell.pick }}" disabled="{{ cell.disabled }}" style="height: 32px; border: none; border-radius: 8px; background: {{ cell.bg }}; color: {{ cell.color }}; font-size: 13px; font-weight: {{ cell.weight }}; opacity: {{ cell.opacity }}; cursor: {{ cell.cursor }};" style-hover="background: {{ cell.hoverBg }};">{{ cell.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="padding: 16px 24px 18px; display: flex; flex-direction: column; gap: 8px;">
+        <label for="schedule-confirmation" style="font-size: 14px; font-weight: 500;">Gib <span style="font-weight: 600; color: #021f66;">Spielplan erstellen</span> ein, um zu bestätigen</label>
+        <input id="schedule-confirmation" value="{{ confirmValue }}" onChange="{{ onConfirmChange }}" placeholder="Spielplan erstellen" autoComplete="off" style="height: 36px; width: 100%; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 0 12px; font-size: 14px; color: oklch(0.28 0.06 264); outline: none; background: #ffffff;" style-focus="border-color: #ff7b00; box-shadow: 0 0 0 3px rgba(255,123,0,0.25);">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid oklch(0.91 0.012 262); background: oklch(0.975 0.006 262); padding: 14px 24px;">
+        <button type="button" onClick="{{ closeDialog }}" style="height: 36px; padding: 0 16px; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; font-size: 14px; font-weight: 500; color: oklch(0.28 0.06 264); cursor: pointer;" style-hover="background: oklch(0.965 0.008 262);">Abbrechen</button>
+        <button type="button" onClick="{{ submit }}" disabled="{{ confirmDisabled }}" style="height: 36px; padding: 0 16px; border-radius: 10px; border: none; background: {{ confirmBg }}; font-size: 14px; font-weight: 600; color: {{ confirmColor }}; cursor: {{ confirmCursor }};">{{ confirmLabel }}</button>
+      </div>
+
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;playerCount&quot;: { &quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 40, &quot;min&quot;: 8, &quot;max&quot;: 200, &quot;step&quot;: 1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Demo-Daten&quot; },
+  &quot;groupSize&quot;: { &quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 8, &quot;min&quot;: 2, &quot;max&quot;: 24, &quot;step&quot;: 1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Demo-Daten&quot; }
+}">
+class Component extends DCLogic {
+  state = {
+    phase: "seeded",
+    dialogOpen: true,
+    deadlines: null,
+    confirmation: "",
+    pending: false,
+    openPicker: null,
+    pickerMonth: null,
+    flashFrom: null,
+    flashTick: 0,
+  };
+
+  // ---- date helpers (mirror spieltage.ts: whole-day UTC arithmetic) ----
+  toMs(iso) { return Date.parse(iso + "T00:00:00Z"); }
+  toIsoStr(ms) { return new Date(ms).toISOString().slice(0, 10); }
+  addDays(iso, d) { return this.toIsoStr(this.toMs(iso) + d * 86400000); }
+  daysBetween(a, b) { return Math.round((this.toMs(b) - this.toMs(a)) / 86400000); }
+  todayIso() {
+    const n = new Date();
+    return n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0");
+  }
+  nextSundayAtLeast(from, minDays) {
+    const earliest = this.addDays(from, minDays);
+    const dow = new Date(this.toMs(earliest)).getUTCDay();
+    return this.addDays(earliest, (7 - dow) % 7);
+  }
+  defaultDeadlines(start, count) {
+    if (count <= 0) return [];
+    const first = this.nextSundayAtLeast(start, 7);
+    return Array.from({ length: count }, (_, i) => this.addDays(first, i * 7));
+  }
+  shiftFrom(deadlines, index, newEnd) {
+    const delta = this.daysBetween(deadlines[index], newEnd);
+    return deadlines.map((d, i) => (i < index ? d : i === index ? newEnd : this.addDays(d, delta)));
+  }
+  roundCount(n) { return n <= 1 ? 0 : n % 2 === 0 ? n - 1 : n; }
+
+  fmt(iso, withYear) {
+    const d = new Date(this.toMs(iso));
+    const wd = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][d.getUTCDay()];
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    return withYear ? wd + ". " + dd + "." + mm + "." + d.getUTCFullYear() : wd + ". " + dd + "." + mm + ".";
+  }
+  fmtLong(iso) {
+    const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+    const d = new Date(this.toMs(iso));
+    return d.getUTCDate() + ". " + months[d.getUTCMonth()] + " " + d.getUTCFullYear();
+  }
+
+  // ---- demo data ----
+  baseNames() {
+    return ["Aki", "Alenia", "Basti", "Benny", "Bird", "Blizzard", "ChrisK", "Cyrus", "DarkLugia", "Denniss",
+      "Elmo", "Fenrir", "Finn", "Flo", "Gengarline", "Hanto", "Ilias", "Jana", "JonasB", "Kaito",
+      "Kalle", "Kuro", "Lars", "Lea", "LordHelmchen", "Luca", "Marnie97", "Mats", "Milo", "Nick",
+      "Nym", "Ole", "Pat", "Quaxly", "Rob", "Sandro", "Sina", "Tao", "Timo", "Yuki"];
+  }
+
+  effectiveDeadlines(start, count) {
+    const s = this.state.deadlines;
+    return s && s.length === count ? s : this.defaultDeadlines(start, count);
+  }
+
+  pickDate(index, iso, start, count) {
+    const eff = this.effectiveDeadlines(start, count);
+    const delta = this.daysBetween(eff[index], iso);
+    const shifted = this.shiftFrom(eff, index, iso);
+    const flash = delta !== 0 && index < count - 1 ? index + 1 : null;
+    this.setState((s) => ({ deadlines: shifted, openPicker: null, flashFrom: flash, flashTick: s.flashTick + 1 }));
+    if (this._flashTimer) clearTimeout(this._flashTimer);
+    if (flash !== null) this._flashTimer = setTimeout(() => this.setState({ flashFrom: null }), 1000);
+  }
+
+  renderVals() {
+    const phrase = "Spielplan erstellen";
+    const running = this.state.phase === "running";
+    const seeded = !running;
+
+    const pc = Math.max(4, Math.min(200, this.props.playerCount ?? 40));
+    const size = Math.max(2, Math.min(24, this.props.groupSize ?? 8));
+
+    // players
+    const base = this.baseNames();
+    const players = Array.from({ length: pc }, (_, i) => {
+      const name = i < base.length ? base[i] : "Spieler" + (i + 1);
+      return { name, initials: name.slice(0, 2).toUpperCase() };
+    }).sort((a, b) => a.name.localeCompare(b.name, "de", { sensitivity: "base" }));
+
+    // groups (even distribution, like the seeding)
+    const k = Math.ceil(pc / size);
+    const bs = Math.floor(pc / k);
+    const rem = pc % k;
+    const largest = rem > 0 ? bs + 1 : bs;
+    const count = this.roundCount(largest);
+    const matchesPer = (n) => (n * (n - 1)) / 2;
+    const totalMatches = rem * matchesPer(bs + 1) + (k - rem) * matchesPer(bs);
+
+    const start = this.todayIso();
+    const deadlines = this.effectiveDeadlines(start, count);
+    const last = deadlines[deadlines.length - 1];
+
+    // rows
+    const rows = deadlines.map((end, i) => {
+      const rowStart = i === 0 ? start : this.addDays(deadlines[i - 1], 1);
+      const days = this.daysBetween(rowStart, end) + 1;
+      const flashing = this.state.flashFrom !== null && i >= this.state.flashFrom;
+      return {
+        name: "Spieltag " + (i + 1),
+        startLabel: this.fmt(rowStart, false),
+        endLabel: this.fmt(end, true),
+        end,
+        minIso: i === 0 ? this.addDays(start, 1) : rowStart,
+        daysLabel: days + " Tage",
+        daysColor: days > 7 ? "oklch(0.55 0.13 50)" : "oklch(0.52 0.035 263)",
+        anim: flashing ? "rowflash" + (this.state.flashTick % 2 ? "A" : "B") + " 0.9s ease-out" : "none",
+        pickerOpen: this.state.openPicker === i,
+        togglePicker: () => {
+          const opening = this.state.openPicker !== i;
+          const d = new Date(this.toMs(end));
+          this.setState({
+            openPicker: opening ? i : null,
+            pickerMonth: opening ? { y: d.getUTCFullYear(), m: d.getUTCMonth() } : this.state.pickerMonth,
+          });
+        },
+      };
+    });
+
+    // calendar for the open row
+    let calCells = [];
+    let calLabel = "";
+    const open = this.state.openPicker;
+    if (open !== null && this.state.pickerMonth && rows[open]) {
+      const { y, m } = this.state.pickerMonth;
+      const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+      calLabel = monthNames[m] + " " + y;
+      const firstMs = Date.UTC(y, m, 1);
+      const offset = (new Date(firstMs).getUTCDay() + 6) % 7;
+      const gridStart = firstMs - offset * 86400000;
+      const row = rows[open];
+      calCells = Array.from({ length: 42 }, (_, i) => {
+        const ms = gridStart + i * 86400000;
+        const d = new Date(ms);
+        const iso = this.toIsoStr(ms);
+        const inMonth = d.getUTCMonth() === m;
+        const disabled = iso < row.minIso;
+        const selected = iso === row.end;
+        return {
+          label: String(d.getUTCDate()),
+          disabled,
+          bg: selected ? "#ff7b00" : "transparent",
+          hoverBg: selected ? "#ff7b00" : disabled ? "transparent" : "oklch(0.965 0.008 262)",
+          color: selected ? "#021f66" : inMonth ? "oklch(0.28 0.06 264)" : "oklch(0.52 0.035 263)",
+          weight: selected ? "600" : "400",
+          opacity: disabled ? "0.3" : inMonth ? "1" : "0.55",
+          cursor: disabled ? "default" : "pointer",
+          pick: disabled ? undefined : () => this.pickDate(open, iso, start, count),
+        };
+      });
+    }
+
+    const ready = this.state.confirmation.trim() === phrase;
+    const seasonLen = last ? this.daysBetween(start, last) + 1 : 0;
+
+    return {
+      isSeeded: seeded,
+      isRunning: running,
+      statusLabel: running ? "Reguläre Saison läuft" : "Anmeldung geschlossen",
+      statusTick: running ? "#ff7b00" : "oklch(0.91 0.012 262)",
+      seasonMeta: "Geschlossen seit " + this.fmtLong(this.addDays(start, -12)) + ", 20:00 Uhr.",
+      players,
+      playerTotal: pc,
+      previewLine: k + " Gruppen \u00b7 " + count + " Spieltage \u00b7 " + totalMatches + " Spiele \u2014 die Saison startet mit der Erstellung des Spielplans.",
+      dialogOpen: seeded && this.state.dialogOpen,
+      openDialog: () => this.setState({ dialogOpen: true, deadlines: null, confirmation: "", openPicker: null }),
+      closeDialog: () => this.setState({ dialogOpen: false, deadlines: null, confirmation: "", openPicker: null }),
+      resetDemo: () => this.setState({ phase: "seeded", dialogOpen: false, deadlines: null, confirmation: "", openPicker: null }),
+      factSpieltage: String(count),
+      factSpieltageSub: "größte Gruppe: " + largest + " Spieler",
+      factStartSub: this.fmt(start, true),
+      factEnd: last ? this.fmt(last, true) : "—",
+      factEndSub: seasonLen + " Tage insgesamt",
+      rows,
+      calCells,
+      calLabel,
+      calPrev: () => this.setState((s) => {
+        const m = s.pickerMonth.m - 1;
+        return { pickerMonth: m < 0 ? { y: s.pickerMonth.y - 1, m: 11 } : { y: s.pickerMonth.y, m } };
+      }),
+      calNext: () => this.setState((s) => {
+        const m = s.pickerMonth.m + 1;
+        return { pickerMonth: m > 11 ? { y: s.pickerMonth.y + 1, m: 0 } : { y: s.pickerMonth.y, m } };
+      }),
+      confirmValue: this.state.confirmation,
+      onConfirmChange: (e) => this.setState({ confirmation: e.target.value }),
+      confirmDisabled: !ready || this.state.pending,
+      confirmBg: !ready || this.state.pending ? "oklch(0.92 0.01 262)" : "#ff7b00",
+      confirmColor: !ready || this.state.pending ? "oklch(0.6 0.02 262)" : "#ffffff",
+      confirmCursor: !ready || this.state.pending ? "default" : "pointer",
+      confirmLabel: this.state.pending ? "Wird erstellt…" : "Spielplan erstellen",
+      submit: () => {
+        if (!ready || this.state.pending) return;
+        this.setState({ pending: true });
+        setTimeout(() => this.setState({ phase: "running", dialogOpen: false, pending: false, confirmation: "", openPicker: null }), 900);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

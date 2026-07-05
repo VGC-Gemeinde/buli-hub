@@ -29,10 +29,11 @@ export function WithdrawButton() {
         <Button
           type="button"
           variant="outline"
+          className="text-destructive hover:text-destructive"
           disabled={pending}
           onClick={onClick}
         >
-          {pending ? "Wird abgemeldet…" : "Abmelden"}
+          {pending ? "Wird abgemeldet…" : "Anmeldung zurückziehen"}
         </Button>
       </div>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}

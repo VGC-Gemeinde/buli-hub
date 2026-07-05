@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { SectionHeader } from "@/components/section-header";
+import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { matchDisplayState, scoreFor } from "@/features/reporting/match-state";
 import type { MatchResultLite } from "@/features/reporting/queries";
@@ -43,20 +45,6 @@ function deadlineHint(endsOn: string, today: string): string {
   if (days === 0) return "heute fällig";
   if (days === 1) return "noch 1 Tag";
   return `noch ${days} Tage`;
-}
-
-function SectionHeading({ title, meta }: { title: string; meta?: string }) {
-  return (
-    <div className="flex items-baseline justify-between border-b pb-3">
-      <div className="flex items-center gap-2.5">
-        <div className="h-[11px] w-[22px] -skew-x-[18deg] bg-brand-orange" />
-        <h2 className="text-brand-blue text-2xl dark:text-white">{title}</h2>
-      </div>
-      {meta ? (
-        <span className="text-[13px] text-muted-foreground">{meta}</span>
-      ) : null}
-    </div>
-  );
 }
 
 // The season progress strip: one segment per Spieltag, current in orange.
@@ -110,8 +98,8 @@ function Hero({
 
   const label = (text: string) => (
     <div className="flex items-center gap-2">
-      <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
-      <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
+      <Tick size="s" />
+      <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
         {text}
       </span>
     </div>
@@ -167,7 +155,7 @@ function Hero({
       {reported && result ? (
         <Link
           href={`/match/${match.matchId}`}
-          className="flex flex-col items-start gap-1.5 sm:items-end"
+          className="group flex flex-col items-start gap-2 sm:min-h-[74px] sm:items-end sm:justify-center"
         >
           <ReportedBadge result={result} meId={meId} />
           {result.disputed ? (
@@ -175,21 +163,33 @@ function Hero({
               Angefochten
             </span>
           ) : (
-            <span className="text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white">
-              Ansehen →
+            <span className="inline-flex items-center gap-1 font-semibold text-brand-blue text-sm group-hover:underline dark:text-white">
+              Ansehen{" "}
+              <span
+                aria-hidden
+                className="transition-transform group-hover:translate-x-0.5"
+              >
+                →
+              </span>
             </span>
           )}
         </Link>
       ) : pendingFreeWin ? (
         <Link
           href={`/match/${match.matchId}`}
-          className="flex flex-col items-start gap-1.5 sm:items-end"
+          className="group flex flex-col items-start gap-2 sm:min-h-[74px] sm:items-end sm:justify-center"
         >
           <span className="rounded-full bg-brand-orange/12 px-4 py-2 font-semibold text-brand-blue text-sm dark:text-white">
             Freewin — wartet auf Bestätigung
           </span>
-          <span className="text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white">
-            Ansehen →
+          <span className="inline-flex items-center gap-1 font-semibold text-brand-blue text-sm group-hover:underline dark:text-white">
+            Ansehen{" "}
+            <span
+              aria-hidden
+              className="transition-transform group-hover:translate-x-0.5"
+            >
+              →
+            </span>
           </span>
         </Link>
       ) : (
@@ -243,7 +243,7 @@ function ReportedBadge({
           {score.label}
         </span>
       ) : null}
-      <span className="font-bold font-heading text-[22px] text-brand-blue tracking-[0.04em] dark:text-white">
+      <span className="font-bold font-heading text-[30px] text-brand-blue leading-none tracking-[0.04em] dark:text-white">
         {score.self} : {score.opponent}
       </span>
     </div>
@@ -444,10 +444,9 @@ export function InSeasonDashboard({
       />
       <div className="mt-10 grid grid-cols-1 items-start gap-7 lg:grid-cols-[1.25fr_1fr]">
         <section className="flex flex-col gap-3">
-          <SectionHeading
-            title="Dein Spielplan"
-            meta={`${totalRounds} Spieltage`}
-          />
+          <SectionHeader meta={`${totalRounds} Spieltage`}>
+            Dein Spielplan
+          </SectionHeader>
           <div className="flex flex-col gap-2">
             {matches.map((match) => (
               <ScheduleRow
@@ -462,7 +461,7 @@ export function InSeasonDashboard({
         </section>
 
         <section className="flex flex-col gap-3">
-          <SectionHeading title="Tabelle" meta={groupName} />
+          <SectionHeader meta={groupName}>Tabelle</SectionHeader>
           <StandingsPanel
             groupName={groupName}
             groupStandings={standings}

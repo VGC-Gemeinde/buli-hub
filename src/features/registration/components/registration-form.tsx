@@ -2,12 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { playerName } from "@/lib/player-name";
 import { register } from "../actions";
 import { PLATFORM_LABELS, type Platform } from "../registration";
 
@@ -22,9 +24,11 @@ type VeteranKey = (typeof VETERAN_FIELDS)[number]["key"];
 
 export function RegistrationForm({
   displayName,
+  username,
   detectedReturning,
 }: {
   displayName: string | null;
+  username: string | null;
   detectedReturning: boolean;
 }) {
   const router = useRouter();
@@ -90,7 +94,12 @@ export function RegistrationForm({
 
       <div className="grid gap-2">
         <Label htmlFor="display-name">Anzeigename</Label>
-        <Input id="display-name" value={displayName ?? ""} disabled readOnly />
+        <Input
+          id="display-name"
+          value={playerName(displayName, username)}
+          disabled
+          readOnly
+        />
         <p className="text-[13px] text-muted-foreground leading-snug">
           Dein Name auf unserem Discord-Server. Ändere ihn dort, falls nötig.
         </p>
@@ -155,7 +164,7 @@ export function RegistrationForm({
       {isVeteran && !detectedReturning ? (
         <div className="grid gap-2">
           <div className="flex items-center gap-2">
-            <div className="h-[7px] w-3.5 -skew-x-[18deg] bg-brand-orange" />
+            <Tick size="s" />
             <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
               Deine bisherige Teilnahme
             </span>
@@ -227,6 +236,7 @@ export function RegistrationForm({
           <Button
             type="button"
             size="lg"
+            className="h-11 px-6"
             disabled={!canSubmit}
             onClick={submit}
           >

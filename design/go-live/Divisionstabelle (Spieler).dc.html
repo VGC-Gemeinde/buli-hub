@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Tabelle — Buli Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #ffffff; overscroll-behavior: none; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: oklch(0.88 0.015 262); border-radius: 5px; border: 2px solid #fff; }
+    ::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</helmet>
+
+<div style="min-height: 100vh; display: flex; flex-direction: column; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264); background: #ffffff;" data-screen-label="Divisionstabelle (Spieler)">
+
+  <!-- Brand accent + site header -->
+  <div style="height: 3px; background: #ff7b00; flex-shrink: 0;"></div>
+  <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="public/logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block;">
+      <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Buli Hub</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px;">
+      <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600;">KU</div>
+      <span style="font-size: 14px; font-weight: 500;">Kuro</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+    </div>
+  </header>
+
+  <main style="flex: 1; width: 100%; max-width: 780px; margin: 0 auto; box-sizing: border-box; padding: 40px 28px 72px;">
+
+    <section style="display: flex; flex-direction: column; gap: 14px;">
+
+      <!-- Section header + view switcher -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00;"></div>
+          <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; color: #021f66;">Tabelle</h2>
+        </div>
+        <sc-if value="{{ hasSwitcher }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; gap: 4px; border: 1px solid oklch(0.91 0.012 262); border-radius: 999px; padding: 3px; background: #ffffff;">
+            <button onClick="{{ selGroup }}" style="{{ groupSegStyle }}">Division 2a</button>
+            <button onClick="{{ selDivision }}" title="Maßgebliche Tabelle für Auf- und Abstieg" style="{{ divSegStyle }}">
+              <span style="display: inline-block; height: 7px; width: 14px; transform: skewX(-18deg); background: {{ divSegTick }}; margin-right: 8px;"></span>Division 2</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noSwitcher }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size: 13px; color: oklch(0.52 0.035 263);">Division 2a</span>
+        </sc-if>
+      </div>
+
+      <p style="margin: 0; font-size: 13px; color: oklch(0.52 0.035 263);">{{ infoText }}</p>
+
+      <!-- Standings table -->
+      <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 6px 44px 1fr 64px 58px 64px; padding: 10px 16px 10px 0; border-bottom: 1px solid oklch(0.91 0.012 262); background: oklch(0.975 0.006 262);">
+          <span></span>
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); padding-left: 10px;">Platz</span>
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263);">Spieler</span>
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); text-align: right;">Bilanz</span>
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); text-align: right;">Diff.</span>
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263); text-align: right;">Punkte</span>
+        </div>
+        <sc-for list="{{ table }}" as="row" hint-placeholder-count="8">
+          <div style="display: grid; grid-template-columns: 6px 44px 1fr 64px 58px 64px; align-items: stretch; border-bottom: 1px solid {{ row.divider }}; background: {{ row.bg }};">
+            <span style="background: {{ row.rail }};"></span>
+            <span style="display: flex; align-items: center; font-size: 14px; font-weight: 600; color: oklch(0.52 0.035 263); padding: 9px 0 9px 10px;">{{ row.rank }}</span>
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 0;">
+              <div style="width: 26px; height: 26px; flex-shrink: 0; border-radius: 999px; background: {{ row.avBg }}; border: 1px solid {{ row.avBorder }}; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: {{ row.avColor }};">{{ row.initials }}</div>
+              <span style="font-size: 14.5px; font-weight: {{ row.weight }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.name }}</span>
+              <sc-if value="{{ row.isMe }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #ff7b00;">Du</span>
+              </sc-if>
+              <sc-if value="{{ row.showChip }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); flex-shrink: 0;">{{ row.group }}</span>
+              </sc-if>
+            </div>
+            <span style="display: flex; align-items: center; justify-content: flex-end; font-size: 14px; color: oklch(0.52 0.035 263); padding: 9px 0;">{{ row.record }}</span>
+            <span style="display: flex; align-items: center; justify-content: flex-end; font-size: 14px; font-weight: 600; padding: 9px 0;">{{ row.diff }}</span>
+            <span style="display: flex; align-items: center; justify-content: flex-end; font-size: 14.5px; font-weight: 600; padding: 9px 16px 9px 0;">{{ row.points }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Zone legend -->
+      <sc-if value="{{ hasLegend }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0 4px;">
+          <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="4">
+            <span style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: oklch(0.52 0.035 263);">
+              <span style="width: 14px; height: 5px; border-radius: 3px; background: {{ lg.color }};"></span>{{ lg.label }}
+            </span>
+          </sc-for>
+        </div>
+      </sc-if>
+
+    </section>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;modus&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;Gesamttabelle&quot;, &quot;Gruppentabelle&quot;], &quot;default&quot;: &quot;Gesamttabelle&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Staff-Einstellung&quot;, &quot;description&quot;: &quot;Maßgebliche Tabelle der Division — bestimmt Standardansicht, Umschalter und wo die Zonen liegen&quot;}
+}">
+class Component extends DCLogic {
+  state = { scope: null };
+
+  renderVals() {
+    const border = "oklch(0.91 0.012 262)";
+    const muted = "oklch(0.52 0.035 263)";
+    const navy = "#021f66";
+    const green = "oklch(0.6 0.12 158)";
+    const amber = "oklch(0.78 0.13 78)";
+    const red = "oklch(0.55 0.19 27)";
+
+    const divisionMode = (this.props.modus ?? "Gesamttabelle") === "Gesamttabelle";
+    const scope = divisionMode ? (this.state.scope ?? "division") : "group";
+    const me = "Kuro";
+
+    // pre-sorted division standings (wins desc, game diff desc), 2 groups à 8
+    const all = [
+      { name: "Silberzahn", g: "2b", w: 5, l: 0, d: 8 },
+      { name: "Blitzkralle", g: "2a", w: 5, l: 0, d: 7 },
+      { name: "Anni", g: "2b", w: 4, l: 1, d: 6 },
+      { name: "Mira", g: "2a", w: 4, l: 1, d: 4 },
+      { name: "Sturmvogel", g: "2a", w: 3, l: 2, d: 3 },
+      { name: "Wolkenbruch", g: "2b", w: 3, l: 2, d: 2 },
+      { name: "Timo", g: "2b", w: 3, l: 2, d: 1 },
+      { name: "Dario", g: "2a", w: 3, l: 2, d: 0 },
+      { name: "Nox", g: "2b", w: 2, l: 3, d: -1 },
+      { name: "Lumen", g: "2a", w: 2, l: 3, d: -2 },
+      { name: "Fee", g: "2b", w: 2, l: 3, d: -3 },
+      { name: "Kaya", g: "2a", w: 2, l: 3, d: -3 },
+      { name: "Kuro", g: "2a", w: 1, l: 4, d: -4 },
+      { name: "Grim", g: "2b", w: 1, l: 4, d: -5 },
+      { name: "Rex", g: "2a", w: 0, l: 5, d: -7 },
+      { name: "Palina", g: "2b", w: 0, l: 5, d: -8 },
+    ];
+
+    // zones: per-division totals in division mode, per-group counts in group mode
+    const zonesFor = (n, p, pp, dp, dem) => {
+      const z = [];
+      for (let i = 0; i < n; i++) {
+        if (i < p) z.push("promote");
+        else if (i < p + pp) z.push("ppf");
+        else if (i >= n - dem) z.push("demote");
+        else if (i >= n - dem - dp) z.push("dpf");
+        else z.push("none");
+      }
+      return z;
+    };
+
+    const groupRows = all.filter((r) => r.g === "2a");
+    const showDivision = scope === "division";
+    const rows = showDivision ? all : groupRows;
+    // zones live on the relevant table only: division table in Gesamttabelle
+    // mode, group table otherwise. The non-relevant view carries none.
+    const zones = showDivision
+      ? zonesFor(16, 2, 2, 2, 2)
+      : divisionMode
+        ? rows.map(() => "none")
+        : zonesFor(8, 1, 1, 1, 1);
+
+    const zoneStyle = {
+      promote: { rail: green, bg: "oklch(0.6 0.12 158 / 0.07)" },
+      ppf: { rail: amber, bg: "oklch(0.78 0.13 78 / 0.1)" },
+      dpf: { rail: amber, bg: "oklch(0.78 0.13 78 / 0.1)" },
+      demote: { rail: red, bg: "oklch(0.55 0.19 27 / 0.06)" },
+      none: { rail: "transparent", bg: "transparent" },
+    };
+
+    const initials = (n) => n.slice(0, 2).toUpperCase();
+    const table = rows.map((r, i) => {
+      const isMe = r.name === me;
+      const z = zoneStyle[zones[i]];
+      const zoned = zones[i] !== "none";
+      return {
+        rank: i + 1,
+        name: r.name,
+        group: r.g,
+        showChip: showDivision,
+        record: r.w + " : " + r.l,
+        diff: r.d > 0 ? "+" + r.d : r.d < 0 ? "−" + -r.d : "0",
+        points: r.w * 3,
+        initials: initials(r.name),
+        isMe,
+        weight: isMe ? 600 : 500,
+        rail: isMe && !zoned ? "#ff7b00" : z.rail,
+        bg: zoned ? z.bg : isMe ? "rgba(255,123,0,0.06)" : "transparent",
+        divider: i === rows.length - 1 ? "transparent" : border,
+        avBg: isMe ? navy : "oklch(0.965 0.008 262)",
+        avBorder: isMe ? navy : border,
+        avColor: isMe ? "#ffffff" : muted,
+      };
+    });
+
+    const hasZones = zones.some((z) => z !== "none");
+    const present = new Set(zones);
+    const legend = [
+      { show: present.has("promote"), color: green, label: "Direkter Aufstieg" },
+      { show: present.has("ppf"), color: amber, label: "Aufstiegs-Playoff" },
+      { show: present.has("dpf"), color: amber, label: "Abstiegs-Playoff" },
+      { show: present.has("demote"), color: red, label: "Direkter Abstieg" },
+    ].filter((l) => l.show);
+
+    const seg = (active) =>
+      `height: 27px; padding: 0 13px; border: none; border-radius: 999px; font-size: 12.5px; font-weight: 600; font-family: inherit; white-space: nowrap; display: inline-flex; align-items: center; ` +
+      (active ? `background: #ff7b00; color: #ffffff; cursor: default;` : `background: transparent; color: ${muted}; cursor: pointer;`);
+
+    return {
+      hasSwitcher: divisionMode,
+      noSwitcher: !divisionMode,
+      selGroup: () => this.setState({ scope: "group" }),
+      selDivision: () => this.setState({ scope: "division" }),
+      groupSegStyle: seg(!showDivision),
+      divSegStyle: seg(showDivision),
+      divSegTick: showDivision ? "#ffffff" : "#ff7b00",
+      infoText: divisionMode
+        ? showDivision
+          ? "Auf- und Abstieg wird über die Gesamttabelle der Division entschieden — die markierten Plätze gelten."
+          : "Nur zur Orientierung — Auf- und Abstieg wird über die Gesamttabelle (Division 2) entschieden."
+        : "Auf- und Abstieg wird innerhalb deiner Gruppe entschieden — die markierten Plätze gelten.",
+      table,
+      hasLegend: hasZones,
+      legend,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -41,7 +41,12 @@ export function DisputeDialog({ matchId }: { matchId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant="outline"
+        className="border-destructive/35 text-destructive"
+        onClick={() => setOpen(true)}
+      >
         Ergebnis anfechten
       </Button>
       <DialogContent>

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ActionLink } from "@/components/links";
+import { SectionHeader } from "@/components/section-header";
+import { Tick } from "@/components/tick";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { StandingsTable } from "@/features/season/components/standings-panel";
 import type { MatchdayLite } from "@/features/season/dashboard";
@@ -34,6 +37,41 @@ function weekRange(startsOn: string, endsOn: string): string {
     : `${day(startsOn)}. ${month(startsOn)} – ${day(endsOn)}. ${month(endsOn)}`;
 }
 
+// A pill switcher (division / group). Container `rounded-full`, 30px pills,
+// active = solid orange with white text (DESIGN.md §4.5, §8.2). Pills wrap on
+// narrow screens; the `py` on the row keeps a comfortable touch box.
+function Switcher({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: { value: string; label: string }[];
+  selected: string;
+  onSelect: (value: string) => void;
+}) {
+  if (options.length <= 1) return null;
+  return (
+    <div className="flex w-fit max-w-full flex-wrap gap-1 rounded-2xl border bg-muted/40 p-[3px]">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          aria-pressed={o.value === selected}
+          onClick={() => onSelect(o.value)}
+          className={cn(
+            "inline-flex h-[30px] items-center justify-center rounded-full px-3.5 font-semibold text-[13px] uppercase tracking-[0.06em] transition-colors",
+            o.value === selected
+              ? "bg-brand-orange text-white"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // The public league overview: switch division → switch group → read one table at
 // a time and browse the Spieltage. Read-only; a logged-in visitor gets their row
 // highlighted (meId) and a link back to their dashboard.
@@ -52,7 +90,7 @@ export function PublicLeague({
     <div className="mx-auto w-full max-w-[1040px] flex-1 px-6 pt-10 pb-16">
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-          <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
+          <Tick size="l" />
           <h1 className="text-[28px] text-brand-blue leading-[1.1] sm:text-[34px] dark:text-white">
             VGC Bundesliga
           </h1>
@@ -62,41 +100,28 @@ export function PublicLeague({
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
           {overview.currentRound ? (
-            <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.1em]">
+            <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
               Spieltag {overview.currentRound} / {overview.totalRounds}
             </span>
           ) : null}
           {meId ? (
-            <Link
-              href="/spieler"
-              className="font-medium text-brand-orange text-sm hover:underline"
-            >
-              Zum Spieler-Dashboard →
-            </Link>
+            <ActionLink href="/spieler" className="text-sm">
+              Zum Spieler-Dashboard
+            </ActionLink>
           ) : null}
         </div>
       </div>
 
-      {overview.divisions.length > 1 ? (
-        <div className="mt-6 flex w-fit max-w-full flex-wrap gap-1 rounded-2xl border bg-muted/40 p-[3px]">
-          {overview.divisions.map((d) => (
-            <button
-              key={d.tier}
-              type="button"
-              aria-pressed={d.tier === tier}
-              onClick={() => setTier(d.tier)}
-              className={cn(
-                "rounded-full px-3.5 py-1.5 font-semibold text-[13px] uppercase tracking-[0.06em] transition-colors",
-                d.tier === tier
-                  ? "bg-brand-orange text-white"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {d.name}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <div className="mt-6">
+        <Switcher
+          options={overview.divisions.map((d) => ({
+            value: String(d.tier),
+            label: d.name,
+          }))}
+          selected={String(tier)}
+          onSelect={(value) => setTier(Number(value))}
+        />
+      </div>
 
       {division ? (
         <DivisionView
@@ -148,41 +173,26 @@ function DivisionView({
   }
 
   const matchday = matchdays.find((m) => m.round === round) ?? null;
-  // Options: the Gesamt entry (when available) followed by each group.
+  // Both section heads carry the same meta (§4.5): the division name in Gesamt
+  // mode, otherwise the full group name („Division 1a").
+  const scopeMeta = showGesamt || !group ? division.name : group.name;
+  // Group switcher labels are short („1a" → uppercased „1A"); the division is
+  // already named in the row above, so the „Division"-prefix would be redundant.
   const options = [
     ...(gesamt ? [{ value: "gesamt", label: "Gesamt" }] : []),
-    ...division.groups.map((g) => ({ value: g.subDivisionId, label: g.name })),
+    ...division.groups.map((g) => ({
+      value: g.subDivisionId,
+      label: g.shortName,
+    })),
   ];
 
   return (
     <div className="mt-7 flex flex-col gap-8">
-      {options.length > 1 ? (
-        <div className="flex w-fit max-w-full flex-wrap gap-1 rounded-2xl border bg-muted/40 p-[3px]">
-          {options.map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              aria-pressed={o.value === selected}
-              onClick={() => setSelected(o.value)}
-              className={cn(
-                "rounded-full px-3.5 py-1.5 font-semibold text-[13px] uppercase tracking-[0.06em] transition-colors",
-                o.value === selected
-                  ? "bg-brand-orange text-white"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <Switcher options={options} selected={selected} onSelect={setSelected} />
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.15fr_1fr]">
         <section className="flex flex-col gap-3">
-          <SectionHead
-            title="Tabelle"
-            meta={showGesamt || !group ? division.name : group.name}
-          />
+          <SectionHeader meta={scopeMeta}>Tabelle</SectionHeader>
           {showGesamt && division.divisionStandings ? (
             <StandingsTable
               standings={division.divisionStandings}
@@ -200,10 +210,7 @@ function DivisionView({
         </section>
 
         <section className="flex flex-col gap-4">
-          <SectionHead
-            title="Spielplan"
-            meta={showGesamt || !group ? division.name : group.shortName}
-          />
+          <SectionHeader meta={scopeMeta}>Spielplan</SectionHeader>
           <SpieltagTimeline
             selected={round}
             total={totalRounds}
@@ -215,7 +222,7 @@ function DivisionView({
             <div className="flex flex-col gap-5">
               {division.groups.map((g) => (
                 <div key={g.subDivisionId} className="flex flex-col gap-2">
-                  <p className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.1em]">
+                  <p className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.12em]">
                     {g.name}
                   </p>
                   <MatchdayList
@@ -256,11 +263,11 @@ function SpieltagTimeline({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
-        <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.1em]">
+        <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
           Spieltag {selected} von {total}
         </span>
         {matchday ? (
-          <span className="text-[13px] text-muted-foreground">
+          <span className="text-[13px] text-muted-foreground tabular-nums">
             {weekRange(matchday.startsOn, matchday.endsOn)}
           </span>
         ) : null}
@@ -391,19 +398,5 @@ function Side({
         {identity.name}
       </span>
     </span>
-  );
-}
-
-function SectionHead({ title, meta }: { title: string; meta?: string }) {
-  return (
-    <div className="flex items-baseline justify-between border-b pb-2.5">
-      <div className="flex items-center gap-2.5">
-        <div className="h-[11px] w-[22px] -skew-x-[18deg] bg-brand-orange" />
-        <h2 className="text-brand-blue text-xl dark:text-white">{title}</h2>
-      </div>
-      {meta ? (
-        <span className="text-[13px] text-muted-foreground">{meta}</span>
-      ) : null}
-    </div>
   );
 }

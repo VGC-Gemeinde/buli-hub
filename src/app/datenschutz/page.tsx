@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal";
+import { InlineLink } from "@/components/links";
 
 export const metadata: Metadata = {
   title: "Datenschutzerklärung · Buli Hub",
@@ -24,7 +25,9 @@ export default function DatenschutzPage() {
         Krafftstr. 8, 63065 Offenbach am Main, Deutschland
         <br />
         E-Mail:{" "}
-        <a href="mailto:webmaster@vgcgemein.de">webmaster@vgcgemein.de</a>
+        <InlineLink href="mailto:webmaster@vgcgemein.de">
+          webmaster@vgcgemein.de
+        </InlineLink>
       </p>
 
       <h2>2. Zugriffsdaten / Server-Logfiles</h2>
@@ -131,7 +134,10 @@ export default function DatenschutzPage() {
       </ul>
       <p>
         Zur Ausübung deiner Rechte genügt eine Nachricht an{" "}
-        <a href="mailto:webmaster@vgcgemein.de">webmaster@vgcgemein.de</a>.
+        <InlineLink href="mailto:webmaster@vgcgemein.de">
+          webmaster@vgcgemein.de
+        </InlineLink>
+        .
       </p>
 
       <h2>10. Beschwerderecht</h2>

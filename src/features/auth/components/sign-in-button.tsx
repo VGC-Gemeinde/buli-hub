@@ -4,7 +4,7 @@ import { signInWithDiscord } from "../actions";
 
 type SignInButtonProps = Pick<
   ComponentProps<typeof Button>,
-  "variant" | "size"
+  "variant" | "size" | "className"
 >;
 
 export function SignInButton(props: SignInButtonProps) {

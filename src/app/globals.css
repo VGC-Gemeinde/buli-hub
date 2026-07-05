@@ -68,11 +68,12 @@
   --brand-blue: #021f66; /* falinks-blue */
   --brand-orange: #ff7b00; /* pawmo-orange */
 
-  /* post-season zone colors (same in both modes); navy-compatible chroma */
-  --zone-promote: oklch(0.55 0.12 158); /* guaranteed promotion — green */
-  --zone-playoff: oklch(0.8 0.13 79); /* both playoff bands — amber */
-  --zone-demote: oklch(0.55 0.19 27); /* guaranteed demotion — red */
-  --zone-champion: oklch(0.82 0.16 95); /* Division 1 title playoff — gold */
+  /* Zone palette (DESIGN.md §2.9) — decoupled from brand orange so orange keeps
+     meaning „active / you". Same values in both modes; navy-compatible chroma. */
+  --zone-promote: oklch(0.6 0.12 158); /* Aufstieg direkt — green */
+  --zone-playoff: oklch(0.78 0.13 78); /* Auf-/Abstiegs-Playoff — amber */
+  --zone-demote: oklch(0.55 0.19 27); /* Abstieg direkt — red */
+  --zone-champion: oklch(0.85 0.16 90); /* Meister-Playoff — yellow */
 
   --background: #ffffff; /* wooloo-white */
   --foreground: oklch(0.28 0.06 264); /* navy-tinted body text */

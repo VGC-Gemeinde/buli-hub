@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -254,12 +255,9 @@ export function PostSeasonDialog({
           </Button>
         </div>
       </DialogTrigger>
-      <DialogContent
-        className="grid max-h-[88vh] grid-rows-[auto_minmax(0,1fr)_auto]"
-        style={{ width: "min(1060px, 94vw)", maxWidth: "min(1060px, 94vw)" }}
-      >
+      <DialogContent className="grid max-h-[88vh] w-[min(1060px,94vw)] max-w-[min(1060px,94vw)] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-w-[min(1060px,94vw)] max-sm:inset-0 max-sm:top-0 max-sm:left-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none">
         <DialogHeader className="gap-1.5 pr-8">
-          <DialogTitle className="text-brand-blue text-xl uppercase tracking-[0.02em] dark:text-white">
+          <DialogTitle className="text-[28px] text-brand-blue uppercase leading-none tracking-[0.02em] dark:text-white">
             Auf- und Abstieg festlegen
           </DialogTitle>
           <DialogDescription>
@@ -305,16 +303,21 @@ export function PostSeasonDialog({
                 finalisiert werden.
               </p>
             ) : (
-              <ul className="max-h-16 overflow-auto">
-                {issues.map((issue) => (
-                  <li
-                    key={`${issue.kind}-${"tier" in issue ? issue.tier : `${issue.upperTier}-${issue.lowerTier}`}`}
-                    className="text-[13px] text-destructive"
-                  >
-                    {describeIssue(issue, rows)}
-                  </li>
-                ))}
-              </ul>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full bg-zone-demote text-[11px] text-white">
+                  !
+                </span>
+                <ul className="max-h-16 min-w-0 overflow-auto">
+                  {issues.map((issue) => (
+                    <li
+                      key={`${issue.kind}-${"tier" in issue ? issue.tier : `${issue.upperTier}-${issue.lowerTier}`}`}
+                      className="text-[13px] text-destructive"
+                    >
+                      {describeIssue(issue, rows)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             {saveError ? (
               <p className="text-[13px] text-destructive">{saveError}</p>
@@ -391,9 +394,9 @@ function DivisionCard({
 
   return (
     <div className="rounded-xl border bg-card shadow-2xs">
-      <div className="flex items-center gap-3 px-5 py-3">
-        <div className="h-2.5 w-5 -skew-x-[18deg] bg-brand-blue dark:bg-white" />
-        <span className="font-heading text-brand-blue text-xl uppercase tracking-[0.04em] dark:text-white">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3">
+        <Tick size="m" color="navy" />
+        <span className="font-heading text-[22px] text-brand-blue uppercase tracking-[0.04em] dark:text-white">
           {divisionName(row.tier)}
         </span>
         <span className="text-[12.5px] text-muted-foreground">
@@ -421,7 +424,7 @@ function DivisionCard({
 
         <ZonePreview preview={preview} />
 
-        <div className="flex items-start gap-4">
+        <div className="flex flex-wrap items-start gap-4">
           {isTop ? (
             // The top division can't promote — instead it sends its top players
             // to the title playoff that crowns the champion.
@@ -459,7 +462,7 @@ function DivisionCard({
               />
             </>
           )}
-          <div className="flex flex-1 items-center justify-center px-2 pt-6 text-center">
+          <div className="flex w-full items-center justify-center px-2 text-center sm:w-auto sm:flex-1 sm:pt-6">
             {leftover >= 0 ? (
               <span className="text-[12px] text-muted-foreground">
                 {leftover} Plätze Klassenerhalt
@@ -516,7 +519,8 @@ const OVERBOOKED_STRIPES =
 
 function ZonePreview({ preview }: { preview: PreviewCell[] }) {
   if (preview.length === 0) return null;
-  const width = preview.length <= 10 ? 34 : preview.length <= 16 ? 28 : 22;
+  // Spec chips are 40×34; large divisions shrink so the row still wraps cleanly.
+  const width = preview.length <= 10 ? 40 : preview.length <= 16 ? 32 : 26;
   return (
     <div className="flex flex-wrap gap-1.5">
       {preview.map((cell, i) => (
@@ -530,7 +534,7 @@ function ZonePreview({ preview }: { preview: PreviewCell[] }) {
               : { width }
           }
           className={cn(
-            "flex h-[30px] items-center justify-center rounded-[7px] border text-[11.5px] font-semibold tabular-nums",
+            "flex h-[34px] items-center justify-center rounded-[8px] border text-sm font-semibold tabular-nums max-sm:h-[32px] max-sm:!w-[32px]",
             SQUARE_FILL[cell],
           )}
         >
@@ -557,7 +561,7 @@ function Cluster({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="flex w-[148px] flex-col gap-1.5">
+    <div className="flex grow basis-[140px] flex-col gap-1.5 sm:w-[148px] sm:grow-0 sm:basis-auto">
       <div className="flex items-center gap-1.5">
         <span className={cn("size-2.5 rounded-[3px]", zoneClass)} />
         <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.06em]">
@@ -590,18 +594,18 @@ function Stepper({
         type="button"
         disabled={disabled || value <= 0}
         onClick={() => onChange(Math.max(0, value - 1))}
-        className="flex h-7 w-[30px] items-center justify-center text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+        className="flex h-[34px] w-[34px] items-center justify-center text-[16px] text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
       >
         −
       </button>
-      <span className="w-[38px] border-x py-1 text-center font-semibold text-sm tabular-nums">
+      <span className="w-[44px] border-x py-1 text-center font-semibold text-[15px] tabular-nums">
         {value}
       </span>
       <button
         type="button"
         disabled={disabled}
         onClick={() => onChange(value + 1)}
-        className="flex h-7 w-[30px] items-center justify-center text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+        className="flex h-[34px] w-[34px] items-center justify-center text-[16px] text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
       >
         +
       </button>
@@ -613,7 +617,6 @@ function SeamRow({ upper, lower }: { upper: Row; lower: Row }) {
   const demotions = effectiveMovement(forValidation(upper)).demotions;
   const promotions = effectiveMovement(forValidation(lower)).promotions;
   const balanced = demotions === promotions;
-  const diff = Math.abs(demotions - promotions);
 
   const breakdown = (row: Row, perGroupCount: number) =>
     row.relevantTable === "division"
@@ -621,8 +624,8 @@ function SeamRow({ upper, lower }: { upper: Row; lower: Row }) {
       : `${perGroupCount} je Gruppe × ${row.groupSizes.length} Gruppen`;
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-8 py-2">
-      <div className="text-right text-[12px] text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-8 py-2 sm:grid sm:grid-cols-[1fr_auto_1fr]">
+      <div className="text-[12px] text-muted-foreground sm:text-right">
         <span className="mr-1.5 font-bold text-zone-demote">↓ {demotions}</span>
         steigen ab ({breakdown(upper, upper.guaranteedDemotions)})
       </div>
@@ -634,7 +637,7 @@ function SeamRow({ upper, lower }: { upper: Row; lower: Row }) {
             : "border-zone-demote/40 bg-zone-demote/5 text-zone-demote",
         )}
       >
-        {balanced ? "✓ Ausgeglichen" : `✕ Differenz ${diff}`}
+        {balanced ? "✓ Ausgeglichen" : "✕ Nicht ausgeglichen"}
       </span>
       <div className="text-[12px] text-muted-foreground">
         <span className="mr-1.5 font-bold text-zone-promote">

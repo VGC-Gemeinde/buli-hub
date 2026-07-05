@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: oklch(0.94 0.01 262); }
+  </style>
+</helmet>
+
+<section style="display: flex; flex-direction: column; gap: 24px; padding: 48px; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264)">
+
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; color: #021f66">Saison-Dashboard im Staff-Bereich + Staff-Ansicht auf Matches</div>
+    <div style="font-size: 14px; color: oklch(0.52 0.035 263); max-width: 860px">Kein separates /staff/saison: läuft die Saison, wird der Staff-Bereich selbst zum Dashboard (<a href="#1a" style="color: #021f66; font-weight: 600">1a</a>, leer: <a href="#1b" style="color: #021f66; font-weight: 600">1b</a>). Das Dashboard ist eine Triage-Liste — nur was Handlung braucht: Überfälliges, offene Freewins, dann der Wochenüberblick. Freewins werden direkt aus der Liste bestätigt. Die Match-Seite bekommt eine Staff-Zone mit zustandsabhängigen Aktionen: offenes Match (<a href="#1c" style="color: #021f66; font-weight: 600">1c</a>), Freewin wartet (<a href="#1d" style="color: #021f66; font-weight: 600">1d</a>), Ergebnis gemeldet (<a href="#1e" style="color: #021f66; font-weight: 600">1e</a>), Dialog Freewin vergeben (<a href="#1f" style="color: #021f66; font-weight: 600">1f</a>). Der leere Disputes-Platzhalter entfällt — Sektionen ohne Inhalt zeigen wir nicht.</div>
+  </div>
+
+  <div style="display: flex; gap: 56px; align-items: flex-start; flex-wrap: wrap">
+
+    <!-- ============ 1a — Staff-Bereich, Saison läuft ============ -->
+    <div id="1a" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#1a" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">1a</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Staff-Bereich · Saison läuft — Dashboard integriert</span>
+      </div>
+      <div data-screen-label="1a Staff-Bereich Saison läuft" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 1170px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+            <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 960px; flex: 1; padding: 40px 32px; box-sizing: border-box; overflow: hidden">
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; color: #021f66">Staff-Bereich</h1>
+
+          <!-- Season strip -->
+          <div style="margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 22px">
+            <div style="display: flex; align-items: center; gap: 14px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 22px; line-height: 1; color: #021f66">Saison 1</div>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+                <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263)">Reguläre Saison</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="font-size: 13px; font-weight: 600; white-space: nowrap">Spieltag 4 von 13</span>
+              <div style="width: 160px; height: 6px; border-radius: 999px; background: oklch(0.93 0.01 262); overflow: hidden">
+                <div style="width: 31%; height: 100%; background: #ff7b00"></div>
+              </div>
+              <span style="font-size: 13px; color: oklch(0.52 0.035 263); white-space: nowrap">29.06. – 05.07.</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 18px">
+              <a href="Divisions-Einteilung.dc.html" style="display: inline-flex; height: 32px; align-items: center; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); padding: 0 14px; font-size: 13.5px; font-weight: 500; color: #021f66; text-decoration: none">Divisionen</a>
+              <a href="Spielplan-Erstellung.dc.html" style="display: inline-flex; height: 32px; align-items: center; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); padding: 0 14px; font-size: 13.5px; font-weight: 500; color: #021f66; text-decoration: none">Spielplan</a>
+            </div>
+          </div>
+
+          <!-- Stat tiles -->
+          <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px">
+            <div style="border: 1px solid oklch(0.55 0.2 25 / 0.4); background: oklch(0.55 0.2 25 / 0.05); border-radius: 10px; padding: 14px 18px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1; color: #021f66; font-variant-numeric: tabular-nums">3</div>
+              <div style="margin-top: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.5 0.19 25)">Überfällig</div>
+            </div>
+            <div style="border: 1px solid oklch(0.55 0.2 25 / 0.4); background: oklch(0.55 0.2 25 / 0.05); border-radius: 10px; padding: 14px 18px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1; color: #021f66; font-variant-numeric: tabular-nums">1</div>
+              <div style="margin-top: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.5 0.19 25)">Angefochten</div>
+            </div>
+            <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 18px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1; color: #021f66; font-variant-numeric: tabular-nums">5</div>
+              <div style="margin-top: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263)">Offen diese Woche</div>
+            </div>
+            <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 18px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1; color: #021f66; font-variant-numeric: tabular-nums">2</div>
+              <div style="margin-top: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263)">Freewins offen</div>
+            </div>
+          </div>
+
+          <!-- Überfällig -->
+          <div style="margin-top: 34px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <div style="height: 8px; width: 16px; transform: skewX(-18deg); background: #ff7b00; height: 9px; width: 18px"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Überfällig</h2>
+              <span style="border-radius: 999px; background: oklch(0.965 0.008 262); padding: 2px 9px; font-size: 12.5px; font-weight: 600; color: oklch(0.52 0.035 263); font-variant-numeric: tabular-nums">3</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 16px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 1a · S2</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Piet <span style="color: oklch(0.52 0.035 263)">vs.</span> Yuna</a>
+                <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.55 0.2 25 / 0.08); color: oklch(0.5 0.19 25); padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">seit 12 Tagen</span>
+                <span style="width: 48px; flex-shrink: 0; text-align: right; font-size: 13px; color: oklch(0.52 0.035 263)">21.06.</span>
+                <a href="#1f" style="display: inline-flex; flex-shrink: 0; height: 28px; align-items: center; border-radius: 8px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 10px; font-size: 13px; font-weight: 500; color: inherit; text-decoration: none">Freewin…</a>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 16px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 2a · S3</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Milva <span style="color: oklch(0.52 0.035 263)">vs.</span> Corvus</a>
+                <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.55 0.2 25 / 0.08); color: oklch(0.5 0.19 25); padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">seit 5 Tagen</span>
+                <span style="width: 48px; flex-shrink: 0; text-align: right; font-size: 13px; color: oklch(0.52 0.035 263)">28.06.</span>
+                <a href="#1f" style="display: inline-flex; flex-shrink: 0; height: 28px; align-items: center; border-radius: 8px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 10px; font-size: 13px; font-weight: 500; color: inherit; text-decoration: none">Freewin…</a>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 16px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 3b · S3</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Talos <span style="color: oklch(0.52 0.035 263)">vs.</span> Vesper</a>
+                <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.55 0.2 25 / 0.08); color: oklch(0.5 0.19 25); padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">seit 5 Tagen</span>
+                <span style="width: 48px; flex-shrink: 0; text-align: right; font-size: 13px; color: oklch(0.52 0.035 263)">28.06.</span>
+                <a href="#1f" style="display: inline-flex; flex-shrink: 0; height: 28px; align-items: center; border-radius: 8px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 10px; font-size: 13px; font-weight: 500; color: inherit; text-decoration: none">Freewin…</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Angefochten -->
+          <div style="margin-top: 34px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Angefochten</h2>
+              <span style="border-radius: 999px; background: oklch(0.965 0.008 262); padding: 2px 9px; font-size: 12.5px; font-weight: 600; color: oklch(0.52 0.035 263); font-variant-numeric: tabular-nums">1</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; border: 1px solid oklch(0.55 0.2 25 / 0.4); background: oklch(0.55 0.2 25 / 0.04); border-radius: 10px; padding: 12px 16px">
+              <div style="display: flex; align-items: center; gap: 14px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 2d · S1</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Anna <span style="color: oklch(0.52 0.035 263)">vs.</span> Nico</a>
+                <a href="Ergebnis melden.dc.html" style="display: inline-flex; flex-shrink: 0; height: 28px; align-items: center; border-radius: 8px; border: 1px solid oklch(0.55 0.2 25 / 0.45); background: #ffffff; padding: 0 10px; font-size: 13px; font-weight: 500; color: oklch(0.5 0.19 25); text-decoration: none">Prüfen</a>
+              </div>
+              <div style="display: flex; gap: 14px; padding-left: 110px; font-size: 13px; color: oklch(0.52 0.035 263)">„Spiel 2 ging an mich, das Ergebnis stimmt nicht." — Nico</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 2px">
+              <span style="font-size: 13px; color: oklch(0.52 0.035 263)">Erledigte Anfechtungen <span style="font-variant-numeric: tabular-nums">(1)</span></span>
+              <span style="font-size: 13px; font-weight: 600; color: #021f66; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Anzeigen</span>
+            </div>
+          </div>
+
+          <!-- Freewins bestätigen -->
+          <div style="margin-top: 34px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <div style="height: 8px; width: 16px; transform: skewX(-18deg); background: #ff7b00; height: 9px; width: 18px"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Freewins bestätigen</h2>
+              <span style="border-radius: 999px; background: oklch(0.965 0.008 262); padding: 2px 9px; font-size: 12.5px; font-weight: 600; color: oklch(0.52 0.035 263); font-variant-numeric: tabular-nums">2</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; flex-direction: column; gap: 7px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 11px 16px">
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 1b · S4</span>
+                  <a href="#1d" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Lyra <span style="color: oklch(0.52 0.035 263)">vs.</span> Fenrik</a>
+                  <span style="flex-shrink: 0; border-radius: 999px; background: rgba(255,123,0,0.14); color: #021f66; padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">Freewin: Lyra</span>
+                  <button style="display: inline-flex; flex-shrink: 0; height: 28px; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid transparent; background: #ff7b00; color: #ffffff; padding: 0 12px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">Bestätigen</button>
+                </div>
+                <div style="display: flex; gap: 14px; padding-left: 110px; font-size: 13px; color: oklch(0.52 0.035 263)">„Gegner war die ganze Woche nicht erreichbar." — gemeldet von Lyra, Mi., 01.07.</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 7px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 11px 16px">
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 2b · S3</span>
+                  <a href="#1d" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Juno <span style="color: oklch(0.52 0.035 263)">vs.</span> Rasmus</a>
+                  <span style="flex-shrink: 0; border-radius: 999px; background: rgba(255,123,0,0.14); color: #021f66; padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">Freewin: Juno</span>
+                  <button style="display: inline-flex; flex-shrink: 0; height: 28px; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid transparent; background: #ff7b00; color: #ffffff; padding: 0 12px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">Bestätigen</button>
+                </div>
+                <div style="display: flex; gap: 14px; padding-left: 110px; font-size: 13px; color: oklch(0.52 0.035 263)">„Krankheitsbedingt abgesagt, kein Nachholtermin möglich." — gemeldet von Juno, Di., 30.06.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Diese Woche -->
+          <div style="margin-top: 34px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div style="height: 8px; width: 16px; transform: skewX(-18deg); background: #ff7b00; height: 9px; width: 18px"></div>
+                <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Diese Woche offen</h2>
+                <span style="border-radius: 999px; background: oklch(0.965 0.008 262); padding: 2px 9px; font-size: 12.5px; font-weight: 600; color: oklch(0.52 0.035 263); font-variant-numeric: tabular-nums">5</span>
+              </div>
+              <button style="border: none; background: none; padding: 0; font-size: 13px; font-weight: 500; color: oklch(0.52 0.035 263); font-family: inherit; cursor: pointer">Alle anzeigen (8)</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 16px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 1a · S4</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Kuro <span style="color: oklch(0.52 0.035 263)">vs.</span> Nero</a>
+                <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">offen</span>
+                <span style="width: 48px; flex-shrink: 0; text-align: right; font-size: 13px; color: oklch(0.52 0.035 263)">05.07.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 16px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 1a · S4</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Edda <span style="color: oklch(0.52 0.035 263)">vs.</span> Bo</a>
+                <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">offen</span>
+                <span style="width: 48px; flex-shrink: 0; text-align: right; font-size: 13px; color: oklch(0.52 0.035 263)">05.07.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 16px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 2a · S4</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Smilla <span style="color: oklch(0.52 0.035 263)">vs.</span> Corvus</a>
+                <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">offen</span>
+                <span style="width: 48px; flex-shrink: 0; text-align: right; font-size: 13px; color: oklch(0.52 0.035 263)">05.07.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 16px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 2b · S4</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Rasmus <span style="color: oklch(0.52 0.035 263)">vs.</span> Piet</a>
+                <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">offen</span>
+                <span style="width: 48px; flex-shrink: 0; text-align: right; font-size: 13px; color: oklch(0.52 0.035 263)">05.07.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 9px 16px">
+                <span style="width: 96px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263)">Div 3a · S4</span>
+                <a href="#1c" style="flex: 1; min-width: 0; font-size: 14.5px; font-weight: 500; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Vesper <span style="color: oklch(0.52 0.035 263)">vs.</span> Juno</a>
+                <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap">offen</span>
+                <span style="width: 48px; flex-shrink: 0; text-align: right; font-size: 13px; color: oklch(0.52 0.035 263)">05.07.</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Ersetzt den Staff-Bereich im Zustand „Saison läuft" — kein Zwischenschritt über eine Karte mit „Dashboard öffnen". Die Saison-Zeile bündelt Kontext (Spieltag-Fortschritt, aktuelle Woche) und die bisherigen Einstiege Divisionen/Spielplan. Kacheln zeigen nur Handlungsbedarf. Überfällige Zeilen haben „Freewin…" als Schnellaktion direkt aus der Liste (öffnet <a href="#1f" style="color: #021f66; font-weight: 600">1f</a>); Zeilenklick führt zur Match-Seite (<a href="#1c" style="color: #021f66; font-weight: 600">1c</a>). Freewins zeigen die Begründung direkt in der Liste — bestätigen ohne Seitenwechsel.</div>
+    </div>
+
+    <!-- ============ 1b — Staff-Bereich, alles erledigt ============ -->
+    <div id="1b" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#1b" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">1b</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Staff-Bereich · Alles erledigt</span>
+      </div>
+      <div data-screen-label="1b Staff-Bereich alles erledigt" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 640px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+            <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 960px; flex: 1; padding: 40px 32px; box-sizing: border-box; overflow: hidden">
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; color: #021f66">Staff-Bereich</h1>
+
+          <div style="margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 22px">
+            <div style="display: flex; align-items: center; gap: 14px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 22px; line-height: 1; color: #021f66">Saison 1</div>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+                <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263)">Reguläre Saison</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="font-size: 13px; font-weight: 600; white-space: nowrap">Spieltag 4 von 13</span>
+              <div style="width: 160px; height: 6px; border-radius: 999px; background: oklch(0.93 0.01 262); overflow: hidden">
+                <div style="width: 31%; height: 100%; background: #ff7b00"></div>
+              </div>
+              <span style="font-size: 13px; color: oklch(0.52 0.035 263); white-space: nowrap">29.06. – 05.07.</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 18px">
+              <a href="Divisions-Einteilung.dc.html" style="display: inline-flex; height: 32px; align-items: center; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); padding: 0 14px; font-size: 13.5px; font-weight: 500; color: #021f66; text-decoration: none">Divisionen</a>
+              <a href="Spielplan-Erstellung.dc.html" style="display: inline-flex; height: 32px; align-items: center; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); padding: 0 14px; font-size: 13.5px; font-weight: 500; color: #021f66; text-decoration: none">Spielplan</a>
+            </div>
+          </div>
+
+          <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px">
+            <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 18px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1; color: oklch(0.72 0.02 262); font-variant-numeric: tabular-nums">0</div>
+              <div style="margin-top: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263)">Überfällig</div>
+            </div>
+            <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 18px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1; color: oklch(0.72 0.02 262); font-variant-numeric: tabular-nums">0</div>
+              <div style="margin-top: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263)">Angefochten</div>
+            </div>
+            <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 18px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1; color: oklch(0.72 0.02 262); font-variant-numeric: tabular-nums">0</div>
+              <div style="margin-top: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263)">Offen diese Woche</div>
+            </div>
+            <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 18px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1; color: oklch(0.72 0.02 262); font-variant-numeric: tabular-nums">0</div>
+              <div style="margin-top: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263)">Freewins offen</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 26px; display: flex; align-items: center; gap: 16px; border: 1px dashed oklch(0.87 0.015 262); border-radius: 10px; padding: 22px 24px">
+            <div style="height: 10px; width: 20px; transform: skewX(-18deg); background: #ff7b00; flex-shrink: 0"></div>
+            <div style="display: flex; flex-direction: column; gap: 3px">
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 20px; line-height: 1; color: #021f66">Alles erledigt</div>
+              <div style="font-size: 13.5px; color: oklch(0.52 0.035 263)">Alle 8 Matches dieser Woche sind gemeldet, nichts ist überfällig, keine Freewins offen.</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div style="height: 8px; width: 16px; transform: skewX(-18deg); background: #ff7b00; height: 9px; width: 18px"></div>
+                <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Diese Woche offen</h2>
+                <span style="border-radius: 999px; background: oklch(0.965 0.008 262); padding: 2px 9px; font-size: 12.5px; font-weight: 600; color: oklch(0.52 0.035 263); font-variant-numeric: tabular-nums">0</span>
+              </div>
+              <button style="border: none; background: none; padding: 0; font-size: 13px; font-weight: 500; color: oklch(0.52 0.035 263); font-family: inherit; cursor: pointer">Alle anzeigen (8)</button>
+            </div>
+            <p style="margin: 0; border: 1px dashed oklch(0.87 0.015 262); border-radius: 10px; padding: 16px; text-align: center; font-size: 14px; color: oklch(0.52 0.035 263)">Diese Woche ist alles gemeldet.</p>
+          </div>
+        </main>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Leerzustand: Kacheln bleiben als ruhige Bestätigung stehen (Zahlen ausgegraut), eine Zeile sagt explizit, dass nichts ansteht. Überfällig- und Freewin-Sektionen verschwinden komplett, statt leere Platzhalter zu zeigen — nur der Wochenüberblick bleibt, über „Alle anzeigen" erreichbar.</div>
+    </div>
+
+    <!-- ============ 1c — Match-Seite, Staff-Ansicht, offen/überfällig ============ -->
+    <div id="1c" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#1c" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">1c</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Match · Staff-Ansicht · kein Ergebnis, überfällig</span>
+      </div>
+      <div data-screen-label="1c Match Staff-Ansicht offen" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 700px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+            <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 760px; flex: 1; padding: 36px 32px; box-sizing: border-box; overflow: hidden">
+          <a href="#1a" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: oklch(0.52 0.035 263); text-decoration: none; margin-bottom: 18px">← Staff-Bereich</a>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
+            <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263); white-space: nowrap">Spieltag 3 · Division 2a · Deadline war Sa., 28.06.</span>
+          </div>
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 38px; line-height: 1.1; color: #021f66">Milva vs. Corvus</h1>
+
+          <div style="margin-top: 22px; display: flex; align-items: center; gap: 12px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 14px 18px">
+            <span style="flex-shrink: 0; border-radius: 999px; background: oklch(0.55 0.2 25 / 0.08); color: oklch(0.5 0.19 25); padding: 3px 12px; font-size: 12.5px; font-weight: 600; white-space: nowrap">seit 5 Tagen überfällig</span>
+            <span style="font-size: 14px; color: oklch(0.52 0.035 263)">Noch kein Ergebnis gemeldet.</span>
+          </div>
+
+          <section style="margin-top: 36px; display: flex; flex-direction: column; gap: 4px; border: 1px solid rgba(2,31,102,0.25); background: rgba(2,31,102,0.03); border-radius: 12px; padding: 20px 24px 8px">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <div style="height: 8px; width: 16px; transform: skewX(-18deg); background: #021f66; height: 9px; width: 18px"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 20px; line-height: 1; color: #021f66">Staff-Aktionen</h2>
+            </div>
+            <p style="margin: 6px 0 10px; font-size: 13.5px; color: oklch(0.52 0.035 263)">Spieler melden Ergebnisse selbst. Staff greift ein, wenn ein Match nicht zustande kommt.</p>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(2,31,102,0.1); padding: 14px 0">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14.5px; font-weight: 600">Freewin vergeben</span>
+                <span style="font-size: 13px; color: oklch(0.52 0.035 263)">Ein Spieler erhält den Sieg. Begründung erforderlich — sofort gewertet.</span>
+              </div>
+              <a href="#1f" style="display: inline-flex; flex-shrink: 0; height: 32px; align-items: center; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 12px; font-size: 14px; font-weight: 500; color: inherit; text-decoration: none">Vergeben…</a>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(2,31,102,0.1); padding: 14px 0">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14.5px; font-weight: 600">Doppelniederlage vergeben</span>
+                <span style="font-size: 13px; color: oklch(0.52 0.035 263)">Beide Spieler erhalten eine Niederlage, niemand einen Sieg.</span>
+              </div>
+              <button style="display: inline-flex; flex-shrink: 0; height: 32px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 12px; font-size: 14px; font-weight: 500; font-family: inherit; color: inherit; cursor: pointer">Vergeben…</button>
+            </div>
+          </section>
+        </main>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Staff sieht jedes Match, meldet aber keine normalen Ergebnisse — das bleibt bei den Spielern. Die Staff-Zone ist blau abgesetzt (Offiziellen-Farbe, klar getrennt vom Spieler-Orange), jede Aktion mit Konsequenz-Zeile. Zurück-Link führt für Staff in den Staff-Bereich, nicht ins Spieler-Dashboard.</div>
+    </div>
+
+    <!-- ============ 1d — Match-Seite, Freewin wartet ============ -->
+    <div id="1d" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#1d" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">1d</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Match · Staff-Ansicht · Freewin wartet auf Bestätigung</span>
+      </div>
+      <div data-screen-label="1d Match Freewin wartet" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 810px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+            <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 760px; flex: 1; padding: 36px 32px; box-sizing: border-box; overflow: hidden">
+          <a href="#1a" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: oklch(0.52 0.035 263); text-decoration: none; margin-bottom: 18px">← Staff-Bereich</a>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263); white-space: nowrap">Freewin · Spieltag 4 · Division 1b</span>
+            </div>
+            <div style="padding: 4px 14px; border-radius: 999px; background: rgba(255,123,0,0.14); flex-shrink: 0; display: flex; align-items: center; justify-content: center">
+              <span style="font-size: 12.5px; font-weight: 600; color: #021f66">Wartet auf Bestätigung</span>
+            </div>
+          </div>
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 38px; line-height: 1.1; color: #021f66">Lyra vs. Fenrik</h1>
+
+          <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 12px; padding: 20px 24px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263)">Sieg</span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 26px; line-height: 1; color: #021f66">Lyra</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263)">Begründung</span>
+              <p style="margin: 0; font-size: 14.5px; line-height: 1.55">„Gegner war trotz mehrerer Terminvorschläge über die ganze Woche nicht erreichbar."</p>
+            </div>
+            <div style="font-size: 13px; color: oklch(0.52 0.035 263)">Gemeldet von Lyra · Mi., 01.07., 21:14</div>
+          </div>
+
+          <section style="margin-top: 36px; display: flex; flex-direction: column; gap: 4px; border: 1px solid rgba(2,31,102,0.25); background: rgba(2,31,102,0.03); border-radius: 12px; padding: 20px 24px 8px">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <div style="height: 8px; width: 16px; transform: skewX(-18deg); background: #021f66; height: 9px; width: 18px"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 20px; line-height: 1; color: #021f66">Staff-Aktionen</h2>
+            </div>
+            <p style="margin: 6px 0 10px; font-size: 13.5px; color: oklch(0.52 0.035 263)">Der Freewin zählt erst nach Bestätigung für die Tabelle.</p>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(2,31,102,0.1); padding: 14px 0">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14.5px; font-weight: 600">Freewin bestätigen</span>
+                <span style="font-size: 13px; color: oklch(0.52 0.035 263)">Sieg für Lyra wird gewertet.</span>
+              </div>
+              <button style="display: inline-flex; flex-shrink: 0; height: 32px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid transparent; background: #ff7b00; color: #ffffff; padding: 0 14px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer">Bestätigen</button>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(2,31,102,0.1); padding: 14px 0">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14.5px; font-weight: 600">Zurückweisen</span>
+                <span style="font-size: 13px; color: oklch(0.52 0.035 263)">Meldung wird gelöscht, das Match kann neu gemeldet werden.</span>
+              </div>
+              <button style="display: inline-flex; flex-shrink: 0; height: 32px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 12px; font-size: 14px; font-weight: 500; font-family: inherit; color: inherit; cursor: pointer">Zurückweisen…</button>
+            </div>
+          </section>
+        </main>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Der wichtigste Fall der Staff-Zone: Bestätigen als einzige Primäraktion (Orange), mit dem Gewinner in der Konsequenz-Zeile. „Zurückweisen" ist das Gegenstück und ersetzt ein verstecktes „Ergebnis zurücksetzen" — gleiche Wirkung, aber im Vokabular der Entscheidung. Aus dem Dashboard (<a href="#1a" style="color: #021f66; font-weight: 600">1a</a>) geht Bestätigen auch ohne diese Seite.</div>
+    </div>
+
+    <!-- ============ 1e — Match-Seite, Ergebnis gemeldet ============ -->
+    <div id="1e" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#1e" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">1e</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Match · Staff-Ansicht · Ergebnis gemeldet</span>
+      </div>
+      <div data-screen-label="1e Match Ergebnis gemeldet" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 900px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+            <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 760px; flex: 1; padding: 36px 32px; box-sizing: border-box; overflow: hidden">
+          <a href="#1a" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: oklch(0.52 0.035 263); text-decoration: none; margin-bottom: 18px">← Staff-Bereich</a>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263); white-space: nowrap">Ergebnis · Spieltag 4 · Division 1a</span>
+            </div>
+            <div style="padding: 4px 14px; border-radius: 999px; background: rgba(2,31,102,0.07); flex-shrink: 0; display: flex; align-items: center; justify-content: center">
+              <span style="font-size: 12.5px; font-weight: 600; color: #021f66">Gemeldet</span>
+            </div>
+          </div>
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 38px; line-height: 1.1; color: #021f66">Kuro vs. Nero</h1>
+
+          <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 16px; border: 1px solid oklch(0.91 0.012 262); border-radius: 12px; padding: 22px 24px">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 22px">
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 24px; color: #021f66">Kuro</span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 44px; line-height: 1; color: #021f66; font-variant-numeric: tabular-nums">2 : 1</span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 24px; color: oklch(0.52 0.035 263)">Nero</span>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px">
+              <span style="border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); padding: 3px 12px; font-size: 12.5px; font-weight: 600">Spiel 1 · Kuro</span>
+              <span style="border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); padding: 3px 12px; font-size: 12.5px; font-weight: 600">Spiel 2 · Nero</span>
+              <span style="border-radius: 999px; background: oklch(0.965 0.008 262); color: oklch(0.52 0.035 263); padding: 3px 12px; font-size: 12.5px; font-weight: 600">Spiel 3 · Kuro</span>
+            </div>
+            <div style="text-align: center; font-size: 13px; color: oklch(0.52 0.035 263)">Gemeldet von Kuro · Do., 02.07., 19:42</div>
+          </div>
+
+          <section style="margin-top: 36px; display: flex; flex-direction: column; gap: 4px; border: 1px solid rgba(2,31,102,0.25); background: rgba(2,31,102,0.03); border-radius: 12px; padding: 20px 24px 8px">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <div style="height: 8px; width: 16px; transform: skewX(-18deg); background: #021f66; height: 9px; width: 18px"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 20px; line-height: 1; color: #021f66">Staff-Aktionen</h2>
+            </div>
+            <p style="margin: 6px 0 10px; font-size: 13.5px; color: oklch(0.52 0.035 263)">Eingriffe überschreiben bzw. löschen das gemeldete Ergebnis.</p>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(2,31,102,0.1); padding: 14px 0">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14.5px; font-weight: 600">Ergebnis zurücksetzen</span>
+                <span style="font-size: 13px; color: oklch(0.52 0.035 263)">Löscht das Ergebnis — das Match kann neu gemeldet werden.</span>
+              </div>
+              <button style="display: inline-flex; flex-shrink: 0; height: 32px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid oklch(0.55 0.2 25 / 0.35); background: #ffffff; color: oklch(0.5 0.19 25); padding: 0 12px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer">Zurücksetzen…</button>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(2,31,102,0.1); padding: 14px 0">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14.5px; font-weight: 600">Freewin vergeben</span>
+                <span style="font-size: 13px; color: oklch(0.52 0.035 263)">Überschreibt das gemeldete Ergebnis. Begründung erforderlich.</span>
+              </div>
+              <a href="#1f" style="display: inline-flex; flex-shrink: 0; height: 32px; align-items: center; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 12px; font-size: 14px; font-weight: 500; color: inherit; text-decoration: none">Vergeben…</a>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(2,31,102,0.1); padding: 14px 0">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14.5px; font-weight: 600">Doppelniederlage vergeben</span>
+                <span style="font-size: 13px; color: oklch(0.52 0.035 263)">Überschreibt das gemeldete Ergebnis — beide verlieren.</span>
+              </div>
+              <button style="display: inline-flex; flex-shrink: 0; height: 32px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 12px; font-size: 14px; font-weight: 500; font-family: inherit; color: inherit; cursor: pointer">Vergeben…</button>
+            </div>
+          </section>
+        </main>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Bei gemeldetem Ergebnis wird die Staff-Zone zur Korrektur-Zone: Zurücksetzen zuerst (häufigster Fall, rot umrandet als destruktive Aktion), Überschreiben darunter. Jede Zeile benennt explizit, dass das bestehende Ergebnis verloren geht — alle drei Aktionen bestätigen per Dialog.</div>
+    </div>
+
+    <!-- ============ 1f — Dialog: Freewin vergeben ============ -->
+    <div id="1f" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#1f" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">1f</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Dialog · Freewin vergeben</span>
+      </div>
+      <div data-screen-label="1f Dialog Freewin vergeben" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 700px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+            <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 760px; flex: 1; padding: 36px 32px; box-sizing: border-box; overflow: hidden">
+          <a href="#1a" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: oklch(0.52 0.035 263); text-decoration: none; margin-bottom: 18px">← Staff-Bereich</a>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
+            <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: oklch(0.52 0.035 263); white-space: nowrap">Spieltag 3 · Division 2a · Deadline war Sa., 28.06.</span>
+          </div>
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 38px; line-height: 1.1; color: #021f66">Milva vs. Corvus</h1>
+        </main>
+        <div style="position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: oklch(0.15 0.04 265 / 0.4)">
+          <div style="display: flex; width: 480px; flex-direction: column; gap: 16px; border-radius: 12px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; box-shadow: 0 12px 32px oklch(0.15 0.04 265 / 0.25); padding: 24px; box-sizing: border-box">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h3 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; line-height: 1; color: #021f66">Freewin vergeben</h3>
+              <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: oklch(0.52 0.035 263)">Milva vs. Corvus · Spieltag 3 · Division 2a. Wird sofort gewertet und überschreibt ein bestehendes Ergebnis.</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span style="font-size: 14px; font-weight: 500">Gewinner</span>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 2px solid #ff7b00; border-radius: 10px; padding: 12px 14px; cursor: pointer">
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <div style="display: flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">MI</div>
+                    <span style="font-size: 14.5px; font-weight: 600">Milva</span>
+                  </div>
+                  <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 13px 15px; cursor: pointer">
+                  <div style="display: flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">CO</div>
+                  <span style="font-size: 14.5px; font-weight: 500">Corvus</span>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span style="font-size: 14px; font-weight: 500">Begründung</span>
+              <div style="border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.5; min-height: 62px">Corvus hat auf keine Terminanfrage reagiert (Discord, drei Versuche über die Woche verteilt).</div>
+              <span style="font-size: 12.5px; color: oklch(0.52 0.035 263)">Sichtbar für beide Spieler auf der Match-Seite.</span>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px">
+              <button style="display: inline-flex; height: 32px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 12px; font-size: 14px; font-weight: 500; font-family: inherit; color: inherit; cursor: pointer">Abbrechen</button>
+              <button style="display: inline-flex; height: 32px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid transparent; background: #ff7b00; color: #ffffff; padding: 0 14px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer">Freewin an Milva vergeben</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Gewinner als zwei antippbare Spieler-Karten statt Dropdown (ein Klick, kein Menü — gleiches Muster wie beim Spieler-Freewin in „Ergebnis melden"). Der Bestätigen-Button benennt den Gewinner und ist erst aktiv, wenn Gewinner + Begründung gesetzt sind. Der Hinweis unter der Begründung macht klar, dass sie für die Spieler sichtbar ist. Gleicher Dialog aus Dashboard-Zeile (<a href="#1a" style="color: #021f66; font-weight: 600">1a</a>) und Match-Seite (<a href="#1c" style="color: #021f66; font-weight: 600">1c</a>).</div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+</body>
+</html>

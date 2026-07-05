@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,7 +110,7 @@ export function SeedingToolbar({
       </Link>
       <div className="flex items-center gap-7 px-7 pt-2 pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="h-[11px] w-[22px] -skew-x-[18deg] bg-brand-orange" />
+          <Tick size="l" />
           <h1 className="whitespace-nowrap text-[28px] text-brand-blue leading-none dark:text-white">
             Divisionen einteilen
           </h1>
@@ -140,7 +141,7 @@ export function SeedingToolbar({
         ) : null}
         {finalized ? (
           <div className="flex items-center gap-2 rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-3 py-1.5 font-semibold text-[13.5px]">
-            <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
+            <Tick size="s" />
             Finalisiert — endgültig
           </div>
         ) : readOnly ? null : (

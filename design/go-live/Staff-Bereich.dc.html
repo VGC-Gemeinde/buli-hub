@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: oklch(0.94 0.01 262); }
+  </style>
+</helmet>
+
+<section style="display: flex; flex-direction: column; gap: 24px; padding: 48px; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264)">
+
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; color: #021f66">Staff-Bereich — Vor-Saison /staff</div>
+    <div style="font-size: 14px; color: oklch(0.52 0.035 263); max-width: 760px">Keine Saison wird &bdquo;angelegt&ldquo; — das System kennt die n&auml;chste Saison. Staff &ouml;ffnet nur die Anmeldung: geschlossen (<a href="#2a" style="color: #021f66; font-weight: 600">2a</a>) &rarr; Best&auml;tigung (<a href="#2b" style="color: #021f66; font-weight: 600">2b</a>) &rarr; offen (<a href="#2c" style="color: #021f66; font-weight: 600">2c</a>) &rarr; geschlossen (<a href="#2d" style="color: #021f66; font-weight: 600">2d</a>). Geschlossen wird automatisch zum Anmeldeschluss, kein Button. Vor der &Ouml;ffnung gibt es keine Anmeldungen-Sektion; der Anmeldelink ist kopierbar, sobald er relevant ist.</div>
+  </div>
+
+  <div style="display: flex; gap: 56px; align-items: flex-start; flex-wrap: wrap">
+
+    <!-- ============ 2a — Anmeldung noch nicht geöffnet ============ -->
+    <div id="2a" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#2a" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">2a</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Anmeldung noch nicht ge&ouml;ffnet</span>
+      </div>
+      <div data-screen-label="2a Anmeldung geschlossen" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 620px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 28px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+              <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+            </div>
+            <nav style="display: flex; align-items: center; gap: 20px">
+              <span style="font-size: 14px; font-weight: 500; color: oklch(0.52 0.035 263)">Spieler-Dashboard</span>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+                <span style="font-size: 14px; font-weight: 600; color: #021f66">Staff-Bereich</span>
+              </div>
+            </nav>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 960px; flex: 1; padding: 48px 32px; box-sizing: border-box; overflow: hidden">
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; color: #021f66">Staff-Bereich</h1>
+          <div style="margin-top: 36px; display: flex; flex-direction: column; gap: 20px">
+            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px">
+              <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Saison</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); padding: 20px 24px">
+              <div style="display: flex; align-items: center; gap: 14px">
+                <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; line-height: 1; color: #021f66">Saison 1</div>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: oklch(0.88 0.015 262)"></div>
+                  <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263)">Anmeldung noch nicht ge&ouml;ffnet</span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: flex-end; gap: 12px">
+                <div style="display: grid; gap: 8px">
+                  <label style="font-size: 14px; font-weight: 500; line-height: 1">Anmeldeschluss</label>
+                  <input value="15.08.2026, 20:00" style="height: 32px; width: 200px; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: transparent; outline: none; padding: 0 10px; font-size: 14px; font-family: inherit; color: inherit; box-sizing: border-box">
+                </div>
+                <button style="display: inline-flex; height: 38px; align-items: center; justify-content: center; border-radius: 8px; border: none; background: #ff7b00; color: #ffffff; padding: 0 16px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer">Anmeldung &ouml;ffnen</button>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <p style="margin: 0; font-size: 13px; color: oklch(0.52 0.035 263)">Anmeldelink (aktiv, sobald ge&ouml;ffnet):</p>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <code style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 8px; background: oklch(0.965 0.008 262); padding: 6px 10px; font-size: 14px">https://buli-hub.de/anmeldung</code>
+                  <button style="display: inline-flex; flex-shrink: 0; height: 28px; align-items: center; justify-content: center; gap: 4px; border-radius: 8px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 10px; font-size: 13px; font-weight: 500; font-family: inherit; color: inherit; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>Link kopieren</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Saison 1 kommt vom System, kein &bdquo;Anlegen&ldquo;. Einzige Aktion: Anmeldeschluss setzen und &ouml;ffnen. Keine Anmeldungen-Sektion in diesem Zustand.</div>
+    </div>
+
+    <!-- ============ 2b — Bestätigung ============ -->
+    <div id="2b" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#2b" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">2b</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Best&auml;tigung vor dem &Ouml;ffnen</span>
+      </div>
+      <div data-screen-label="2b Bestätigung" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 620px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 28px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+              <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+            </div>
+            <nav style="display: flex; align-items: center; gap: 20px">
+              <span style="font-size: 14px; font-weight: 500; color: oklch(0.52 0.035 263)">Spieler-Dashboard</span>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+                <span style="font-size: 14px; font-weight: 600; color: #021f66">Staff-Bereich</span>
+              </div>
+            </nav>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 960px; flex: 1; padding: 48px 32px; box-sizing: border-box; overflow: hidden">
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; color: #021f66">Staff-Bereich</h1>
+          <div style="margin-top: 36px; display: flex; flex-direction: column; gap: 20px">
+            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px">
+              <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00"></div>
+              <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Saison</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); padding: 20px 24px">
+              <div style="display: flex; align-items: center; gap: 14px">
+                <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; line-height: 1; color: #021f66">Saison 1</div>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: oklch(0.88 0.015 262)"></div>
+                  <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263)">Anmeldung noch nicht ge&ouml;ffnet</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <div style="position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: oklch(0.15 0.04 265 / 0.4)">
+          <div style="display: flex; width: 440px; flex-direction: column; gap: 12px; border-radius: 12px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; box-shadow: 0 12px 32px oklch(0.15 0.04 265 / 0.25); padding: 24px; box-sizing: border-box">
+            <h3 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; line-height: 1; color: #021f66">Anmeldung &ouml;ffnen?</h3>
+            <p style="margin: 0; font-size: 14px; line-height: 1.5; color: oklch(0.52 0.035 263)">Die Anmeldung f&uuml;r <span style="font-weight: 600; color: oklch(0.28 0.06 264)">Saison 1</span> &ouml;ffnet sofort und schlie&szlig;t automatisch am <span style="font-weight: 600; color: oklch(0.28 0.06 264)">15.08.2026 um 20:00</span>.</p>
+            <div style="display: grid; gap: 8px; margin-top: 4px">
+              <label style="font-size: 14px; font-weight: 500; line-height: 1.4">Gib <span style="font-weight: 600; color: #021f66">Saison 1</span> ein, um zu best&auml;tigen</label>
+              <input value="" placeholder="Saison 1" style="height: 32px; width: 100%; min-width: 0; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: transparent; outline: none; padding: 0 10px; font-size: 14px; font-family: inherit; color: inherit; box-sizing: border-box">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px">
+              <button style="display: inline-flex; height: 32px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 10px; font-size: 14px; font-weight: 500; font-family: inherit; color: inherit; cursor: pointer">Abbrechen</button>
+              <button disabled="{{ true }}" style="display: inline-flex; height: 36px; align-items: center; justify-content: center; border-radius: 8px; border: none; background: oklch(0.92 0.01 262); color: oklch(0.6 0.02 262); padding: 0 14px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: default; pointer-events: none">Anmeldung &ouml;ffnen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Best&auml;tigungsdialog mit Type-to-confirm: &bdquo;Saison 1&ldquo; muss eingetippt werden, erst dann wird der Button aktiv (hier: deaktivierter Zustand). Der Code nutzt aktuell die Phrase &bdquo;Anmeldung &ouml;ffnen&ldquo; — &bdquo;Saison 1&ldquo; ist k&uuml;rzer und benennt, was ge&ouml;ffnet wird.</div>
+    </div>
+
+    <!-- ============ 2c — Anmeldung offen ============ -->
+    <div id="2c" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#2c" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">2c</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Anmeldung offen · schlie&szlig;t automatisch</span>
+      </div>
+      <div data-screen-label="2c Anmeldung offen" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 860px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 28px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+              <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+            </div>
+            <nav style="display: flex; align-items: center; gap: 20px">
+              <span style="font-size: 14px; font-weight: 500; color: oklch(0.52 0.035 263)">Spieler-Dashboard</span>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+                <span style="font-size: 14px; font-weight: 600; color: #021f66">Staff-Bereich</span>
+              </div>
+            </nav>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 960px; flex: 1; padding: 48px 32px; box-sizing: border-box; overflow: hidden">
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; color: #021f66">Staff-Bereich</h1>
+          <div style="margin-top: 36px; display: flex; flex-direction: column; gap: 40px">
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px">
+                <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00"></div>
+                <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Saison</h2>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); padding: 20px 24px">
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; line-height: 1; color: #021f66">Saison 1</div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+                    <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263)">Anmeldung offen</span>
+                  </div>
+                </div>
+                <span style="font-size: 14px; color: oklch(0.52 0.035 263)">Schlie&szlig;t automatisch am 15.08.2026 um 20:00</span>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px">
+                  <p style="margin: 0; font-size: 13px; color: oklch(0.52 0.035 263)">Anmeldelink:</p>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <code style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 8px; background: oklch(0.965 0.008 262); padding: 6px 10px; font-size: 14px">https://buli-hub.de/anmeldung</code>
+                    <button style="display: inline-flex; flex-shrink: 0; height: 28px; align-items: center; justify-content: center; gap: 4px; border-radius: 8px; border: 1px solid oklch(0.91 0.012 262); background: #ffffff; padding: 0 10px; font-size: 13px; font-weight: 500; font-family: inherit; color: inherit; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>Link kopieren</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px">
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00"></div>
+                  <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Anmeldungen</h2>
+                </div>
+                <span style="font-size: 14px; color: oklch(0.52 0.035 263)">24 gesamt</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px">
+                <sc-for list="{{ anmeldungen }}" as="a" hint-placeholder-count="12">
+                  <div style="display: flex; align-items: center; gap: 8px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 4px 10px 4px 4px; min-width: 0">
+                    <div style="display: flex; width: 24px; height: 24px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 10px; font-weight: 600">{{ a.kurz }}</div>
+                    <span style="font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ a.name }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Offener Zustand: kein Schlie&szlig;en-Button — der Anmeldeschluss steht in der Statuszeile, der Anmeldelink ist direkt kopierbar. Anmeldungen-Sektion erscheint erst jetzt.</div>
+    </div>
+
+    <!-- ============ 2d — Anmeldung geschlossen ============ -->
+    <div id="2d" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#2d" style="display: inline-flex; padding: 2px 8px; background: #021f66; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none">2d</a>
+        <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.52 0.035 263)">Anmeldung geschlossen</span>
+      </div>
+      <div data-screen-label="2d Anmeldung geschlossen" style="position: relative; display: flex; flex-direction: column; overflow: hidden; width: 1280px; height: 860px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 12px oklch(0.3 0.05 264 / 0.1)">
+        <div style="height: 3px; flex-shrink: 0; background: #ff7b00"></div>
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px">
+          <div style="display: flex; align-items: center; gap: 28px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <img src="logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block">
+              <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">Buli Hub</span>
+            </div>
+            <nav style="display: flex; align-items: center; gap: 20px">
+              <span style="font-size: 14px; font-weight: 500; color: oklch(0.52 0.035 263)">Spieler-Dashboard</span>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00"></div>
+                <span style="font-size: 14px; font-weight: 600; color: #021f66">Staff-Bereich</span>
+              </div>
+            </nav>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px">
+            <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600">KU</div>
+            <span style="font-size: 14px; font-weight: 500">Kuro</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+        </header>
+        <main style="margin: 0 auto; width: 100%; max-width: 960px; flex: 1; padding: 48px 32px; box-sizing: border-box; overflow: hidden">
+          <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; color: #021f66">Staff-Bereich</h1>
+          <div style="margin-top: 36px; display: flex; flex-direction: column; gap: 40px">
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px">
+                <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00"></div>
+                <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Saison</h2>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; border-radius: 10px; border: 1px solid oklch(0.91 0.012 262); padding: 20px 24px">
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 24px; line-height: 1; color: #021f66">Saison 1</div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: oklch(0.88 0.015 262)"></div>
+                    <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263)">Anmeldung geschlossen</span>
+                  </div>
+                </div>
+                <span style="font-size: 14px; color: oklch(0.52 0.035 263)">Geschlossen seit 15.08.2026, 20:00</span>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding-bottom: 12px">
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div style="height: 9px; width: 18px; transform: skewX(-18deg); background: #ff7b00"></div>
+                  <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; font-size: 24px; line-height: 1; color: #021f66">Anmeldungen</h2>
+                </div>
+                <span style="font-size: 14px; color: oklch(0.52 0.035 263)">24 gesamt</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px">
+                <sc-for list="{{ anmeldungen }}" as="a" hint-placeholder-count="12">
+                  <div style="display: flex; align-items: center; gap: 8px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 4px 10px 4px 4px; min-width: 0">
+                    <div style="display: flex; width: 24px; height: 24px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 10px; font-weight: 600">{{ a.kurz }}</div>
+                    <span style="font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ a.name }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+      <div style="font-size: 13px; color: oklch(0.52 0.035 263); max-width: 900px">Nach dem Anmeldeschluss: grauer Status-Tick, &bdquo;Geschlossen seit &hellip;&ldquo;, kein Anmeldelink mehr. Die endg&uuml;ltige Spielerliste bleibt sichtbar.</div>
+    </div>
+
+  </div>
+</section>
+
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;saisonAktiv&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Zustände&quot; },
+  &quot;leereAnmeldungen&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Zustände&quot; }
+}">
+class Component extends DCLogic {
+  renderVals() {
+    const saisonAktiv = this.props.saisonAktiv ?? true;
+    const leereListe = this.props.leereAnmeldungen ?? false;
+    const namen = ["Nayru", "Flowly", "Kaito", "Melina", "Tobi", "Sarina", "Devon", "Luca", "Marek", "Jella", "Nico", "Basti", "Yuki", "Paula", "Amara", "Finn", "Rieke", "Ole", "Talia", "Jonas", "Mira", "Lenn", "Chiara", "Samu"];
+    return {
+      anmeldungen: namen
+        .slice()
+        .sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }))
+        .map((n) => ({ name: n, kurz: n.slice(0, 2).toUpperCase() })),
+      saisonAktiv: saisonAktiv,
+      keineSaison: !saisonAktiv,
+      spielerVorhanden: !leereListe,
+      keineSpieler: leereListe,
+    };
+  }
+}
+</script>
+</body>
+</html>

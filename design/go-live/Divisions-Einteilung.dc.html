@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Divisionen einteilen — Buli Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #ffffff; overscroll-behavior: none; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: oklch(0.88 0.015 262); border-radius: 5px; border: 2px solid #fff; }
+    ::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</helmet>
+
+<div style="height: 100vh; min-width: 1520px; display: flex; flex-direction: column; font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264); background: #ffffff; overflow: hidden;" data-screen-label="Divisions-Einteilung Sheet">
+
+  <!-- Brand accent + site header -->
+  <div style="height: 3px; background: #ff7b00; flex-shrink: 0;"></div>
+  <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 12px 28px; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="public/logo.svg" alt="Buli Hub" width="44" height="30" style="border-radius: 8px; display: block;">
+      <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Buli Hub</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 4px 10px 4px 4px;">
+      <div style="display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 9999px; background: oklch(0.965 0.008 262); font-size: 12px; font-weight: 600;">KU</div>
+      <span style="font-size: 14px; font-weight: 500;">Kuro</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.52 0.035 263)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+    </div>
+  </header>
+
+  <!-- Title row -->
+  <div style="display: flex; align-items: center; gap: 28px; padding: 16px 28px 12px; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+      <div style="height: 11px; width: 22px; transform: skewX(-18deg); background: #ff7b00; flex-shrink: 0;"></div>
+      <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 28px; line-height: 1; color: #021f66; white-space: nowrap;">Divisionen einteilen</h1>
+      <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.52 0.035 263); white-space: nowrap; padding-top: 2px;">Saison 1</span>
+    </div>
+    <div style="flex: 1;"></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; width: 130px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263);">
+        <span>Platziert</span><span style="color: oklch(0.28 0.06 264);">{{ placedLabel }}</span>
+      </div>
+      <div style="height: 5px; background: oklch(0.945 0.01 262); border-radius: 3px; overflow: hidden;">
+        <div style="height: 100%; background: #ff7b00; width: {{ placedPct }};"></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px; width: 130px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: oklch(0.52 0.035 263);">
+        <span>In Gruppen</span><span style="color: oklch(0.28 0.06 264);">{{ groupedLabel }}</span>
+      </div>
+      <div style="height: 5px; background: oklch(0.945 0.01 262); border-radius: 3px; overflow: hidden;">
+        <div style="height: 100%; background: #021f66; width: {{ groupedPct }};"></div>
+      </div>
+    </div>
+    <a href="Auf- & Abstieg (Staff).dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid oklch(0.86 0.02 262); background: #ffffff; font-size: 13.5px; font-weight: 500; color: oklch(0.28 0.06 264); text-decoration: none; white-space: nowrap;">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ postSeasonDot }};"></span>Auf- &amp; Abstieg</a>
+    <sc-if value="{{ published }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; gap: 8px; border: 1px solid oklch(0.85 0.09 60); background: oklch(0.985 0.01 60); border-radius: 10px; padding: 7px 12px;">
+        <div style="height: 7px; width: 14px; transform: skewX(-18deg); background: #ff7b00;"></div>
+        <span style="font-size: 13.5px; font-weight: 600;">Finalisiert — endgültig</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ notPublished }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ openPublish }}" title="{{ publishTitle }}" style="{{ publishBtnStyle }}">Finalisieren</button>
+    </sc-if>
+  </div>
+
+  <!-- Control row -->
+  <div style="display: flex; align-items: center; gap: 20px; padding: 0 28px 12px; border-bottom: 1px solid oklch(0.91 0.012 262); flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <label style="font-size: 13px; font-weight: 500; color: oklch(0.52 0.035 263);">Divisionen</label>
+      <input type="number" min="1" max="20" value="{{ divisionCount }}" onChange="{{ onCountChange }}" style="height: 28px; width: 56px; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; padding: 0 8px; font-size: 13.5px; font-weight: 500; font-family: inherit; color: inherit; background: transparent; box-sizing: border-box;">
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <label style="font-size: 13px; font-weight: 500; color: oklch(0.52 0.035 263);">Gruppengröße</label>
+      <input type="number" min="2" max="24" value="{{ groupSize }}" onChange="{{ onSizeChange }}" style="height: 28px; width: 56px; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; padding: 0 8px; font-size: 13.5px; font-weight: 500; font-family: inherit; color: inherit; background: transparent; box-sizing: border-box;">
+      <span style="font-size: 12.5px; color: oklch(0.52 0.035 263);">→ {{ weeksLabel }} Spieltage</span>
+    </div>
+    <button onClick="{{ genAll }}" style="height: 28px; padding: 0 10px; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; background: #ffffff; color: oklch(0.28 0.06 264); font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer;">Alle Gruppen generieren</button>
+    <div style="flex: 1;"></div>
+    <input type="text" placeholder="Spieler suchen…" value="{{ search }}" onChange="{{ onSearch }}" style="height: 28px; width: 220px; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; padding: 0 10px; font-size: 13px; font-family: inherit; color: inherit; background: oklch(0.985 0.005 262); box-sizing: border-box; outline: none;">
+    <div style="display: flex; gap: 6px;">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+        <button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ================= SHEET ================= -->
+  <div style="flex: 1; min-height: 0; overflow: auto; position: relative;">
+
+    <!-- Column header (sticky) -->
+    <div style="position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: 36px minmax(190px, 1.3fr) 100px 110px 170px 150px 130px minmax(170px, 1fr) 150px 110px; align-items: center; background: #ffffff; border-bottom: 1px solid oklch(0.91 0.012 262); padding: 0 28px 0 20px; height: 34px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.52 0.035 263);">
+      <span></span>
+      <span>Spieler</span>
+      <span>Status</span>
+      <span>Plattform</span>
+      <span>Letzte Saison</span>
+      <span>Hinweis</span>
+      <span>Einschätzung</span>
+      <span>Erfolge</span>
+      <span>Division</span>
+      <span>Gruppe</span>
+    </div>
+
+    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="20">
+
+      <!-- Division / pool separator row -->
+      <sc-if value="{{ r.isDivSep }}" hint-placeholder-val="{{ false }}">
+        <div onDragOver="{{ r.onDragOver }}" onDrop="{{ r.onDrop }}" style="{{ r.style }}">
+          <div style="height: 10px; width: 20px; transform: skewX(-18deg); background: {{ r.tickColor }}; flex-shrink: 0;"></div>
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 18px; color: {{ r.titleColor }}; white-space: nowrap;">{{ r.title }}</span>
+          <span style="font-size: 12.5px; color: {{ r.metaColor }}; white-space: nowrap;">{{ r.meta }}</span>
+          <div style="flex: 1;"></div>
+          <sc-if value="{{ r.hasBtn }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ r.onGen }}" style="{{ r.btnStyle }}">{{ r.btnLabel }}</button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- Group separator row -->
+      <sc-if value="{{ r.isGroupSep }}" hint-placeholder-val="{{ false }}">
+        <div onDragOver="{{ r.onDragOver }}" onDrop="{{ r.onDrop }}" style="{{ r.style }}">
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 14.5px; color: {{ r.titleColor }};">{{ r.title }}</span>
+          <span style="font-size: 12px; color: oklch(0.52 0.035 263);">{{ r.meta }}</span>
+        </div>
+      </sc-if>
+
+      <!-- Empty-division hint row -->
+      <sc-if value="{{ r.isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div onDragOver="{{ r.onDragOver }}" onDrop="{{ r.onDrop }}" style="{{ r.style }}">Keine Spieler — Zeilen hierher ziehen oder die Division-Spalte nutzen.</div>
+      </sc-if>
+
+      <!-- Player row -->
+      <sc-if value="{{ r.isPlayer }}" hint-placeholder-val="{{ true }}">
+        <div draggable="true" onDragStart="{{ r.onDragStart }}" onDragEnd="{{ r.onDragEnd }}" onDragOver="{{ r.onDragOver }}" onDrop="{{ r.onDrop }}" style="{{ r.style }}">
+          <span style="display: flex; align-items: center;"><input type="checkbox" checked="{{ r.sel }}" onChange="{{ r.onSel }}" style="width: 15px; height: 15px; accent-color: #ff7b00; cursor: pointer; margin: 0;"></span>
+          <span style="display: flex; align-items: center; gap: 9px; min-width: 0;">
+            <span style="{{ r.avatarStyle }}">{{ r.initials }}</span>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; font-weight: 500;">{{ r.name }}</span>
+          </span>
+          <span><span style="{{ r.statusStyle }}">{{ r.statusLabel }}</span></span>
+          <span style="display: flex; align-items: center; gap: 6px; font-size: 13px;"><span style="{{ r.platDot }}"></span>{{ r.platLabel }}</span>
+          <span style="font-size: 13px; color: {{ r.prevColor }};">{{ r.prevLabel }}</span>
+          <span><sc-if value="{{ r.hasCaveat }}" hint-placeholder-val="{{ false }}"><span style="{{ r.caveatStyle }}">{{ r.caveatLabel }}</span></sc-if></span>
+          <span style="display: flex; align-items: center; gap: 7px;">
+            <sc-if value="{{ r.hasRating }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size: 12.5px; font-weight: 600; width: 30px;">{{ r.ratingLabel }}</span>
+              <span style="width: 52px; height: 4px; background: oklch(0.945 0.01 262); border-radius: 2px; overflow: hidden;"><span style="display: block; height: 100%; background: #ff7b00; width: {{ r.ratingPct }};"></span></span>
+            </sc-if>
+            <sc-if value="{{ r.noRating }}" hint-placeholder-val="{{ true }}"><span style="font-size: 13px; color: oklch(0.75 0.02 262);">—</span></sc-if>
+          </span>
+          <span title="{{ r.achTitle }}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: {{ r.achColor }}; padding-right: 14px;">{{ r.achLabel }}</span>
+          <span>
+            <select value="{{ r.divValue }}" onChange="{{ r.onDivChange }}" style="height: 27px; max-width: 136px; border: 1px solid oklch(0.91 0.012 262); border-radius: 8px; font-size: 13px; font-family: inherit; color: inherit; background: #ffffff; padding: 0 4px; cursor: pointer;">
+              <sc-for list="{{ r.divOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+            </select>
+          </span>
+          <span>
+            <select value="{{ r.groupValue }}" onChange="{{ r.onGroupChange }}" disabled="{{ r.groupDisabled }}" style="{{ r.groupSelStyle }}">
+              <sc-for list="{{ r.groupOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+            </select>
+          </span>
+        </div>
+      </sc-if>
+
+    </sc-for>
+    <div style="height: 80px;"></div>
+  </div>
+
+  <!-- Bulk action bar -->
+  <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; align-items: center; gap: 12px; background: #021f66; color: #ffffff; border-radius: 12px; padding: 9px 14px; box-shadow: 0 10px 34px oklch(0.15 0.05 265 / 0.35);">
+      <span style="font-size: 13.5px; font-weight: 600; white-space: nowrap;">{{ selectionLabel }}</span>
+      <span style="font-size: 12px; color: oklch(0.75 0.04 262); white-space: nowrap;">verschieben nach</span>
+      <div style="display: flex; gap: 5px;">
+        <sc-for list="{{ bulkTargets }}" as="b" hint-placeholder-count="8">
+          <button onClick="{{ b.onClick }}" title="{{ b.title }}" style="width: 26px; height: 26px; border: 1px solid oklch(1 0 0 / 0.3); border-radius: 7px; background: oklch(1 0 0 / 0.08); color: #ffffff; font-size: 12.5px; font-weight: 700; font-family: inherit; cursor: pointer; padding: 0;">{{ b.n }}</button>
+        </sc-for>
+      </div>
+      <button onClick="{{ clearSelection }}" style="border: none; background: none; font-family: inherit; font-size: 12.5px; font-weight: 500; color: oklch(0.75 0.04 262); cursor: pointer; padding: 0 2px;">Aufheben</button>
+    </div>
+  </sc-if>
+
+  <!-- Publish dialog -->
+  <sc-if value="{{ dialogOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; background: oklch(0.15 0.04 265 / 0.45); display: flex; align-items: center; justify-content: center; z-index: 50;">
+      <div style="width: 440px; background: #ffffff; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 60px oklch(0.1 0.04 265 / 0.3); font-family: 'Barlow', sans-serif; color: oklch(0.28 0.06 264);">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; font-size: 22px; color: #021f66;">Einteilung finalisieren?</div>
+          <p style="margin: 0; font-size: 14px; line-height: 1.5; color: oklch(0.52 0.035 263);">Die Einteilung für <span style="font-weight: 600; color: oklch(0.28 0.06 264);">Saison 1</span> wird finalisiert und kann danach <span style="font-weight: 600; color: oklch(0.28 0.06 264);">nicht mehr geändert</span> werden.</p>
+        </div>
+        <div style="display: grid; gap: 8px;">
+          <label style="font-size: 14px; font-weight: 500;">Gib <span style="font-weight: 700; color: #021f66;">Saison 1</span> ein, um zu bestätigen</label>
+          <input type="text" placeholder="Saison 1" value="{{ confirmText }}" onChange="{{ onConfirmChange }}" autoComplete="off" style="height: 36px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; padding: 0 12px; font-size: 14px; font-family: inherit; color: inherit; background: transparent; box-sizing: border-box; width: 100%;">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button onClick="{{ closePublish }}" style="height: 34px; padding: 0 14px; border: 1px solid oklch(0.91 0.012 262); border-radius: 10px; background: #ffffff; color: oklch(0.28 0.06 264); font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer;">Abbrechen</button>
+          <button onClick="{{ confirmPublish }}" style="{{ confirmBtnStyle }}">Finalisieren</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;playerCount&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 180, &quot;min&quot;: 40, &quot;max&quot;: 240, &quot;step&quot;: 10, &quot;unit&quot;: &quot; Spieler&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Demo-Daten&quot;}, &quot;postSeasonKonfiguriert&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Zustand&quot;, &quot;description&quot;: &quot;Statuspunkt am Auf- &amp; Abstieg-Button&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      divisionCount: 7,
+      groupSize: 8,
+      players: this.buildPlayers(props.playerCount ?? 180),
+      selected: [],
+      search: "",
+      filter: "alle",
+      dragIds: null,
+      dragOverKey: null,
+      dialogOpen: false,
+      confirmText: "",
+      published: false,
+    };
+  }
+
+  componentDidUpdate(prevProps) {
+    const n = this.props.playerCount ?? 180;
+    if ((prevProps.playerCount ?? 180) !== n) {
+      this.setState({ players: this.buildPlayers(n), selected: [] });
+    }
+  }
+
+  buildPlayers(n) {
+    let seed = 1337;
+    const rnd = () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+    const A = ["Blitz", "Sturm", "Feuer", "Eis", "Schatten", "Drachen", "Wolken", "Nacht", "Silber", "Kristall", "Donner", "Flammen", "Mond", "Sonnen", "Stern", "Berg", "Wald", "Fluss", "Glut", "Frost"];
+    const B = ["falke", "wolf", "meister", "ritter", "jaeger", "zahn", "klinge", "herz", "geist", "kaiser", "pfote", "schwinge", "kralle", "hueter", "fuchs", "drache", "garde", "pilot", "fan", "held"];
+    const avatarHues = [40, 60, 230, 264, 300];
+    const tierWeights = [6, 8, 10, 16, 18, 12, 8];
+    const pickTier = () => {
+      const total = tierWeights.reduce((a, b) => a + b, 0);
+      let r = rnd() * total;
+      for (let t = 0; t < tierWeights.length; t++) {
+        r -= tierWeights[t];
+        if (r <= 0) return t + 1;
+      }
+      return 7;
+    };
+    const players = [];
+    for (let i = 0; i < n; i++) {
+      const name = A[i % 20] + B[Math.floor(i / 20) % 20] + (i >= 400 ? String(i) : i % 7 === 0 ? String(10 + Math.floor(rnd() * 89)) : "");
+      const returning = rnd() < 0.55;
+      const platform = rnd() < 0.65 ? "SD" : "PC";
+      const hue = avatarHues[Math.floor(rnd() * avatarHues.length)];
+      const p = {
+        id: i,
+        name,
+        initials: name.slice(0, 2).toUpperCase(),
+        platform,
+        returning,
+        avatarBg: `oklch(0.92 0.045 ${hue})`,
+        tier: null,
+        group: null,
+      };
+      if (returning) {
+        p.prevTier = pickTier();
+        p.prevPlace = 1 + Math.floor(rnd() * 8);
+        p.stale = rnd() < 0.08;
+        p.confirmed = !p.stale && rnd() < 0.3;
+        p.prevSeason = p.stale ? "BL6" : "BL8";
+        if (!p.stale) p.tier = Math.min(p.prevTier, 7);
+      } else {
+        p.rating = Math.max(0, Math.min(10, Math.round(2 + rnd() * 8)));
+        const ACH = [
+          "Top 64 Regional Bochum 2025",
+          "Cut bei der IVT 2025, Top 8 lokale Liga",
+          "3x Showdown-Ladder Top 500",
+          "Sieger Stadtliga Wien 2024",
+          "Worlds Day 1 (2024), Regional Top 32",
+          "Top 16 Special Event Mailand",
+          "Mehrere Premier Challenges gewonnen",
+          "Showdown Room Tour Sieger, Ladder 1600+",
+        ];
+        p.achievements = rnd() < 0.6 ? ACH[Math.floor(rnd() * ACH.length)] : null;
+      }
+      players.push(p);
+    }
+    return players;
+  }
+
+  fg = "oklch(0.28 0.06 264)";
+  mut = "oklch(0.52 0.035 263)";
+  brd = "oklch(0.91 0.012 262)";
+  rowBrd = "oklch(0.945 0.008 262)";
+  blue = "#021f66";
+  orange = "#ff7b00";
+
+  orderPool(list) {
+    return [...list].sort((a, b) => {
+      const ar = a.returning ? 0 : 1;
+      const br = b.returning ? 0 : 1;
+      if (ar !== br) return ar - br;
+      return (b.rating ?? -1) - (a.rating ?? -1);
+    });
+  }
+
+  assign(ids, tier, group) {
+    this.setState((s) => ({
+      players: s.players.map((p) => (ids.includes(p.id) ? { ...p, tier, group: group ?? null } : p)),
+      selected: s.selected.filter((id) => !ids.includes(id)),
+      dragIds: null,
+      dragOverKey: null,
+    }));
+  }
+
+  generateFor(tier) {
+    this.setState((s) => {
+      const size = s.groupSize;
+      const inDiv = s.players.filter((p) => p.tier === tier);
+      if (inDiv.length === 0) return {};
+      const k = Math.ceil(inDiv.length / size);
+      const base = Math.floor(inDiv.length / k);
+      const extra = inDiv.length % k;
+      const sorted = [...inDiv].sort((a, b) => a.platform.localeCompare(b.platform) || a.id - b.id);
+      const groupOf = {};
+      let idx = 0;
+      for (let g = 0; g < k; g++) {
+        const sz = base + (g < extra ? 1 : 0);
+        for (let j = 0; j < sz; j++) groupOf[sorted[idx++].id] = g;
+      }
+      return { players: s.players.map((p) => (p.tier === tier ? { ...p, group: groupOf[p.id] } : p)) };
+    });
+  }
+
+  playerRow(p, s, gk) {
+    const letter = (i) => String.fromCharCode(97 + i);
+    const sel = s.selected.includes(p.id);
+    const key = `p${p.id}`;
+    const over = s.dragOverKey === key;
+    const divOptions = [{ v: "none", label: "Nicht platziert" }];
+    for (let t = 1; t <= s.divisionCount; t++) divOptions.push({ v: String(t), label: `Division ${t}` });
+    const groupOptions = [{ v: "none", label: "—" }];
+    for (let g = 0; g < gk; g++) groupOptions.push({ v: String(g), label: `${p.tier}${letter(g)}` });
+    const groupDisabled = p.tier === null || gk === 0;
+    let caveatLabel = null;
+    let caveatStyle = "";
+    if (p.returning) {
+      if (p.stale) {
+        caveatLabel = `Ältere Saison (${p.prevSeason})`;
+        caveatStyle = `display:inline-block; border:1.5px dashed oklch(0.8 0.1 50); border-radius:6px; padding:1px 7px; font-size:11.5px; font-weight:600; color:oklch(0.55 0.13 50); white-space:nowrap;`;
+      } else if (p.confirmed) {
+        caveatLabel = "Bestätigt";
+        caveatStyle = `display:inline-block; border:1px solid oklch(0.85 0.06 150); background:oklch(0.975 0.02 150); border-radius:6px; padding:1px 7px; font-size:11.5px; font-weight:600; color:oklch(0.45 0.1 150); white-space:nowrap;`;
+      } else {
+        caveatLabel = "Selbst angegeben";
+        caveatStyle = `display:inline-block; border:1.5px dashed oklch(0.78 0.02 262); border-radius:6px; padding:1px 7px; font-size:11.5px; font-weight:600; color:${this.mut}; white-space:nowrap;`;
+      }
+    }
+    return {
+      key,
+      isPlayer: true,
+      name: p.name,
+      initials: p.initials,
+      avatarStyle: `width:24px; height:24px; flex-shrink:0; border-radius:50%; background:${p.avatarBg}; color:${this.blue}; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:600;`,
+      sel,
+      onSel: () => this.setState((st) => ({ selected: st.selected.includes(p.id) ? st.selected.filter((x) => x !== p.id) : [...st.selected, p.id] })),
+      statusLabel: p.returning ? "Rückkehrer" : "Neu",
+      statusStyle: p.returning
+        ? `display:inline-block; background:oklch(0.955 0.02 264); color:${this.blue}; border-radius:10px; padding:1px 8px; font-size:11.5px; font-weight:600;`
+        : `display:inline-block; border:1px solid ${this.brd}; color:${this.mut}; border-radius:10px; padding:1px 8px; font-size:11.5px; font-weight:600;`,
+      platLabel: p.platform === "SD" ? "Showdown" : "Cartridge",
+      platDot: `display:inline-block; width:7px; height:7px; border-radius:50%; background:${p.platform === "SD" ? "oklch(0.6 0.12 264)" : "oklch(0.68 0.14 55)"}; flex-shrink:0;`,
+      prevLabel: p.returning ? `Division ${p.prevTier} · ${p.prevPlace}. Platz` : "—",
+      prevColor: p.returning ? this.fg : "oklch(0.75 0.02 262)",
+      hasCaveat: caveatLabel !== null,
+      caveatLabel: caveatLabel ?? "",
+      caveatStyle,
+      hasRating: !p.returning,
+      noRating: p.returning,
+      ratingLabel: p.returning ? "" : `${p.rating}/10`,
+      ratingPct: p.returning ? "0%" : `${p.rating * 10}%`,
+      achLabel: !p.returning && p.achievements ? p.achievements : "—",
+      achTitle: !p.returning && p.achievements ? p.achievements : "",
+      achColor: !p.returning && p.achievements ? this.fg : "oklch(0.75 0.02 262)",
+      divValue: p.tier === null ? "none" : String(p.tier),
+      divOptions,
+      onDivChange: (e) => {
+        const v = e.target.value;
+        this.assign([p.id], v === "none" ? null : parseInt(v, 10), null);
+      },
+      groupValue: p.group === null ? "none" : String(p.group),
+      groupOptions,
+      groupDisabled,
+      groupSelStyle: `height:27px; max-width:96px; border:1px solid ${this.brd}; border-radius:8px; font-size:13px; font-family:inherit; color:${groupDisabled ? "oklch(0.75 0.02 262)" : this.fg}; background:#ffffff; padding:0 4px; cursor:${groupDisabled ? "default" : "pointer"}; opacity:${groupDisabled ? 0.55 : 1};`,
+      onGroupChange: (e) => {
+        const v = e.target.value;
+        this.setState((st) => ({ players: st.players.map((q) => (q.id === p.id ? { ...q, group: v === "none" ? null : parseInt(v, 10) } : q)) }));
+      },
+      onDragStart: (e) => {
+        const ids = s.selected.includes(p.id) ? [...s.selected] : [p.id];
+        e.dataTransfer.effectAllowed = "move";
+        try { e.dataTransfer.setData("text/plain", "players"); } catch (err) {}
+        this.setState({ dragIds: ids });
+      },
+      onDragEnd: () => this.setState({ dragIds: null, dragOverKey: null }),
+      onDragOver: (e) => { e.preventDefault(); if (s.dragOverKey !== key) this.setState({ dragOverKey: key }); },
+      onDrop: (e) => { e.preventDefault(); if (s.dragIds) this.assign(s.dragIds, p.tier, p.group); },
+      style: `display:grid; grid-template-columns:36px minmax(190px,1.3fr) 100px 110px 170px 150px 130px minmax(170px,1fr) 150px 110px; align-items:center; padding:0 28px 0 20px; height:38px; border-bottom:1px solid ${this.rowBrd}; background:${sel ? "oklch(0.975 0.02 60)" : over ? "oklch(0.985 0.012 60)" : "#ffffff"}; ${over ? `box-shadow: inset 0 -2px 0 ${this.orange};` : ""} cursor:grab; user-select:none;`,
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const { players, divisionCount, groupSize } = s;
+    const letter = (i) => String.fromCharCode(97 + i);
+    const total = players.length;
+    const placed = players.filter((p) => p.tier !== null).length;
+    const grouped = players.filter((p) => p.group !== null).length;
+
+    const term = s.search.trim().toLowerCase();
+    const visible = (p) => {
+      if (term && !p.name.toLowerCase().includes(term)) return false;
+      if (s.filter === "neu" && p.returning) return false;
+      if (s.filter === "rueck" && !p.returning) return false;
+      return true;
+    };
+
+    const rows = [];
+
+    // ---- Nicht platziert ----
+    const unplaced = this.orderPool(players.filter((p) => p.tier === null));
+    const upKey = "sep-u";
+    rows.push({
+      key: upKey,
+      isDivSep: true,
+      title: "Nicht platziert",
+      titleColor: this.blue,
+      tickColor: this.orange,
+      meta: `${unplaced.length} Spieler · Rückkehrer zuerst, dann nach Selbsteinschätzung`,
+      metaColor: this.mut,
+      hasBtn: false,
+      onDragOver: (e) => { e.preventDefault(); if (s.dragOverKey !== upKey) this.setState({ dragOverKey: upKey }); },
+      onDrop: (e) => { e.preventDefault(); if (s.dragIds) this.assign(s.dragIds, null, null); },
+      style: `display:flex; align-items:center; gap:12px; padding:0 28px 0 20px; height:40px; background:${s.dragOverKey === upKey ? "oklch(0.975 0.02 60)" : "oklch(0.985 0.005 262)"}; border-bottom:1px solid ${this.brd}; ${s.dragOverKey === upKey ? `box-shadow: inset 0 0 0 1.5px ${this.orange};` : ""}`,
+    });
+    unplaced.filter(visible).forEach((p) => rows.push(this.playerRow(p, s, 0)));
+
+    // ---- Divisions ----
+    for (let tier = 1; tier <= divisionCount; tier++) {
+      const inDiv = players.filter((p) => p.tier === tier);
+      const gk = inDiv.reduce((m, p) => (p.group !== null ? Math.max(m, p.group + 1) : m), 0);
+      const dKey = `sep-d${tier}`;
+      const kPlanned = Math.ceil(inDiv.length / groupSize) || 0;
+      rows.push({
+        key: dKey,
+        isDivSep: true,
+        title: `Division ${tier}`,
+        titleColor: "#ffffff",
+        tickColor: this.orange,
+        meta: gk > 0
+          ? `${inDiv.length} Spieler · ${gk} ${gk === 1 ? "Gruppe" : "Gruppen"}`
+          : `${inDiv.length} Spieler · → ${kPlanned} ${kPlanned === 1 ? "Gruppe" : "Gruppen"} bei Größe ${groupSize}`,
+        metaColor: "oklch(0.78 0.04 262)",
+        hasBtn: inDiv.length > 0,
+        btnLabel: gk > 0 ? "Neu generieren" : "Gruppen generieren",
+        onGen: () => this.generateFor(tier),
+        btnStyle: gk > 0
+          ? `height:26px; padding:0 10px; border:1px solid oklch(1 0 0 / 0.3); border-radius:8px; background:oklch(1 0 0 / 0.08); color:#ffffff; font-size:12.5px; font-weight:500; font-family:inherit; cursor:pointer;`
+          : `height:26px; padding:0 10px; border:1px solid transparent; border-radius:8px; background:${this.orange}; color:#ffffff; font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer;`,
+        onDragOver: (e) => { e.preventDefault(); if (s.dragOverKey !== dKey) this.setState({ dragOverKey: dKey }); },
+        onDrop: (e) => { e.preventDefault(); if (s.dragIds) this.assign(s.dragIds, tier, null); },
+        style: `display:flex; align-items:center; gap:12px; padding:0 28px 0 20px; height:40px; background:${this.blue}; ${s.dragOverKey === dKey ? `box-shadow: inset 0 0 0 2px ${this.orange};` : ""}`,
+      });
+      if (inDiv.length === 0) {
+        const eKey = `empty-d${tier}`;
+        rows.push({
+          key: eKey,
+          isEmpty: true,
+          onDragOver: (e) => { e.preventDefault(); if (s.dragOverKey !== eKey) this.setState({ dragOverKey: eKey }); },
+          onDrop: (e) => { e.preventDefault(); if (s.dragIds) this.assign(s.dragIds, tier, null); },
+          style: `display:flex; align-items:center; padding:0 28px 0 52px; height:38px; font-size:13px; color:oklch(0.62 0.025 262); border-bottom:1px solid ${this.rowBrd}; background:${s.dragOverKey === eKey ? "oklch(0.985 0.012 60)" : "#ffffff"};`,
+        });
+        continue;
+      }
+      if (gk === 0) {
+        this.orderPool(inDiv).filter(visible).forEach((p) => rows.push(this.playerRow(p, s, 0)));
+      } else {
+        for (let g = 0; g < gk; g++) {
+          const members = inDiv.filter((p) => p.group === g);
+          const sd = members.filter((p) => p.platform === "SD").length;
+          const gkey = `sep-d${tier}g${g}`;
+          rows.push({
+            key: gkey,
+            isGroupSep: true,
+            title: `Division ${tier}${letter(g)}`,
+            titleColor: this.blue,
+            meta: `${members.length} Spieler · ${sd} Showdown / ${members.length - sd} Cartridge`,
+            onDragOver: (e) => { e.preventDefault(); if (s.dragOverKey !== gkey) this.setState({ dragOverKey: gkey }); },
+            onDrop: (e) => { e.preventDefault(); if (s.dragIds) this.assign(s.dragIds, tier, g); },
+            style: `display:flex; align-items:baseline; gap:10px; padding:0 28px 0 36px; height:32px; align-items:center; background:${s.dragOverKey === gkey ? "oklch(0.975 0.02 60)" : "oklch(0.97 0.006 262)"}; border-bottom:1px solid ${this.brd}; ${s.dragOverKey === gkey ? `box-shadow: inset 0 0 0 1.5px ${this.orange};` : ""}`,
+          });
+          members.filter(visible).sort((a, b) => a.name.localeCompare(b.name, "de")).forEach((p) => rows.push(this.playerRow(p, s, gk)));
+        }
+        const ungrouped = inDiv.filter((p) => p.group === null);
+        if (ungrouped.length > 0) {
+          const ukey = `sep-d${tier}u`;
+          rows.push({
+            key: ukey,
+            isGroupSep: true,
+            title: "Ohne Gruppe",
+            titleColor: "oklch(0.55 0.13 50)",
+            meta: `${ungrouped.length} Spieler — per Gruppen-Spalte oder Ziehen zuordnen`,
+            onDragOver: (e) => { e.preventDefault(); if (s.dragOverKey !== ukey) this.setState({ dragOverKey: ukey }); },
+            onDrop: (e) => { e.preventDefault(); if (s.dragIds) this.assign(s.dragIds, tier, null); },
+            style: `display:flex; align-items:center; gap:10px; padding:0 28px 0 36px; height:32px; background:oklch(0.985 0.01 60); border-bottom:1px solid ${this.brd};`,
+          });
+          this.orderPool(ungrouped).filter(visible).forEach((p) => rows.push(this.playerRow(p, s, gk)));
+        }
+      }
+    }
+
+    // ---- controls ----
+    const filters = [
+      { key: "alle", label: "Alle" },
+      { key: "rueck", label: "Rückkehrer" },
+      { key: "neu", label: "Neu" },
+    ].map((f) => ({
+      label: f.label,
+      onClick: () => this.setState({ filter: f.key }),
+      style: `height:26px; padding:0 10px; border-radius:13px; font-family:inherit; font-size:12.5px; font-weight:500; cursor:pointer; border:1px solid ${s.filter === f.key ? "transparent" : this.brd}; background:${s.filter === f.key ? this.blue : "#ffffff"}; color:${s.filter === f.key ? "#ffffff" : this.mut};`,
+    }));
+
+    const selCount = s.selected.length;
+    const bulkTargets = [];
+    for (let t = 1; t <= divisionCount; t++) {
+      bulkTargets.push({ n: String(t), title: `Division ${t}`, onClick: () => this.assign([...s.selected], t, null) });
+    }
+    bulkTargets.push({ n: "—", title: "Nicht platziert", onClick: () => this.assign([...s.selected], null, null) });
+
+    const allPlaced = placed === total && total > 0;
+    const allGrouped = grouped === total && total > 0;
+    const ready = allPlaced && allGrouped && !s.published;
+
+    return {
+      placedLabel: `${placed}/${total}`,
+      groupedLabel: `${grouped}/${total}`,
+      placedPct: total ? `${Math.round((placed / total) * 100)}%` : "0%",
+      groupedPct: total ? `${Math.round((grouped / total) * 100)}%` : "0%",
+      weeksLabel: String(Math.max(1, groupSize - 1)),
+      divisionCount,
+      groupSize,
+      onCountChange: (e) => {
+        const v = Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 1));
+        this.setState((st) => ({
+          divisionCount: v,
+          players: st.players.map((p) => (p.tier !== null && p.tier > v ? { ...p, tier: null, group: null } : p)),
+        }));
+      },
+      onSizeChange: (e) => this.setState({ groupSize: Math.max(2, Math.min(24, parseInt(e.target.value, 10) || 2)) }),
+      genAll: () => { for (let t = 1; t <= divisionCount; t++) this.generateFor(t); },
+      search: s.search,
+      onSearch: (e) => this.setState({ search: e.target.value }),
+      filters,
+      rows,
+      hasSelection: selCount > 0,
+      selectionLabel: `${selCount} ausgewählt`,
+      bulkTargets,
+      clearSelection: () => this.setState({ selected: [] }),
+      published: s.published,
+      notPublished: !s.published,
+      postSeasonDot: (this.props.postSeasonKonfiguriert ?? true) ? "#ff7b00" : "oklch(0.85 0.02 262)",
+      publishTitle: ready ? "Endgültig — kann nicht rückgängig gemacht werden." : `Erst möglich, wenn alle Spieler platziert (${placed}/${total}) und in Gruppen (${grouped}/${total}) sind.`,
+      publishBtnStyle: `height:34px; padding:0 16px; border:1px solid transparent; border-radius:10px; background:${this.orange}; color:#ffffff; font-size:14px; font-weight:600; font-family:inherit; cursor:${ready ? "pointer" : "default"}; opacity:${ready ? 1 : 0.5};` + (ready ? "" : " pointer-events:none;"),
+      openPublish: () => this.setState({ dialogOpen: true, confirmText: "" }),
+      closePublish: () => this.setState({ dialogOpen: false, confirmText: "" }),
+      onConfirmChange: (e) => this.setState({ confirmText: e.target.value }),
+      confirmPublish: () => {
+        if (s.confirmText.trim() === "Saison 1") this.setState({ published: true, dialogOpen: false });
+      },
+      confirmBtnStyle: `height:34px; padding:0 14px; border:1px solid transparent; border-radius:10px; background:${this.orange}; color:#ffffff; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; opacity:${s.confirmText.trim() === "Saison 1" ? 1 : 0.5}; pointer-events:${s.confirmText.trim() === "Saison 1" ? "auto" : "none"};`,
+      dialogOpen: s.dialogOpen,
+      confirmText: s.confirmText,
+    };
+  }
+}
+</script>
+</body>
+</html>

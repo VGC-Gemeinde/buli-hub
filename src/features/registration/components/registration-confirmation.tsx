@@ -1,3 +1,4 @@
+import { Tick } from "@/components/tick";
 import { PLATFORM_LABELS, type Platform } from "../registration";
 import { WithdrawButton } from "./withdraw-button";
 
@@ -11,11 +12,16 @@ export type ConfirmationData = {
   greatestAchievements: string | null;
 };
 
+// One row of the bordered definition table (GO-LIVE-POLISH §4.3). Only rows
+// with data are rendered by the caller. On mobile the fixed label column would
+// crowd the value, so it stacks below `sm`.
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[13px] text-muted-foreground">{label}</span>
-      <span className="text-sm">{value}</span>
+    <div className="grid grid-cols-1 gap-1 px-5 py-3 sm:grid-cols-[180px_1fr] sm:items-baseline sm:gap-4">
+      <span className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.1em]">
+        {label}
+      </span>
+      <span className="font-medium text-sm">{value}</span>
     </div>
   );
 }
@@ -45,12 +51,12 @@ export function RegistrationConfirmation({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 rounded-lg border px-6 py-5">
-        <div className="flex items-center gap-3.5">
-          <p className="font-heading font-bold text-2xl uppercase tracking-[0.02em] text-brand-blue dark:text-white">
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
+          <p className="font-bold font-heading text-2xl text-brand-blue uppercase tracking-[0.02em] dark:text-white">
             Du bist angemeldet
           </p>
           <div className="flex items-center gap-2">
-            <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
+            <Tick size="s" />
             <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
               {seasonName}
             </span>
@@ -62,25 +68,19 @@ export function RegistrationConfirmation({
         </p>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="divide-y overflow-hidden rounded-xl border">
         <Row label="Plattform" value={PLATFORM_LABELS[data.platform]} />
         {data.prevSeason ? (
-          <>
-            <Row label="Letzte Saison" value={data.prevSeason} />
-            <Row label="Damaliger Name" value={data.prevName ?? ""} />
-            <Row
-              label="Division"
-              value={
-                data.prevDivision !== null ? String(data.prevDivision) : ""
-              }
-            />
-            <Row
-              label="Platzierung"
-              value={
-                data.prevPlacement !== null ? String(data.prevPlacement) : ""
-              }
-            />
-          </>
+          <Row label="Letzte Saison" value={data.prevSeason} />
+        ) : null}
+        {data.prevName ? (
+          <Row label="Damaliger Name" value={data.prevName} />
+        ) : null}
+        {data.prevDivision !== null ? (
+          <Row label="Division" value={String(data.prevDivision)} />
+        ) : null}
+        {data.prevPlacement !== null ? (
+          <Row label="Platzierung" value={String(data.prevPlacement)} />
         ) : null}
         {data.skillSelfRating !== null ? (
           <Row

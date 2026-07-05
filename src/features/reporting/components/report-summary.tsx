@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PLATFORM_LABELS } from "@/features/registration/registration";
 import type { Identity } from "@/features/season/dashboard";
@@ -55,8 +56,8 @@ function BackAndEyebrow({
         ← {backLabel}
       </Link>
       <div className="flex items-center gap-2">
-        <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
-        <span className="whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
+        <Tick size="s" />
+        <span className="whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
           {label}
         </span>
       </div>
@@ -77,6 +78,7 @@ export function ReportSummary({
   privileged,
   round,
   groupName,
+  disputed = false,
   backHref = "/spieler",
   backLabel = "Zurück zur Übersicht",
 }: {
@@ -89,6 +91,9 @@ export function ReportSummary({
   privileged: boolean;
   round: number;
   groupName: string;
+  // An open dispute flips the status chip Final → Angefochten (§4.4). Only
+  // participants/staff ever see this — neutral observers are passed `false`.
+  disputed?: boolean;
   backHref?: string;
   backLabel?: string;
 }) {
@@ -124,13 +129,19 @@ export function ReportSummary({
           <span
             className={cn(
               "flex items-center justify-center rounded-full px-3.5 py-1 font-semibold text-xs uppercase tracking-[0.08em]",
-              pending
-                ? "bg-brand-orange/14 text-brand-blue dark:text-white"
-                : "bg-brand-blue/7 text-brand-blue dark:text-white",
+              disputed
+                ? "bg-destructive/[0.09] text-destructive"
+                : pending
+                  ? "bg-brand-orange/14 text-brand-blue dark:text-white"
+                  : "bg-brand-blue/7 text-brand-blue dark:text-white",
             )}
           >
             <span className="-mr-[0.08em] leading-none">
-              {pending ? "Wartet auf Staff" : "Final"}
+              {disputed
+                ? "Angefochten"
+                : pending
+                  ? "Wartet auf Staff"
+                  : "Final"}
             </span>
           </span>
         </div>
@@ -197,8 +208,17 @@ export function ReportSummary({
         <h1 className="text-[38px] text-brand-blue leading-[1.1] dark:text-white">
           {title}
         </h1>
-        <span className="flex items-center justify-center rounded-full bg-brand-blue/7 px-3.5 py-1 font-semibold text-brand-blue text-xs uppercase tracking-[0.08em] dark:text-white">
-          <span className="-mr-[0.08em] leading-none">Final</span>
+        <span
+          className={cn(
+            "flex items-center justify-center rounded-full px-3.5 py-1 font-semibold text-xs uppercase tracking-[0.08em]",
+            disputed
+              ? "bg-destructive/[0.09] text-destructive"
+              : "bg-brand-blue/7 text-brand-blue dark:text-white",
+          )}
+        >
+          <span className="-mr-[0.08em] leading-none">
+            {disputed ? "Angefochten" : "Final"}
+          </span>
         </span>
       </div>
 
@@ -211,7 +231,7 @@ export function ReportSummary({
         isParticipant={isParticipant}
       />
 
-      <p className="mt-3.5 flex items-center gap-2 whitespace-nowrap text-[13px] text-muted-foreground">
+      <p className="mt-3.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
         {result.platform ? (
           <span>{PLATFORM_LABELS[result.platform]}</span>
         ) : null}
@@ -282,13 +302,6 @@ export function ReportSummary({
           ) : null}
         </div>
       </section>
-
-      {isParticipant ? (
-        <p className="mt-10 border-t pt-5 text-[13.5px] text-muted-foreground">
-          Stimmt etwas nicht? Ergebnisse sind final — wende dich an den Staff,
-          um eine Korrektur anzustoßen.
-        </p>
-      ) : null}
     </>
   );
 }

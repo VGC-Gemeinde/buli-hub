@@ -88,7 +88,7 @@ export function RegistrationForm({
       {detectedReturning ? (
         <p className="text-muted-foreground text-sm">
           Willkommen zurück! Wir haben deine bisherige Teilnahme erkannt — mehr
-          als Plattform brauchen wir nicht von dir.
+          als deine präferierte Plattform brauchen wir nicht von dir.
         </p>
       ) : null}
 
@@ -106,7 +106,7 @@ export function RegistrationForm({
       </div>
 
       <div className="grid gap-2">
-        <Label>Plattform</Label>
+        <Label>Präferierte Plattform</Label>
         <RadioGroup
           className="grid grid-cols-2 gap-2"
           value={platform}
@@ -125,6 +125,12 @@ export function RegistrationForm({
             </label>
           ))}
         </RadioGroup>
+        <p className="text-[13px] text-muted-foreground leading-snug">
+          Beim Seeding versuchen wir, dich mit Spielern derselben Präferenz in
+          eine Division einzuteilen. In kleineren Divisionen behalten wir uns
+          vor, komplett zufällig zu seeden, um die kompetitive Integrität zu
+          wahren.
+        </p>
       </div>
 
       {detectedReturning ? null : (

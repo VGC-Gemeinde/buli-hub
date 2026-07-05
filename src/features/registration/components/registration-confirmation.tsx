@@ -69,7 +69,10 @@ export function RegistrationConfirmation({
       </div>
 
       <div className="divide-y overflow-hidden rounded-xl border">
-        <Row label="Plattform" value={PLATFORM_LABELS[data.platform]} />
+        <Row
+          label="Präferierte Plattform"
+          value={PLATFORM_LABELS[data.platform]}
+        />
         {data.prevSeason ? (
           <Row label="Letzte Saison" value={data.prevSeason} />
         ) : null}

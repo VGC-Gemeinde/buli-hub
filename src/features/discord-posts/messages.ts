@@ -1,0 +1,116 @@
+// Pure composition of the Discord results-channel messages — the historical
+// community format with hub vocabulary (docs/plans/discord-result-posts.md).
+// Scores and outcomes sit behind Discord spoiler tags; both names are always
+// bold (bolding only the winner would leak through the spoiler).
+
+export type MatchOutcome = "normal" | "free_win" | "double_loss";
+
+export type ResultMessageInput = {
+  groupName: string; // „Division 1a"
+  round: number;
+  playerAName: string;
+  playerBName: string;
+  outcome: MatchOutcome;
+  // Free win only: whose walkover it is (inside the spoiler).
+  winnerName: string | null;
+  // Normal only: games won per player.
+  scoreA: number;
+  scoreB: number;
+  platform: "showdown" | "cartridge" | null;
+  playerATeamUrl: string | null;
+  playerBTeamUrl: string | null;
+  videoUrl: string | null;
+  // Ordered game replays (Showdown). The rendered Game-3 line always exists:
+  // it repeats game 2's replay as a decoy when the series ended 2-0, so the
+  // message shape never reveals the split.
+  replayUrls: string[];
+  corrected: boolean;
+  // Absolute hub link, or null when APP_BASE_URL is not configured.
+  matchUrl: string | null;
+};
+
+function scoreLine(input: ResultMessageInput): string {
+  const a = `**${input.playerAName}**`;
+  const b = `**${input.playerBName}**`;
+  if (input.outcome === "double_loss") {
+    return `${a}  ||Doppelniederlage||  ${b}`;
+  }
+  if (input.outcome === "free_win") {
+    return `${a}  ||Freewin für ${input.winnerName ?? "—"}||  ${b}`;
+  }
+  return `${a}  ||${input.scoreA} - ${input.scoreB}||  ${b}`;
+}
+
+export function resultMessage(input: ResultMessageInput): string {
+  const blocks: string[] = [
+    `__**VGC Bundesliga · ${input.groupName} · Spieltag ${input.round}**__`,
+    scoreLine(input),
+  ];
+
+  if (input.outcome === "normal") {
+    if (input.playerATeamUrl && input.playerBTeamUrl) {
+      blocks.push(
+        `Team von ${input.playerAName}: ${input.playerATeamUrl}\n` +
+          `Team von ${input.playerBName}: ${input.playerBTeamUrl}`,
+      );
+    }
+    const [game1, game2, game3] = input.replayUrls;
+    if (input.platform === "showdown" && game1 && game2) {
+      blocks.push(
+        `Game 1: *${game1}*\n` +
+          `Game 2: *${game2}*\n` +
+          `Game 3: ||*${game3 ?? game2}*||`,
+      );
+    }
+    if (input.platform === "cartridge" && input.videoUrl) {
+      blocks.push(`Video: *${input.videoUrl}*`);
+    }
+  }
+
+  if (input.matchUrl) {
+    blocks.push(`Zum Match: <${input.matchUrl}>`);
+  }
+  if (input.corrected) {
+    blocks.push("*(korrigiert)*");
+  }
+  return blocks.join("\n\n");
+}
+
+export function motwVodMessage(input: {
+  round: number;
+  playerAName: string;
+  playerBName: string;
+  youtubeUrl: string;
+  matchUrl: string | null;
+}): string {
+  const blocks: string[] = [
+    `__**VGC Bundesliga · Match of the Week · Spieltag ${input.round}**__`,
+    // The YouTube URL stays unwrapped on purpose: its embed preview is the
+    // announcement. The result is never part of this message.
+    `**${input.playerAName}** vs. **${input.playerBName}** — das VOD ist da!\n${input.youtubeUrl}`,
+  ];
+  if (input.matchUrl) {
+    blocks.push(`Zum Match: <${input.matchUrl}>`);
+  }
+  return blocks.join("\n\n");
+}
+
+// Whether the results channel should carry a result post for a match — the
+// converge decision. "No" for unreported matches, results the hub itself
+// still hides (pending free wins), and the Match of the Week (its result is
+// permanently spoiler-protected; the VOD post is its only announcement).
+export function shouldPostResult(input: {
+  isMotw: boolean;
+  result: { outcome: MatchOutcome; confirmedAt: Date | null } | null;
+}): boolean {
+  if (input.isMotw || input.result === null) {
+    return false;
+  }
+  if (
+    input.result.outcome === "free_win" &&
+    input.result.confirmedAt === null
+  ) {
+    return false;
+  }
+  return true;
+}

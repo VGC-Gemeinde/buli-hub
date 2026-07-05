@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { syncResultPost } from "@/features/discord-posts/sync";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import {
@@ -16,10 +17,15 @@ import { staffResultSchema, toResultRows } from "./report";
 
 export type StaffActionResult = { ok: true } | { ok: false; error: string };
 
-function revalidate(matchId: string) {
+// Refresh the affected screens and mirror the new public state to Discord
+// (best-effort — syncResultPost never throws). Every staff result power
+// changes what the channel should show: confirm/award posts, edit rewrites,
+// reopen deletes.
+async function revalidate(matchId: string) {
   revalidatePath("/staff");
   revalidatePath(`/match/${matchId}`);
   revalidatePath("/spieler");
+  await syncResultPost(matchId);
 }
 
 async function staffGate(matchId: string) {
@@ -56,7 +62,7 @@ export async function confirmFreeWin(
     return { ok: false, error: "Bereits bestätigt" };
   }
   await persistConfirmFreeWin(matchId, gate.staffId);
-  revalidate(matchId);
+  await revalidate(matchId);
   return { ok: true };
 }
 
@@ -86,7 +92,7 @@ export async function awardFreeWin(input: {
     freeWinReason: input.reason.trim(),
     staffId: gate.staffId,
   });
-  revalidate(input.matchId);
+  await revalidate(input.matchId);
   return { ok: true };
 }
 
@@ -105,7 +111,7 @@ export async function awardDoubleLoss(input: {
     freeWinReason: null,
     staffId: gate.staffId,
   });
-  revalidate(input.matchId);
+  await revalidate(input.matchId);
   return { ok: true };
 }
 
@@ -146,7 +152,7 @@ export async function editResult(input: {
     games,
     staffId: gate.staffId,
   });
-  revalidate(input.matchId);
+  await revalidate(input.matchId);
   return { ok: true };
 }
 
@@ -157,6 +163,6 @@ export async function reopenMatch(matchId: string): Promise<StaffActionResult> {
     return gate;
   }
   await deleteMatchResult(matchId);
-  revalidate(matchId);
+  await revalidate(matchId);
   return { ok: true };
 }

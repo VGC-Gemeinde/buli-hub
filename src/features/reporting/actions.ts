@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { syncResultPost } from "@/features/discord-posts/sync";
 import { currentUser } from "@/features/roles/guard";
 import {
   getMatchForReport,
@@ -66,5 +67,7 @@ export async function reportMatch(input: {
   await saveResult(input.matchId, result, games, current.userId);
   revalidatePath("/spieler");
   revalidatePath(`/match/${input.matchId}`);
+  // Best-effort Discord mirror (a pending free win converges to "no post").
+  await syncResultPost(input.matchId);
   return { ok: true };
 }

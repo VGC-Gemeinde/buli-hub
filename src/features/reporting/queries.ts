@@ -107,6 +107,9 @@ export type StoredResult = ResultRow & {
   reportedById: string;
   reportedAt: Date;
   confirmedAt: Date | null;
+  // Set when staff corrected the result in place (drives the „(korrigiert)"
+  // marker on the Discord post).
+  correctedAt: Date | null;
   // Display name of the staff member a free win was discussed with, resolved
   // from `discussedWithId` (null for normal/double-loss results and staff awards).
   discussedWithName: string | null;
@@ -159,6 +162,7 @@ export async function getMatchResult(
     reportedById: result.reportedById,
     reportedAt: result.reportedAt,
     confirmedAt: result.confirmedAt,
+    correctedAt: result.correctedAt,
     games,
   };
 }

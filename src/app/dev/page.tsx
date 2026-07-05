@@ -110,6 +110,16 @@ export default function DevPage() {
             </span>
           </a>
           <a
+            href="/dev/report-results?count=5"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">5 Ergebnisse melden</span>
+            <span className="text-[13px] text-muted-foreground">
+              Meldet offene Matches der laufenden Saison wie echte Reports —
+              inkl. Discord-Post, wenn DISCORD_RESULTS_CHANNEL_ID gesetzt ist
+            </span>
+          </a>
+          <a
             href="/dev/clear-registrations"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >

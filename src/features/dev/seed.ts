@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import {
   disputes,
   divisions,
@@ -11,6 +11,7 @@ import {
   registrations,
   subDivisions,
 } from "@/db/schema";
+import { syncResultPost } from "@/features/discord-posts/sync";
 import type {
   Platform,
   PlayerStatus,
@@ -41,6 +42,7 @@ import {
   savePostSeasonConfig,
   saveSeedingConfig,
 } from "@/features/seeding/queries";
+import { latestWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
 
 // Dev-only test-data generator: a closed registration window filled with fake
@@ -278,6 +280,86 @@ async function generateDevSchedule(windowId: string): Promise<void> {
   await persistSchedule(windowId, windows, matchRows);
 }
 
+// Writes a normal best-of-3 result the way a player report stores it (result
+// row + game rows with replay links).
+async function insertNormalResult(
+  matchId: string,
+  a: string,
+  b: string,
+  winner: string,
+  sweep: boolean,
+): Promise<void> {
+  const loser = winner === a ? b : a;
+  const games = sweep ? [winner, winner] : [winner, loser, winner];
+  await db.insert(matchResults).values({
+    matchId,
+    outcome: "normal",
+    winnerId: winner,
+    platform: "showdown",
+    playerATeamUrl: "https://pokepast.es/seed-a",
+    playerBTeamUrl: "https://pokepast.es/seed-b",
+    reportedById: a,
+  });
+  await db.insert(matchGames).values(
+    games.map((w, i) => ({
+      matchId,
+      gameNumber: i + 1,
+      winnerId: w,
+      replayUrl: `https://replay.pokemonshowdown.com/seed-${i + 1}`,
+    })),
+  );
+}
+
+// Dev-only: reports up to `count` open (unreported, non-bye) matches of the
+// latest season like real player reports — including the Discord result-post
+// sync, so the results channel can be exercised end to end (set
+// DISCORD_RESULTS_CHANNEL_ID; without it the sync is silently skipped).
+// Alternating winners, a 2-0 sweep every third match. Returns how many
+// matches were reported.
+export async function reportDevResults(count: number): Promise<number> {
+  const window = await latestWindow();
+  if (!window) {
+    return 0;
+  }
+  const open = await db
+    .select({
+      id: matches.id,
+      playerAId: matches.playerAId,
+      playerBId: matches.playerBId,
+    })
+    .from(matches)
+    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
+    .where(
+      and(
+        eq(divisions.windowId, window.id),
+        isNotNull(matches.playerBId),
+        isNull(matchResults.matchId),
+      ),
+    )
+    .orderBy(asc(matches.round), asc(matches.id))
+    .limit(count);
+
+  let index = 0;
+  for (const match of open) {
+    const a = match.playerAId;
+    const b = match.playerBId as string;
+    await insertNormalResult(
+      match.id,
+      a,
+      b,
+      index % 2 === 0 ? a : b,
+      index % 3 === 0,
+    );
+    // Sequential on purpose: Discord's per-channel rate limit is ~5 messages
+    // per 5 seconds; the round trips pace the burst.
+    await syncResultPost(match.id);
+    index++;
+  }
+  return open.length;
+}
+
 // Fills the season with varied, lived-in results so the dashboards and
 // standings have something to chew on. Past rounds are mostly reported with
 // mixed winners and 2:0/2:1 scores, plus one of each edge state (overdue,
@@ -306,33 +388,7 @@ async function seedDevResults(
       .orderBy(asc(matches.round), asc(matches.id))
   ).filter((match) => match.playerBId !== null);
 
-  const reportNormal = async (
-    matchId: string,
-    a: string,
-    b: string,
-    winner: string,
-    sweep: boolean,
-  ) => {
-    const loser = winner === a ? b : a;
-    const games = sweep ? [winner, winner] : [winner, loser, winner];
-    await db.insert(matchResults).values({
-      matchId,
-      outcome: "normal",
-      winnerId: winner,
-      platform: "showdown",
-      playerATeamUrl: "https://pokepast.es/seed-a",
-      playerBTeamUrl: "https://pokepast.es/seed-b",
-      reportedById: a,
-    });
-    await db.insert(matchGames).values(
-      games.map((w, i) => ({
-        matchId,
-        gameNumber: i + 1,
-        winnerId: w,
-        replayUrl: `https://replay.pokemonshowdown.com/seed-${i + 1}`,
-      })),
-    );
-  };
+  const reportNormal = insertNormalResult;
 
   // Reported normal matches (matchId + participants) to hang disputes on.
   const reportedNormal: { matchId: string; a: string; b: string }[] = [];

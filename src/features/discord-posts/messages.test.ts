@@ -1,0 +1,198 @@
+import { describe, expect, it } from "vitest";
+import {
+  motwVodMessage,
+  type ResultMessageInput,
+  resultMessage,
+  shouldPostResult,
+} from "./messages";
+
+const BASE: ResultMessageInput = {
+  groupName: "Division 1a",
+  round: 3,
+  playerAName: "Alice",
+  playerBName: "Bob",
+  outcome: "normal",
+  winnerName: null,
+  scoreA: 2,
+  scoreB: 1,
+  platform: "showdown",
+  playerATeamUrl: "https://pokepast.es/aaa",
+  playerBTeamUrl: "https://pokepast.es/bbb",
+  videoUrl: null,
+  replayUrls: [
+    "https://replay.pokemonshowdown.com/g1",
+    "https://replay.pokemonshowdown.com/g2",
+    "https://replay.pokemonshowdown.com/g3",
+  ],
+  corrected: false,
+  matchUrl: "https://hub.example/match/m1",
+};
+
+describe("resultMessage", () => {
+  it("renders the full Showdown three-game message", () => {
+    expect(resultMessage(BASE)).toBe(
+      `__**VGC Bundesliga · Division 1a · Spieltag 3**__
+
+**Alice**  ||2 - 1||  **Bob**
+
+Team von Alice: https://pokepast.es/aaa
+Team von Bob: https://pokepast.es/bbb
+
+Game 1: *https://replay.pokemonshowdown.com/g1*
+Game 2: *https://replay.pokemonshowdown.com/g2*
+Game 3: ||*https://replay.pokemonshowdown.com/g3*||
+
+Zum Match: <https://hub.example/match/m1>`,
+    );
+  });
+
+  it("fills the Game-3 slot with game 2's replay as a decoy on a 2-0", () => {
+    const message = resultMessage({
+      ...BASE,
+      scoreA: 2,
+      scoreB: 0,
+      replayUrls: BASE.replayUrls.slice(0, 2),
+    });
+    expect(message).toContain(
+      "Game 3: ||*https://replay.pokemonshowdown.com/g2*||",
+    );
+    // Same line count as a three-game series — the shape never leaks.
+    expect(message.split("\n").length).toBe(
+      resultMessage(BASE).split("\n").length,
+    );
+  });
+
+  it("renders the Cartridge variant: teams + italic video, no game lines", () => {
+    const message = resultMessage({
+      ...BASE,
+      platform: "cartridge",
+      replayUrls: [],
+      videoUrl: "https://youtu.be/QbxY2WuzCrU",
+    });
+    expect(message).toContain("Video: *https://youtu.be/QbxY2WuzCrU*");
+    expect(message).not.toContain("Game 1");
+  });
+
+  it("omits the video line when a Cartridge match has none", () => {
+    const message = resultMessage({
+      ...BASE,
+      platform: "cartridge",
+      replayUrls: [],
+    });
+    expect(message).not.toContain("Video:");
+  });
+
+  it("renders a free win with the winner inside the spoiler, no teams", () => {
+    const message = resultMessage({
+      ...BASE,
+      outcome: "free_win",
+      winnerName: "Bob",
+      platform: null,
+      playerATeamUrl: null,
+      playerBTeamUrl: null,
+      replayUrls: [],
+    });
+    expect(message).toBe(
+      `__**VGC Bundesliga · Division 1a · Spieltag 3**__
+
+**Alice**  ||Freewin für Bob||  **Bob**
+
+Zum Match: <https://hub.example/match/m1>`,
+    );
+  });
+
+  it("renders a double loss without a winner", () => {
+    const message = resultMessage({
+      ...BASE,
+      outcome: "double_loss",
+      platform: null,
+      playerATeamUrl: null,
+      playerBTeamUrl: null,
+      replayUrls: [],
+    });
+    expect(message).toContain("**Alice**  ||Doppelniederlage||  **Bob**");
+  });
+
+  it("appends the (korrigiert) marker on corrected results", () => {
+    expect(resultMessage({ ...BASE, corrected: true })).toMatch(
+      /\*\(korrigiert\)\*$/,
+    );
+  });
+
+  it("omits the hub link without a base URL", () => {
+    expect(resultMessage({ ...BASE, matchUrl: null })).not.toContain(
+      "Zum Match",
+    );
+  });
+
+  it("never bolds only the winner", () => {
+    // Both names bold in every variant — anything else leaks the result.
+    const message = resultMessage(BASE);
+    expect(message).toContain("**Alice**");
+    expect(message).toContain("**Bob**");
+  });
+});
+
+describe("motwVodMessage", () => {
+  it("announces the VOD without any result, YouTube link unwrapped", () => {
+    expect(
+      motwVodMessage({
+        round: 3,
+        playerAName: "Alice",
+        playerBName: "Bob",
+        youtubeUrl: "https://youtu.be/xyz",
+        matchUrl: "https://hub.example/match/m1",
+      }),
+    ).toBe(
+      `__**VGC Bundesliga · Match of the Week · Spieltag 3**__
+
+**Alice** vs. **Bob** — das VOD ist da!
+https://youtu.be/xyz
+
+Zum Match: <https://hub.example/match/m1>`,
+    );
+  });
+
+  it("omits the hub link without a base URL", () => {
+    expect(
+      motwVodMessage({
+        round: 3,
+        playerAName: "Alice",
+        playerBName: "Bob",
+        youtubeUrl: "https://youtu.be/xyz",
+        matchUrl: null,
+      }),
+    ).not.toContain("Zum Match");
+  });
+});
+
+describe("shouldPostResult", () => {
+  const confirmed = { outcome: "normal" as const, confirmedAt: null };
+
+  it("posts a public normal result", () => {
+    expect(shouldPostResult({ isMotw: false, result: confirmed })).toBe(true);
+  });
+
+  it("posts nothing for an unreported match", () => {
+    expect(shouldPostResult({ isMotw: false, result: null })).toBe(false);
+  });
+
+  it("holds a pending free win until staff confirm it", () => {
+    expect(
+      shouldPostResult({
+        isMotw: false,
+        result: { outcome: "free_win", confirmedAt: null },
+      }),
+    ).toBe(false);
+    expect(
+      shouldPostResult({
+        isMotw: false,
+        result: { outcome: "free_win", confirmedAt: new Date() },
+      }),
+    ).toBe(true);
+  });
+
+  it("never posts the Match of the Week's result", () => {
+    expect(shouldPostResult({ isMotw: true, result: confirmed })).toBe(false);
+  });
+});

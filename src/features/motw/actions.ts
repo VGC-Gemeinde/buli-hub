@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { syncMotwVodPost, syncResultPost } from "@/features/discord-posts/sync";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import { currentMatchday } from "@/features/season/dashboard";
@@ -10,6 +11,7 @@ import { selectableRounds, youtubeUrlSchema } from "./motw";
 import {
   deleteMotw,
   matchSelectionContext,
+  motwForWindow,
   setMotwYoutubeUrl,
   upsertMotw,
 } from "./queries";
@@ -69,6 +71,10 @@ export async function selectMotw(input: {
         "Nur Matches des aktuellen oder nächsten Spieltags können gewählt werden",
     };
   }
+  const previous =
+    (await motwForWindow(context.windowId)).find(
+      (s) => s.round === context.round,
+    ) ?? null;
   await upsertMotw({
     windowId: context.windowId,
     round: context.round,
@@ -76,6 +82,14 @@ export async function selectMotw(input: {
     staffId: gate.staffId,
   });
   revalidate(input.matchId);
+  // Discord mirror: the new pick's result post disappears (spoiler); a
+  // replaced match gets its public result back and loses its VOD post.
+  await syncResultPost(input.matchId);
+  if (previous && previous.matchId !== input.matchId) {
+    revalidatePath(`/match/${previous.matchId}`);
+    await syncResultPost(previous.matchId);
+    await syncMotwVodPost(previous.matchId);
+  }
   return { ok: true };
 }
 
@@ -100,6 +114,12 @@ export async function removeMotw(input: {
   }
   const matchId = await deleteMotw(window.id, input.round);
   revalidate(matchId);
+  if (matchId) {
+    // No longer featured: its public result may return to the channel; a
+    // VOD announcement (if any) goes with the pick.
+    await syncResultPost(matchId);
+    await syncMotwVodPost(matchId);
+  }
   return { ok: true };
 }
 
@@ -141,5 +161,8 @@ export async function saveMotwYoutubeUrl(input: {
     };
   }
   revalidate(matchId);
+  // Discord mirror: first link posts the announcement, a changed link edits
+  // it, a cleared link deletes it.
+  await syncMotwVodPost(matchId);
   return { ok: true };
 }

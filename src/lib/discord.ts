@@ -41,6 +41,75 @@ export function memberAvatarUrl(
   return null;
 }
 
+function botToken(): string {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) {
+    throw new Error("DISCORD_BOT_TOKEN is not set (see .env.example)");
+  }
+  return token;
+}
+
+// Non-2xx responses are returned as typed outcomes (the caller decides —
+// e.g. a 404 on edit means the message was deleted on Discord and can be
+// re-posted); network failures still throw.
+export type DiscordCallResult = { ok: true } | { ok: false; status: number };
+
+// Posts a plain-content message; returns its id so later edits/deletes can
+// target it. Mentions are never resolved — a player name containing
+// @everyone must not ping the server.
+export async function postChannelMessage(
+  channelId: string,
+  content: string,
+): Promise<{ ok: true; messageId: string } | { ok: false; status: number }> {
+  const response = await fetch(`${API_BASE}/channels/${channelId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${botToken()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+  });
+  if (!response.ok) {
+    return { ok: false, status: response.status };
+  }
+  const message = (await response.json()) as { id?: unknown };
+  const messageId = asString(message.id);
+  return messageId ? { ok: true, messageId } : { ok: false, status: 500 };
+}
+
+export async function editChannelMessage(
+  channelId: string,
+  messageId: string,
+  content: string,
+): Promise<DiscordCallResult> {
+  const response = await fetch(
+    `${API_BASE}/channels/${channelId}/messages/${messageId}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bot ${botToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    },
+  );
+  return response.ok ? { ok: true } : { ok: false, status: response.status };
+}
+
+export async function deleteChannelMessage(
+  channelId: string,
+  messageId: string,
+): Promise<DiscordCallResult> {
+  const response = await fetch(
+    `${API_BASE}/channels/${channelId}/messages/${messageId}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bot ${botToken()}` },
+    },
+  );
+  return response.ok ? { ok: true } : { ok: false, status: response.status };
+}
+
 /**
  * Fetches a guild member by Discord user id.
  * Returns null when the user is not a member of the guild.

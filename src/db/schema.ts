@@ -352,6 +352,36 @@ export const motwSelections = pgTable(
   (table) => [unique().on(table.windowId, table.round)],
 );
 
+// What a Discord post in the results channel announces: a match result, or
+// the Match-of-the-Week VOD.
+export const discordPostKindEnum = pgEnum("discord_post_kind", [
+  "result",
+  "motw_vod",
+]);
+
+// One Discord message per match and kind, mirroring the hub's public state:
+// posted when a result becomes public (or a MotW VOD link lands), edited on
+// changes, deleted when the state disappears (reopen, pick removed). The
+// channel id is stored per post so messages stay editable if the configured
+// results channel later changes. FK + RLS in a custom migration.
+export const discordPosts = pgTable(
+  "discord_posts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: discordPostKindEnum("kind").notNull(),
+    matchId: uuid("match_id").notNull(),
+    channelId: text("channel_id").notNull(),
+    messageId: text("message_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.kind, table.matchId)],
+);
+
 export const disputeStatusEnum = pgEnum("dispute_status", ["open", "resolved"]);
 export const disputeResolutionEnum = pgEnum("dispute_resolution", [
   "upheld", // the reported result stands

@@ -126,6 +126,7 @@ const SUMMARY_RESULT: StoredResult = {
   reportedById: "me",
   reportedAt: new Date("2026-07-06T18:00:00Z"),
   confirmedAt: null,
+  correctedAt: null,
   games: [
     {
       gameNumber: 1,
@@ -157,6 +158,7 @@ const FREEWIN_RESULT: StoredResult = {
   reportedById: "me",
   reportedAt: new Date("2026-07-06T18:00:00Z"),
   confirmedAt: null,
+  correctedAt: null,
   games: [],
 };
 const staffRow = (

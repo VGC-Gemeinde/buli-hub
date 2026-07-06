@@ -5,6 +5,8 @@ import { SectionHeader } from "@/components/section-header";
 import { SiteHeader } from "@/components/site-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import { DropsSection } from "@/features/drops/components/drops-section";
+import { listDropCandidates, listDrops } from "@/features/drops/queries";
 import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
 import { motwTodo } from "@/features/motw/motw";
 import { motwForWindow } from "@/features/motw/queries";
@@ -133,13 +135,21 @@ export default async function StaffPage() {
   // work, no separate page.
   if (phase === "regular_season" && window) {
     const today = new Date().toISOString().slice(0, 10);
-    const [overview, matchdays, resolvedDisputes, motwSelections] =
-      await Promise.all([
-        windowMatchOverview(window.id),
-        matchdaysForWindow(window.id),
-        windowResolvedDisputes(window.id),
-        motwForWindow(window.id),
-      ]);
+    const [
+      overview,
+      matchdays,
+      resolvedDisputes,
+      motwSelections,
+      drops,
+      dropCandidates,
+    ] = await Promise.all([
+      windowMatchOverview(window.id),
+      matchdaysForWindow(window.id),
+      windowResolvedDisputes(window.id),
+      motwForWindow(window.id),
+      listDrops(window.id),
+      listDropCandidates(window.id),
+    ]);
     const week = currentMatchday(matchdays, today);
     const { overdue, thisWeek, pendingFreeWins, disputed } = bucketMatches({
       matches: overview,
@@ -175,6 +185,7 @@ export default async function StaffPage() {
               resolvedDisputes={resolvedDisputes}
               today={today}
             />
+            <DropsSection drops={drops} candidates={dropCandidates} />
           </div>
         </main>
       </div>

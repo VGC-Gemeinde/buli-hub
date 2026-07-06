@@ -168,31 +168,44 @@ Zum Match: <https://hub.example/match/m1>`,
 
 describe("shouldPostResult", () => {
   const confirmed = { outcome: "normal" as const, confirmedAt: null };
+  const base = { isMotw: false, hasDroppedParticipant: false };
 
   it("posts a public normal result", () => {
-    expect(shouldPostResult({ isMotw: false, result: confirmed })).toBe(true);
+    expect(shouldPostResult({ ...base, result: confirmed })).toBe(true);
   });
 
   it("posts nothing for an unreported match", () => {
-    expect(shouldPostResult({ isMotw: false, result: null })).toBe(false);
+    expect(shouldPostResult({ ...base, result: null })).toBe(false);
   });
 
   it("holds a pending free win until staff confirm it", () => {
     expect(
       shouldPostResult({
-        isMotw: false,
+        ...base,
         result: { outcome: "free_win", confirmedAt: null },
       }),
     ).toBe(false);
     expect(
       shouldPostResult({
-        isMotw: false,
+        ...base,
         result: { outcome: "free_win", confirmedAt: new Date() },
       }),
     ).toBe(true);
   });
 
   it("never posts the Match of the Week's result", () => {
-    expect(shouldPostResult({ isMotw: true, result: confirmed })).toBe(false);
+    expect(shouldPostResult({ ...base, isMotw: true, result: confirmed })).toBe(
+      false,
+    );
+  });
+
+  it("never posts drop-decided matches", () => {
+    expect(
+      shouldPostResult({
+        ...base,
+        hasDroppedParticipant: true,
+        result: confirmed,
+      }),
+    ).toBe(false);
   });
 });

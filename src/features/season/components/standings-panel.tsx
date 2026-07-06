@@ -140,6 +140,14 @@ export function StandingsTable({
                           {groupLabel}
                         </span>
                       ) : null}
+                      {row.dropped ? (
+                        <span
+                          title="Spieler wurde gedroppt — alle Matches zählen als Freewin für die Gegner"
+                          className="shrink-0 rounded-full border border-destructive/40 bg-destructive/8 px-[7px] py-[2px] font-bold text-[10.5px] text-destructive uppercase tracking-[0.06em]"
+                        >
+                          Drop
+                        </span>
+                      ) : null}
                       {me ? (
                         <span className="shrink-0 font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
                           Du

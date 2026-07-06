@@ -37,16 +37,20 @@ export async function motwByMatchId(
 }
 
 // A match's season anchor for the selection action: which window/round it
-// belongs to and whether it is a bye (unselectable). Null for an unknown id.
+// belongs to, its participants, and whether it is a bye (unselectable). Null
+// for an unknown id.
 export async function matchSelectionContext(matchId: string): Promise<{
   windowId: string;
   round: number;
+  playerAId: string;
+  playerBId: string | null;
   isBye: boolean;
 } | null> {
   const [row] = await db
     .select({
       windowId: divisions.windowId,
       round: matches.round,
+      playerAId: matches.playerAId,
       playerBId: matches.playerBId,
     })
     .from(matches)
@@ -58,6 +62,8 @@ export async function matchSelectionContext(matchId: string): Promise<{
     ? {
         windowId: row.windowId,
         round: row.round,
+        playerAId: row.playerAId,
+        playerBId: row.playerBId,
         isBye: row.playerBId === null,
       }
     : null;

@@ -7,6 +7,7 @@ import {
   matchGames,
   matchResults,
   motwSelections,
+  placements,
   profiles,
   registrations,
   subDivisions,
@@ -464,6 +465,32 @@ async function seedDevResults(
       youtubeUrl: "https://www.youtube.com/watch?v=vgc-bundesliga",
       selectedById: staffId,
     });
+  }
+
+  // Drop one player (not a MotW participant) so tables, row scores, match
+  // pages and the staff Drops list all show the state.
+  const motwMatch = all.find((m) => m.id === motwMatchId);
+  const dropCandidate = [...all]
+    .reverse()
+    .find(
+      (m) =>
+        m.playerAId !== motwMatch?.playerAId &&
+        m.playerAId !== motwMatch?.playerBId,
+    );
+  if (dropCandidate) {
+    await db
+      .update(placements)
+      .set({
+        droppedAt: new Date(),
+        droppedById: staffId,
+        dropReason: "Inaktivität — mehrfach nicht erreichbar.",
+      })
+      .where(
+        and(
+          eq(placements.windowId, windowId),
+          eq(placements.userId, dropCandidate.playerAId),
+        ),
+      );
   }
 
   // One open dispute (loser contests the result) and one already resolved, so

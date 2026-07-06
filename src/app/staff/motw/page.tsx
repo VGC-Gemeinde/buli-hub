@@ -52,8 +52,9 @@ export default async function StaffMotwPage() {
         current: round === currentRound,
         startsOn: day?.startsOn ?? today,
         endsOn: day?.endsOn ?? today,
+        // Drop-decided matches cannot be featured — filter them out.
         matches: overview
-          .filter((m) => m.round === round)
+          .filter((m) => m.round === round && !m.decidedByDrop)
           .map((m) => ({
             matchId: m.matchId,
             groupName: m.groupName,

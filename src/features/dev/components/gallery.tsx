@@ -8,6 +8,8 @@ import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
+import { DropBanner } from "@/features/drops/components/drop-banner";
+import { DropsSection } from "@/features/drops/components/drops-section";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import {
   MotwManager,
@@ -220,6 +222,7 @@ const staffRow = (
   outcome: null,
   winnerId: null,
   confirmedAt: null,
+  decidedByDrop: false,
   freeWinReason: null,
   reporterName: null,
   reportedAt: null,
@@ -421,6 +424,8 @@ const DASH_STANDINGS: StandingsRow[] = [
     gamesWon: 0,
     gamesLost: 0,
     rank: 3,
+    // Shows the "Drop" tag in every standings specimen.
+    dropped: true,
   },
 ];
 // The whole division (groups 1a + 1b, equal size) merged into one table — the
@@ -1153,6 +1158,42 @@ export function Gallery() {
             round={2}
             groupName="Division 1a"
             spoilerMode="default"
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Drops</h2>
+        <Specimen label="Match-Seite: Drop-Banner (einfach / beidseitig)">
+          <div className="flex flex-col">
+            <DropBanner
+              playerAName="Falinks"
+              playerBName="Wooloo"
+              aDropped
+              bDropped={false}
+            />
+            <DropBanner
+              playerAName="Falinks"
+              playerBName="Wooloo"
+              aDropped
+              bDropped
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Staff: Drops-Sektion (Liste + Dialog; Aktionen ohne Staff-Login wirkungslos)">
+          <DropsSection
+            drops={[
+              {
+                identity: { userId: "c", name: "Pawmi", avatarUrl: null },
+                groupName: "Division 1a",
+                reason: "Inaktivität — mehrfach nicht erreichbar.",
+                droppedAt: new Date("2026-07-06T10:00:00Z"),
+              },
+            ]}
+            candidates={[
+              { userId: "a", name: "Falinks", groupName: "Division 1a" },
+              { userId: "b", name: "Wooloo", groupName: "Division 1a" },
+            ]}
           />
         </Specimen>
       </section>

@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { DropBanner } from "@/features/drops/components/drop-banner";
+import { droppedIdsForSubDivision } from "@/features/drops/queries";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
 import { motwByMatchId } from "@/features/motw/queries";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
@@ -56,6 +58,11 @@ export default async function MatchReportPage({
   const spoilersOff = parseSpoilersOff(
     (await cookies()).get(SPOILERS_OFF_COOKIE)?.value,
   );
+  // Drop-decided matches: banner for everyone, no reporting.
+  const droppedIds = await droppedIdsForSubDivision(match.subDivisionId);
+  const aDropped = droppedIds.has(match.playerA.userId);
+  const bDropped = droppedIds.has(match.playerB.userId);
+  const isDropDecided = aDropped || bDropped;
   // A pending (unconfirmed) free win is not public — neutral observers see the
   // match as still open until it is confirmed.
   const pendingFreeWinHidden =
@@ -145,6 +152,14 @@ export default async function MatchReportPage({
         {motw ? (
           <MotwMatchBanner round={motw.round} youtubeUrl={motw.youtubeUrl} />
         ) : null}
+        {isDropDecided ? (
+          <DropBanner
+            playerAName={match.playerA.name}
+            playerBName={match.playerB.name}
+            aDropped={aDropped}
+            bDropped={bDropped}
+          />
+        ) : null}
 
         {summary}
 
@@ -174,7 +189,9 @@ export default async function MatchReportPage({
         ) : null}
 
         {!shownResult ? (
-          isParticipant && current ? (
+          // A drop-decided match is not reportable — the banner explains the
+          // counted outcome; participants get no form.
+          isParticipant && current && !isDropDecided ? (
             <ReportForm
               matchId={match.matchId}
               round={match.round}

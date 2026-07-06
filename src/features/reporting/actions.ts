@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { syncResultPost } from "@/features/discord-posts/sync";
+import { droppedIdsForSubDivision } from "@/features/drops/queries";
 import { currentUser } from "@/features/roles/guard";
 import {
   getMatchForReport,
@@ -43,6 +44,17 @@ export async function reportMatch(input: {
   }
   if (await getMatchResult(input.matchId)) {
     return { ok: false, error: "Das Ergebnis wurde bereits gemeldet" };
+  }
+  // A drop decides the match — there is nothing left to report.
+  const droppedIds = await droppedIdsForSubDivision(match.subDivisionId);
+  if (
+    droppedIds.has(match.playerA.userId) ||
+    droppedIds.has(match.playerB.userId)
+  ) {
+    return {
+      ok: false,
+      error: "Das Match wurde durch einen Drop entschieden",
+    };
   }
 
   const staffIds = new Set(

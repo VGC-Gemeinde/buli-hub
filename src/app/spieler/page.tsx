@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { markDropped } from "@/features/drops/drops";
+import { droppedIdsForWindow } from "@/features/drops/queries";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { getRegistration } from "@/features/registration/queries";
 import {
@@ -94,12 +96,14 @@ export default async function SpielerPage() {
 
   if (view === "in_season" && window && placement) {
     const today = new Date().toISOString().slice(0, 10);
-    const [groups, matchdays, rawMatches, resultByMatchId] = await Promise.all([
-      divisionGroups(placement.divisionId),
-      matchdaysForWindow(window.id),
-      subDivisionMatches(placement.subDivisionId),
-      subDivisionResults(placement.subDivisionId),
-    ]);
+    const [groups, matchdays, rawMatches, resultByMatchId, droppedIds] =
+      await Promise.all([
+        divisionGroups(placement.divisionId),
+        matchdaysForWindow(window.id),
+        subDivisionMatches(placement.subDivisionId),
+        subDivisionResults(placement.subDivisionId),
+        droppedIdsForWindow(window.id),
+      ]);
 
     // The player's own group is one of the division's groups — derive the group
     // roster + standings from it so the group is loaded only once.
@@ -122,17 +126,21 @@ export default async function SpielerPage() {
       userId: current.userId,
     });
     const { next } = splitPlayerMatches(myMatches, today);
-    const standings = computeStandings({
-      roster: members,
-      results: ownGroup?.results ?? [],
-    });
+    const standings = markDropped(
+      computeStandings({
+        roster: members,
+        results: ownGroup?.results ?? [],
+      }),
+      droppedIds,
+    );
 
     // Post-season zones are shown on the division's *relevant* table only. In
     // `division` mode the global table carries them and is the default view; in
     // `sub_division` mode the player's own group table carries them.
     const config = await divisionPostSeason(placement.divisionId);
     const divisionMode = config?.relevantTable === "division";
-    const division = divisionMode ? divisionStandings(groups) : null;
+    const divisionRaw = divisionMode ? divisionStandings(groups) : null;
+    const division = divisionRaw ? markDropped(divisionRaw, droppedIds) : null;
     let groupZones: Map<string, Zone> | undefined;
     let divisionZones: Map<string, Zone> | undefined;
     if (division) {

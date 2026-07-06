@@ -95,10 +95,12 @@ afterAll(async () => {
 });
 
 describe("matchSelectionContext", () => {
-  it("resolves a match's window, round, and bye state", async () => {
+  it("resolves a match's window, round, participants, and bye state", async () => {
     expect(await matchSelectionContext(matchR2)).toEqual({
       windowId,
       round: 2,
+      playerAId: alice,
+      playerBId: bob,
       isBye: false,
     });
     expect((await matchSelectionContext(matchBye))?.isBye).toBe(true);

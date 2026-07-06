@@ -187,6 +187,10 @@ export const subDivisions = pgTable(
 
 // Where a registered player sits in the seeding: first a division (sub-division
 // null), then a sub-division. One row per player per season.
+// A mid-season drop is a flag here, never a data change: stored results stay
+// untouched and every consumer counts the player's matches as 2:0 free wins
+// for the opponents at read time (`effectiveResult`), which makes un-dropping
+// a plain reset. FK for dropped_by_id in a custom migration.
 export const placements = pgTable(
   "placements",
   {
@@ -195,6 +199,9 @@ export const placements = pgTable(
     userId: uuid("user_id").notNull(),
     divisionId: uuid("division_id"),
     subDivisionId: uuid("sub_division_id"),
+    droppedAt: timestamp("dropped_at", { withTimezone: true }),
+    droppedById: uuid("dropped_by_id"),
+    dropReason: text("drop_reason"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

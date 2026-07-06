@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { syncMotwVodPost, syncResultPost } from "@/features/discord-posts/sync";
+import { droppedIdsForWindow } from "@/features/drops/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import { currentMatchday } from "@/features/season/dashboard";
@@ -61,6 +62,17 @@ export async function selectMotw(input: {
     return {
       ok: false,
       error: "Ein Spielfrei kann nicht Match of the Week sein",
+    };
+  }
+  const droppedIds = await droppedIdsForWindow(context.windowId);
+  if (
+    droppedIds.has(context.playerAId) ||
+    (context.playerBId !== null && droppedIds.has(context.playerBId))
+  ) {
+    return {
+      ok: false,
+      error:
+        "Ein Match mit einem gedroppten Spieler kann nicht Match of the Week sein",
     };
   }
   const rounds = await openRounds(context.windowId);

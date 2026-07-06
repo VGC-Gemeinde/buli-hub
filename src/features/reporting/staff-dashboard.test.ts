@@ -12,6 +12,7 @@ const base: StaffMatchRow = {
   outcome: null,
   winnerId: null,
   confirmedAt: null,
+  decidedByDrop: false,
   freeWinReason: null,
   reporterName: null,
   reportedAt: null,

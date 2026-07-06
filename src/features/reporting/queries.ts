@@ -10,6 +10,11 @@ import {
   profiles,
   subDivisions,
 } from "@/db/schema";
+import { decidedByDrop, effectiveResult } from "@/features/drops/drops";
+import {
+  droppedIdsForSubDivision,
+  droppedIdsForWindow,
+} from "@/features/drops/queries";
 import type { Identity } from "@/features/season/dashboard";
 import { groupRoster } from "@/features/season/queries";
 import { subDivisionName } from "@/features/seeding/seeding";
@@ -186,25 +191,30 @@ export async function saveResult(
 }
 
 // Every match of a sub-division with its result state — the input for
-// `computeStandings`.
+// `computeStandings`. Results are mapped through the drop override: matches
+// of a dropped player count as 2:0 free wins for the opponent, whatever is
+// (or is not) stored.
 export async function groupResults(
   subDivisionId: string,
 ): Promise<ResultForStandings[]> {
-  const rows = await db
-    .select({
-      matchId: matches.id,
-      playerAId: matches.playerAId,
-      playerBId: matches.playerBId,
-      outcome: matchResults.outcome,
-      winnerId: matchResults.winnerId,
-      confirmedAt: matchResults.confirmedAt,
-      gameWinnerId: matchGames.winnerId,
-    })
-    .from(matches)
-    .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
-    .leftJoin(matchGames, eq(matchGames.matchId, matches.id))
-    .where(eq(matches.subDivisionId, subDivisionId))
-    .orderBy(asc(matchGames.gameNumber));
+  const [rows, droppedIds] = await Promise.all([
+    db
+      .select({
+        matchId: matches.id,
+        playerAId: matches.playerAId,
+        playerBId: matches.playerBId,
+        outcome: matchResults.outcome,
+        winnerId: matchResults.winnerId,
+        confirmedAt: matchResults.confirmedAt,
+        gameWinnerId: matchGames.winnerId,
+      })
+      .from(matches)
+      .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
+      .leftJoin(matchGames, eq(matchGames.matchId, matches.id))
+      .where(eq(matches.subDivisionId, subDivisionId))
+      .orderBy(asc(matchGames.gameNumber)),
+    droppedIdsForSubDivision(subDivisionId),
+  ]);
 
   const byMatch = new Map<string, ResultForStandings>();
   for (const row of rows) {
@@ -226,7 +236,9 @@ export async function groupResults(
       });
     }
   }
-  return [...byMatch.values()];
+  return [...byMatch.values()].map((entry) =>
+    effectiveResult(entry, droppedIds),
+  );
 }
 
 // One sub-division's standings input, plus its id/position — the per-group shape
@@ -270,53 +282,84 @@ export type MatchResultLite = {
   games: { winnerId: string }[];
 };
 
-// Result state for every reported match in a sub-division, keyed by matchId —
-// feeds the schedule's result chips / scores on the dashboard.
+// Result state for every decided match in a sub-division, keyed by matchId —
+// feeds the schedule's result chips / scores on the dashboard. Mapped through
+// the drop override, so matches of a dropped player appear as (confirmed)
+// free wins even when nothing is stored — an open match against a dropped
+// player is decided.
 export async function subDivisionResults(
   subDivisionId: string,
 ): Promise<Map<string, MatchResultLite>> {
-  const rows = await db
-    .select({
-      matchId: matchResults.matchId,
-      outcome: matchResults.outcome,
-      winnerId: matchResults.winnerId,
-      confirmedAt: matchResults.confirmedAt,
-      disputeId: disputes.id,
-      gameWinnerId: matchGames.winnerId,
-      gameNumber: matchGames.gameNumber,
-    })
-    .from(matchResults)
-    .innerJoin(matches, eq(matches.id, matchResults.matchId))
-    .leftJoin(
-      disputes,
-      and(
-        eq(disputes.matchId, matchResults.matchId),
-        eq(disputes.status, "open"),
-      ),
-    )
-    .leftJoin(matchGames, eq(matchGames.matchId, matchResults.matchId))
-    .where(eq(matches.subDivisionId, subDivisionId))
-    .orderBy(asc(matchGames.gameNumber));
+  const [rows, droppedIds] = await Promise.all([
+    db
+      .select({
+        matchId: matches.id,
+        playerAId: matches.playerAId,
+        playerBId: matches.playerBId,
+        outcome: matchResults.outcome,
+        winnerId: matchResults.winnerId,
+        confirmedAt: matchResults.confirmedAt,
+        disputeId: disputes.id,
+        gameWinnerId: matchGames.winnerId,
+        gameNumber: matchGames.gameNumber,
+      })
+      .from(matches)
+      .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
+      .leftJoin(
+        disputes,
+        and(eq(disputes.matchId, matches.id), eq(disputes.status, "open")),
+      )
+      .leftJoin(matchGames, eq(matchGames.matchId, matches.id))
+      .where(eq(matches.subDivisionId, subDivisionId))
+      .orderBy(asc(matchGames.gameNumber)),
+    droppedIdsForSubDivision(subDivisionId),
+  ]);
 
-  const byMatch = new Map<string, MatchResultLite>();
+  type Raw = {
+    playerAId: string;
+    playerBId: string | null;
+    outcome: MatchOutcome | null;
+    winnerId: string | null;
+    confirmedAt: Date | null;
+    disputed: boolean;
+    games: { winnerId: string }[];
+  };
+  const byMatch = new Map<string, Raw>();
   for (const row of rows) {
-    let entry = byMatch.get(row.matchId);
-    if (!entry) {
-      entry = {
-        matchId: row.matchId,
-        outcome: row.outcome,
+    let raw = byMatch.get(row.matchId);
+    if (!raw) {
+      raw = {
+        playerAId: row.playerAId,
+        playerBId: row.playerBId,
+        outcome: row.outcome as MatchOutcome | null,
         winnerId: row.winnerId,
         confirmedAt: row.confirmedAt,
         disputed: row.disputeId !== null,
         games: [],
       };
-      byMatch.set(row.matchId, entry);
+      byMatch.set(row.matchId, raw);
     }
     if (row.gameWinnerId) {
-      entry.games.push({ winnerId: row.gameWinnerId });
+      raw.games.push({ winnerId: row.gameWinnerId });
     }
   }
-  return byMatch;
+
+  const result = new Map<string, MatchResultLite>();
+  for (const [matchId, raw] of byMatch) {
+    const effective = effectiveResult(raw, droppedIds);
+    if (effective.outcome === null) {
+      continue; // genuinely unreported
+    }
+    result.set(matchId, {
+      matchId,
+      outcome: effective.outcome,
+      winnerId: effective.winnerId,
+      confirmedAt: effective.confirmedAt,
+      disputed: raw.disputed,
+      games: [...effective.games],
+    });
+  }
+  return result;
 }
 
 // All staff + admin users (never dev) as identities — the „discussed with"
@@ -361,6 +404,9 @@ export type StaffMatchRow = {
   outcome: MatchOutcome | null;
   winnerId: string | null;
   confirmedAt: Date | null;
+  // Decided by a player drop: counts as a confirmed free win (or double
+  // loss), is never chased, and cannot be featured as MotW.
+  decidedByDrop: boolean;
   // Free-win context for the confirm list.
   freeWinReason: string | null;
   reporterName: string | null;
@@ -433,37 +479,55 @@ export async function windowMatchOverview(
       asc(matches.round),
     );
 
-  return rows.map((row) => ({
-    matchId: row.matchId,
-    round: row.round,
-    groupName: subDivisionName(row.tier, row.position),
-    endsOn: row.endsOn,
-    playerA: toIdentity({
-      userId: row.playerAId,
-      displayName: row.aName,
-      username: row.aUser,
-      avatarUrl: row.aAvatar,
-    }),
-    playerB: toIdentity({
-      userId: row.playerBId as string,
-      displayName: row.bName,
-      username: row.bUser,
-      avatarUrl: row.bAvatar,
-    }),
-    outcome: row.outcome,
-    winnerId: row.winnerId,
-    confirmedAt: row.confirmedAt,
-    freeWinReason: row.freeWinReason,
-    reporterName: row.rpName ?? row.rpUser,
-    reportedAt: row.reportedAt,
-    dispute: row.disputeReason
-      ? {
-          reason: row.disputeReason,
-          openedByName: row.dpName ?? row.dpUser,
-          openedAt: row.disputeOpenedAt as Date,
-        }
-      : null,
-  }));
+  const droppedIds = await droppedIdsForWindow(windowId);
+
+  return rows.map((row) => {
+    const match = { playerAId: row.playerAId, playerBId: row.playerBId };
+    const effective = effectiveResult(
+      {
+        ...match,
+        outcome: row.outcome,
+        winnerId: row.winnerId,
+        confirmedAt: row.confirmedAt,
+        games: [],
+      },
+      droppedIds,
+    );
+    const dropDecided = decidedByDrop(match, droppedIds);
+    return {
+      matchId: row.matchId,
+      round: row.round,
+      groupName: subDivisionName(row.tier, row.position),
+      endsOn: row.endsOn,
+      playerA: toIdentity({
+        userId: row.playerAId,
+        displayName: row.aName,
+        username: row.aUser,
+        avatarUrl: row.aAvatar,
+      }),
+      playerB: toIdentity({
+        userId: row.playerBId as string,
+        displayName: row.bName,
+        username: row.bUser,
+        avatarUrl: row.bAvatar,
+      }),
+      outcome: effective.outcome,
+      winnerId: effective.winnerId,
+      confirmedAt: effective.confirmedAt,
+      decidedByDrop: dropDecided,
+      // Drop free wins carry no staff-facing report context.
+      freeWinReason: dropDecided ? null : row.freeWinReason,
+      reporterName: dropDecided ? null : (row.rpName ?? row.rpUser),
+      reportedAt: dropDecided ? null : row.reportedAt,
+      dispute: row.disputeReason
+        ? {
+            reason: row.disputeReason,
+            openedByName: row.dpName ?? row.dpUser,
+            openedAt: row.disputeOpenedAt as Date,
+          }
+        : null,
+    };
+  });
 }
 
 // Confirms a pending free win — it then counts for standings.

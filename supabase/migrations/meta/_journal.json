@@ -204,6 +204,20 @@
       "when": 1783281669229,
       "tag": "20260705200109_discord_posts_fk_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1783291831641,
+      "tag": "20260705225031_player_drops",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1783291832341,
+      "tag": "20260705225032_player_drops_fk",
+      "breakpoints": true
     }
   ]
 }

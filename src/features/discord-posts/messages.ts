@@ -97,13 +97,17 @@ export function motwVodMessage(input: {
 
 // Whether the results channel should carry a result post for a match — the
 // converge decision. "No" for unreported matches, results the hub itself
-// still hides (pending free wins), and the Match of the Week (its result is
-// permanently spoiler-protected; the VOD post is its only announcement).
+// still hides (pending free wins), the Match of the Week (its result is
+// permanently spoiler-protected; the VOD post is its only announcement), and
+// drop-decided matches (drop free wins get no messages; existing posts of
+// played matches stay as historical records until the match is touched
+// again).
 export function shouldPostResult(input: {
   isMotw: boolean;
+  hasDroppedParticipant: boolean;
   result: { outcome: MatchOutcome; confirmedAt: Date | null } | null;
 }): boolean {
-  if (input.isMotw || input.result === null) {
+  if (input.isMotw || input.hasDroppedParticipant || input.result === null) {
     return false;
   }
   if (

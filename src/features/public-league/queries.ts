@@ -1,3 +1,5 @@
+import { markDropped } from "@/features/drops/drops";
+import { droppedIdsForWindow } from "@/features/drops/queries";
 import { findMotw, type MotwBlockData } from "@/features/motw/motw";
 import { motwForWindow } from "@/features/motw/queries";
 import { scoreFor } from "@/features/reporting/match-state";
@@ -120,10 +122,11 @@ export async function publicLeagueOverview(
   seasonNumber: number,
   today: string,
 ): Promise<PublicOverview> {
-  const [configs, matchdays, motwSelections] = await Promise.all([
+  const [configs, matchdays, motwSelections, droppedIds] = await Promise.all([
     divisionsWithGroupSizes(windowId),
     matchdaysForWindow(windowId),
     motwForWindow(windowId),
+    droppedIdsForWindow(windowId),
   ]);
   const currentRound = currentMatchday(matchdays, today)?.round ?? null;
 
@@ -131,7 +134,7 @@ export async function publicLeagueOverview(
   const divisions = await Promise.all(
     [...configs]
       .sort((a, b) => a.tier - b.tier)
-      .map((config) => buildDivision(config, motwMatchIds)),
+      .map((config) => buildDivision(config, motwMatchIds, droppedIds)),
   );
 
   // The prominent block features only the running Spieltag's pick.
@@ -152,6 +155,7 @@ export async function publicLeagueOverview(
 async function buildDivision(
   config: Awaited<ReturnType<typeof divisionsWithGroupSizes>>[number],
   motwMatchIds: ReadonlySet<string>,
+  droppedIds: ReadonlySet<string>,
 ): Promise<PublicDivision> {
   const groups = await divisionGroups(config.id);
   const counts = zoneCounts(config);
@@ -159,7 +163,8 @@ async function buildDivision(
 
   // The merged Gesamttabelle is shown only when it is the relevant table — i.e.
   // in division mode, where it decides promotion/relegation and carries the zones.
-  const merged = mode === "division" ? divisionStandings(groups) : null;
+  const mergedRaw = mode === "division" ? divisionStandings(groups) : null;
+  const merged = mergedRaw ? markDropped(mergedRaw, droppedIds) : null;
   const divisionZones = merged ? zoneMap(merged, counts) : null;
   const divisionGroupLabels = merged
     ? new Map(
@@ -177,7 +182,7 @@ async function buildDivision(
 
   const publicGroups = await Promise.all(
     groups.map((group) =>
-      buildGroup(config.tier, group, mode, counts, motwMatchIds),
+      buildGroup(config.tier, group, mode, counts, motwMatchIds, droppedIds),
     ),
   );
 
@@ -198,11 +203,12 @@ async function buildGroup(
   mode: "sub_division" | "division",
   counts: ReturnType<typeof zoneCounts>,
   motwMatchIds: ReadonlySet<string>,
+  droppedIds: ReadonlySet<string>,
 ): Promise<PublicGroup> {
-  const standings = computeStandings({
-    roster: group.roster,
-    results: group.results,
-  });
+  const standings = markDropped(
+    computeStandings({ roster: group.roster, results: group.results }),
+    droppedIds,
+  );
   // Zones sit on the relevant table only: the group table in sub_division mode.
   const zones = mode === "sub_division" ? zoneMap(standings, counts) : null;
 

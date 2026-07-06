@@ -1,3 +1,4 @@
+import { droppedIdsForSubDivision } from "@/features/drops/queries";
 import { motwByMatchId } from "@/features/motw/queries";
 import {
   getMatchForReport,
@@ -96,12 +97,22 @@ export async function syncResultPost(matchId: string): Promise<void> {
     if (!match || !match.playerB) {
       return;
     }
-    const [result, motw] = await Promise.all([
+    const [result, motw, droppedIds] = await Promise.all([
       getMatchResult(matchId),
       motwByMatchId(matchId),
+      droppedIdsForSubDivision(match.subDivisionId),
     ]);
 
-    if (!shouldPostResult({ isMotw: motw !== null, result })) {
+    const hasDroppedParticipant =
+      droppedIds.has(match.playerA.userId) ||
+      droppedIds.has(match.playerB.userId);
+    if (
+      !shouldPostResult({
+        isMotw: motw !== null,
+        hasDroppedParticipant,
+        result,
+      })
+    ) {
       await dropMessage("result", matchId);
       return;
     }

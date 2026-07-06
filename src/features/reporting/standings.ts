@@ -19,6 +19,10 @@ export type StandingsRow = {
   gamesWon: number;
   gamesLost: number;
   rank: number;
+  // Mid-season drop: the player stays in the table (their matches count as
+  // 2:0 free wins for the opponents) with a small marker. Set by the view
+  // assembly, not by computeStandings.
+  dropped?: boolean;
 };
 
 export type ResultForStandings = {

@@ -9,6 +9,7 @@ import { SectionHeader } from "@/components/section-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatGermanDay } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import { removeMotw, saveMotwYoutubeUrl, selectMotw } from "../actions";
 import { MotwBadge } from "./motw-badge";
@@ -43,10 +44,10 @@ export type MotwPastPick = {
 };
 
 function ddMM(dateStr: string): string {
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDay(dateStr, {
     day: "2-digit",
     month: "2-digit",
-  }).format(new Date(`${dateStr}T00:00:00Z`));
+  });
 }
 
 function chipLabel(groupName: string): string {

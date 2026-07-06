@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { matchesConfirmationPhrase } from "@/lib/confirm";
+import { formatGermanDateTime } from "@/lib/german-time";
 import { openRegistration } from "../actions";
 import { seasonName } from "../registration-window";
 
@@ -39,10 +40,10 @@ export function OpenRegistrationDialog({
   const confirmationPhrase = seasonName(Number(seasonNumber));
 
   const closesAtLabel = closesAtLocal
-    ? new Intl.DateTimeFormat("de-DE", {
+    ? formatGermanDateTime(new Date(closesAtLocal), {
         dateStyle: "long",
         timeStyle: "short",
-      }).format(new Date(closesAtLocal))
+      })
     : "";
 
   function handleOpenChange(next: boolean) {

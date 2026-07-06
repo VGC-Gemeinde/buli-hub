@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Identity } from "@/features/season/dashboard";
+import { formatGermanDay } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import { reportMatch } from "../actions";
 import { isPokepasteUrl, type Platform } from "../report";
@@ -30,10 +31,10 @@ function isReplayUrl(value: string): boolean {
 }
 
 function formatDeadline(dateStr: string): string {
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDay(dateStr, {
     day: "numeric",
     month: "long",
-  }).format(new Date(`${dateStr}T00:00:00Z`));
+  });
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }) {

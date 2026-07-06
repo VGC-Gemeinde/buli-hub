@@ -6,6 +6,7 @@ import { roleAtLeast } from "@/features/roles/roles";
 import { getSeeding } from "@/features/seeding/queries";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
+import { germanToday } from "@/lib/german-time";
 import { hasSchedule, persistSchedule, subDivisionRosters } from "./queries";
 import { generateRoundRobin } from "./round-robin";
 import {
@@ -69,7 +70,7 @@ export async function createSchedule(input: {
   }
 
   // The season starts on generation; week 1's deadline must be after it.
-  const seasonStart = new Date().toISOString().slice(0, 10);
+  const seasonStart = germanToday();
   if (deadlines[0] <= seasonStart) {
     return {
       ok: false,

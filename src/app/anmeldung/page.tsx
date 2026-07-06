@@ -19,29 +19,30 @@ import {
   registrationState,
   seasonName,
 } from "@/features/staff/registration-window";
+import { formatGermanDateTime } from "@/lib/german-time";
 
 // Short deadline, e.g. „15.08.26, 20:00" — used in the status line and inline
 // next to the sign-in CTA.
 function formatDeadline(closesAt: Date): string {
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDateTime(closesAt, {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(closesAt);
+  });
 }
 
 // Long, spelled-out timestamp, e.g. „15. August 2026, 20:00" — used on the
 // closed card.
 function formatLongTimestamp(date: Date): string {
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDateTime(date, {
     day: "numeric",
     month: "long",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  });
 }
 
 function statusLine(

@@ -13,6 +13,7 @@ import { roleAtLeast } from "@/features/roles/roles";
 import { currentMatchday } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
 import { latestWindow } from "@/features/staff/queries";
+import { germanToday } from "@/lib/german-time";
 import { clearDropped, placementDropState, setDropped } from "./queries";
 
 export type DropActionResult = { ok: true } | { ok: false; error: string };
@@ -73,7 +74,7 @@ export async function dropPlayer(input: {
   // — remove the pick (and its VOD announcement, if any). Past picks are
   // history and stay.
   const matchdays = await matchdaysForWindow(window.id);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = germanToday();
   const openRounds = selectableRounds(
     currentMatchday(matchdays, today)?.round ?? null,
     matchdays.length,

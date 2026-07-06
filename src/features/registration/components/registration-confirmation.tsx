@@ -1,4 +1,5 @@
 import { Tick } from "@/components/tick";
+import { formatGermanDateTime } from "@/lib/german-time";
 import { PLATFORM_LABELS, type Platform } from "../registration";
 import { WithdrawButton } from "./withdraw-button";
 
@@ -42,10 +43,10 @@ export function RegistrationConfirmation({
   note?: string;
 }) {
   const deadline = closesAt
-    ? new Intl.DateTimeFormat("de-DE", {
+    ? formatGermanDateTime(closesAt, {
         dateStyle: "short",
         timeStyle: "short",
-      }).format(closesAt)
+      })
     : null;
 
   return (

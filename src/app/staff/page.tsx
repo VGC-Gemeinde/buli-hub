@@ -39,13 +39,14 @@ import {
   seasonName,
 } from "@/features/staff/registration-window";
 import { seasonPhase } from "@/features/staff/season-phase";
+import { formatGermanDay, germanToday } from "@/lib/german-time";
 import { playerName } from "@/lib/player-name";
 
 function ddMM(dateStr: string): string {
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDay(dateStr, {
     day: "2-digit",
     month: "2-digit",
-  }).format(new Date(`${dateStr}T00:00:00Z`));
+  });
 }
 
 // The running-season header strip: identity, progress, and the entry points
@@ -134,7 +135,7 @@ export default async function StaffPage() {
   // Running season: the /staff page *is* the dashboard — staff lands on their
   // work, no separate page.
   if (phase === "regular_season" && window) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = germanToday();
     const [
       overview,
       matchdays,
@@ -216,7 +217,7 @@ export default async function StaffPage() {
     const rosters = await subDivisionRosters(window.id);
     const sizes = rosters.map((roster) => roster.userIds.length);
     const count = spieltagCount(sizes);
-    const seasonStart = new Date().toISOString().slice(0, 10);
+    const seasonStart = germanToday();
     if (count > 0) {
       scheduleSetup = {
         seasonStart,

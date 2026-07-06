@@ -6,6 +6,11 @@ import { useState } from "react";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import {
+  formatGermanDateTime,
+  formatGermanDay,
+  germanToday,
+} from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import type { DisputeRow, StaffMatchRow } from "../queries";
 import { confirmFreeWin } from "../staff-actions";
@@ -13,18 +18,15 @@ import { AwardFreewinDialog } from "./award-freewin-dialog";
 
 function ddMM(dateStr: string | null): string {
   if (!dateStr) return "—";
-  return new Intl.DateTimeFormat("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(new Date(`${dateStr}T00:00:00Z`));
+  return formatGermanDay(dateStr, { day: "2-digit", month: "2-digit" });
 }
 function reportedAtLabel(date: Date | null): string {
   if (!date) return "";
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDateTime(date, {
     weekday: "short",
     day: "2-digit",
     month: "2-digit",
-  }).format(date);
+  });
 }
 function daysSince(dateStr: string | null, today: string): number {
   if (!dateStr) return 0;
@@ -123,7 +125,7 @@ export function SaisonDashboard({
   pendingFreeWins,
   disputed,
   resolvedDisputes,
-  today = new Date().toISOString().slice(0, 10),
+  today = germanToday(),
 }: {
   overdue: StaffMatchRow[];
   thisWeek: StaffMatchRow[];

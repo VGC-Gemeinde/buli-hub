@@ -23,14 +23,15 @@ import {
 } from "@/components/ui/select";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
+import { formatGermanDateTime } from "@/lib/german-time";
 import { dropPlayer, undropPlayer } from "../actions";
 import type { DropCandidate, DropRow } from "../queries";
 
 function ddMM(date: Date): string {
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDateTime(date, {
     day: "2-digit",
     month: "2-digit",
-  }).format(date);
+  });
 }
 
 // The staff dashboard's Drops section: the list of dropped players (with

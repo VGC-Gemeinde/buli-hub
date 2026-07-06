@@ -1,6 +1,7 @@
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatGermanDateTime } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import type { RegistrationState } from "../registration-window";
 import { CopyLinkButton } from "./copy-link-button";
@@ -21,10 +22,10 @@ const STATUS_LABEL: Record<RegistrationState, string> = {
 };
 
 function formatCloses(closesAt: Date): string {
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDateTime(closesAt, {
     dateStyle: "long",
     timeStyle: "short",
-  }).format(closesAt);
+  });
 }
 
 export function SeasonCard({

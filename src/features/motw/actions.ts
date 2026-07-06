@@ -8,6 +8,7 @@ import { roleAtLeast } from "@/features/roles/roles";
 import { currentMatchday } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
 import { latestWindow } from "@/features/staff/queries";
+import { germanToday } from "@/lib/german-time";
 import { selectableRounds, youtubeUrlSchema } from "./motw";
 import {
   deleteMotw,
@@ -41,7 +42,7 @@ async function staffGate() {
 // The rounds currently open for picking in a window (current + next Spieltag).
 async function openRounds(windowId: string): Promise<Set<number>> {
   const matchdays = await matchdaysForWindow(windowId);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = germanToday();
   const current = currentMatchday(matchdays, today)?.round ?? null;
   return selectableRounds(current, matchdays.length);
 }

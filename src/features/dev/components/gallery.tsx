@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DateTimePicker } from "@/components/date-picker";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { ActionLink, InlineLink } from "@/components/links";
 import { SectionHeader } from "@/components/section-header";
@@ -806,6 +807,13 @@ const IDENTITIES: {
 
 const SAVE_STATES = ["idle", "saving", "saved", "error"] as const;
 
+// Stateful wrapper for the date+time picker pair (matching button anatomy,
+// browser-locale-independent 24h time).
+function DateTimePickerDemo() {
+  const [value, setValue] = useState("2026-07-20T18:00");
+  return <DateTimePicker value={value} onChange={setValue} />;
+}
+
 // Stateful wrappers for the controlled spoiler components.
 function SpoilerSwitchDemo() {
   const [off, setOff] = useState(false);
@@ -876,6 +884,9 @@ export function Gallery() {
               Staff
             </SectionHeader>
           </div>
+        </Specimen>
+        <Specimen label="DateTimePicker (deutscher Kalender + 24h-Uhrzeit, unabhängig von der Browser-Locale)">
+          <DateTimePickerDemo />
         </Specimen>
         <Specimen label="EmptyStateCard (Aktion · informativ)">
           <div className="flex flex-col gap-4">

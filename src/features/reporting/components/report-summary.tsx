@@ -8,14 +8,15 @@ import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PLATFORM_LABELS } from "@/features/registration/registration";
 import type { Identity } from "@/features/season/dashboard";
 import { SpoilerPill } from "@/features/spoilers/components/spoiler-score";
+import { formatGermanDateTime } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import type { StoredResult } from "../queries";
 
 function formatReportedAt(date: Date): string {
-  return new Intl.DateTimeFormat("de-DE", {
+  return formatGermanDateTime(date, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date);
+  });
 }
 
 function Dot() {

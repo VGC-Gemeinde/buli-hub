@@ -44,6 +44,7 @@ import {
   seasonName,
 } from "@/features/staff/registration-window";
 import { seasonPhase } from "@/features/staff/season-phase";
+import { germanToday } from "@/lib/german-time";
 
 // Narrow shell with the plain title — used by every non-in-season state.
 function Shell({ children }: { children: React.ReactNode }) {
@@ -95,7 +96,7 @@ export default async function SpielerPage() {
   });
 
   if (view === "in_season" && window && placement) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = germanToday();
     const [groups, matchdays, rawMatches, resultByMatchId, droppedIds] =
       await Promise.all([
         divisionGroups(placement.divisionId),

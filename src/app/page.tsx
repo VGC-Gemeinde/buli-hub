@@ -13,6 +13,7 @@ import {
   parseSpoilersOff,
   SPOILERS_OFF_COOKIE,
 } from "@/features/spoilers/spoilers";
+import { germanToday } from "@/lib/german-time";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home({
@@ -26,7 +27,7 @@ export default async function Home({
   const { window, phase } = await currentSeason();
 
   if (phase === "regular_season" && window) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = germanToday();
     const [overview, current, cookieStore] = await Promise.all([
       publicLeagueOverview(window.id, window.seasonNumber, today),
       currentUser(),

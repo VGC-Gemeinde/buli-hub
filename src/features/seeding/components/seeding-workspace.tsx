@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { formatGermanDateTime } from "@/lib/german-time";
 import {
   acquireControl,
   assignManyToDivision,
@@ -405,10 +406,10 @@ export function SeedingWorkspace({
 
   const finalizedNotice =
     finalized && finalizedAt
-      ? new Intl.DateTimeFormat("de-DE", {
+      ? formatGermanDateTime(finalizedAt, {
           dateStyle: "long",
           timeStyle: "short",
-        }).format(finalizedAt)
+        })
       : null;
 
   // While the auto-init runs, cover the workspace so the sheet is never seen in

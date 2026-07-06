@@ -15,6 +15,7 @@ import { roleAtLeast } from "@/features/roles/roles";
 import { currentMatchday } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
 import { latestWindow } from "@/features/staff/queries";
+import { germanToday } from "@/lib/german-time";
 
 // Staff manager for the Match of the Week: pick (or replace/remove) the
 // featured match of the current and next Spieltag, and maintain VOD links —
@@ -35,7 +36,7 @@ export default async function StaffMotwPage() {
     redirect("/staff");
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = germanToday();
   const currentRound = currentMatchday(matchdays, today)?.round ?? null;
   const [selections, overview] = await Promise.all([
     motwForWindow(window.id),

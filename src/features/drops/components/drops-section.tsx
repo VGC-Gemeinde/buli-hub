@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { dropPlayer, undropPlayer } from "../actions";
 import type { DropCandidate, DropRow } from "../queries";
@@ -69,7 +70,9 @@ export function DropsSection({
   );
 }
 
-function DropListRow({ drop }: { drop: DropRow }) {
+// The un-drop control, shared by the dashboard list and the profile staff
+// panel. Nothing was destroyed by the drop, so no extra confirmation.
+export function UndropButton({ userId }: { userId: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +80,7 @@ function DropListRow({ drop }: { drop: DropRow }) {
   async function undrop() {
     setPending(true);
     setError(null);
-    const result = await undropPlayer({ userId: drop.identity.userId });
+    const result = await undropPlayer({ userId });
     setPending(false);
     if (!result.ok) {
       setError(result.error);
@@ -87,12 +90,32 @@ function DropListRow({ drop }: { drop: DropRow }) {
   }
 
   return (
+    <div className="flex items-center gap-3">
+      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled={pending}
+        onClick={undrop}
+      >
+        {pending ? "Wird aufgehoben…" : "Drop aufheben"}
+      </Button>
+    </div>
+  );
+}
+
+function DropListRow({ drop }: { drop: DropRow }) {
+  return (
     <div className="flex flex-col gap-2 rounded-lg border px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3.5">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <PlayerAvatar identity={drop.identity} size="size-[26px]" />
         <div className="flex min-w-0 flex-col">
           <span className="truncate font-medium text-sm">
-            {drop.identity.name}
+            <PlayerLink
+              userId={drop.identity.userId}
+              name={drop.identity.name}
+            />
             <span className="text-muted-foreground">
               {" "}
               · {drop.groupName} · seit {ddMM(drop.droppedAt)}
@@ -105,23 +128,23 @@ function DropListRow({ drop }: { drop: DropRow }) {
           ) : null}
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        {error ? <p className="text-destructive text-sm">{error}</p> : null}
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={pending}
-          onClick={undrop}
-        >
-          {pending ? "Wird aufgehoben…" : "Drop aufheben"}
-        </Button>
-      </div>
+      <UndropButton userId={drop.identity.userId} />
     </div>
   );
 }
 
-function DropPlayerDialog({ candidates }: { candidates: DropCandidate[] }) {
+// The drop dialog: with `candidates` staff pick the player; with `fixed`
+// (profile staff panel) the player is given and only reason + confirmation
+// remain.
+export function DropPlayerDialog({
+  candidates = [],
+  fixed,
+  triggerSize = "default",
+}: {
+  candidates?: DropCandidate[];
+  fixed?: DropCandidate;
+  triggerSize?: "default" | "sm";
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState("");
@@ -130,7 +153,7 @@ function DropPlayerDialog({ candidates }: { candidates: DropCandidate[] }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selected = candidates.find((c) => c.userId === userId) ?? null;
+  const selected = fixed ?? candidates.find((c) => c.userId === userId) ?? null;
   const ready =
     selected !== null && reason.trim() !== "" && confirmation === selected.name;
 
@@ -155,40 +178,50 @@ function DropPlayerDialog({ candidates }: { candidates: DropCandidate[] }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant="outline"
+        size={triggerSize}
+        onClick={() => setOpen(true)}
+      >
         Spieler droppen
       </Button>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Spieler droppen</DialogTitle>
+          <DialogTitle>
+            {fixed ? `${fixed.name} droppen` : "Spieler droppen"}
+          </DialogTitle>
           <DialogDescription>
-            Alle Matches des Spielers zählen ab sofort als Freewin (2:0) für die
+            {fixed ? `${fixed.name} (${fixed.groupName}): alle` : "Alle"}{" "}
+            Matches des Spielers zählen ab sofort als Freewin (2:0) für die
             Gegner — auch bereits gespielte. Gespeicherte Ergebnisse und Replays
             bleiben als Historie erhalten; der Drop lässt sich aufheben.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
-          <div className="grid gap-2">
-            <Label>Spieler</Label>
-            <Select
-              value={userId}
-              onValueChange={(value) => {
-                setUserId(value);
-                setConfirmation("");
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Spieler wählen …" />
-              </SelectTrigger>
-              <SelectContent>
-                {candidates.map((candidate) => (
-                  <SelectItem key={candidate.userId} value={candidate.userId}>
-                    {candidate.name} — {candidate.groupName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {fixed ? null : (
+            <div className="grid gap-2">
+              <Label>Spieler</Label>
+              <Select
+                value={userId}
+                onValueChange={(value) => {
+                  setUserId(value);
+                  setConfirmation("");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Spieler wählen …" />
+                </SelectTrigger>
+                <SelectContent>
+                  {candidates.map((candidate) => (
+                    <SelectItem key={candidate.userId} value={candidate.userId}>
+                      {candidate.name} — {candidate.groupName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="drop-reason">
               Grund{" "}

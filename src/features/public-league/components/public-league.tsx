@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { MotwBlock } from "@/features/motw/components/motw-block";
+import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { StandingsTable } from "@/features/season/components/standings-panel";
 import type { MatchdayLite } from "@/features/season/dashboard";
@@ -391,7 +392,8 @@ function MatchRow({
         </span>
       ) : (
         // Fixed-width slot: pill ⇄ score ⇄ „offen" swap without any shift.
-        <span className="flex w-12 shrink-0 items-center justify-center font-semibold text-muted-foreground text-xs tabular-nums">
+        // `relative` lifts the pill above the stretched match link.
+        <span className="relative flex w-12 shrink-0 items-center justify-center font-semibold text-muted-foreground text-xs tabular-nums">
           {match.reported ? (
             // A pending free win is not shown publicly until confirmed → „offen".
             <SpoilerScore
@@ -417,13 +419,20 @@ function MatchRow({
       )}
     </>
   );
-  // Real matches link to their public detail page; byes are not clickable.
-  return match.playerB ? (
-    <Link href={`/match/${match.matchId}`} className={className}>
+  // The whole row links to the match via a stretched link underneath; the
+  // player names (and the reveal pill) sit above it and link to the profiles.
+  // Byes are not clickable.
+  return (
+    <div className={cn(className, "relative")}>
+      {match.playerB ? (
+        <Link
+          href={`/match/${match.matchId}`}
+          aria-label={`Zum Match ${match.playerA.name} vs. ${match.playerB.name}`}
+          className="absolute inset-0 rounded-lg"
+        />
+      ) : null}
       {content}
-    </Link>
-  ) : (
-    <div className={className}>{content}</div>
+    </div>
   );
 }
 
@@ -444,11 +453,16 @@ function Side({
       )}
     >
       <PlayerAvatar identity={identity} size="size-[22px]" />
-      <span
-        className={cn("truncate", winner ? "font-semibold" : "font-medium")}
-      >
-        {identity.name}
-      </span>
+      {/* `relative` lifts the profile link above the row's stretched match
+          link. */}
+      <PlayerLink
+        userId={identity.userId}
+        name={identity.name}
+        className={cn(
+          "relative truncate",
+          winner ? "font-semibold" : "font-medium",
+        )}
+      />
     </span>
   );
 }

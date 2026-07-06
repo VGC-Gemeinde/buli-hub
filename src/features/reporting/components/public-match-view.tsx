@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PlayerLink } from "@/features/player-profile/components/player-link";
 import type { Identity } from "@/features/season/dashboard";
 
 // Public, result-less match page for neutral visitors (guests and non-
@@ -54,7 +55,7 @@ export function PublicMatchView({
         <div className="flex items-center gap-3 px-4 py-3">
           <Face identity={playerA} />
           <span className="min-w-0 flex-1 break-words font-bold font-heading text-[18px] text-brand-blue uppercase leading-[1.15] dark:text-white">
-            {playerA.name}
+            <PlayerLink userId={playerA.userId} name={playerA.name} />
           </span>
         </div>
         <div className="flex items-center gap-2 py-2.5 pr-4 pl-[68px]">
@@ -66,7 +67,7 @@ export function PublicMatchView({
         <div className="flex items-center gap-3 px-4 py-3">
           <Face identity={playerB} />
           <span className="min-w-0 flex-1 break-words font-bold font-heading text-[18px] text-brand-blue uppercase leading-[1.15] dark:text-white">
-            {playerB.name}
+            <PlayerLink userId={playerB.userId} name={playerB.name} />
           </span>
         </div>
       </div>
@@ -75,9 +76,11 @@ export function PublicMatchView({
       <div className="mt-6 hidden grid-cols-[1fr_auto_1fr] items-center gap-4.5 rounded-xl border bg-muted/30 px-[30px] py-5 sm:grid">
         <div className="flex min-w-0 items-center gap-3">
           <Face identity={playerA} />
-          <span className="truncate font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] dark:text-white">
-            {playerA.name}
-          </span>
+          <PlayerLink
+            userId={playerA.userId}
+            name={playerA.name}
+            className="truncate font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] dark:text-white"
+          />
         </div>
         <div className="flex flex-col items-center gap-1">
           <span className="whitespace-nowrap rounded-full bg-muted px-3 py-[3px] font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.08em]">
@@ -88,9 +91,11 @@ export function PublicMatchView({
           </span>
         </div>
         <div className="flex min-w-0 items-center justify-end gap-3">
-          <span className="truncate text-right font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] dark:text-white">
-            {playerB.name}
-          </span>
+          <PlayerLink
+            userId={playerB.userId}
+            name={playerB.name}
+            className="truncate text-right font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] dark:text-white"
+          />
           <Face identity={playerB} />
         </div>
       </div>

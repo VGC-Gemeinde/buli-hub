@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { matchDisplayState, scoreFor } from "@/features/reporting/match-state";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
@@ -305,24 +306,32 @@ function ScheduleRow({
       ) : match.opponent ? (
         <div className="flex flex-1 items-center gap-2.5">
           <PlayerAvatar identity={match.opponent} />
-          <span className="truncate font-semibold text-[15px]">
-            {match.opponent.name}
-          </span>
+          {/* `relative` lifts the profile link above the stretched match
+              link. */}
+          <PlayerLink
+            userId={match.opponent.userId}
+            name={match.opponent.name}
+            className="relative truncate font-semibold text-[15px]"
+          />
         </div>
       ) : null}
       <RowRight match={match} result={result} state={state} meId={meId} />
     </>
   );
 
-  return isBye ? (
-    <div className={row}>{inner}</div>
-  ) : (
-    <Link
-      href={`/match/${match.matchId}`}
-      className={cn(row, "hover:bg-muted/40")}
-    >
+  // The row links to the match via a stretched link underneath; the opponent
+  // name links to their profile above it. Byes are not clickable.
+  return (
+    <div className={cn(row, "relative", !isBye && "hover:bg-muted/40")}>
+      {isBye || !match.opponent ? null : (
+        <Link
+          href={`/match/${match.matchId}`}
+          aria-label={`Zum Match gegen ${match.opponent.name}`}
+          className="absolute inset-0 rounded-lg"
+        />
+      )}
       {inner}
-    </Link>
+    </div>
   );
 }
 

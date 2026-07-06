@@ -10,6 +10,7 @@ import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { DropBanner } from "@/features/drops/components/drop-banner";
 import { DropsSection } from "@/features/drops/components/drops-section";
+import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import {
   MotwManager,
@@ -19,6 +20,8 @@ import {
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
 import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
 import type { MotwBlockData } from "@/features/motw/motw";
+import { ProfileSpielplan } from "@/features/player-profile/components/profile-schedule";
+import type { ProfileScheduleRow } from "@/features/player-profile/profile";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { PublicLeague } from "@/features/public-league/components/public-league";
@@ -528,6 +531,42 @@ const asIdentity = (row: StandingsRow) => ({
   name: row.name,
   avatarUrl: row.avatarUrl,
 });
+
+// Profile page Spielplan: every row state at once.
+const profileRow = (
+  matchId: string,
+  round: number,
+  extra: Partial<ProfileScheduleRow>,
+): ProfileScheduleRow => ({
+  matchId,
+  round,
+  startsOn: `2026-01-0${round}`,
+  endsOn: `2026-01-1${round}`,
+  opponent: { userId: `o${round}`, name: `Gegner ${round}`, avatarUrl: null },
+  reported: false,
+  scoreSelf: null,
+  scoreOpponent: null,
+  isMine: false,
+  isMotw: false,
+  ...extra,
+});
+const PROFILE_ROWS: ProfileScheduleRow[] = [
+  profileRow("pr1", 1, { reported: true, scoreSelf: 2, scoreOpponent: 1 }),
+  profileRow("pr2", 2, {}),
+  profileRow("pr3", 3, {
+    reported: true,
+    scoreSelf: 0,
+    scoreOpponent: 2,
+    isMotw: true,
+  }),
+  profileRow("pr4", 4, {
+    reported: true,
+    scoreSelf: 2,
+    scoreOpponent: 0,
+    isMine: true,
+  }),
+  profileRow("pr5", 5, { opponent: null }),
+];
 
 // Match of the Week: the featured pairing in all three block states. The
 // reported match doubles as the overview's featured row (badge instead of
@@ -1159,6 +1198,31 @@ export function Gallery() {
             groupName="Division 1a"
             spoilerMode="default"
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Spieler-Profil</h2>
+        <Specimen label="Spielplan (verdeckt · offen · MotW · eigenes Match · spielfrei) + Schalter">
+          <ProfileSpielplan rows={PROFILE_ROWS} initialSpoilersOff={false} />
+        </Specimen>
+        <Specimen label="Staff-Panel — aktiver Spieler / gedroppter Spieler (Aktionen ohne Staff-Login wirkungslos)">
+          <div className="flex flex-col gap-4">
+            <ProfileStaffPanel
+              player={{
+                userId: "a",
+                name: "Falinks",
+                groupName: "Division 1a",
+              }}
+              dropped={false}
+              dropReason={null}
+            />
+            <ProfileStaffPanel
+              player={{ userId: "c", name: "Pawmi", groupName: "Division 1a" }}
+              dropped
+              dropReason="Inaktivität — mehrfach nicht erreichbar."
+            />
+          </div>
         </Specimen>
       </section>
 

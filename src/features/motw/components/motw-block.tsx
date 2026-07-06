@@ -4,6 +4,7 @@ import { Eye, Play } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PlayerLink } from "@/features/player-profile/components/player-link";
 import type { Identity } from "@/features/season/dashboard";
 import { cn } from "@/lib/utils";
 import type { MotwBlockData } from "../motw";
@@ -154,9 +155,11 @@ function Side({
           align === "right" && "sm:items-end sm:text-right",
         )}
       >
-        <span className="break-words font-bold font-heading text-[22px] text-white uppercase leading-[1.02] sm:text-[32px]">
-          {identity.name}
-        </span>
+        <PlayerLink
+          userId={identity.userId}
+          name={identity.name}
+          className="break-words font-bold font-heading text-[22px] text-white uppercase leading-[1.02] sm:text-[32px]"
+        />
         {rank !== null ? (
           <span className="font-medium text-[12px] text-white/55">
             Platz {rank}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PLATFORM_LABELS } from "@/features/registration/registration";
 import type { Identity } from "@/features/season/dashboard";
 import { SpoilerPill } from "@/features/spoilers/components/spoiler-score";
@@ -619,7 +620,7 @@ function PlayerRow({
       <Face identity={identity} filled={filled} size="size-10" />
       <div className="min-w-0 flex-1">
         <div className="font-bold font-heading text-[20px] text-brand-blue uppercase leading-[1.15] dark:text-white">
-          {identity.name}
+          <PlayerLink userId={identity.userId} name={identity.name} />
         </div>
         {winner ? (
           <span className="flex items-center gap-1.5">
@@ -702,14 +703,14 @@ function ScoreSide({
           align === "right" && "items-end",
         )}
       >
-        <span
+        <PlayerLink
+          userId={identity.userId}
+          name={identity.name}
           className={cn(
             "w-full truncate font-bold font-heading text-[22px] text-brand-blue uppercase leading-[1.05] sm:text-[28px] dark:text-white",
             align === "right" && "text-right",
           )}
-        >
-          {identity.name}
-        </span>
+        />
         {reserveMarker ? (
           // Reserved marker row: empty while covered, holds the „Sieger"
           // marker after reveal — the names never move (§3.4).

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PlayerLink } from "@/features/player-profile/components/player-link";
 import type { StandingsRow } from "@/features/reporting/standings";
 import type { Zone } from "@/features/seeding/post-season";
 import { cn } from "@/lib/utils";
@@ -127,14 +128,14 @@ export function StandingsTable({
                         size="size-[26px]"
                         filled={me}
                       />
-                      <span
+                      <PlayerLink
+                        userId={row.userId}
+                        name={row.name}
                         className={cn(
                           "truncate text-[14.5px]",
                           me ? "font-semibold" : "font-medium",
                         )}
-                      >
-                        {row.name}
-                      </span>
+                      />
                       {groupLabel ? (
                         <span className="shrink-0 rounded-full bg-muted px-[7px] py-[2px] font-bold text-[10.5px] text-muted-foreground">
                           {groupLabel}

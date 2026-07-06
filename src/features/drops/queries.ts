@@ -46,9 +46,9 @@ export async function clearDropped(
 export async function placementDropState(
   windowId: string,
   userId: string,
-): Promise<{ droppedAt: Date | null } | null> {
+): Promise<{ droppedAt: Date | null; dropReason: string | null } | null> {
   const row = await db.query.placements.findFirst({
-    columns: { droppedAt: true },
+    columns: { droppedAt: true, dropReason: true },
     where: and(
       eq(placements.windowId, windowId),
       eq(placements.userId, userId),

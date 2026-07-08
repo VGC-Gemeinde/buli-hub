@@ -1,9 +1,77 @@
 {
-  "id": "803d3b3d-7243-47ba-a5ae-156a23c05f44",
-  "prevId": "8f60a168-7e04-4529-bf9c-f8ff59e5ed0d",
+  "id": "cedb9f1d-36d3-460b-b76c-1f43209ca499",
+  "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.discord_posts": {
+      "name": "discord_posts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "discord_post_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "match_id": {
+          "name": "match_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel_id": {
+          "name": "channel_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "discord_posts_kind_match_id_unique": {
+          "name": "discord_posts_kind_match_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "kind",
+            "match_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.disputes": {
       "name": "disputes",
       "schema": "",
@@ -162,11 +230,11 @@
       "uniqueConstraints": {
         "divisions_window_id_tier_unique": {
           "name": "divisions_window_id_tier_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "tier"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -222,11 +290,11 @@
       "uniqueConstraints": {
         "match_games_match_id_game_number_unique": {
           "name": "match_games_match_id_game_number_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "match_id",
             "game_number"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -402,11 +470,11 @@
       "uniqueConstraints": {
         "matchdays_window_id_round_unique": {
           "name": "matchdays_window_id_round_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "round"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -526,18 +594,18 @@
       "uniqueConstraints": {
         "motw_selections_match_id_unique": {
           "name": "motw_selections_match_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "match_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "motw_selections_window_id_round_unique": {
           "name": "motw_selections_window_id_round_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "round"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -579,6 +647,24 @@
           "primaryKey": false,
           "notNull": false
         },
+        "dropped_at": {
+          "name": "dropped_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dropped_by_id": {
+          "name": "dropped_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "drop_reason": {
+          "name": "drop_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -593,11 +679,11 @@
       "uniqueConstraints": {
         "placements_window_id_user_id_unique": {
           "name": "placements_window_id_user_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "user_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -845,11 +931,11 @@
       "uniqueConstraints": {
         "registrations_window_id_user_id_unique": {
           "name": "registrations_window_id_user_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "user_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -983,11 +1069,11 @@
       "uniqueConstraints": {
         "sub_divisions_division_id_position_unique": {
           "name": "sub_divisions_division_id_position_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "division_id",
             "position"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -996,6 +1082,14 @@
     }
   },
   "enums": {
+    "public.discord_post_kind": {
+      "name": "discord_post_kind",
+      "schema": "public",
+      "values": [
+        "result",
+        "motw_vod"
+      ]
+    },
     "public.dispute_resolution": {
       "name": "dispute_resolution",
       "schema": "public",
@@ -1057,10 +1151,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

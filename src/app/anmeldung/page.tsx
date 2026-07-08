@@ -21,6 +21,10 @@ import {
 } from "@/features/staff/registration-window";
 import { formatGermanDateTime } from "@/lib/german-time";
 
+// Reads the live registration window on every request — never prerender at
+// build time (the image build has no database).
+export const dynamic = "force-dynamic";
+
 // Short deadline, e.g. „15.08.26, 20:00" — used in the status line and inline
 // next to the sign-in CTA.
 function formatDeadline(closesAt: Date): string {

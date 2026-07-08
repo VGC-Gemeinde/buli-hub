@@ -1,1 +1,0 @@
-ALTER TABLE "registration_windows" ADD COLUMN "season_number" integer DEFAULT 1 NOT NULL;

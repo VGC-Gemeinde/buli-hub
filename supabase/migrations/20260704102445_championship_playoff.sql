@@ -1,1 +1,0 @@
-ALTER TABLE "divisions" ADD COLUMN "championship_playoff_slots" integer DEFAULT 0 NOT NULL;

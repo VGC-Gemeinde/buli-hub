@@ -10,6 +10,8 @@ const allowedDevOrigins = (process.env.DEV_LAN_ORIGIN ?? "")
   .filter(Boolean);
 
 const nextConfig: NextConfig = {
+  // Self-contained server bundle for the Docker image (see Dockerfile).
+  output: "standalone",
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
 };
 

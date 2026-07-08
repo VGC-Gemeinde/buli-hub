@@ -1,1 +1,0 @@
-ALTER TABLE "seedings" RENAME COLUMN "published_at" TO "finalized_at";

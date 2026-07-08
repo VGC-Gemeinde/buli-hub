@@ -30,12 +30,14 @@ launch; deferring migrations only batches the work, it does not remove it.
 
 ## The squash
 
-Because there is no production DB to migrate, **the migration chain is
-disposable**: at go-live (or periodically before then) collapse all migrations
-into a single clean baseline. This yields the clean single-migration schema we
-want at launch without giving up reproducible dev/test databases in the
-meantime. A squash rewrites the journal/snapshots and invalidates existing
-local DBs — fine, since every local DB is rebuilt with `supabase db reset`.
+Before go-live there was no production DB to migrate, so **the pre-launch
+migration chain was disposable**: at go-live (2026-07-06) the 31 per-feature
+migrations were collapsed into a two-file baseline — one generated from
+`schema.ts`, one consolidated custom migration holding everything Drizzle
+cannot express. Verified by diffing normalized `pg_dump --schema-only`
+output of the old chain against the new one (identical) plus the full test
+suite. **From here on the chain is append-only** — production carries the
+history, and the deploy workflow applies new migrations with each release.
 
 ## Authoring the non-`schema.ts` migrations
 

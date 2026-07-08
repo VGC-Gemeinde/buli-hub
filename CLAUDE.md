@@ -26,8 +26,8 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
 - **Scheduled jobs** — Google **Cloud Scheduler** invoking route handlers
 - **Hosting** — Docker container on **Google Cloud Run**, scale-to-zero
 - **Tooling** — **npm** (package manager), **Biome** (lint + format)
-- **Dependencies** — **exact version pinning** (`save-exact=true` in `.npmrc`, no `^`/`~` ranges), committed lockfile. Automated updates via **Renovate** once CI exists to validate update PRs.
-- **CI/CD** — intentionally deferred until first deployment. Do not scaffold pipelines yet. Renovate activation is coupled to this milestone.
+- **Dependencies** — **exact version pinning** (`save-exact=true` in `.npmrc`, no `^`/`~` ranges), committed lockfile. Automated updates via **Renovate** (`renovate.json`, weekly, grouped minor/patch), gated by CI.
+- **CI/CD** — one workflow (`.github/workflows/ci.yml`): every push/PR runs Biome, typecheck, the full test suite against a Supabase CLI stack, and a production build; pushes to `main` additionally build the Docker image, apply migrations to production (`drizzle-kit migrate`), and deploy to Cloud Run. Every main commit ships. One-time infrastructure setup lives in `docs/deployment.md`.
 
 ## Architectural principles
 
@@ -79,7 +79,7 @@ npx drizzle-kit migrate    # apply migrations to local DB
 npx drizzle-kit studio     # browser GUI to inspect data
 supabase db reset          # wipe local DB, re-run all migrations + seed
 ```
-Workflow: edit `schema.ts` → `generate` → review generated SQL → `migrate`. Migrations are committed and versioned. SQL that `schema.ts` cannot express (RLS policies, FKs into `auth.users`, grants) goes in a **custom** migration authored with `npx drizzle-kit generate --custom --name <x>` — this writes the file *and* its journal/snapshot entry; a hand-written `.sql` file is silently skipped by `migrate`. Migrations are kept per-feature and **squashed into one baseline at go-live** (there is no production DB to preserve history for) — see `docs/decisions/migrations-squash-at-launch.md`.
+Workflow: edit `schema.ts` → `generate` → review generated SQL → `migrate`. Migrations are committed and versioned. SQL that `schema.ts` cannot express (RLS policies, FKs into `auth.users`, grants) goes in a **custom** migration authored with `npx drizzle-kit generate --custom --name <x>` — this writes the file *and* its journal/snapshot entry; a hand-written `.sql` file is silently skipped by `migrate`. Migrations are per-feature and **append-only** — the pre-launch chain was squashed into a baseline at go-live (see `docs/decisions/migrations-squash-at-launch.md`); the deploy workflow applies new migrations to production with each release.
 
 ### Testing
 ```bash
@@ -127,6 +127,6 @@ Common commands should be wrapped as npm scripts (`db:generate`, `db:migrate`, `
 
 ## Open decisions (not yet pinned)
 
-- CI/CD design (GitHub Actions → Cloud Run was the sketch; decide at first deployment, together with Renovate activation)
+- None currently.
 
 Domain-level open questions are intentionally not tracked here — they belong to feature plans (`docs/plans/`).

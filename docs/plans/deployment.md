@@ -49,7 +49,7 @@ other environment; no staging, no preview deploys.
   Cloud Run service + WIF pool/provider + deployer service account; Secret
   Manager entries; Supabase project setup (Discord OAuth provider, site +
   redirect URLs, email signups off); Cloud Run configuration (region
-  **europe-west3**, `min-instances=1` during the season, max small, 512Mi);
+  **europe-west1**, `min-instances=1` during the season, max small, 512Mi);
   domain mapping + `APP_BASE_URL`; the full env/secret inventory table;
   minimal observability (uptime check on `/`, log-based alert on error
   entries); backup/PITR verification on the Supabase plan.

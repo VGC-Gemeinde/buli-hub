@@ -1,6 +1,6 @@
 # Deployment runbook
 
-Production = one Cloud Run service (region **europe-west3**, Frankfurt) + one
+Production = one Cloud Run service (region **europe-west1**, Belgium — Cloud Run domain mapping is not available in Frankfurt) + one
 hosted Supabase project. Every push to `main` deploys via
 `.github/workflows/ci.yml` (checks → image → migrations → deploy). This
 runbook is the one-time setup; keep it current when infrastructure changes.
@@ -36,7 +36,7 @@ gcloud services enable run.googleapis.com artifactregistry.googleapis.com \
   iamcredentials.googleapis.com secretmanager.googleapis.com \
   monitoring.googleapis.com
 gcloud artifacts repositories create buli-hub --repository-format=docker \
-  --location=europe-west3
+  --location=europe-west1
 ```
 
 ### Deployer service account + Workload Identity Federation
@@ -81,7 +81,7 @@ gcloud secrets add-iam-policy-binding DATABASE_URL \
 ### Cloud Run service (first deploy creates it; then pin the config)
 
 ```bash
-gcloud run deploy buli-hub --image <first image> --region europe-west3 \
+gcloud run deploy buli-hub --image <first image> --region europe-west1 \
   --allow-unauthenticated \
   --min-instances=1 --max-instances=3 --memory=512Mi \
   --set-secrets=DATABASE_URL=DATABASE_URL:latest,SUPABASE_SECRET_KEY=SUPABASE_SECRET_KEY:latest,DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest \
@@ -99,12 +99,13 @@ Datenschutz page's imprint must all match the final domain.
 
 ## 3. GitHub repository configuration
 
-Settings → Secrets and variables → Actions:
+Settings → Environments → **PROD** (the deploy job declares
+`environment: PROD` — values anywhere else are not injected):
 
 | Kind | Name | Value |
 |---|---|---|
 | Variable | `GCP_PROJECT_ID` | `buli-hub` |
-| Variable | `GCP_REGION` | `europe-west3` |
+| Variable | `GCP_REGION` | `europe-west1` |
 | Variable | `GCP_ARTIFACT_REPO` | `buli-hub` |
 | Variable | `GCP_SERVICE` | `buli-hub` |
 | Variable | `GCP_WORKLOAD_IDENTITY_PROVIDER` | `projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/github/providers/github` |

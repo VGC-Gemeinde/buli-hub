@@ -1,5 +1,6 @@
 # CI on every push/PR; CD to Cloud Run on main after CI passes.
-# Repository configuration this expects (docs/deployment.md §GitHub):
+# Deploy configuration lives in the repo's PROD environment
+# (docs/deployment.md §3):
 #   Variables: GCP_PROJECT_ID, GCP_REGION, GCP_ARTIFACT_REPO, GCP_SERVICE,
 #              GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_DEPLOYER_SA,
 #              NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -47,6 +48,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: checks
     runs-on: ubuntu-latest
+    # All deploy variables/secrets live in this environment (single source
+    # of truth) — without declaring it, none of them resolve.
+    environment: PROD
     # Serialize deploys; a superseded run is cancelled before it ships.
     concurrency:
       group: deploy

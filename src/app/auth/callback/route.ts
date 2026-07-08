@@ -9,6 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  // Behind Cloud Run's proxy, `request.url` reflects the container's own
+  // listen address (0.0.0.0:8080), not the public domain — redirects must
+  // use APP_BASE_URL. Locally it is unset and the request origin is correct.
+  const base = process.env.APP_BASE_URL || origin;
 
   if (code) {
     const supabase = await createClient();
@@ -21,9 +25,9 @@ export async function GET(request: Request) {
       } catch (syncError) {
         console.error("Member sync at sign-in failed:", syncError);
       }
-      return NextResponse.redirect(origin);
+      return NextResponse.redirect(base);
     }
   }
 
-  return NextResponse.redirect(`${origin}/?auth_error=1`);
+  return NextResponse.redirect(`${base}/?auth_error=1`);
 }

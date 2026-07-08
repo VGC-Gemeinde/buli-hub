@@ -82,7 +82,7 @@ gcloud secrets add-iam-policy-binding DATABASE_URL \
 
 ```bash
 gcloud run deploy buli-hub --image <first image> --region europe-west1 \
-  --allow-unauthenticated \
+  --no-invoker-iam-check \
   --min-instances=1 --max-instances=3 --memory=512Mi \
   --set-secrets=DATABASE_URL=DATABASE_URL:latest,SUPABASE_SECRET_KEY=SUPABASE_SECRET_KEY:latest,DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest \
   --set-env-vars=APP_BASE_URL=https://<DOMAIN>,DISCORD_GUILD_ID=…,DISCORD_ROLE_ID_DEV=…,DISCORD_ROLE_ID_ADMIN=…,DISCORD_ROLE_ID_STAFF=…,DISCORD_RESULTS_CHANNEL_ID=…
@@ -90,6 +90,10 @@ gcloud run deploy buli-hub --image <first image> --region europe-west1 \
 
 `min-instances=1` during the season (no cold starts); drop to 0 off-season.
 Later deploys from CI only swap the image — env/secrets stick to the service.
+`--no-invoker-iam-check` (instead of `--allow-unauthenticated`): the GCP
+project sits under the VGC-Gemeinde organization, whose Domain Restricted
+Sharing policy forbids `allUsers` IAM bindings — this flag is Cloud Run's
+supported way to serve public traffic under that policy.
 
 ### Domain
 

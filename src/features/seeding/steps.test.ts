@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   finalizeGateHint,
+  finalizeGateShort,
+  type RulesEditorStatus,
+  rulesStepSublabel,
   type SeedingProgress,
   type SeedingStepId,
   seedingSteps,
@@ -144,5 +147,87 @@ describe("finalizeGateHint", () => {
         progress({ placed: 20, grouped: 20, postSeasonConfigured: true }),
       ),
     ).toBe("Endgültig — kann nicht rückgängig gemacht werden.");
+  });
+});
+
+describe("finalizeGateShort", () => {
+  it("reports an empty season", () => {
+    expect(finalizeGateShort(progress({ total: 0 }))).toBe("Keine Anmeldungen");
+  });
+
+  it("counts the unplaced players first", () => {
+    expect(finalizeGateShort(progress({ placed: 12, grouped: 5 }))).toBe(
+      "Noch 8 platzieren",
+    );
+  });
+
+  it("counts the ungrouped players once everyone is placed", () => {
+    expect(finalizeGateShort(progress({ placed: 20, grouped: 15 }))).toBe(
+      "Noch 5 ohne Gruppe",
+    );
+  });
+
+  it("asks for the rules once everyone is grouped", () => {
+    expect(finalizeGateShort(progress({ placed: 20, grouped: 20 }))).toBe(
+      "Regeln noch speichern",
+    );
+  });
+
+  it("is null when nothing blocks", () => {
+    expect(
+      finalizeGateShort(
+        progress({ placed: 20, grouped: 20, postSeasonConfigured: true }),
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("rulesStepSublabel", () => {
+  const status = (
+    overrides: Partial<RulesEditorStatus>,
+  ): RulesEditorStatus => ({
+    configured: false,
+    dirty: false,
+    noGroups: false,
+    issueCount: 0,
+    ...overrides,
+  });
+
+  it("reports saved rules", () => {
+    expect(rulesStepSublabel(status({ configured: true }))).toEqual({
+      text: "Regeln gespeichert",
+      warn: false,
+    });
+  });
+
+  it("flags unsaved edits on top of saved rules", () => {
+    expect(
+      rulesStepSublabel(status({ configured: true, dirty: true })),
+    ).toEqual({ text: "Änderungen nicht gespeichert", warn: false });
+  });
+
+  it("points to grouping while groups are missing", () => {
+    expect(rulesStepSublabel(status({ noGroups: true }))).toEqual({
+      text: "Zuerst Gruppen bilden",
+      warn: false,
+    });
+  });
+
+  it("counts open validation issues with singular/plural", () => {
+    expect(rulesStepSublabel(status({ issueCount: 1 }))).toEqual({
+      text: "1 Punkt zu klären",
+      warn: true,
+    });
+    expect(rulesStepSublabel(status({ issueCount: 3 }))).toEqual({
+      text: "3 Punkte zu klären",
+      warn: true,
+    });
+  });
+
+  it("asks to save when valid but unsaved", () => {
+    expect(rulesStepSublabel(status({}))).toEqual({
+      text: "Noch speichern",
+      warn: false,
+    });
   });
 });

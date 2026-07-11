@@ -54,7 +54,7 @@ import {
 } from "@/features/season/components/pre-season";
 import { InSeasonDashboard } from "@/features/season/components/season-dashboard";
 import type { PlayerMatch } from "@/features/season/dashboard";
-import { ControlBar } from "@/features/seeding/components/control-bar";
+import { ControlPill } from "@/features/seeding/components/control-bar";
 import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
 import { PostSeasonPanel } from "@/features/seeding/components/post-season-panel";
 import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
@@ -1086,6 +1086,57 @@ export function Gallery() {
               subDivisions={SEEDING_SUBS}
               selection={new Set()}
               readOnly={false}
+              finalized={false}
+              generatingDivisionId={null}
+              onGenerate={() => {}}
+              onToggleSelect={() => {}}
+              onToggleCollapse={() => {}}
+              onAssignDivision={() => {}}
+              onMoveGroup={() => {}}
+              onPlace={() => {}}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Beobachter — Selects deaktiviert, keine Checkboxen/Generieren">
+          <div className="flex h-[300px] flex-col overflow-hidden rounded-lg border">
+            <SeedingSheet
+              rows={assembleSheetRows({
+                players: SEEDING_PLAYERS,
+                divisions: SEEDING_DIVISIONS,
+                subDivisions: SEEDING_SUBS,
+                size: 8,
+                filter: { query: "", status: "all" },
+              })}
+              divisions={SEEDING_DIVISIONS}
+              subDivisions={SEEDING_SUBS}
+              selection={new Set()}
+              readOnly
+              finalized={false}
+              generatingDivisionId={null}
+              onGenerate={() => {}}
+              onToggleSelect={() => {}}
+              onToggleCollapse={() => {}}
+              onAssignDivision={() => {}}
+              onMoveGroup={() => {}}
+              onPlace={() => {}}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Finalisiert — statische Zeilen (Division/Gruppe als Text)">
+          <div className="flex h-[300px] flex-col overflow-hidden rounded-lg border">
+            <SeedingSheet
+              rows={assembleSheetRows({
+                players: SEEDING_PLAYERS,
+                divisions: SEEDING_DIVISIONS,
+                subDivisions: SEEDING_SUBS,
+                size: 8,
+                filter: { query: "", status: "all" },
+              })}
+              divisions={SEEDING_DIVISIONS}
+              subDivisions={SEEDING_SUBS}
+              selection={new Set()}
+              readOnly
+              finalized
               generatingDivisionId={null}
               onGenerate={() => {}}
               onToggleSelect={() => {}}
@@ -1111,6 +1162,7 @@ export function Gallery() {
               subDivisions={SEEDING_SUBS}
               selection={new Set()}
               readOnly={false}
+              finalized={false}
               generatingDivisionId={null}
               onGenerate={() => {}}
               onToggleSelect={() => {}}
@@ -1133,9 +1185,9 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Seeding: Steuerung</h2>
+        <h2 className="text-2xl">Seeding: Steuerungs-Pill</h2>
         <Specimen label="Beobachter — niemand steuert">
-          <ControlBar
+          <ControlPill
             state="free"
             holderName={null}
             pending={false}
@@ -1144,7 +1196,7 @@ export function Gallery() {
           />
         </Specimen>
         <Specimen label="Beobachter — jemand steuert">
-          <ControlBar
+          <ControlPill
             state="held-by-other"
             holderName="Testerino"
             pending={false}
@@ -1153,7 +1205,7 @@ export function Gallery() {
           />
         </Specimen>
         <Specimen label="Du steuerst">
-          <ControlBar
+          <ControlPill
             state="self"
             holderName="Testerino"
             pending={false}
@@ -1165,7 +1217,7 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Einteilung: Schrittleiste</h2>
-        <Specimen label="Start — Sheet-Ansicht aktiv, Platzieren läuft, Finalisieren gesperrt">
+        <Specimen label="Anfang — Schritt 1 aktiv, Finalisieren nennt den Blocker">
           <StepBar
             steps={seedingSteps({
               total: 42,
@@ -1176,32 +1228,52 @@ export function Gallery() {
             })}
             view="sheet"
             onViewChange={() => {}}
+            rulesStatus={{
+              configured: false,
+              dirty: false,
+              noGroups: true,
+              issueCount: 0,
+            }}
             finalize={{
-              enabled: false,
-              hint: "Erst möglich, wenn alle Spieler platziert (12/42) und in Gruppen (0/42) sind.",
-              onClick: () => {},
+              finalized: false,
+              ready: false,
+              readOnly: false,
+              gateShort: "Noch 30 platzieren",
+              gateHint:
+                "Erst möglich, wenn alle Spieler platziert (12/42) und in Gruppen (0/42) sind.",
+              onOpen: () => {},
             }}
           />
         </Specimen>
-        <Specimen label="Regel-Ansicht aktiv — Auf-/Abstieg schon gespeichert, Gruppieren offen">
+        <Specimen label="Alles eingeteilt — Regel-Ansicht aktiv, Punkte zu klären">
           <StepBar
             steps={seedingSteps({
               total: 42,
               placed: 42,
-              grouped: 30,
-              postSeasonConfigured: true,
+              grouped: 42,
+              postSeasonConfigured: false,
               finalized: false,
             })}
             view="rules"
             onViewChange={() => {}}
+            rulesStatus={{
+              configured: false,
+              dirty: true,
+              noGroups: false,
+              issueCount: 2,
+            }}
             finalize={{
-              enabled: false,
-              hint: "Erst möglich, wenn alle Spieler platziert (42/42) und in Gruppen (30/42) sind.",
-              onClick: () => {},
+              finalized: false,
+              ready: false,
+              readOnly: false,
+              gateShort: "Regeln noch speichern",
+              gateHint:
+                "Erst die Auf- und Abstiegsregeln festlegen und speichern.",
+              onOpen: () => {},
             }}
           />
         </Specimen>
-        <Specimen label="Bereit zum Finalisieren — Aktion wird primär">
+        <Specimen label="Bereit zum Finalisieren — Schritt 4 wird zur Aktion">
           <StepBar
             steps={seedingSteps({
               total: 42,
@@ -1212,14 +1284,23 @@ export function Gallery() {
             })}
             view="sheet"
             onViewChange={() => {}}
+            rulesStatus={{
+              configured: true,
+              dirty: false,
+              noGroups: false,
+              issueCount: 0,
+            }}
             finalize={{
-              enabled: true,
-              hint: "Endgültig — kann nicht rückgängig gemacht werden.",
-              onClick: () => {},
+              finalized: false,
+              ready: true,
+              readOnly: false,
+              gateShort: null,
+              gateHint: "Endgültig — kann nicht rückgängig gemacht werden.",
+              onOpen: () => {},
             }}
           />
         </Specimen>
-        <Specimen label="Beobachter — Navigation frei, Finalisieren nur Status">
+        <Specimen label="Bereit, aber Beobachter — Steuerung übernehmen">
           <StepBar
             steps={seedingSteps({
               total: 42,
@@ -1230,9 +1311,23 @@ export function Gallery() {
             })}
             view="sheet"
             onViewChange={() => {}}
+            rulesStatus={{
+              configured: true,
+              dirty: false,
+              noGroups: false,
+              issueCount: 0,
+            }}
+            finalize={{
+              finalized: false,
+              ready: true,
+              readOnly: true,
+              gateShort: null,
+              gateHint: "Endgültig — kann nicht rückgängig gemacht werden.",
+              onOpen: () => {},
+            }}
           />
         </Specimen>
-        <Specimen label="Finalisiert — alles erledigt">
+        <Specimen label="Finalisiert — Chip statt Aktion, Flow-Hint entfällt">
           <StepBar
             steps={seedingSteps({
               total: 42,
@@ -1243,6 +1338,20 @@ export function Gallery() {
             })}
             view="sheet"
             onViewChange={() => {}}
+            rulesStatus={{
+              configured: true,
+              dirty: false,
+              noGroups: false,
+              issueCount: 0,
+            }}
+            finalize={{
+              finalized: true,
+              ready: false,
+              readOnly: true,
+              gateShort: null,
+              gateHint: "",
+              onOpen: () => {},
+            }}
           />
         </Specimen>
       </section>
@@ -1422,6 +1531,7 @@ export function Gallery() {
             <PostSeasonPanel
               divisions={POST_SEASON_DIVISIONS}
               readOnly={false}
+              finalized={false}
               onSave={async () => ({ ok: true, issues: [] })}
             />
           </div>
@@ -1431,6 +1541,7 @@ export function Gallery() {
             <PostSeasonPanel
               divisions={POST_SEASON_OVERBOOKED}
               readOnly={false}
+              finalized={false}
               onSave={async () => ({ ok: true, issues: [] })}
             />
           </div>

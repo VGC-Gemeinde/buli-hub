@@ -64,10 +64,19 @@ den Klick durchfallen (`pointer-events-none`). Strukturell beseitigt — beide
 Dialog-Trigger-Konstrukte existieren nicht mehr. Server-seitig war Finalize
 immer abgesichert.
 
+## Design-Pass
+
+Umgesetzt nach `design/DIVISIONS-EINTEILUNG-ABLAUF.md` (2026-07-11): eigene
+Stepper-Zeile mit nummerierten Kreisen und Fortschritts-Sublabels, Steuerung
+als Pill in der Titelzeile (statt eigener Leiste), Breadcrumb statt
+Zurück-Zeile, Finalize-Blocker inline lesbar (`finalizeGateShort`),
+Beobachter- vs. Finalisiert-Read-only im Sheet getrennt. Nur Views; einzige
+Logik-Ergänzungen: `finalizeGateShort` + `rulesStepSublabel` in `steps.ts`
+(unit-getestet) und der Status-Callback des Regel-Panels.
+
 ## Out of scope
 
 - Kein Schema-/Query-/Action-Change, keine Discord-Touchpoints.
-- Design-Pass (Politur) folgt über den üblichen Designer-Handoff.
 
 ## Tests
 

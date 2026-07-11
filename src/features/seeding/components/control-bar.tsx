@@ -1,6 +1,5 @@
 "use client";
 
-import { Eye, Lock, Radio } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,11 +14,12 @@ import {
 import { cn } from "@/lib/utils";
 import type { ControlState } from "../control";
 
-// The strip above the seeding toolbar showing who is driving. The page opens
-// read-only for everyone; one person takes control to edit. Free/stale locks
-// are taken with a light confirmation; a lock held by someone else needs an
-// explicit takeover.
-export function ControlBar({
+// The status pill in the title row showing who is driving. The page opens
+// read-only for everyone; one person takes control to edit. The lock is a
+// page-wide mode and the disabled controls communicate it locally, so a pill
+// states it without costing a chrome row. Free/stale locks are taken with a
+// light confirmation; a lock held by someone else needs an explicit takeover.
+export function ControlPill({
   state,
   holderName,
   pending,
@@ -35,93 +35,73 @@ export function ControlBar({
 }) {
   if (state === "self") {
     return (
-      <Bar
-        tone="active"
-        icon={<Radio className="size-4" />}
-        text="Du steuerst die Einteilung."
-        action={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={pending}
-            onClick={onRelease}
-          >
-            Freigeben
-          </Button>
-        }
-      />
+      <Pill
+        tone="border-brand-orange/40 bg-brand-orange/5"
+        dot="bg-brand-orange"
+      >
+        <span className="text-muted-foreground">
+          Du steuerst die Einteilung
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={pending}
+          onClick={onRelease}
+        >
+          Freigeben
+        </Button>
+      </Pill>
     );
   }
 
   if (state === "held-by-other") {
     return (
-      <Bar
-        tone="busy"
-        icon={<Lock className="size-4" />}
-        text={
-          <>
-            <span className="font-semibold">
-              {holderName ?? "Jemand anderes"}
-            </span>{" "}
-            steuert die Einteilung gerade — du beobachtest.
-          </>
-        }
-        action={
-          <ConfirmTakeover
-            holderName={holderName}
-            pending={pending}
-            onConfirm={() => onAcquire(true)}
-          />
-        }
-      />
+      <Pill tone="border-amber-500/40 bg-amber-500/5" dot="bg-amber-500">
+        <span className="text-muted-foreground">
+          <span className="font-semibold text-foreground">
+            {holderName ?? "Jemand anderes"}
+          </span>{" "}
+          steuert — du beobachtest
+        </span>
+        <ConfirmTakeover
+          holderName={holderName}
+          pending={pending}
+          onConfirm={() => onAcquire(true)}
+        />
+      </Pill>
     );
   }
 
   // free | stale — nobody is actively driving.
   return (
-    <Bar
-      tone="idle"
-      icon={<Eye className="size-4" />}
-      text="Du beobachtest. Niemand steuert die Einteilung gerade."
-      action={
-        <ConfirmAcquire pending={pending} onConfirm={() => onAcquire(false)} />
-      }
-    />
+    <Pill tone="bg-muted/40" dot="bg-muted-foreground/40">
+      <span className="text-muted-foreground">
+        Niemand steuert — du beobachtest
+      </span>
+      <ConfirmAcquire pending={pending} onConfirm={() => onAcquire(false)} />
+    </Pill>
   );
 }
 
-function Bar({
+function Pill({
   tone,
-  icon,
-  text,
-  action,
+  dot,
+  children,
 }: {
-  tone: "active" | "busy" | "idle";
-  icon: React.ReactNode;
-  text: React.ReactNode;
-  action: React.ReactNode;
+  tone: string;
+  dot: string;
+  children: React.ReactNode;
 }) {
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center gap-2.5 border-b px-7 py-2 text-[13.5px]",
-        tone === "active" && "border-brand-orange/40 bg-brand-orange/5",
-        tone === "busy" && "border-amber-500/40 bg-amber-500/5",
-        tone === "idle" && "bg-muted/40",
+        "flex shrink-0 items-center gap-2 rounded-full border py-[5px] pr-1.5 pl-3 text-[13px]",
+        tone,
       )}
     >
-      <span
-        className={cn(
-          tone === "active" && "text-brand-orange",
-          tone === "busy" && "text-amber-600 dark:text-amber-500",
-          tone === "idle" && "text-muted-foreground",
-        )}
-      >
-        {icon}
-      </span>
-      <span className="flex-1">{text}</span>
-      {action}
+      <span className={cn("size-2 shrink-0 rounded-full", dot)} />
+      {children}
     </div>
   );
 }

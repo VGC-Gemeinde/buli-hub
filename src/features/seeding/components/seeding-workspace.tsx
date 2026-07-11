@@ -28,6 +28,7 @@ import {
   seedingReadiness,
   suggestedDivisionCount,
 } from "../placement";
+import { validatePostSeason } from "../post-season";
 import type { DivisionWithGroupSizes } from "../queries";
 import {
   assembleSheetRows,
@@ -36,10 +37,10 @@ import {
   type SheetFilter,
   type SubDivisionRef,
 } from "../sheet";
-import { finalizeGateHint, seedingSteps } from "../steps";
+import { finalizeGateHint, finalizeGateShort, seedingSteps } from "../steps";
 import { BulkBar } from "./bulk-bar";
-import { ControlBar } from "./control-bar";
 import {
+  type PanelRulesStatus,
   type PostSeasonConfigInput,
   PostSeasonPanel,
   type PostSeasonSaveResult,
@@ -89,11 +90,25 @@ export function SeedingWorkspace({
     query: "",
     status: "all",
   });
-  // Which content the page shows below the control row: the placement sheet
-  // or the promotion/demotion rules. The step bar navigates between them.
+  // Which content the page shows below the step bar: the placement sheet or
+  // the promotion/demotion rules. The step bar navigates between them.
   const [view, setView] = useState<SeedingView>("sheet");
   // Collapsed divisions/sub-divisions (local to each viewer, not shared).
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  // The rules panel mirrors its live editor state up here so the step bar's
+  // „Auf- & Abstieg" sublabel matches the panel. Initialized from the server
+  // data (the panel reports on mount, but the first paint should agree).
+  const [panelRules, setPanelRules] = useState<PanelRulesStatus>(() => ({
+    dirty: false,
+    noGroups:
+      postSeason.length === 0 ||
+      postSeason.some((d) => d.groupSizes.length === 0),
+    issueCount: validatePostSeason(postSeason).length,
+  }));
+  const onRulesStatusChange = useCallback(
+    (status: PanelRulesStatus) => setPanelRules(status),
+    [],
+  );
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [overrides, setOverrides] = useState<Record<string, Override>>({});
   const [divisionCount, setDivisionCount] = useState(
@@ -186,6 +201,8 @@ export function SeedingWorkspace({
   // Finalize also needs the post-season rules explicitly configured (valid + saved).
   const ready = placementReady && postSeasonConfigured;
   const gateHint = finalizeGateHint(progress);
+  const gateShort = finalizeGateShort(progress);
+  const rulesStatus = { configured: postSeasonConfigured, ...panelRules };
 
   const rows = useMemo(
     () =>
@@ -450,6 +467,7 @@ export function SeedingWorkspace({
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <SeedingToolbar
         finalized={finalized}
+        finalizedNotice={finalizedNotice}
         readOnly={readOnly}
         season={season}
         divisionCount={divisionCount}
@@ -459,33 +477,24 @@ export function SeedingWorkspace({
         steps={steps}
         view={view}
         onViewChange={setView}
+        rulesStatus={rulesStatus}
         ready={ready}
         gateHint={gateHint}
+        gateShort={gateShort}
         onFinalize={onFinalize}
         onGenerateAll={onGenerateAll}
         generatingAll={generatingAll}
         filter={filter}
         onFilterChange={setFilter}
+        controlState={control.state}
+        controlHolderName={control.holderName}
+        controlPending={controlPending}
+        onAcquireControl={onAcquireControl}
+        onReleaseControl={onReleaseControl}
       />
-
-      {finalized ? null : (
-        <ControlBar
-          state={control.state}
-          holderName={control.holderName}
-          pending={controlPending}
-          onAcquire={onAcquireControl}
-          onRelease={onReleaseControl}
-        />
-      )}
 
       {actionError ? (
         <p className="px-7 py-1.5 text-destructive text-sm">{actionError}</p>
-      ) : null}
-      {finalizedNotice ? (
-        <p className="border-brand-orange/40 border-b bg-brand-orange/5 px-7 py-2 text-sm">
-          Die Einteilung wurde am {finalizedNotice} finalisiert und ist
-          endgültig.
-        </p>
       ) : null}
 
       {total === 0 && divisions.length === 0 ? (
@@ -510,6 +519,7 @@ export function SeedingWorkspace({
               subDivisions={subDivisions}
               selection={selection}
               readOnly={readOnly}
+              finalized={finalized}
               generatingDivisionId={generatingDivisionId}
               onGenerate={onGenerate}
               onToggleSelect={onToggleSelect}
@@ -528,7 +538,10 @@ export function SeedingWorkspace({
             <PostSeasonPanel
               divisions={postSeason}
               readOnly={readOnly || finalized}
+              finalized={finalized}
               onSave={onSavePostSeason}
+              onStatusChange={onRulesStatusChange}
+              onBackToSheet={() => setView("sheet")}
             />
           </div>
         </>

@@ -28,6 +28,7 @@ export function SeedingSheet({
   subDivisions,
   selection,
   readOnly,
+  finalized,
   generatingDivisionId,
   onGenerate,
   onToggleSelect,
@@ -41,6 +42,7 @@ export function SeedingSheet({
   subDivisions: SubDivisionRef[];
   selection: Set<string>;
   readOnly: boolean;
+  finalized: boolean;
   generatingDivisionId: string | null;
   onGenerate: (divisionId: string) => void;
   onToggleSelect: (userId: string) => void;
@@ -223,6 +225,7 @@ export function SeedingSheet({
                   subDivisions={subDivisions}
                   selected={selection.has(p.userId)}
                   readOnly={readOnly}
+                  finalized={finalized}
                   onToggleSelect={onToggleSelect}
                   onAssignDivision={onAssignDivision}
                   onMoveGroup={onMoveGroup}

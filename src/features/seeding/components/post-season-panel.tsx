@@ -172,6 +172,14 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
   }
 }
 
+// What the step bar's „Auf- & Abstieg" sublabel needs from the (possibly
+// unsaved) editor; the caller combines it with the saved stamp.
+export type PanelRulesStatus = {
+  dirty: boolean;
+  noGroups: boolean;
+  issueCount: number;
+};
+
 // Per-division promotion/demotion rules as a ladder of division cards with a
 // balance seam between neighbours. Counts are per group in Gruppen mode, per
 // division in Gesamttabelle mode. Live-validates; saving persists and (when
@@ -181,11 +189,21 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
 export function PostSeasonPanel({
   divisions,
   readOnly,
+  finalized,
   onSave,
+  onStatusChange,
+  onBackToSheet,
 }: {
   divisions: DivisionWithGroupSizes[];
   readOnly: boolean;
+  // Finalized hides the action strip: the toolbar's notice fills the
+  // contextual slot, and there is nothing left to save.
+  finalized: boolean;
   onSave: (configs: PostSeasonConfigInput[]) => Promise<PostSeasonSaveResult>;
+  // Mirrors the editor state up so the step bar's sublabel stays in step.
+  onStatusChange?: (status: PanelRulesStatus) => void;
+  // The no-groups notice's escape hatch back to the sheet view.
+  onBackToSheet?: () => void;
 }) {
   const [rows, setRows] = useState<Row[]>(() => toRows(divisions));
   const [savedRows, setSavedRows] = useState<Row[]>(() => toRows(divisions));
@@ -231,62 +249,72 @@ export function PostSeasonPanel({
 
   const showSaved = !dirty && valid && !saveError;
 
+  // Mirror the live editor state up for the step bar's sublabel.
+  const issueCount = issues.length;
+  useEffect(() => {
+    onStatusChange?.({ dirty, noGroups, issueCount });
+  }, [dirty, noGroups, issueCount, onStatusChange]);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Action strip: validation verdict + save, right above what it saves. */}
-      <div className="flex shrink-0 items-center gap-4 border-b px-7 py-2">
-        {noGroups || rows.length === 0 ? (
-          <span className="text-muted-foreground text-sm">
-            Auf- und Abstiegsregeln
-          </span>
-        ) : valid ? (
-          <p className="flex items-center gap-2 text-sm">
-            <span className="flex size-[18px] items-center justify-center rounded-full bg-zone-promote text-[11px] text-white">
-              ✓
+      {/* Action strip: validation verdict + save, right above what it saves.
+          A finalized seeding has nothing to save — the toolbar's notice fills
+          the contextual slot instead. */}
+      {finalized ? null : (
+        <div className="flex shrink-0 items-center gap-4 border-b px-7 py-2">
+          {noGroups || rows.length === 0 ? (
+            <span className="text-muted-foreground text-sm">
+              Auf- und Abstiegsregeln
             </span>
-            Regeln gültig — nach dem Speichern kann die Einteilung finalisiert
-            werden.
-          </p>
-        ) : (
-          <p className="flex items-center gap-2 text-sm">
-            <span className="flex size-[18px] items-center justify-center rounded-full bg-zone-demote text-[11px] text-white">
-              !
+          ) : valid ? (
+            <p className="flex items-center gap-2 text-sm">
+              <span className="flex size-[18px] items-center justify-center rounded-full bg-zone-promote text-[11px] text-white">
+                ✓
+              </span>
+              Regeln gültig — nach dem Speichern kann die Einteilung finalisiert
+              werden.
+            </p>
+          ) : (
+            <p className="flex items-center gap-2 text-sm">
+              <span className="flex size-[18px] items-center justify-center rounded-full bg-zone-demote text-[11px] text-white">
+                !
+              </span>
+              {issues.length === 1
+                ? "1 Punkt zu klären — Details in der Liste unten."
+                : `${issues.length} Punkte zu klären — Details in der Liste unten.`}
+            </p>
+          )}
+          {saveError ? (
+            <span className="text-[13px] text-destructive">{saveError}</span>
+          ) : null}
+          <div className="flex-1" />
+          {valid && dirty ? (
+            <span className="text-[12.5px] text-muted-foreground">
+              Ungespeicherte Änderungen
             </span>
-            {issues.length === 1
-              ? "1 Punkt zu klären"
-              : `${issues.length} Punkte zu klären`}
-          </p>
-        )}
-        {saveError ? (
-          <span className="text-[13px] text-destructive">{saveError}</span>
-        ) : null}
-        <div className="flex-1" />
-        {valid && dirty ? (
-          <span className="text-[12.5px] text-muted-foreground">
-            Ungespeicherte Änderungen
-          </span>
-        ) : null}
-        {readOnly || rows.length === 0 ? null : showSaved ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled
-            className="border-zone-promote/40 text-zone-promote"
-          >
-            Gespeichert ✓
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            size="sm"
-            disabled={pending || !valid}
-            onClick={submit}
-          >
-            {pending ? "Wird gespeichert…" : "Speichern"}
-          </Button>
-        )}
-      </div>
+          ) : null}
+          {readOnly || rows.length === 0 ? null : showSaved ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled
+              className="border-zone-promote/40 text-zone-promote"
+            >
+              Gespeichert ✓
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              disabled={pending || !valid}
+              onClick={submit}
+            >
+              {pending ? "Wird gespeichert…" : "Speichern"}
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-auto bg-muted/40">
         <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-2 px-7 py-4">
@@ -294,7 +322,7 @@ export function PostSeasonPanel({
             Lege pro Division fest, wie viele Spieler fest auf- und absteigen,
             wie viele Playoff-Plätze es gibt und über welche Tabelle entschieden
             wird. Abstiege und Aufstiege benachbarter Divisionen müssen sich
-            decken — erst dann kann die Einteilung finalisiert werden.
+            decken — erst dann kann gespeichert und finalisiert werden.
           </p>
 
           {rows.length === 0 ? (
@@ -306,7 +334,16 @@ export function PostSeasonPanel({
           {noGroups ? (
             <p className="rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-2.5 text-sm">
               Bitte zuerst die Gruppen generieren — ohne Gruppen lassen sich
-              keine gültigen Regeln festlegen.
+              keine gültigen Regeln festlegen.{" "}
+              {onBackToSheet ? (
+                <button
+                  type="button"
+                  onClick={onBackToSheet}
+                  className="font-semibold underline underline-offset-2 hover:text-brand-orange"
+                >
+                  Zurück zum Sheet
+                </button>
+              ) : null}
             </p>
           ) : null}
           {!noGroups && rows.length > 0 && !valid ? (
@@ -600,6 +637,9 @@ function Stepper({
   );
 }
 
+// The seam names its divisions explicitly — the ladder scrolls (up to 7
+// cards), so „ab/auf" alone would lose its reference. Both sides name the
+// upper division: down out of it, up into it.
 function SeamRow({ upper, lower }: { upper: Row; lower: Row }) {
   const demotions = effectiveMovement(forValidation(upper)).demotions;
   const promotions = effectiveMovement(forValidation(lower)).promotions;
@@ -614,7 +654,8 @@ function SeamRow({ upper, lower }: { upper: Row; lower: Row }) {
     <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-8 py-2 sm:grid sm:grid-cols-[1fr_auto_1fr]">
       <div className="text-[12px] text-muted-foreground sm:text-right">
         <span className="mr-1.5 font-bold text-zone-demote">↓ {demotions}</span>
-        steigen ab ({breakdown(upper, upper.guaranteedDemotions)})
+        steigen aus {divisionName(upper.tier)} ab (
+        {breakdown(upper, upper.guaranteedDemotions)})
       </div>
       <span
         className={cn(
@@ -624,13 +665,14 @@ function SeamRow({ upper, lower }: { upper: Row; lower: Row }) {
             : "border-zone-demote/40 bg-zone-demote/5 text-zone-demote",
         )}
       >
-        {balanced ? "✓ Ausgeglichen" : "✕ Nicht ausgeglichen"}
+        {balanced ? "✓ Ausgeglichen" : "✕ Nicht gedeckt"}
       </span>
       <div className="text-[12px] text-muted-foreground">
         <span className="mr-1.5 font-bold text-zone-promote">
           ↑ {promotions}
         </span>
-        steigen auf ({breakdown(lower, lower.guaranteedPromotions)})
+        steigen in {divisionName(upper.tier)} auf (
+        {breakdown(lower, lower.guaranteedPromotions)})
       </div>
     </div>
   );

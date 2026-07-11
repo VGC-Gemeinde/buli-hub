@@ -248,12 +248,16 @@ function CaveatChip({ player }: { player: SeedingPlayer }) {
   );
 }
 
+// Two read-only flavors: an observer (someone else drives) still sees the
+// selects, just disabled; a finalized seeding is a terminal record and
+// renders plain text instead.
 export function PlayerRow({
   player,
   divisions,
   subDivisions,
   selected,
   readOnly,
+  finalized,
   onToggleSelect,
   onAssignDivision,
   onMoveGroup,
@@ -263,6 +267,7 @@ export function PlayerRow({
   subDivisions: SubDivisionRef[];
   selected: boolean;
   readOnly: boolean;
+  finalized: boolean;
   onToggleSelect: (userId: string) => void;
   onAssignDivision: (userId: string, divisionId: string | null) => void;
   onMoveGroup: (userId: string, subDivisionId: string) => void;
@@ -356,7 +361,7 @@ export function PlayerRow({
         <Dash />
       )}
 
-      {readOnly ? (
+      {finalized ? (
         player.divisionId && divisionTier ? (
           <span className="text-[13px]">{divisionName(divisionTier)}</span>
         ) : (
@@ -365,11 +370,15 @@ export function PlayerRow({
       ) : (
         <Select
           value={player.divisionId ?? UNPLACED}
+          disabled={readOnly}
           onValueChange={(value) =>
             onAssignDivision(player.userId, value === UNPLACED ? null : value)
           }
         >
-          <SelectTrigger size="sm" className="h-7 w-[136px]">
+          <SelectTrigger
+            size="sm"
+            className={cn("h-7 w-[136px]", readOnly && "opacity-60")}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -383,7 +392,7 @@ export function PlayerRow({
         </Select>
       )}
 
-      {readOnly ? (
+      {finalized ? (
         player.subDivisionId && divisionTier !== undefined ? (
           <span className="text-[13px]">
             {subDivisionShortName(
@@ -398,14 +407,15 @@ export function PlayerRow({
       ) : (
         <Select
           value={player.subDivisionId ?? undefined}
-          disabled={divisionSubs.length === 0}
+          disabled={readOnly || divisionSubs.length === 0}
           onValueChange={(value) => onMoveGroup(player.userId, value)}
         >
           <SelectTrigger
             size="sm"
             className={cn(
               "h-7 w-[96px]",
-              divisionSubs.length === 0 && "opacity-55",
+              readOnly && "opacity-60",
+              !readOnly && divisionSubs.length === 0 && "opacity-55",
             )}
           >
             <SelectValue placeholder="—" />

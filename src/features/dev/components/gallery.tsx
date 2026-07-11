@@ -35,6 +35,7 @@ import { RegistrationConfirmation } from "@/features/registration/components/reg
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { DisputeResolveDialog } from "@/features/reporting/components/dispute-resolve-dialog";
 import { PublicMatchView } from "@/features/reporting/components/public-match-view";
+import { ReportForm } from "@/features/reporting/components/report-form";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
 import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
 import { StaffResultEditor } from "@/features/reporting/components/staff-result-editor";
@@ -1224,11 +1225,13 @@ export function Gallery() {
               placed: 12,
               grouped: 0,
               postSeasonConfigured: false,
+              replayConfigured: true,
               finalized: false,
             })}
             view="sheet"
             onViewChange={() => {}}
             rulesStatus={{
+              replayConfigured: false,
               configured: false,
               dirty: false,
               noGroups: true,
@@ -1252,11 +1255,13 @@ export function Gallery() {
               placed: 42,
               grouped: 42,
               postSeasonConfigured: false,
+              replayConfigured: true,
               finalized: false,
             })}
             view="rules"
             onViewChange={() => {}}
             rulesStatus={{
+              replayConfigured: false,
               configured: false,
               dirty: true,
               noGroups: false,
@@ -1280,11 +1285,13 @@ export function Gallery() {
               placed: 42,
               grouped: 42,
               postSeasonConfigured: true,
+              replayConfigured: true,
               finalized: false,
             })}
             view="sheet"
             onViewChange={() => {}}
             rulesStatus={{
+              replayConfigured: true,
               configured: true,
               dirty: false,
               noGroups: false,
@@ -1307,11 +1314,13 @@ export function Gallery() {
               placed: 42,
               grouped: 42,
               postSeasonConfigured: true,
+              replayConfigured: true,
               finalized: false,
             })}
             view="sheet"
             onViewChange={() => {}}
             rulesStatus={{
+              replayConfigured: true,
               configured: true,
               dirty: false,
               noGroups: false,
@@ -1334,11 +1343,13 @@ export function Gallery() {
               placed: 42,
               grouped: 42,
               postSeasonConfigured: true,
+              replayConfigured: true,
               finalized: true,
             })}
             view="sheet"
             onViewChange={() => {}}
             rulesStatus={{
+              replayConfigured: true,
               configured: true,
               dirty: false,
               noGroups: false,
@@ -1532,6 +1543,10 @@ export function Gallery() {
               divisions={POST_SEASON_DIVISIONS}
               readOnly={false}
               finalized={false}
+              configured
+              replayTiers="2"
+              replayError={null}
+              onReplayChange={() => {}}
               onSave={async () => ({ ok: true, issues: [] })}
             />
           </div>
@@ -1542,6 +1557,10 @@ export function Gallery() {
               divisions={POST_SEASON_OVERBOOKED}
               readOnly={false}
               finalized={false}
+              configured
+              replayTiers="2"
+              replayError={null}
+              onReplayChange={() => {}}
               onSave={async () => ({ ok: true, issues: [] })}
             />
           </div>
@@ -1617,6 +1636,44 @@ export function Gallery() {
             title="Du bist in der laufenden Saison nicht dabei"
             body="Für diese Saison liegt keine Einteilung für dich vor."
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Match-Meldung: Formular (Replay-Pflicht)</h2>
+        <Specimen label="Division mit Replay-Pflicht — Replays/Video Pflicht">
+          <div className="max-h-[520px] overflow-auto rounded-lg border p-4">
+            <ReportForm
+              matchId="demo"
+              round={2}
+              groupName="Division 1a"
+              deadline="2026-07-14"
+              proofRequired
+              playerA={{ ...SUMMARY_A, userId: "me" }}
+              playerB={{ ...SUMMARY_B, userId: "opp" }}
+              reporterId="me"
+              staffOptions={[
+                { userId: "staff1", name: "Orga Team", avatarUrl: null },
+              ]}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Division ohne Replay-Pflicht — Beweis optional">
+          <div className="max-h-[520px] overflow-auto rounded-lg border p-4">
+            <ReportForm
+              matchId="demo"
+              round={2}
+              groupName="Division 3b"
+              deadline="2026-07-14"
+              proofRequired={false}
+              playerA={{ ...SUMMARY_A, userId: "me" }}
+              playerB={{ ...SUMMARY_B, userId: "opp" }}
+              reporterId="me"
+              staffOptions={[
+                { userId: "staff1", name: "Orga Team", avatarUrl: null },
+              ]}
+            />
+          </div>
         </Specimen>
       </section>
 

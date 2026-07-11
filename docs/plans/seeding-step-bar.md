@@ -11,20 +11,25 @@ Regel-Editor steckte in einem beengten Modal.
 ## Schrittmodell (pur)
 
 `src/features/seeding/steps.ts`: `seedingSteps(progress)` leitet die vier
-Schritte **Platzieren → In Gruppen → Auf- & Abstieg → Finalisieren** mit
+Schritte **Platzieren → Gruppen bilden → Regeln → Finalisieren** mit
 Zustand (done / active / pending) und Zählern ab; `finalizeGateHint(progress)`
 erzeugt den Gate-Text aus demselben Modell. Schritte werden unabhängig „done"
-(Auf-/Abstieg kann vor dem letzten Gruppieren gespeichert sein); „active" ist
-der erste offene Schritt in Reihenfolge.
+(die Regeln können vor dem letzten Gruppieren gespeichert sein); „active" ist
+der erste offene Schritt in Reihenfolge. Der Schritt **„Regeln"** umfasst
+beide Saison-Regeln und ist erst done, wenn Auf-/Abstieg gespeichert **und**
+die Replay-Pflicht festgelegt ist (siehe `replay-requirement.md`).
 
 ## Schrittleiste = Fortschritt + Navigation
 
 `components/step-bar.tsx`. Die Seite hat unterhalb der Steuerungszeile zwei
 Ansichten; die Leiste zeigt den Fortschritt und schaltet zwischen ihnen um:
 
-- Segment **„Platzieren · In Gruppen"** → Sheet-Ansicht (die Arbeit dieser
-  Schritte passiert im Sheet).
-- Segment **„Auf- & Abstieg"** → Regel-Ansicht.
+- Segment **„Platzieren · Gruppen bilden"** → Sheet-Ansicht (die Arbeit
+  dieser Schritte passiert im Sheet).
+- Segment **„Regeln"** → Regel-Ansicht (Auf-/Abstieg + Replay-Pflicht); das
+  Sublabel nennt den nächsten offenen Teil („Auf- & Abstieg speichern" →
+  „Replay-Pflicht festlegen" → „Regeln gespeichert" / „Änderungen nicht
+  gespeichert").
 - Die aktive Ansicht ist unterlegt (Brand-Orange-Tönung); jeder Schritt trägt
   weiterhin sein Status-Icon (✓/●/○) und ggf. Zähler.
 - **„Finalisieren"** ist keine Ansicht, sondern die gegatete Schluss-Aktion:
@@ -40,21 +45,24 @@ Ansichten; die Leiste zeigt den Fortschritt und schaltet zwischen ihnen um:
   dieser Ansicht.
 - **Regel-Ansicht** (`post-season-panel.tsx`, ehem. Dialog): eigene
   Aktionszeile (Validierungsstatus, „Ungespeicherte Änderungen", Speichern)
-  direkt über der zentrierten Divisions-Leiter; Fehlerliste als Callout über
-  den Karten. Beide Ansichten bleiben gemountet — Umschalten versteckt nur,
-  ungespeicherte Regel-Änderungen und Sheet-Filter überleben den Wechsel.
-  Frische Serverdaten reseeden den Editor nur, wenn keine lokalen Änderungen
-  offen sind. ControlBar, Fehlerzeile und Finalize-Banner gelten für beide
-  Ansichten.
+  direkt über dem zentrierten Inhalt — zuerst die Karte **„Replay-Pflicht"**,
+  darunter die Divisions-Leiter; Fehlerliste als Callout über den Karten.
+  Der Speichern-Zustand hängt am **Server-Stempel** (`postSeasonConfiguredAt`),
+  nicht nur an lokalen Änderungen: Gruppen-Regenerierung oder Config-Änderung
+  löschen den Stempel, und der Button wird wieder aktiv, auch wenn die Werte
+  unverändert aussehen (sonst Finalize-Sackgasse). Beide Ansichten bleiben
+  gemountet — Umschalten versteckt nur, ungespeicherte Regel-Änderungen und
+  Sheet-Filter überleben den Wechsel. Frische Serverdaten reseeden den Editor
+  nur, wenn keine lokalen Änderungen offen sind. Steuerungs-Pill, Fehlerzeile
+  und Finalize-Banner gelten für beide Ansichten.
 
 ## Dev-Tooling
 
 - Gallery: Schrittleisten-Zustände (Sheet/Regel-Ansicht aktiv, bereit,
   Beobachter, finalisiert), Regel-Panel gültig/fehlerhaft, Finalize-Dialog.
 - `/dev/seed-registrations?grouped=1` (Karte auf `/dev`) baut eine Einteilung,
-  in der alle Spieler platziert und gruppiert sind, aber die
-  Auf-/Abstiegsregeln noch fehlen — der Zustand, in dem „Auf- & Abstieg" der
-  aktive Schritt ist.
+  in der alle Spieler platziert und gruppiert sind, aber beide Saison-Regeln
+  noch fehlen — der Zustand, in dem „Regeln" der aktive Schritt ist.
 
 ## Nebenbei behoben
 

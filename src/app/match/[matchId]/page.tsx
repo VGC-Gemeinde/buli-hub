@@ -197,6 +197,7 @@ export default async function MatchReportPage({
               round={match.round}
               groupName={match.groupName}
               deadline={match.deadline}
+              proofRequired={match.proofRequired}
               playerA={match.playerA}
               playerB={match.playerB}
               reporterId={current.userId}

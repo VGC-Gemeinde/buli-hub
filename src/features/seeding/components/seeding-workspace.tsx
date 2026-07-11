@@ -21,6 +21,7 @@ import {
   releaseControl,
   type SeedingResult,
   savePostSeason,
+  setReplayRequirement,
 } from "../actions";
 import { CONTROL_HEARTBEAT_MS, type ControlState } from "../control";
 import {
@@ -57,6 +58,7 @@ export function SeedingWorkspace({
   subDivisions,
   initialSize,
   initialDivisionCount,
+  initialReplayTiers,
   season,
   postSeason,
   postSeasonConfigured,
@@ -70,6 +72,8 @@ export function SeedingWorkspace({
   subDivisions: SubDivisionRef[];
   initialSize: number | null;
   initialDivisionCount: number;
+  // Null until staff make the explicit per-season replay decision.
+  initialReplayTiers: number | null;
   season: string;
   postSeason: DivisionWithGroupSizes[];
   postSeasonConfigured: boolean;
@@ -115,6 +119,11 @@ export function SeedingWorkspace({
     initialDivisionCount > 0 ? String(initialDivisionCount) : "",
   );
   const [size, setSize] = useState(initialSize ? String(initialSize) : "");
+  const [replayTiers, setReplayTiers] = useState(
+    initialReplayTiers !== null ? String(initialReplayTiers) : "",
+  );
+  const [replayError, setReplayError] = useState<string | null>(null);
+  const replayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [generatingAll, setGeneratingAll] = useState(false);
@@ -182,6 +191,14 @@ export function SeedingWorkspace({
     );
   }, [initialDivisionCount]);
 
+  // Same server-sync for the replay decision (set by another controller, or
+  // fresh after our own save + refresh).
+  useEffect(() => {
+    setReplayTiers(
+      initialReplayTiers !== null ? String(initialReplayTiers) : "",
+    );
+  }, [initialReplayTiers]);
+
   const effectivePlayers = useMemo(
     () =>
       players.map((p) =>
@@ -195,14 +212,27 @@ export function SeedingWorkspace({
   const grouped = effectivePlayers.filter(
     (p) => p.subDivisionId !== null,
   ).length;
-  const progress = { total, placed, grouped, postSeasonConfigured, finalized };
+  const progress = {
+    total,
+    placed,
+    grouped,
+    postSeasonConfigured,
+    replayConfigured: initialReplayTiers !== null,
+    finalized,
+  };
   const steps = seedingSteps(progress);
   const placementReady = seedingReadiness(effectivePlayers).ready;
-  // Finalize also needs the post-season rules explicitly configured (valid + saved).
-  const ready = placementReady && postSeasonConfigured;
+  // Finalize also needs the post-season rules explicitly configured (valid +
+  // saved) and the explicit replay-requirement decision.
+  const ready =
+    placementReady && postSeasonConfigured && initialReplayTiers !== null;
   const gateHint = finalizeGateHint(progress);
   const gateShort = finalizeGateShort(progress);
-  const rulesStatus = { configured: postSeasonConfigured, ...panelRules };
+  const rulesStatus = {
+    configured: postSeasonConfigured,
+    replayConfigured: initialReplayTiers !== null,
+    ...panelRules,
+  };
 
   const rows = useMemo(
     () =>
@@ -318,6 +348,29 @@ export function SeedingWorkspace({
         subDivisionSize: nextSize,
       });
       setConfigError(result.ok ? null : result.error);
+      if (result.ok) {
+        router.refresh();
+      } else if (result.code === "no_control") {
+        refreshControl();
+        router.refresh();
+      }
+    }, 500);
+  }
+
+  function onReplayChange(next: string) {
+    setReplayTiers(next);
+    if (replayTimer.current) {
+      clearTimeout(replayTimer.current);
+    }
+    // An emptied field is "still undecided", not a save of 0 — the decision
+    // can only be made, not silently revoked.
+    if (next.trim() === "") {
+      setReplayError(null);
+      return;
+    }
+    replayTimer.current = setTimeout(async () => {
+      const result = await setReplayRequirement({ replayRequiredTiers: next });
+      setReplayError(result.ok ? null : result.error);
       if (result.ok) {
         router.refresh();
       } else if (result.code === "no_control") {
@@ -539,6 +592,10 @@ export function SeedingWorkspace({
               divisions={postSeason}
               readOnly={readOnly || finalized}
               finalized={finalized}
+              configured={postSeasonConfigured}
+              replayTiers={replayTiers}
+              replayError={replayError}
+              onReplayChange={onReplayChange}
               onSave={onSavePostSeason}
               onStatusChange={onRulesStatusChange}
               onBackToSheet={() => setView("sheet")}

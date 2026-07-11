@@ -15,6 +15,7 @@ function progress(overrides: Partial<SeedingProgress> = {}): SeedingProgress {
     placed: 0,
     grouped: 0,
     postSeasonConfigured: false,
+    replayConfigured: true,
     finalized: false,
     ...overrides,
   };
@@ -72,13 +73,31 @@ describe("seedingSteps", () => {
     });
   });
 
-  it("marks post-season done out of order when saved before grouping", () => {
+  it("marks the rules done out of order when saved before grouping", () => {
     expect(
       states(progress({ placed: 20, grouped: 3, postSeasonConfigured: true })),
     ).toEqual({
       place: "done",
       group: "active",
       post_season: "done",
+      finalize: "pending",
+    });
+  });
+
+  it("keeps the rules step open until the replay decision is made", () => {
+    expect(
+      states(
+        progress({
+          placed: 20,
+          grouped: 20,
+          postSeasonConfigured: true,
+          replayConfigured: false,
+        }),
+      ),
+    ).toEqual({
+      place: "done",
+      group: "done",
+      post_season: "active",
       finalize: "pending",
     });
   });
@@ -141,6 +160,19 @@ describe("finalizeGateHint", () => {
     );
   });
 
+  it("asks for the replay decision after the rules", () => {
+    expect(
+      finalizeGateHint(
+        progress({
+          placed: 20,
+          grouped: 20,
+          postSeasonConfigured: true,
+          replayConfigured: false,
+        }),
+      ),
+    ).toBe("Erst festlegen, bis zu welcher Division Replays Pflicht sind.");
+  });
+
   it("warns about finality when everything is ready", () => {
     expect(
       finalizeGateHint(
@@ -169,8 +201,21 @@ describe("finalizeGateShort", () => {
 
   it("asks for the rules once everyone is grouped", () => {
     expect(finalizeGateShort(progress({ placed: 20, grouped: 20 }))).toBe(
-      "Regeln noch speichern",
+      "Auf- & Abstieg speichern",
     );
+  });
+
+  it("asks for the replay decision after the rules", () => {
+    expect(
+      finalizeGateShort(
+        progress({
+          placed: 20,
+          grouped: 20,
+          postSeasonConfigured: true,
+          replayConfigured: false,
+        }),
+      ),
+    ).toBe("Replay-Pflicht festlegen");
   });
 
   it("is null when nothing blocks", () => {
@@ -187,13 +232,14 @@ describe("rulesStepSublabel", () => {
     overrides: Partial<RulesEditorStatus>,
   ): RulesEditorStatus => ({
     configured: false,
+    replayConfigured: true,
     dirty: false,
     noGroups: false,
     issueCount: 0,
     ...overrides,
   });
 
-  it("reports saved rules", () => {
+  it("reports fully saved rules", () => {
     expect(rulesStepSublabel(status({ configured: true }))).toEqual({
       text: "Regeln gespeichert",
       warn: false,
@@ -224,9 +270,22 @@ describe("rulesStepSublabel", () => {
     });
   });
 
-  it("asks to save when valid but unsaved", () => {
+  it("asks to save the ladder when valid but unsaved", () => {
     expect(rulesStepSublabel(status({}))).toEqual({
-      text: "Noch speichern",
+      text: "Auf- & Abstieg speichern",
+      warn: false,
+    });
+  });
+
+  it("asks for the replay decision once the ladder is saved", () => {
+    expect(
+      rulesStepSublabel(status({ configured: true, replayConfigured: false })),
+    ).toEqual({ text: "Replay-Pflicht festlegen", warn: false });
+  });
+
+  it("the ladder comes first when both are open", () => {
+    expect(rulesStepSublabel(status({ replayConfigured: false }))).toEqual({
+      text: "Auf- & Abstieg speichern",
       warn: false,
     });
   });

@@ -137,6 +137,10 @@ export type StaffResultInput = z.infer<typeof staffResultUnion>;
 export type ReportContext = {
   participants: { playerAId: string; playerBId: string };
   isStaffOrAdmin: (userId: string) => boolean;
+  // Whether this match's division requires proof (top-X rule from the
+  // seeding): Showdown replays per game / a cartridge video. When false,
+  // proof is optional — provided links are still format-checked.
+  proofRequired: boolean;
 };
 
 // Shared validation for player reports and staff edits (double_loss needs none).
@@ -161,11 +165,18 @@ function refineReport(
     }
     if (value.platform === "showdown") {
       value.games.forEach((game, i) => {
-        if (!game.replayUrl || !isHttpsUrl(game.replayUrl)) {
+        if (context.proofRequired && !game.replayUrl) {
           ctx.addIssue({
             code: "custom",
             path: ["games", i, "replayUrl"],
             message: "Replay-Link erforderlich",
+          });
+        }
+        if (game.replayUrl && !isHttpsUrl(game.replayUrl)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["games", i, "replayUrl"],
+            message: "Ungültiger Link",
           });
         }
       });
@@ -177,6 +188,13 @@ function refineReport(
         });
       }
     } else {
+      if (context.proofRequired && !value.videoUrl) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["videoUrl"],
+          message: "Video-Link erforderlich",
+        });
+      }
       if (value.videoUrl && !isHttpsUrl(value.videoUrl)) {
         ctx.addIssue({
           code: "custom",
@@ -306,7 +324,8 @@ export function toResultRows(input: StaffResultInput): {
   const games: GameRow[] = input.games.map((game, i) => ({
     gameNumber: i + 1,
     winnerId: game.winnerId,
-    replayUrl: input.platform === "showdown" ? (game.replayUrl ?? null) : null,
+    // `|| null` also folds an empty optional field to null.
+    replayUrl: input.platform === "showdown" ? game.replayUrl || null : null,
   }));
   return {
     result: {
@@ -315,8 +334,7 @@ export function toResultRows(input: StaffResultInput): {
       platform: input.platform,
       playerATeamUrl: input.playerATeamUrl,
       playerBTeamUrl: input.playerBTeamUrl,
-      videoUrl:
-        input.platform === "cartridge" ? (input.videoUrl ?? null) : null,
+      videoUrl: input.platform === "cartridge" ? input.videoUrl || null : null,
       freeWinReason: null,
       discussedWithId: null,
     },

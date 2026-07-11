@@ -1,0 +1,1 @@
+ALTER TABLE "seedings" ADD COLUMN "replay_required_tiers" integer;

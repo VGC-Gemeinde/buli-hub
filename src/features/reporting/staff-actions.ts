@@ -138,6 +138,7 @@ export async function editResult(input: {
       playerBId: gate.match.playerB.userId,
     },
     isStaffOrAdmin: (id) => staffIds.has(id),
+    proofRequired: gate.match.proofRequired,
   }).safeParse(input.report);
   if (!parsed.success) {
     return {

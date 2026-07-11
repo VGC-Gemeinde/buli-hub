@@ -85,7 +85,7 @@ export function StepBar({
       <Separator />
       <ViewSegment
         active={view === "rules"}
-        title="Ansicht: Auf- und Abstiegsregeln festlegen"
+        title="Ansicht: Saison-Regeln festlegen (Auf- & Abstieg, Replay-Pflicht)"
         onClick={() => onViewChange("rules")}
       >
         {rules ? (

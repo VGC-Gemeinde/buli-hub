@@ -10,8 +10,12 @@ import {
 const ctx = {
   participants: { playerAId: "a", playerBId: "b" },
   isStaffOrAdmin: (id: string) => id === "staff1" || id === "admin1",
+  proofRequired: true,
 };
+const optionalCtx = { ...ctx, proofRequired: false };
 const parse = (input: unknown) => reportSchema(ctx).safeParse(input);
+const parseOptional = (input: unknown) =>
+  reportSchema(optionalCtx).safeParse(input);
 const PASTE_A = "https://pokepast.es/aaaa";
 const PASTE_B = "https://pokepast.es/bbbb";
 const REPLAY = "https://replay.pokemonshowdown.com/gen9-1";
@@ -86,12 +90,12 @@ describe("reportSchema — normal", () => {
     });
     expect(parse(input).success).toBe(true);
   });
-  it("accepts cartridge without a video", () => {
+  it("rejects cartridge without a video where proof is required", () => {
     const input = normal({
       platform: "cartridge",
       games: [{ winnerId: "a" }, { winnerId: "a" }],
     });
-    expect(parse(input).success).toBe(true);
+    expect(parse(input).success).toBe(false);
   });
   it("rejects a showdown game missing its replay", () => {
     const input = normal({
@@ -131,6 +135,60 @@ describe("reportSchema — normal", () => {
       ],
     });
     expect(parse(input).success).toBe(false);
+  });
+});
+
+// Divisions below the season's replay-requirement cut: proof is optional,
+// but provided links are still format-checked.
+describe("reportSchema — proof optional", () => {
+  it("accepts showdown without any replays", () => {
+    const input = normal({
+      games: [{ winnerId: "a" }, { winnerId: "a" }],
+    });
+    expect(parseOptional(input).success).toBe(true);
+  });
+  it("accepts showdown with replays on some games only", () => {
+    const input = normal({
+      games: [{ winnerId: "a", replayUrl: REPLAY }, { winnerId: "a" }],
+    });
+    expect(parseOptional(input).success).toBe(true);
+  });
+  it("accepts cartridge without a video", () => {
+    const input = normal({
+      platform: "cartridge",
+      games: [{ winnerId: "a" }, { winnerId: "a" }],
+    });
+    expect(parseOptional(input).success).toBe(true);
+  });
+  it("still rejects an invalid replay link", () => {
+    const input = normal({
+      games: [
+        { winnerId: "a", replayUrl: "nicht-mal-eine-url" },
+        { winnerId: "a" },
+      ],
+    });
+    expect(parseOptional(input).success).toBe(false);
+  });
+  it("still rejects an invalid video link", () => {
+    const input = normal({
+      platform: "cartridge",
+      games: [{ winnerId: "a" }, { winnerId: "a" }],
+      videoUrl: "http://unverschluesselt.example",
+    });
+    expect(parseOptional(input).success).toBe(false);
+  });
+  it("still rejects replays on cartridge and video on showdown", () => {
+    expect(
+      parseOptional(
+        normal({
+          platform: "cartridge",
+          games: [{ winnerId: "a", replayUrl: REPLAY }, { winnerId: "a" }],
+        }),
+      ).success,
+    ).toBe(false);
+    expect(
+      parseOptional(normal({ videoUrl: "https://youtu.be/x" })).success,
+    ).toBe(false);
   });
 });
 

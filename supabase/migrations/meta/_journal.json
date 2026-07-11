@@ -15,6 +15,20 @@
       "when": 1783331705254,
       "tag": "20260706095505_baseline_auth_fk_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783771871540,
+      "tag": "20260711121111_gigantic_lockheed",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783771882967,
+      "tag": "20260711121122_backfill-replay-required",
+      "breakpoints": true
     }
   ]
 }

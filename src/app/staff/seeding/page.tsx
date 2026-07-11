@@ -72,6 +72,7 @@ export default async function SeedingPage() {
         subDivisions={subDivisions}
         initialSize={seeding?.subDivisionSize ?? null}
         initialDivisionCount={divisions.length}
+        initialReplayTiers={seeding?.replayRequiredTiers ?? null}
         season={seasonName(window.seasonNumber)}
         postSeason={postSeason}
         postSeasonConfigured={Boolean(seeding?.postSeasonConfiguredAt)}

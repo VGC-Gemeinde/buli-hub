@@ -60,3 +60,14 @@ export const seedingConfigSchema = z.object({
 });
 
 export type SeedingConfig = z.output<typeof seedingConfigSchema>;
+
+// The explicit per-season decision up to which division proof (Showdown
+// replays / cartridge video) is mandatory when reporting. 0 = optional
+// everywhere. Deliberately no default anywhere — finalize requires a value.
+export const replayRequirementSchema = z.object({
+  replayRequiredTiers: z.coerce
+    .number({ error: "Ungültige Zahl" })
+    .int()
+    .min(0, "Mindestens 0")
+    .max(MAX_DIVISIONS, `Höchstens ${MAX_DIVISIONS}`),
+});

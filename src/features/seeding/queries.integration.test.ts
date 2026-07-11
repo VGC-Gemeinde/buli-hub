@@ -18,6 +18,7 @@ import {
   listSeedingPlayers,
   listSubDivisions,
   releaseLock,
+  saveReplayRequirement,
   saveSeedingConfig,
   upsertLock,
 } from "./queries";
@@ -66,6 +67,17 @@ describe("seeding config", () => {
   it("removes the extra tiers when the count shrinks", async () => {
     await saveSeedingConfig(windowId, 6, 2);
     expect((await listDivisions(windowId)).map((d) => d.tier)).toEqual([1, 2]);
+  });
+
+  it("starts with no replay decision, then persists it", async () => {
+    expect((await getSeeding(windowId))?.replayRequiredTiers).toBeNull();
+    await saveReplayRequirement(windowId, 2);
+    expect((await getSeeding(windowId))?.replayRequiredTiers).toBe(2);
+  });
+
+  it("changing size/count keeps the replay decision", async () => {
+    await saveSeedingConfig(windowId, 6, 2);
+    expect((await getSeeding(windowId))?.replayRequiredTiers).toBe(2);
   });
 });
 

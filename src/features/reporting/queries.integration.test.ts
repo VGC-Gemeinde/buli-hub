@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   divisions,
@@ -7,6 +7,7 @@ import {
   matches,
   placements,
   profiles,
+  seedings,
   subDivisions,
 } from "@/db/schema";
 import { createWindow } from "@/features/staff/queries";
@@ -109,6 +110,24 @@ describe("getMatchForReport", () => {
   it("reports a bye's playerB as null", async () => {
     const match = await getMatchForReport(matchBye);
     expect(match?.playerB).toBeNull();
+  });
+
+  it("derives proofRequired from the season's replay rule", async () => {
+    // No seeding row (defensive edge) → proof required.
+    expect((await getMatchForReport(matchAB))?.proofRequired).toBe(true);
+
+    // Rule covers tier 1 → this division-1 match needs proof.
+    await db
+      .insert(seedings)
+      .values({ windowId, subDivisionSize: 8, replayRequiredTiers: 1 });
+    expect((await getMatchForReport(matchAB))?.proofRequired).toBe(true);
+
+    // Rule set to 0 → optional everywhere.
+    await db
+      .update(seedings)
+      .set({ replayRequiredTiers: 0 })
+      .where(eq(seedings.windowId, windowId));
+    expect((await getMatchForReport(matchAB))?.proofRequired).toBe(false);
   });
 });
 

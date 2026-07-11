@@ -29,11 +29,16 @@ import {
   savePostSeasonConfig as persistPostSeasonConfig,
   placePlayersInGroup,
   releaseLock,
+  saveReplayRequirement,
   saveSeedingConfig,
   subDivisionDivisionId,
   upsertLock,
 } from "./queries";
-import { postSeasonConfigSchema, seedingConfigSchema } from "./seeding";
+import {
+  postSeasonConfigSchema,
+  replayRequirementSchema,
+  seedingConfigSchema,
+} from "./seeding";
 
 // `code: "no_control"` lets the client tell "you lost control" apart from other
 // failures and flip its UI to read-only instead of only surfacing the error.
@@ -63,6 +68,30 @@ export async function configureSeeding(input: {
     parsed.data.subDivisionSize,
     parsed.data.divisionCount,
   );
+  revalidatePath("/staff/seeding");
+  return { ok: true };
+}
+
+// The explicit per-season replay-requirement decision (proof mandatory for
+// the top N divisions). Separate from `configureSeeding` on purpose: it must
+// not clear the post-season stamp — the rule has nothing to do with groups.
+export async function setReplayRequirement(input: {
+  replayRequiredTiers: unknown;
+}): Promise<SeedingResult> {
+  const gate = await editableWindow();
+  if (!gate.ok) {
+    return gate;
+  }
+
+  const parsed = replayRequirementSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
+    };
+  }
+
+  await saveReplayRequirement(gate.windowId, parsed.data.replayRequiredTiers);
   revalidatePath("/staff/seeding");
   return { ok: true };
 }
@@ -366,6 +395,14 @@ export async function finalizeSeeding(): Promise<SeedingResult> {
     return {
       ok: false,
       error: "Bitte zuerst die Auf- und Abstiegsregeln festlegen",
+    };
+  }
+  // The replay requirement is an explicit per-season decision — a season must
+  // never start without one (reporting validation depends on it).
+  if (seeding.replayRequiredTiers === null) {
+    return {
+      ok: false,
+      error: "Bitte zuerst die Replay-Pflicht festlegen",
     };
   }
   if (

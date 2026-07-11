@@ -19,18 +19,31 @@ export type SeedingProgress = {
   placed: number;
   grouped: number;
   postSeasonConfigured: boolean;
+  // The explicit per-season replay-requirement decision has been made
+  // (`seedings.replay_required_tiers` is set). Gates finalize; not a step of
+  // its own — it is a config field, surfaced via the finalize blocker texts.
+  replayConfigured: boolean;
   finalized: boolean;
 };
 
-// Steps complete independently of each other (the post-season rules can be
-// saved before the last player is grouped); "active" is the first incomplete
-// step in workflow order, everything incomplete behind it stays "pending".
+// Steps complete independently of each other (the season rules can be saved
+// before the last player is grouped); "active" is the first incomplete step
+// in workflow order, everything incomplete behind it stays "pending". The
+// "Regeln" step covers both season rules: promotion/demotion AND the replay
+// requirement — it is done only when both decisions are made.
 export function seedingSteps(progress: SeedingProgress): SeedingStep[] {
-  const { total, placed, grouped, postSeasonConfigured, finalized } = progress;
+  const {
+    total,
+    placed,
+    grouped,
+    postSeasonConfigured,
+    replayConfigured,
+    finalized,
+  } = progress;
   const complete: Record<SeedingStepId, boolean> = {
     place: total > 0 && placed === total,
     group: total > 0 && grouped === total,
-    post_season: postSeasonConfigured,
+    post_season: postSeasonConfigured && replayConfigured,
     finalize: finalized,
   };
   const steps: SeedingStep[] = [
@@ -46,7 +59,7 @@ export function seedingSteps(progress: SeedingProgress): SeedingStep[] {
       state: "pending",
       count: { done: grouped, total },
     },
-    { id: "post_season", label: "Auf- & Abstieg", state: "pending" },
+    { id: "post_season", label: "Regeln", state: "pending" },
     { id: "finalize", label: "Finalisieren", state: "pending" },
   ];
   let activeAssigned = false;
@@ -63,12 +76,16 @@ export function seedingSteps(progress: SeedingProgress): SeedingStep[] {
 
 // Why the finalize button is (still) gated — same inputs as the step bar.
 export function finalizeGateHint(progress: SeedingProgress): string {
-  const { total, placed, grouped, postSeasonConfigured } = progress;
+  const { total, placed, grouped, postSeasonConfigured, replayConfigured } =
+    progress;
   if (total === 0 || grouped < total) {
     return `Erst möglich, wenn alle Spieler platziert (${placed}/${total}) und in Gruppen (${grouped}/${total}) sind.`;
   }
   if (!postSeasonConfigured) {
     return "Erst die Auf- und Abstiegsregeln festlegen und speichern.";
+  }
+  if (!replayConfigured) {
+    return "Erst festlegen, bis zu welcher Division Replays Pflicht sind.";
   }
   return "Endgültig — kann nicht rückgängig gemacht werden.";
 }
@@ -77,7 +94,8 @@ export function finalizeGateHint(progress: SeedingProgress): string {
 // readable without hovering. Null when nothing blocks (the step renders its
 // action then).
 export function finalizeGateShort(progress: SeedingProgress): string | null {
-  const { total, placed, grouped, postSeasonConfigured } = progress;
+  const { total, placed, grouped, postSeasonConfigured, replayConfigured } =
+    progress;
   if (total === 0) {
     return "Keine Anmeldungen";
   }
@@ -88,42 +106,49 @@ export function finalizeGateShort(progress: SeedingProgress): string | null {
     return `Noch ${total - grouped} ohne Gruppe`;
   }
   if (!postSeasonConfigured) {
-    return "Regeln noch speichern";
+    return "Auf- & Abstieg speichern";
+  }
+  if (!replayConfigured) {
+    return "Replay-Pflicht festlegen";
   }
   return null;
 }
 
 // The live state of the rules editor, as the step bar needs it: the saved
-// stamp plus what the (possibly unsaved) panel currently holds.
+// stamps plus what the (possibly unsaved) panel currently holds.
 export type RulesEditorStatus = {
   configured: boolean;
+  replayConfigured: boolean;
   dirty: boolean;
   noGroups: boolean;
   issueCount: number;
 };
 
-// The „Auf- & Abstieg" step's sublabel — mirrors the rules panel so step bar
-// and panel tell one story. `warn` marks the validation-issue state.
+// The „Regeln" step's sublabel — mirrors the rules panel so step bar and
+// panel tell one story. Ladder problems first (they need the most work),
+// then the replay decision, then the all-done states. `warn` marks the
+// validation-issue state.
 export function rulesStepSublabel(status: RulesEditorStatus): {
   text: string;
   warn: boolean;
 } {
-  if (status.configured) {
-    return {
-      text: status.dirty
-        ? "Änderungen nicht gespeichert"
-        : "Regeln gespeichert",
-      warn: false,
-    };
+  if (!status.configured) {
+    if (status.noGroups) {
+      return { text: "Zuerst Gruppen bilden", warn: false };
+    }
+    if (status.issueCount > 0) {
+      return {
+        text: `${status.issueCount} ${status.issueCount === 1 ? "Punkt" : "Punkte"} zu klären`,
+        warn: true,
+      };
+    }
+    return { text: "Auf- & Abstieg speichern", warn: false };
   }
-  if (status.noGroups) {
-    return { text: "Zuerst Gruppen bilden", warn: false };
+  if (!status.replayConfigured) {
+    return { text: "Replay-Pflicht festlegen", warn: false };
   }
-  if (status.issueCount > 0) {
-    return {
-      text: `${status.issueCount} ${status.issueCount === 1 ? "Punkt" : "Punkte"} zu klären`,
-      warn: true,
-    };
-  }
-  return { text: "Noch speichern", warn: false };
+  return {
+    text: status.dirty ? "Änderungen nicht gespeichert" : "Regeln gespeichert",
+    warn: false,
+  };
 }

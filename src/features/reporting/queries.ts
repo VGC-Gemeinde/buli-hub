@@ -8,6 +8,7 @@ import {
   matchGames,
   matchResults,
   profiles,
+  seedings,
   subDivisions,
 } from "@/db/schema";
 import { decidedByDrop, effectiveResult } from "@/features/drops/drops";
@@ -45,6 +46,7 @@ export async function getMatchForReport(matchId: string): Promise<{
   subDivisionId: string;
   groupName: string;
   deadline: string | null;
+  proofRequired: boolean;
   playerA: Identity;
   playerB: Identity | null;
 } | null> {
@@ -58,15 +60,22 @@ export async function getMatchForReport(matchId: string): Promise<{
       tier: divisions.tier,
       position: subDivisions.position,
       windowId: divisions.windowId,
+      // The season's top-X replay rule. Null cannot occur for a running
+      // season (finalize gates on it); treated as "required" defensively.
+      replayRequiredTiers: seedings.replayRequiredTiers,
     })
     .from(matches)
     .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
     .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .leftJoin(seedings, eq(seedings.windowId, divisions.windowId))
     .where(eq(matches.id, matchId))
     .limit(1);
   if (!match) {
     return null;
   }
+  const proofRequired =
+    match.replayRequiredTiers === null ||
+    match.tier <= match.replayRequiredTiers;
 
   const [matchday] = await db
     .select({ endsOn: matchdays.endsOn })
@@ -103,6 +112,7 @@ export async function getMatchForReport(matchId: string): Promise<{
     subDivisionId: match.subDivisionId,
     groupName: subDivisionName(match.tier, match.position),
     deadline: matchday?.endsOn ?? null,
+    proofRequired,
     playerA: identity(match.playerAId),
     playerB: match.playerBId ? identity(match.playerBId) : null,
   };

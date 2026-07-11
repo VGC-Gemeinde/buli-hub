@@ -41,6 +41,7 @@ import {
   listDivisions,
   listSeedingPlayers,
   savePostSeasonConfig,
+  saveReplayRequirement,
   saveSeedingConfig,
 } from "@/features/seeding/queries";
 import { latestWindow } from "@/features/staff/queries";
@@ -188,8 +189,9 @@ async function groupDevSeeding(
 }
 
 // Builds a complete, finalized seeding from the window's registered players:
-// grouping plus valid post-season rules, then finalize. Lets the „Spielplan
-// erstellen" flow be exercised without hand-running the seeding tool.
+// grouping plus valid post-season rules and the replay decision, then
+// finalize. Lets the „Spielplan erstellen" flow be exercised without
+// hand-running the seeding tool.
 async function finalizeDevSeeding(
   windowId: string,
   divisionCount: number,
@@ -197,6 +199,8 @@ async function finalizeDevSeeding(
 ): Promise<void> {
   await groupDevSeeding(windowId, divisionCount, size);
   await applyDevPostSeason(windowId);
+  // Mirrors the league's real rule: proof mandatory in divisions 1 + 2.
+  await saveReplayRequirement(windowId, 2);
   await finalizeSeeding(windowId);
 }
 
@@ -702,6 +706,7 @@ export async function generateLadderSeason(
   }
 
   await applyLadderPostSeason(windowId, div2Mode);
+  await saveReplayRequirement(windowId, 2);
   await finalizeSeeding(windowId);
   await generateDevSchedule(windowId);
   await seedDevResults(windowId, staffId);

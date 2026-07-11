@@ -150,7 +150,7 @@ export function SeedingToolbar({
             : "Die Einteilung ist finalisiert und endgültig."}
         </div>
       ) : view === "rules" ? null : (
-        <div className="flex items-center gap-5 border-b px-7 pb-3">
+        <div className="flex items-center gap-5 border-b px-7 py-2.5">
           <div className="flex items-center gap-2">
             <Label className="text-[13px] text-muted-foreground">
               Divisionen

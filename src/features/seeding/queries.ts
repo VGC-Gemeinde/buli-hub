@@ -265,6 +265,30 @@ export async function saveSeedingConfig(
   });
 }
 
+// Persists the per-season replay requirement (proof mandatory for tiers
+// <= value). Does not touch the post-season stamp — the rule has nothing to
+// do with the group shape. The insert path only exists for the edge of a
+// seeding that was never configured (no auto-init); it uses the same size
+// default the workspace assumes.
+export async function saveReplayRequirement(
+  windowId: string,
+  replayRequiredTiers: number,
+) {
+  const now = new Date();
+  await db
+    .insert(seedings)
+    .values({
+      windowId,
+      subDivisionSize: 8,
+      replayRequiredTiers,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: seedings.windowId,
+      set: { replayRequiredTiers, updatedAt: now },
+    });
+}
+
 // Sub-divisions of a season's divisions, ordered by division tier then group
 // position.
 export async function listSubDivisions(windowId: string) {

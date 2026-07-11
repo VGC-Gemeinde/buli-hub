@@ -193,6 +193,7 @@ export function ReportForm({
   round,
   groupName,
   deadline,
+  proofRequired,
   playerA,
   playerB,
   reporterId,
@@ -204,6 +205,8 @@ export function ReportForm({
   round: number;
   groupName: string;
   deadline: string | null;
+  // Top-X divisions: Showdown replays / cartridge video are mandatory.
+  proofRequired: boolean;
   playerA: Identity;
   playerB: Identity;
   reporterId: string;
@@ -253,9 +256,19 @@ export function ReportForm({
   }
   if (
     platform === "showdown" &&
-    neededIdx.some((i) => games[i] !== "" && !isReplayUrl(replays[i]))
+    neededIdx.some((i) =>
+      proofRequired
+        ? games[i] !== "" && !isReplayUrl(replays[i])
+        : replays[i] !== "" && !isReplayUrl(replays[i]),
+    )
   ) {
     missing.push("Replay-Links");
+  }
+  if (
+    platform === "cartridge" &&
+    (proofRequired ? !isReplayUrl(video) : video !== "" && !isReplayUrl(video))
+  ) {
+    missing.push("Video-Link");
   }
   if (!isPokepasteUrl(teamMine) || !isPokepasteUrl(teamOpp)) {
     missing.push("Teamsheets");
@@ -291,7 +304,10 @@ export function ReportForm({
             platform,
             games: neededIdx.map((i) => ({
               winnerId: games[i],
-              ...(platform === "showdown" ? { replayUrl: replays[i] } : {}),
+              // Empty optional replays stay off the payload entirely.
+              ...(platform === "showdown" && replays[i].trim() !== ""
+                ? { replayUrl: replays[i] }
+                : {}),
             })),
             // Team sheets are keyed to the match's player A/B.
             playerATeamUrl: reporterId === playerA.userId ? teamMine : teamOpp,
@@ -441,12 +457,16 @@ export function ReportForm({
               {
                 value: "showdown",
                 title: "Pokémon Showdown",
-                note: "Für jedes Spiel wird ein Replay-Link gebraucht.",
+                note: proofRequired
+                  ? "Für jedes Spiel wird ein Replay-Link gebraucht."
+                  : "Replay-Links sind in eurer Division optional.",
               },
               {
                 value: "cartridge",
                 title: "Cartridge",
-                note: "Auf der Konsole gespielt — Video-Link optional.",
+                note: proofRequired
+                  ? "Auf der Konsole gespielt — Video-Link erforderlich."
+                  : "Auf der Konsole gespielt — Video-Link optional.",
               },
             ].map((option) => (
               // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control
@@ -484,6 +504,7 @@ export function ReportForm({
                 split={split}
                 platform={platform}
                 replay={replays[i]}
+                proofRequired={proofRequired}
                 onPick={(winnerId) => setGame(i, winnerId)}
                 onReplay={(value) =>
                   setReplays((prev) => {
@@ -499,7 +520,10 @@ export function ReportForm({
 
         {platform === "cartridge" ? (
           <section className="flex flex-col gap-3">
-            <SectionHead title="Video" meta="Optional" />
+            <SectionHead
+              title="Video"
+              meta={proofRequired ? "Pflicht in eurer Division" : "Optional"}
+            />
             <Input
               className="h-10.5"
               value={video}
@@ -596,6 +620,7 @@ function GameRow({
   split,
   platform,
   replay,
+  proofRequired,
   onPick,
   onReplay,
 }: {
@@ -606,6 +631,7 @@ function GameRow({
   split: boolean;
   platform: Platform | "";
   replay: string;
+  proofRequired: boolean;
   onPick: (winnerId: string) => void;
   onReplay: (value: string) => void;
 }) {
@@ -678,7 +704,13 @@ function GameRow({
                   : "text-[oklch(0.55_0.2_25)]",
             )}
           >
-            {replay === "" ? "Pflicht" : isReplayUrl(replay) ? "✓" : "Link?"}
+            {replay === ""
+              ? proofRequired
+                ? "Pflicht"
+                : "optional"
+              : isReplayUrl(replay)
+                ? "✓"
+                : "Link?"}
           </span>
         </div>
       ) : null}

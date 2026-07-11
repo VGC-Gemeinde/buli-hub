@@ -3,6 +3,8 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   type DivisionForValidation,
@@ -190,6 +192,10 @@ export function PostSeasonPanel({
   divisions,
   readOnly,
   finalized,
+  configured,
+  replayTiers,
+  replayError,
+  onReplayChange,
   onSave,
   onStatusChange,
   onBackToSheet,
@@ -199,6 +205,13 @@ export function PostSeasonPanel({
   // Finalized hides the action strip: the toolbar's notice fills the
   // contextual slot, and there is nothing left to save.
   finalized: boolean;
+  // The server-side stamp. Group or config changes clear it — the save
+  // button must reactivate then, even if the local values are unchanged.
+  configured: boolean;
+  // The per-season replay decision ("" = still undecided).
+  replayTiers: string;
+  replayError: string | null;
+  onReplayChange: (value: string) => void;
   onSave: (configs: PostSeasonConfigInput[]) => Promise<PostSeasonSaveResult>;
   // Mirrors the editor state up so the step bar's sublabel stays in step.
   onStatusChange?: (status: PanelRulesStatus) => void;
@@ -247,7 +260,10 @@ export function PostSeasonPanel({
     setSavedRows(rows);
   }
 
-  const showSaved = !dirty && valid && !saveError;
+  // "Saved" needs the server stamp too: regenerating groups or changing the
+  // config clears it, and then the ladder must be re-savable even though the
+  // local values look unchanged (otherwise finalize dead-ends).
+  const showSaved = configured && !dirty && valid && !saveError;
 
   // Mirror the live editor state up for the step bar's sublabel.
   const issueCount = issues.length;
@@ -324,6 +340,47 @@ export function PostSeasonPanel({
             wird. Abstiege und Aufstiege benachbarter Divisionen müssen sich
             decken — erst dann kann gespeichert und finalisiert werden.
           </p>
+
+          {/* The season's second rule. Its own card, decidable independently
+              of the ladder (needs no groups); saves debounced on input. */}
+          <div className="rounded-xl border bg-card shadow-2xs">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3">
+              <Tick size="m" color="navy" />
+              <span className="font-heading text-[22px] text-brand-blue uppercase tracking-[0.04em] dark:text-white">
+                Replay-Pflicht
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">
+                Showdown-Replays bzw. Cartridge-Video beim Melden
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 border-t px-5 py-4">
+              <Label className="text-[13px] text-muted-foreground">
+                Pflicht bis Division
+              </Label>
+              <Input
+                type="number"
+                min={0}
+                max={20}
+                placeholder="?"
+                value={replayTiers}
+                disabled={readOnly}
+                onChange={(e) => onReplayChange(e.target.value)}
+                className="h-8 w-16"
+              />
+              <span className="text-[12.5px] text-muted-foreground">
+                {replayTiers === ""
+                  ? "Noch nicht festgelegt — ohne Entscheidung kann nicht finalisiert werden."
+                  : replayTiers === "0"
+                    ? "In keiner Division Pflicht — Beweise sind überall optional."
+                    : `Pflicht in Division 1–${replayTiers}, darunter optional.`}
+              </span>
+              {replayError ? (
+                <span className="text-[12.5px] text-destructive">
+                  {replayError}
+                </span>
+              ) : null}
+            </div>
+          </div>
 
           {rows.length === 0 ? (
             <p className="rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-2.5 text-sm">

@@ -66,6 +66,7 @@ export async function reportMatch(input: {
       playerBId: match.playerB.userId,
     },
     isStaffOrAdmin: (id) => staffIds.has(id),
+    proofRequired: match.proofRequired,
   }).safeParse(input.report);
   if (!parsed.success) {
     return {

@@ -113,6 +113,11 @@ export const registrations = pgTable(
 export const seedings = pgTable("seedings", {
   windowId: uuid("window_id").primaryKey(),
   subDivisionSize: integer("sub_division_size").notNull(),
+  // Proof (Showdown replays / cartridge video) is mandatory for divisions
+  // with tier <= this value, optional below. Null = not yet decided — an
+  // explicit per-season preseason decision (no default), required to
+  // finalize. See docs/plans/replay-requirement.md.
+  replayRequiredTiers: integer("replay_required_tiers"),
   // Set when staff save a valid post-season config (promotion/demotion rules).
   // Required for finalize; cleared when the seeding config changes so a stale
   // confirmation cannot slip through. See docs/plans/post-season-setup.md.

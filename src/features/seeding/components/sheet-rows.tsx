@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -52,16 +53,38 @@ export function SheetColumnHeader() {
   );
 }
 
-export function UnplacedSeparator({ count }: { count: number }) {
+export function UnplacedSeparator({
+  count,
+  collapsed,
+  onToggle,
+}: {
+  count: number;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
   return (
     <div className="flex h-10 items-center gap-3 border-b bg-muted/40 pr-7 pl-5">
-      <Tick size="m" />
-      <span className="font-heading font-bold text-brand-blue text-lg uppercase tracking-[0.04em] dark:text-white">
-        Nicht platziert
-      </span>
-      <span className="text-[12.5px] text-muted-foreground">
-        {count} Spieler · Rückkehrer zuerst, dann nach Selbsteinschätzung
-      </span>
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        onClick={onToggle}
+        className="flex min-w-0 items-center gap-3 text-left"
+      >
+        <ChevronDown
+          aria-hidden
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground transition-transform",
+            collapsed && "-rotate-90",
+          )}
+        />
+        <Tick size="m" />
+        <span className="font-heading font-bold text-brand-blue text-lg uppercase tracking-[0.04em] dark:text-white">
+          Nicht platziert
+        </span>
+        <span className="text-[12.5px] text-muted-foreground">
+          {count} Spieler · Rückkehrer zuerst, dann nach Selbsteinschätzung
+        </span>
+      </button>
     </div>
   );
 }
@@ -72,8 +95,10 @@ export function DivisionSeparator({
   groupCount,
   hasGroups,
   size,
+  collapsed,
   readOnly,
   pending,
+  onToggleCollapse,
   onGenerate,
 }: {
   division: DivisionRef;
@@ -81,8 +106,10 @@ export function DivisionSeparator({
   groupCount: number;
   hasGroups: boolean;
   size: number;
+  collapsed: boolean;
   readOnly: boolean;
   pending: boolean;
+  onToggleCollapse: (id: string) => void;
   onGenerate: (divisionId: string) => void;
 }) {
   const meta = hasGroups
@@ -90,11 +117,27 @@ export function DivisionSeparator({
     : `${count} Spieler · → ${groupCount} Gruppen bei Größe ${size}`;
   return (
     <div className="flex h-10 items-center gap-3 bg-brand-blue pr-7 pl-5 dark:bg-[oklch(0.26_0.06_265)]">
-      <Tick size="m" />
-      <span className="font-heading font-bold text-lg text-white uppercase tracking-[0.04em]">
-        {divisionName(division.tier)}
-      </span>
-      <span className="text-[12.5px] text-white/60">{meta}</span>
+      {/* The whole title area toggles; the generate button stays outside so
+          the two never fight for the click. */}
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        onClick={() => onToggleCollapse(division.id)}
+        className="flex min-w-0 items-center gap-3 text-left"
+      >
+        <ChevronDown
+          aria-hidden
+          className={cn(
+            "size-4 shrink-0 text-white/70 transition-transform",
+            collapsed && "-rotate-90",
+          )}
+        />
+        <Tick size="m" />
+        <span className="font-heading font-bold text-lg text-white uppercase tracking-[0.04em]">
+          {divisionName(division.tier)}
+        </span>
+        <span className="text-[12.5px] text-white/60">{meta}</span>
+      </button>
       <div className="flex-1" />
       {!readOnly && count > 0 ? (
         <Button
@@ -122,24 +165,44 @@ export function DivisionSeparator({
 export function SubDivisionSeparator({
   tier,
   position,
+  subDivisionId,
   count,
   showdown,
   cartridge,
+  collapsed,
+  onToggleCollapse,
 }: {
   tier: number;
   position: number;
+  subDivisionId: string;
   count: number;
   showdown: number;
   cartridge: number;
+  collapsed: boolean;
+  onToggleCollapse: (id: string) => void;
 }) {
   return (
     <div className="flex h-8 items-center gap-2.5 border-b bg-muted/60 pr-7 pl-9">
-      <span className="font-bold text-[14.5px] text-brand-blue uppercase dark:text-white">
-        {subDivisionShortName(tier, position)}
-      </span>
-      <span className="text-muted-foreground text-xs">
-        {count} Spieler · {showdown} Showdown / {cartridge} Cartridge
-      </span>
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        onClick={() => onToggleCollapse(subDivisionId)}
+        className="flex min-w-0 items-center gap-2.5 text-left"
+      >
+        <ChevronDown
+          aria-hidden
+          className={cn(
+            "size-3.5 shrink-0 text-muted-foreground transition-transform",
+            collapsed && "-rotate-90",
+          )}
+        />
+        <span className="font-bold text-[14.5px] text-brand-blue uppercase dark:text-white">
+          {subDivisionShortName(tier, position)}
+        </span>
+        <span className="text-muted-foreground text-xs">
+          {count} Spieler · {showdown} Showdown / {cartridge} Cartridge
+        </span>
+      </button>
     </div>
   );
 }

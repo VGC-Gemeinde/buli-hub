@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type {
-  DivisionRef,
-  Placement,
-  SheetRow,
-  SubDivisionRef,
+import {
+  type DivisionRef,
+  type Placement,
+  type SheetRow,
+  type SubDivisionRef,
+  UNPLACED_SECTION,
 } from "../sheet";
 import {
   DivisionSeparator,
@@ -30,6 +31,7 @@ export function SeedingSheet({
   generatingDivisionId,
   onGenerate,
   onToggleSelect,
+  onToggleCollapse,
   onAssignDivision,
   onMoveGroup,
   onPlace,
@@ -42,6 +44,7 @@ export function SeedingSheet({
   generatingDivisionId: string | null;
   onGenerate: (divisionId: string) => void;
   onToggleSelect: (userId: string) => void;
+  onToggleCollapse: (id: string) => void;
   onAssignDivision: (userId: string, divisionId: string | null) => void;
   onMoveGroup: (userId: string, subDivisionId: string) => void;
   onPlace: (userIds: string[], placement: Placement) => void;
@@ -120,7 +123,11 @@ export function SeedingSheet({
             );
             return (
               <div key="unplaced" {...drop}>
-                <UnplacedSeparator count={row.count} />
+                <UnplacedSeparator
+                  count={row.count}
+                  collapsed={row.collapsed}
+                  onToggle={() => onToggleCollapse(UNPLACED_SECTION)}
+                />
               </div>
             );
           }
@@ -138,8 +145,10 @@ export function SeedingSheet({
                   groupCount={row.groupCount}
                   hasGroups={row.hasGroups}
                   size={row.size}
+                  collapsed={row.collapsed}
                   readOnly={readOnly}
                   pending={generatingDivisionId === row.division.id}
+                  onToggleCollapse={onToggleCollapse}
                   onGenerate={onGenerate}
                 />
               </div>
@@ -156,9 +165,12 @@ export function SeedingSheet({
                 <SubDivisionSeparator
                   tier={row.tier}
                   position={row.position}
+                  subDivisionId={row.subDivisionId}
                   count={row.count}
                   showdown={row.showdown}
                   cartridge={row.cartridge}
+                  collapsed={row.collapsed}
+                  onToggleCollapse={onToggleCollapse}
                 />
               </div>
             );

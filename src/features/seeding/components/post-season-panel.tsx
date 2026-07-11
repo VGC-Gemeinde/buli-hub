@@ -1,18 +1,8 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   type DivisionForValidation,
@@ -30,7 +20,7 @@ export type PostSeasonSaveResult =
   | { ok: true; issues: PostSeasonIssue[] }
   | { ok: false; error: string };
 
-// The per-division config the dialog submits to `savePostSeason`.
+// The per-division config the panel submits to `savePostSeason`.
 export type PostSeasonConfigInput = {
   divisionId: string;
   relevantTable: RelevantTable;
@@ -185,39 +175,41 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
 // Per-division promotion/demotion rules as a ladder of division cards with a
 // balance seam between neighbours. Counts are per group in Gruppen mode, per
 // division in Gesamttabelle mode. Live-validates; saving persists and (when
-// valid) marks the step done so the seeding can be finalized.
-export function PostSeasonDialog({
+// valid) marks the step done so the seeding can be finalized. Rendered as the
+// page's „Auf- & Abstieg" view (the step bar navigates here); it stays mounted
+// while the sheet is shown, so unsaved edits survive switching views.
+export function PostSeasonPanel({
   divisions,
   readOnly,
-  configured,
   onSave,
 }: {
   divisions: DivisionWithGroupSizes[];
   readOnly: boolean;
-  configured: boolean;
   onSave: (configs: PostSeasonConfigInput[]) => Promise<PostSeasonSaveResult>;
 }) {
-  const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[]>(() => toRows(divisions));
   const [savedRows, setSavedRows] = useState<Row[]>(() => toRows(divisions));
   const [pending, setPending] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Re-seed from the server whenever the dialog opens, so it never shows stale
-  // edits after a refresh.
-  useEffect(() => {
-    if (open) {
-      const fresh = toRows(divisions);
-      setRows(fresh);
-      setSavedRows(fresh);
-      setSaveError(null);
-    }
-  }, [open, divisions]);
-
   const issues = validatePostSeason(rows.map(forValidation));
   const valid = issues.length === 0;
   const noGroups = rows.some((r) => r.groupSizes.length === 0);
   const dirty = fingerprint(rows) !== fingerprint(savedRows);
+
+  // Fresh server data (a save, another controller's group changes) re-seeds
+  // the editor — unless there are local unsaved edits to protect.
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
+  useEffect(() => {
+    if (dirtyRef.current) {
+      return;
+    }
+    const fresh = toRows(divisions);
+    setRows(fresh);
+    setSavedRows(fresh);
+    setSaveError(null);
+  }, [divisions]);
 
   function patch(divisionId: string, next: Partial<Row>) {
     setRows((prev) =>
@@ -234,46 +226,105 @@ export function PostSeasonDialog({
       setSaveError(result.error);
       return;
     }
-    // Keep the dialog open in a „saved" state; staff close it themselves.
     setSavedRows(rows);
   }
 
   const showSaved = !dirty && valid && !saveError;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <div title="Auf- und Abstiegsregeln festlegen">
-          <Button type="button" variant="outline">
-            <span
-              className={cn(
-                "mr-2 inline-block size-2 rounded-full",
-                configured ? "bg-brand-orange" : "bg-muted-foreground/40",
-              )}
-            />
-            Auf- & Abstieg
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Action strip: validation verdict + save, right above what it saves. */}
+      <div className="flex shrink-0 items-center gap-4 border-b px-7 py-2">
+        {noGroups || rows.length === 0 ? (
+          <span className="text-muted-foreground text-sm">
+            Auf- und Abstiegsregeln
+          </span>
+        ) : valid ? (
+          <p className="flex items-center gap-2 text-sm">
+            <span className="flex size-[18px] items-center justify-center rounded-full bg-zone-promote text-[11px] text-white">
+              ✓
+            </span>
+            Regeln gültig — nach dem Speichern kann die Einteilung finalisiert
+            werden.
+          </p>
+        ) : (
+          <p className="flex items-center gap-2 text-sm">
+            <span className="flex size-[18px] items-center justify-center rounded-full bg-zone-demote text-[11px] text-white">
+              !
+            </span>
+            {issues.length === 1
+              ? "1 Punkt zu klären"
+              : `${issues.length} Punkte zu klären`}
+          </p>
+        )}
+        {saveError ? (
+          <span className="text-[13px] text-destructive">{saveError}</span>
+        ) : null}
+        <div className="flex-1" />
+        {valid && dirty ? (
+          <span className="text-[12.5px] text-muted-foreground">
+            Ungespeicherte Änderungen
+          </span>
+        ) : null}
+        {readOnly || rows.length === 0 ? null : showSaved ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled
+            className="border-zone-promote/40 text-zone-promote"
+          >
+            Gespeichert ✓
           </Button>
-        </div>
-      </DialogTrigger>
-      <DialogContent className="grid max-h-[88vh] w-[min(1060px,94vw)] max-w-[min(1060px,94vw)] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-w-[min(1060px,94vw)] max-sm:inset-0 max-sm:top-0 max-sm:left-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none">
-        <DialogHeader className="gap-1.5 pr-8">
-          <DialogTitle className="text-[28px] text-brand-blue uppercase leading-none tracking-[0.02em] dark:text-white">
-            Auf- und Abstieg festlegen
-          </DialogTitle>
-          <DialogDescription>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending || !valid}
+            onClick={submit}
+          >
+            {pending ? "Wird gespeichert…" : "Speichern"}
+          </Button>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-auto bg-muted/40">
+        <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-2 px-7 py-4">
+          <p className="pb-1 text-muted-foreground text-sm">
             Lege pro Division fest, wie viele Spieler fest auf- und absteigen,
             wie viele Playoff-Plätze es gibt und über welche Tabelle entschieden
             wird. Abstiege und Aufstiege benachbarter Divisionen müssen sich
             decken — erst dann kann die Einteilung finalisiert werden.
-          </DialogDescription>
-        </DialogHeader>
+          </p>
 
-        <div className="flex min-h-0 flex-col gap-2 overflow-auto rounded-lg bg-muted/40 p-3">
+          {rows.length === 0 ? (
+            <p className="rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-2.5 text-sm">
+              Noch keine Divisionen — sobald die Einteilung Divisionen hat,
+              lassen sich hier die Regeln festlegen.
+            </p>
+          ) : null}
           {noGroups ? (
             <p className="rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-2.5 text-sm">
               Bitte zuerst die Gruppen generieren — ohne Gruppen lassen sich
               keine gültigen Regeln festlegen.
             </p>
+          ) : null}
+          {!noGroups && rows.length > 0 && !valid ? (
+            <div className="flex items-start gap-2 rounded-lg border border-zone-demote/40 bg-zone-demote/5 px-4 py-2.5">
+              <span className="mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full bg-zone-demote text-[11px] text-white">
+                !
+              </span>
+              <ul className="min-w-0">
+                {issues.map((issue) => (
+                  <li
+                    key={`${issue.kind}-${"tier" in issue ? issue.tier : `${issue.upperTier}-${issue.lowerTier}`}`}
+                    className="text-[13px] text-destructive"
+                  >
+                    {describeIssue(issue, rows)}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
 
           {rows.map((row, i) => (
@@ -291,72 +342,8 @@ export function PostSeasonDialog({
             </Fragment>
           ))}
         </div>
-
-        <DialogFooter className="sm:items-center sm:justify-between">
-          <div className="min-w-0 flex-1">
-            {noGroups ? null : valid ? (
-              <p className="flex items-center gap-2 text-sm">
-                <span className="flex size-[18px] items-center justify-center rounded-full bg-zone-promote text-[11px] text-white">
-                  ✓
-                </span>
-                Regeln gültig — nach dem Speichern kann die Einteilung
-                finalisiert werden.
-              </p>
-            ) : (
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full bg-zone-demote text-[11px] text-white">
-                  !
-                </span>
-                <ul className="max-h-16 min-w-0 overflow-auto">
-                  {issues.map((issue) => (
-                    <li
-                      key={`${issue.kind}-${"tier" in issue ? issue.tier : `${issue.upperTier}-${issue.lowerTier}`}`}
-                      className="text-[13px] text-destructive"
-                    >
-                      {describeIssue(issue, rows)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {saveError ? (
-              <p className="text-[13px] text-destructive">{saveError}</p>
-            ) : null}
-          </div>
-
-          <div className="flex items-center gap-3">
-            {valid && dirty ? (
-              <span className="text-[12.5px] text-muted-foreground">
-                Ungespeicherte Änderungen
-              </span>
-            ) : null}
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Schließen
-              </Button>
-            </DialogClose>
-            {readOnly ? null : showSaved ? (
-              <Button
-                type="button"
-                variant="outline"
-                disabled
-                className="border-zone-promote/40 text-zone-promote"
-              >
-                Gespeichert ✓
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                disabled={pending || !valid}
-                onClick={submit}
-              >
-                {pending ? "Wird gespeichert…" : "Speichern"}
-              </Button>
-            )}
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 

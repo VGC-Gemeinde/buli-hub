@@ -1,8 +1,9 @@
 # Post-season setup
 
 **Status: done** (2026-07-04) — pure logic + full suite green (333 tests); staff
-config dialog, finalize gating, and player-facing zones verified in the browser on
-a seeded season.
+config UI, finalize gating, and player-facing zones verified in the browser on
+a seeded season. The config lives in the seeding page's „Auf- & Abstieg" view
+(see `seeding-step-bar.md`).
 
 A new sub-step of the Divisionseinteilung: per division, staff configure how many
 players are promoted and demoted, how many extra promotion/demotion **playoff

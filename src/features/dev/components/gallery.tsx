@@ -56,13 +56,15 @@ import { InSeasonDashboard } from "@/features/season/components/season-dashboard
 import type { PlayerMatch } from "@/features/season/dashboard";
 import { ControlBar } from "@/features/seeding/components/control-bar";
 import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
-import { PostSeasonDialog } from "@/features/seeding/components/post-season-dialog";
+import { PostSeasonPanel } from "@/features/seeding/components/post-season-panel";
 import { SeedingSheet } from "@/features/seeding/components/seeding-sheet";
 import { SeedingInitLoader } from "@/features/seeding/components/seeding-workspace";
+import { StepBar } from "@/features/seeding/components/step-bar";
 import type { SeedingPlayer } from "@/features/seeding/placement";
 import { assignZones } from "@/features/seeding/post-season";
 import type { DivisionWithGroupSizes } from "@/features/seeding/queries";
-import { assembleSheetRows } from "@/features/seeding/sheet";
+import { assembleSheetRows, UNPLACED_SECTION } from "@/features/seeding/sheet";
+import { seedingSteps } from "@/features/seeding/steps";
 import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
 import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
@@ -1087,6 +1089,32 @@ export function Gallery() {
               generatingDivisionId={null}
               onGenerate={() => {}}
               onToggleSelect={() => {}}
+              onToggleCollapse={() => {}}
+              onAssignDivision={() => {}}
+              onMoveGroup={() => {}}
+              onPlace={() => {}}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Eingeklappt (Nicht platziert zu, Gruppe 1a zu, Division 2 zu)">
+          <div className="flex h-[300px] flex-col overflow-hidden rounded-lg border">
+            <SeedingSheet
+              rows={assembleSheetRows({
+                players: SEEDING_PLAYERS,
+                divisions: SEEDING_DIVISIONS,
+                subDivisions: SEEDING_SUBS,
+                size: 8,
+                filter: { query: "", status: "all" },
+                collapsedIds: new Set([UNPLACED_SECTION, "s1", "d2"]),
+              })}
+              divisions={SEEDING_DIVISIONS}
+              subDivisions={SEEDING_SUBS}
+              selection={new Set()}
+              readOnly={false}
+              generatingDivisionId={null}
+              onGenerate={() => {}}
+              onToggleSelect={() => {}}
+              onToggleCollapse={() => {}}
               onAssignDivision={() => {}}
               onMoveGroup={() => {}}
               onPlace={() => {}}
@@ -1136,22 +1164,93 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Einteilung: Finalisieren</h2>
-        <Specimen label="Bereit">
-          <FinalizeDialog
-            ready
-            gateHint="Endgültig — kann nicht rückgängig gemacht werden."
-            season="Saison 9"
-            onConfirm={async () => ({ ok: true })}
+        <h2 className="text-2xl">Einteilung: Schrittleiste</h2>
+        <Specimen label="Start — Sheet-Ansicht aktiv, Platzieren läuft, Finalisieren gesperrt">
+          <StepBar
+            steps={seedingSteps({
+              total: 42,
+              placed: 12,
+              grouped: 0,
+              postSeasonConfigured: false,
+              finalized: false,
+            })}
+            view="sheet"
+            onViewChange={() => {}}
+            finalize={{
+              enabled: false,
+              hint: "Erst möglich, wenn alle Spieler platziert (12/42) und in Gruppen (0/42) sind.",
+              onClick: () => {},
+            }}
           />
         </Specimen>
-        <Specimen label="Gesperrt">
-          <FinalizeDialog
-            ready={false}
-            season="Saison 9"
-            gateHint="Erst wenn alle Spieler platziert und in Gruppen sind."
-            onConfirm={async () => ({ ok: true })}
+        <Specimen label="Regel-Ansicht aktiv — Auf-/Abstieg schon gespeichert, Gruppieren offen">
+          <StepBar
+            steps={seedingSteps({
+              total: 42,
+              placed: 42,
+              grouped: 30,
+              postSeasonConfigured: true,
+              finalized: false,
+            })}
+            view="rules"
+            onViewChange={() => {}}
+            finalize={{
+              enabled: false,
+              hint: "Erst möglich, wenn alle Spieler platziert (42/42) und in Gruppen (30/42) sind.",
+              onClick: () => {},
+            }}
           />
+        </Specimen>
+        <Specimen label="Bereit zum Finalisieren — Aktion wird primär">
+          <StepBar
+            steps={seedingSteps({
+              total: 42,
+              placed: 42,
+              grouped: 42,
+              postSeasonConfigured: true,
+              finalized: false,
+            })}
+            view="sheet"
+            onViewChange={() => {}}
+            finalize={{
+              enabled: true,
+              hint: "Endgültig — kann nicht rückgängig gemacht werden.",
+              onClick: () => {},
+            }}
+          />
+        </Specimen>
+        <Specimen label="Beobachter — Navigation frei, Finalisieren nur Status">
+          <StepBar
+            steps={seedingSteps({
+              total: 42,
+              placed: 42,
+              grouped: 42,
+              postSeasonConfigured: true,
+              finalized: false,
+            })}
+            view="sheet"
+            onViewChange={() => {}}
+          />
+        </Specimen>
+        <Specimen label="Finalisiert — alles erledigt">
+          <StepBar
+            steps={seedingSteps({
+              total: 42,
+              placed: 42,
+              grouped: 42,
+              postSeasonConfigured: true,
+              finalized: true,
+            })}
+            view="sheet"
+            onViewChange={() => {}}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Einteilung: Finalisieren</h2>
+        <Specimen label="Type-to-confirm-Dialog">
+          <FinalizeSpecimen />
         </Specimen>
       </section>
 
@@ -1317,22 +1416,24 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Einteilung: Auf- & Abstieg</h2>
-        <Specimen label="Dialog — gültig (Gruppen- & Gesamttabelle, Seams ausgeglichen)">
-          <PostSeasonDialog
-            divisions={POST_SEASON_DIVISIONS}
-            readOnly={false}
-            configured
-            onSave={async () => ({ ok: true, issues: [] })}
-          />
+        <h2 className="text-2xl">Einteilung: Auf- & Abstieg (Ansicht)</h2>
+        <Specimen label="Gültig (Gruppen- & Gesamttabelle, Seams ausgeglichen)">
+          <div className="flex h-[520px] flex-col overflow-hidden rounded-lg border">
+            <PostSeasonPanel
+              divisions={POST_SEASON_DIVISIONS}
+              readOnly={false}
+              onSave={async () => ({ ok: true, issues: [] })}
+            />
+          </div>
         </Specimen>
-        <Specimen label="Dialog — überbelegt & unausgeglichen (Fehlerzustände)">
-          <PostSeasonDialog
-            divisions={POST_SEASON_OVERBOOKED}
-            readOnly={false}
-            configured={false}
-            onSave={async () => ({ ok: true, issues: [] })}
-          />
+        <Specimen label="Überbelegt & unausgeglichen (Fehlerzustände)">
+          <div className="flex h-[520px] flex-col overflow-hidden rounded-lg border">
+            <PostSeasonPanel
+              divisions={POST_SEASON_OVERBOOKED}
+              readOnly={false}
+              onSave={async () => ({ ok: true, issues: [] })}
+            />
+          </div>
         </Specimen>
       </section>
 
@@ -1513,6 +1614,25 @@ const SEEDING_SUBS = [
   { id: "s1", divisionId: "d1", position: 0 },
   { id: "s2", divisionId: "d1", position: 1 },
 ];
+
+// The finalize dialog is controlled (opened via the step bar in the real
+// toolbar), so the specimen provides its own opener button + open state.
+function FinalizeSpecimen() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button type="button" size="sm" onClick={() => setOpen(true)}>
+        Finalisieren…
+      </Button>
+      <FinalizeDialog
+        season="Saison 9"
+        onConfirm={async () => ({ ok: true })}
+        open={open}
+        onOpenChange={setOpen}
+      />
+    </>
+  );
+}
 
 function seedPlayer(overrides: Partial<SeedingPlayer>): SeedingPlayer {
   return {

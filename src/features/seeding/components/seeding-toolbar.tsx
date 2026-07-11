@@ -1,49 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { DivisionWithGroupSizes } from "../queries";
 import type { SheetFilter } from "../sheet";
+import type { SeedingStep } from "../steps";
 import { FinalizeDialog } from "./finalize-dialog";
-import {
-  type PostSeasonConfigInput,
-  PostSeasonDialog,
-  type PostSeasonSaveResult,
-} from "./post-season-dialog";
-
-function Meter({
-  label,
-  value,
-  total,
-  fill,
-}: {
-  label: string;
-  value: number;
-  total: number;
-  fill: string;
-}) {
-  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
-  return (
-    <div className="w-[130px]">
-      <div className="flex items-baseline justify-between font-semibold text-[11.5px] text-muted-foreground uppercase tracking-[0.06em]">
-        <span>{label}</span>
-        <span className="text-foreground">
-          {value}/{total}
-        </span>
-      </div>
-      <div className="mt-1 h-[5px] rounded-full bg-muted">
-        <div
-          className={cn("h-[5px] rounded-full", fill)}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
+import { type SeedingView, StepBar } from "./step-bar";
 
 const STATUS_PILLS: { value: SheetFilter["status"]; label: string }[] = [
   { value: "all", label: "Alle" },
@@ -59,9 +26,9 @@ export function SeedingToolbar({
   size,
   configError,
   onConfigChange,
-  placed,
-  grouped,
-  total,
+  steps,
+  view,
+  onViewChange,
   ready,
   gateHint,
   onFinalize,
@@ -69,9 +36,6 @@ export function SeedingToolbar({
   generatingAll,
   filter,
   onFilterChange,
-  postSeason,
-  postSeasonConfigured,
-  onSavePostSeason,
 }: {
   finalized: boolean;
   // Observer mode: someone else drives. Editing controls are disabled, but
@@ -82,9 +46,9 @@ export function SeedingToolbar({
   size: string;
   configError: string | null;
   onConfigChange: (divisionCount: string, size: string) => void;
-  placed: number;
-  grouped: number;
-  total: number;
+  steps: SeedingStep[];
+  view: SeedingView;
+  onViewChange: (view: SeedingView) => void;
   ready: boolean;
   gateHint: string;
   onFinalize: () => Promise<{ ok: boolean; error?: string }>;
@@ -92,13 +56,11 @@ export function SeedingToolbar({
   generatingAll: boolean;
   filter: SheetFilter;
   onFilterChange: (filter: SheetFilter) => void;
-  postSeason: DivisionWithGroupSizes[];
-  postSeasonConfigured: boolean;
-  onSavePostSeason: (
-    configs: PostSeasonConfigInput[],
-  ) => Promise<PostSeasonSaveResult>;
 }) {
   const spieltage = Number(size) > 1 ? Number(size) - 1 : 0;
+  // The finalize dialog has no trigger of its own — the step bar's gated
+  // button opens it.
+  const [finalizeOpen, setFinalizeOpen] = useState(false);
 
   return (
     <div className="shrink-0">
@@ -119,42 +81,33 @@ export function SeedingToolbar({
           </span>
         </div>
         <div className="flex-1" />
-        <Meter
-          label="Platziert"
-          value={placed}
-          total={total}
-          fill="bg-brand-orange"
+        <StepBar
+          steps={steps}
+          view={view}
+          onViewChange={onViewChange}
+          finalize={
+            finalized || readOnly
+              ? undefined
+              : {
+                  enabled: ready,
+                  hint: gateHint,
+                  onClick: () => setFinalizeOpen(true),
+                }
+          }
         />
-        <Meter
-          label="In Gruppen"
-          value={grouped}
-          total={total}
-          fill="bg-brand-blue dark:bg-white/80"
-        />
-        {postSeason.length > 0 ? (
-          <PostSeasonDialog
-            divisions={postSeason}
-            readOnly={readOnly || finalized}
-            configured={postSeasonConfigured}
-            onSave={onSavePostSeason}
-          />
-        ) : null}
-        {finalized ? (
-          <div className="flex items-center gap-2 rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-3 py-1.5 font-semibold text-[13.5px]">
-            <Tick size="s" />
-            Finalisiert — endgültig
-          </div>
-        ) : readOnly ? null : (
+        {finalized || readOnly ? null : (
           <FinalizeDialog
-            ready={ready}
-            gateHint={gateHint}
             season={season}
             onConfirm={onFinalize}
+            open={finalizeOpen}
+            onOpenChange={setFinalizeOpen}
           />
         )}
       </div>
 
-      {finalized ? (
+      {/* The config/search row belongs to the sheet; the rules view brings
+          its own action strip instead. */}
+      {finalized || view === "rules" ? (
         <div className="border-b" />
       ) : (
         <div className="flex items-center gap-5 border-b px-7 pb-3">

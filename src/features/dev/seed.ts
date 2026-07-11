@@ -153,11 +153,11 @@ export async function clearSeedData() {
   );
 }
 
-// Builds a complete, finalized seeding from the window's registered players:
-// picks a division count, distributes players round-robin across divisions,
-// generates sub-divisions, and finalizes. Lets the „Spielplan erstellen" flow
-// be exercised without hand-running the seeding tool.
-async function finalizeDevSeeding(
+// Builds the seeding up to the grouping step: picks a division count,
+// distributes players round-robin across divisions and generates
+// sub-divisions. Post-season rules and finalize are deliberately left out —
+// this is the state right before the „Auf- & Abstieg" step.
+async function groupDevSeeding(
   windowId: string,
   divisionCount: number,
   size: number,
@@ -185,6 +185,17 @@ async function finalizeDevSeeding(
   for (const division of divisions) {
     await generateSubDivisionsForDivision(windowId, division.id);
   }
+}
+
+// Builds a complete, finalized seeding from the window's registered players:
+// grouping plus valid post-season rules, then finalize. Lets the „Spielplan
+// erstellen" flow be exercised without hand-running the seeding tool.
+async function finalizeDevSeeding(
+  windowId: string,
+  divisionCount: number,
+  size: number,
+): Promise<void> {
+  await groupDevSeeding(windowId, divisionCount, size);
   await applyDevPostSeason(windowId);
   await finalizeSeeding(windowId);
 }
@@ -520,6 +531,8 @@ async function seedDevResults(
 export async function generateSeedData(
   count: number,
   opts: {
+    // Everyone placed and grouped, post-season rules still unset.
+    grouped?: boolean;
     finalize?: boolean;
     schedule?: boolean;
     includeUserId?: string;
@@ -609,6 +622,8 @@ export async function generateSeedData(
       opts.divisionCount ?? 2,
       opts.size ?? 8,
     );
+  } else if (opts.grouped) {
+    await groupDevSeeding(window.id, opts.divisionCount ?? 2, opts.size ?? 8);
   }
   if (opts.schedule) {
     await generateDevSchedule(window.id);

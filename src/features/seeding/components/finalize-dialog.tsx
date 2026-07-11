@@ -11,24 +11,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { matchesConfirmationPhrase } from "@/lib/confirm";
 
-// Type-to-confirm finalize. Trigger is the toolbar's gated button; the caller
-// runs the finalize action and reports failure back.
+// Type-to-confirm finalize. Controlled: the step bar's gated "Finalisieren"
+// button opens it; the caller runs the finalize action and reports failure
+// back (the server re-checks readiness regardless).
 export function FinalizeDialog({
-  ready,
-  gateHint,
   season,
   onConfirm,
+  open,
+  onOpenChange,
 }: {
-  ready: boolean;
-  gateHint: string;
   season: string;
   onConfirm: () => Promise<{ ok: boolean; error?: string }>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -38,7 +37,7 @@ export function FinalizeDialog({
       setConfirmation("");
       setError(null);
     }
-    setOpen(next);
+    onOpenChange(next);
   }
 
   async function submit() {
@@ -55,13 +54,6 @@ export function FinalizeDialog({
 
   return (
     <Dialog open={open} onOpenChange={change}>
-      <DialogTrigger asChild>
-        <div title={gateHint}>
-          <Button type="button" disabled={!ready}>
-            Finalisieren…
-          </Button>
-        </div>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Einteilung finalisieren?</DialogTitle>

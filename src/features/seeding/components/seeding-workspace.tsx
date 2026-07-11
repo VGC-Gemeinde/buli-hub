@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatGermanDateTime } from "@/lib/german-time";
+import { cn } from "@/lib/utils";
 import {
   acquireControl,
   assignManyToDivision,
@@ -35,14 +36,17 @@ import {
   type SheetFilter,
   type SubDivisionRef,
 } from "../sheet";
+import { finalizeGateHint, seedingSteps } from "../steps";
 import { BulkBar } from "./bulk-bar";
 import { ControlBar } from "./control-bar";
-import type {
-  PostSeasonConfigInput,
-  PostSeasonSaveResult,
-} from "./post-season-dialog";
+import {
+  type PostSeasonConfigInput,
+  PostSeasonPanel,
+  type PostSeasonSaveResult,
+} from "./post-season-panel";
 import { SeedingSheet } from "./seeding-sheet";
 import { SeedingToolbar } from "./seeding-toolbar";
+import type { SeedingView } from "./step-bar";
 
 type Override = { divisionId?: string | null; subDivisionId?: string | null };
 
@@ -85,6 +89,11 @@ export function SeedingWorkspace({
     query: "",
     status: "all",
   });
+  // Which content the page shows below the control row: the placement sheet
+  // or the promotion/demotion rules. The step bar navigates between them.
+  const [view, setView] = useState<SeedingView>("sheet");
+  // Collapsed divisions/sub-divisions (local to each viewer, not shared).
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [overrides, setOverrides] = useState<Record<string, Override>>({});
   const [divisionCount, setDivisionCount] = useState(
@@ -171,14 +180,12 @@ export function SeedingWorkspace({
   const grouped = effectivePlayers.filter(
     (p) => p.subDivisionId !== null,
   ).length;
+  const progress = { total, placed, grouped, postSeasonConfigured, finalized };
+  const steps = seedingSteps(progress);
   const placementReady = seedingReadiness(effectivePlayers).ready;
   // Finalize also needs the post-season rules explicitly configured (valid + saved).
   const ready = placementReady && postSeasonConfigured;
-  const gateHint = !placementReady
-    ? `Erst möglich, wenn alle Spieler platziert (${placed}/${total}) und in Gruppen (${grouped}/${total}) sind.`
-    : !postSeasonConfigured
-      ? "Erst die Auf- und Abstiegsregeln festlegen und speichern."
-      : "Endgültig — kann nicht rückgängig gemacht werden.";
+  const gateHint = finalizeGateHint(progress);
 
   const rows = useMemo(
     () =>
@@ -188,9 +195,30 @@ export function SeedingWorkspace({
         subDivisions,
         size: Number(size) || initialSize || 8,
         filter,
+        collapsedIds,
       }),
-    [effectivePlayers, divisions, subDivisions, size, initialSize, filter],
+    [
+      effectivePlayers,
+      divisions,
+      subDivisions,
+      size,
+      initialSize,
+      filter,
+      collapsedIds,
+    ],
   );
+
+  function onToggleCollapse(id: string) {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
 
   function setOverride(userId: string, patch: Override) {
     setOverrides((prev) => ({
@@ -428,9 +456,9 @@ export function SeedingWorkspace({
         size={size}
         configError={configError}
         onConfigChange={onConfigChange}
-        placed={placed}
-        grouped={grouped}
-        total={total}
+        steps={steps}
+        view={view}
+        onViewChange={setView}
         ready={ready}
         gateHint={gateHint}
         onFinalize={onFinalize}
@@ -438,9 +466,6 @@ export function SeedingWorkspace({
         generatingAll={generatingAll}
         filter={filter}
         onFilterChange={setFilter}
-        postSeason={postSeason}
-        postSeasonConfigured={postSeasonConfigured}
-        onSavePostSeason={onSavePostSeason}
       />
 
       {finalized ? null : (
@@ -470,22 +495,46 @@ export function SeedingWorkspace({
           </p>
         </div>
       ) : (
-        <SeedingSheet
-          rows={rows}
-          divisions={divisions}
-          subDivisions={subDivisions}
-          selection={selection}
-          readOnly={readOnly}
-          generatingDivisionId={generatingDivisionId}
-          onGenerate={onGenerate}
-          onToggleSelect={onToggleSelect}
-          onAssignDivision={onAssignDivision}
-          onMoveGroup={onMoveGroup}
-          onPlace={onPlace}
-        />
+        <>
+          {/* Both views stay mounted; switching only hides — so sheet filters
+              and unsaved rule edits survive looking at the other view. */}
+          <div
+            className={cn(
+              "flex min-h-0 flex-1 flex-col",
+              view !== "sheet" && "hidden",
+            )}
+          >
+            <SeedingSheet
+              rows={rows}
+              divisions={divisions}
+              subDivisions={subDivisions}
+              selection={selection}
+              readOnly={readOnly}
+              generatingDivisionId={generatingDivisionId}
+              onGenerate={onGenerate}
+              onToggleSelect={onToggleSelect}
+              onToggleCollapse={onToggleCollapse}
+              onAssignDivision={onAssignDivision}
+              onMoveGroup={onMoveGroup}
+              onPlace={onPlace}
+            />
+          </div>
+          <div
+            className={cn(
+              "flex min-h-0 flex-1 flex-col",
+              view !== "rules" && "hidden",
+            )}
+          >
+            <PostSeasonPanel
+              divisions={postSeason}
+              readOnly={readOnly || finalized}
+              onSave={onSavePostSeason}
+            />
+          </div>
+        </>
       )}
 
-      {readOnly ? null : (
+      {readOnly || view !== "sheet" ? null : (
         <BulkBar
           count={selection.size}
           divisions={divisions}

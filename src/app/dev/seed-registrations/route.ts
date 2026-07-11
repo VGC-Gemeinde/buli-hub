@@ -8,6 +8,8 @@ import { currentUser } from "@/features/roles/guard";
 
 // Dev-only: generates a closed window with fake registrations for testing the
 // seeding tool. /dev/seed-registrations?count=100
+// - &grouped=1 places everyone and generates all groups but leaves the
+//   post-season rules unset → the „Auf- & Abstieg" step is what's missing.
 // - &finalize=1 also builds + finalizes a seeding → ready for „Spielplan
 //   erstellen".
 // - &schedule=1 goes all the way to a running season (schedule + matches) and
@@ -37,9 +39,11 @@ export async function GET(request: Request) {
 
   const raw = Number(params.get("count") ?? "100");
   const count = Math.min(Math.max(Number.isFinite(raw) ? raw : 100, 1), 500);
+  const grouped = params.get("grouped") === "1";
   const finalize = params.get("finalize") === "1";
   const schedule = params.get("schedule") === "1";
   await generateSeedData(count, {
+    grouped,
     finalize,
     schedule,
     includeUserId: current?.userId,

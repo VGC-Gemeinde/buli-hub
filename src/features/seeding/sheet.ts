@@ -18,8 +18,12 @@ export type SubDivisionRef = {
   position: number;
 };
 
+// The collapse key of the „Nicht platziert" section (it has no entity id).
+// Cannot collide with the division/sub-division UUIDs.
+export const UNPLACED_SECTION = "unplaced";
+
 export type SheetRow =
-  | { kind: "unplaced"; count: number }
+  | { kind: "unplaced"; count: number; collapsed: boolean }
   | {
       kind: "division";
       division: DivisionRef;
@@ -27,6 +31,7 @@ export type SheetRow =
       groupCount: number;
       hasGroups: boolean;
       size: number;
+      collapsed: boolean;
     }
   | {
       kind: "subdivision";
@@ -36,6 +41,7 @@ export type SheetRow =
       count: number;
       showdown: number;
       cartridge: number;
+      collapsed: boolean;
     }
   | { kind: "ungrouped"; divisionId: string; count: number }
   | { kind: "empty-division"; divisionId: string }
@@ -68,6 +74,11 @@ function byName(a: SeedingPlayer, b: SeedingPlayer): number {
  * (plus an „Ohne Gruppe" section for stragglers) or its ungrouped players (or
  * an empty hint). Separator counts always reflect the full data; the filter
  * only removes player rows.
+ *
+ * `collapsedIds` holds division/sub-division ids whose content is folded away
+ * (the separators stay, flagged `collapsed`). A live search must be able to
+ * reveal players inside collapsed sections, so a non-empty query ignores the
+ * collapse state entirely.
  */
 export function assembleSheetRows(params: {
   players: SeedingPlayer[];
@@ -75,16 +86,26 @@ export function assembleSheetRows(params: {
   subDivisions: SubDivisionRef[];
   size: number;
   filter: SheetFilter;
+  collapsedIds?: ReadonlySet<string>;
 }): SheetRow[] {
   const { players, divisions, subDivisions, size, filter } = params;
+  const collapsed: ReadonlySet<string> =
+    filter.query.trim() === "" ? (params.collapsedIds ?? new Set()) : new Set();
   const rows: SheetRow[] = [];
   const shown = (list: SeedingPlayer[]) =>
     list.filter((p) => playerMatchesFilter(p, filter));
 
   const unplaced = players.filter((p) => p.divisionId === null);
-  rows.push({ kind: "unplaced", count: unplaced.length });
-  for (const player of shown(orderForPlacement(unplaced))) {
-    rows.push({ kind: "player", player });
+  const unplacedCollapsed = collapsed.has(UNPLACED_SECTION);
+  rows.push({
+    kind: "unplaced",
+    count: unplaced.length,
+    collapsed: unplacedCollapsed,
+  });
+  if (!unplacedCollapsed) {
+    for (const player of shown(orderForPlacement(unplaced))) {
+      rows.push({ kind: "player", player });
+    }
   }
 
   for (const division of divisions) {
@@ -93,6 +114,7 @@ export function assembleSheetRows(params: {
       .filter((sd) => sd.divisionId === division.id)
       .sort((a, b) => a.position - b.position);
     const hasGroups = subs.length > 0;
+    const divisionCollapsed = collapsed.has(division.id);
 
     rows.push({
       kind: "division",
@@ -103,13 +125,18 @@ export function assembleSheetRows(params: {
         : Math.ceil(divisionPlayers.length / size),
       hasGroups,
       size,
+      collapsed: divisionCollapsed,
     });
+    if (divisionCollapsed) {
+      continue;
+    }
 
     if (hasGroups) {
       for (const sub of subs) {
         const groupPlayers = divisionPlayers.filter(
           (p) => p.subDivisionId === sub.id,
         );
+        const subCollapsed = collapsed.has(sub.id);
         rows.push({
           kind: "subdivision",
           tier: division.tier,
@@ -120,7 +147,11 @@ export function assembleSheetRows(params: {
             .length,
           cartridge: groupPlayers.filter((p) => p.platform === "cartridge")
             .length,
+          collapsed: subCollapsed,
         });
+        if (subCollapsed) {
+          continue;
+        }
         for (const player of shown([...groupPlayers].sort(byName))) {
           rows.push({ kind: "player", player });
         }

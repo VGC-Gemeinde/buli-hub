@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { SeedingPlayer } from "./placement";
-import { assembleSheetRows, playerMatchesFilter } from "./sheet";
+import {
+  assembleSheetRows,
+  playerMatchesFilter,
+  UNPLACED_SECTION,
+} from "./sheet";
 
 let seq = 0;
 function player(overrides: Partial<SeedingPlayer> = {}): SeedingPlayer {
@@ -52,7 +56,7 @@ describe("assembleSheetRows", () => {
       size: 8,
       filter: noFilter,
     });
-    expect(rows).toEqual([{ kind: "unplaced", count: 0 }]);
+    expect(rows).toEqual([{ kind: "unplaced", count: 0, collapsed: false }]);
   });
 
   it("lists unplaced players under the separator", () => {
@@ -63,7 +67,7 @@ describe("assembleSheetRows", () => {
       size: 8,
       filter: noFilter,
     });
-    expect(rows[0]).toEqual({ kind: "unplaced", count: 2 });
+    expect(rows[0]).toEqual({ kind: "unplaced", count: 2, collapsed: false });
     expect(rows.filter((r) => r.kind === "player")).toHaveLength(2);
   });
 
@@ -139,7 +143,114 @@ describe("assembleSheetRows", () => {
       size: 8,
       filter: { query: "alice", status: "all" },
     });
-    expect(rows[0]).toEqual({ kind: "unplaced", count: 2 });
+    expect(rows[0]).toEqual({ kind: "unplaced", count: 2, collapsed: false });
     expect(rows.filter((r) => r.kind === "player")).toHaveLength(1);
+  });
+
+  it("collapsing the unplaced section hides its players only", () => {
+    const rows = assembleSheetRows({
+      players: [player(), player({ divisionId: "d1" })],
+      divisions: [{ id: "d1", tier: 1 }],
+      subDivisions: [],
+      size: 8,
+      filter: noFilter,
+      collapsedIds: new Set([UNPLACED_SECTION]),
+    });
+    expect(rows[0]).toEqual({ kind: "unplaced", count: 1, collapsed: true });
+    // The placed player below is unaffected.
+    expect(rows.filter((r) => r.kind === "player")).toHaveLength(1);
+  });
+
+  it("collapsing a division keeps its separator and drops all content rows", () => {
+    const rows = assembleSheetRows({
+      players: [
+        player({ divisionId: "d1", subDivisionId: "s1" }),
+        player({ divisionId: "d1", subDivisionId: null }),
+      ],
+      divisions: [{ id: "d1", tier: 1 }],
+      subDivisions: [{ id: "s1", divisionId: "d1", position: 0 }],
+      size: 8,
+      filter: noFilter,
+      collapsedIds: new Set(["d1"]),
+    });
+    expect(rows.find((r) => r.kind === "division")).toMatchObject({
+      collapsed: true,
+      count: 2,
+    });
+    expect(rows.some((r) => r.kind === "subdivision")).toBe(false);
+    expect(rows.some((r) => r.kind === "ungrouped")).toBe(false);
+    expect(rows.filter((r) => r.kind === "player")).toHaveLength(0);
+  });
+
+  it("collapsing an empty division hides its empty hint", () => {
+    const rows = assembleSheetRows({
+      players: [],
+      divisions: [{ id: "d1", tier: 1 }],
+      subDivisions: [],
+      size: 8,
+      filter: noFilter,
+      collapsedIds: new Set(["d1"]),
+    });
+    expect(rows.some((r) => r.kind === "empty-division")).toBe(false);
+  });
+
+  it("collapsing a sub-division hides only its players", () => {
+    const rows = assembleSheetRows({
+      players: [
+        player({ divisionId: "d1", subDivisionId: "s1" }),
+        player({ divisionId: "d1", subDivisionId: "s2" }),
+      ],
+      divisions: [{ id: "d1", tier: 1 }],
+      subDivisions: [
+        { id: "s1", divisionId: "d1", position: 0 },
+        { id: "s2", divisionId: "d1", position: 1 },
+      ],
+      size: 8,
+      filter: noFilter,
+      collapsedIds: new Set(["s1"]),
+    });
+    const subs = rows.filter((r) => r.kind === "subdivision");
+    expect(subs).toHaveLength(2);
+    expect(subs[0]).toMatchObject({ collapsed: true, count: 1 });
+    expect(subs[1]).toMatchObject({ collapsed: false });
+    expect(rows.filter((r) => r.kind === "player")).toHaveLength(1);
+  });
+
+  it("a search query overrides collapsing so matches stay findable", () => {
+    const rows = assembleSheetRows({
+      players: [
+        player({ displayName: "Alice", divisionId: "d1", subDivisionId: "s1" }),
+      ],
+      divisions: [{ id: "d1", tier: 1 }],
+      subDivisions: [{ id: "s1", divisionId: "d1", position: 0 }],
+      size: 8,
+      filter: { query: "alice", status: "all" },
+      collapsedIds: new Set(["d1", "s1"]),
+    });
+    expect(rows.find((r) => r.kind === "division")).toMatchObject({
+      collapsed: false,
+    });
+    expect(rows.filter((r) => r.kind === "player")).toHaveLength(1);
+  });
+
+  it("the status filter alone does not override collapsing", () => {
+    const rows = assembleSheetRows({
+      players: [
+        player({
+          status: "returning",
+          divisionId: "d1",
+          subDivisionId: "s1",
+        }),
+      ],
+      divisions: [{ id: "d1", tier: 1 }],
+      subDivisions: [{ id: "s1", divisionId: "d1", position: 0 }],
+      size: 8,
+      filter: { query: "", status: "returning" },
+      collapsedIds: new Set(["d1"]),
+    });
+    expect(rows.find((r) => r.kind === "division")).toMatchObject({
+      collapsed: true,
+    });
+    expect(rows.filter((r) => r.kind === "player")).toHaveLength(0);
   });
 });

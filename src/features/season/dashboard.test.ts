@@ -8,6 +8,7 @@ import {
   type MatchdayLite,
   opponentOf,
   type PlayerMatch,
+  showsRoster,
   splitPlayerMatches,
 } from "./dashboard";
 
@@ -89,6 +90,19 @@ describe("dashboardState", () => {
         hasRegistration: false,
       }),
     ).toBe("not_registered_closed");
+  });
+});
+
+describe("showsRoster", () => {
+  it("runs from the open registration until the season starts", () => {
+    expect(showsRoster("registration_open")).toBe(true);
+    expect(showsRoster("registration_closed")).toBe(true);
+    expect(showsRoster("seeded")).toBe(true);
+  });
+
+  it("is hidden before the registration opens and once the season runs", () => {
+    expect(showsRoster("not_started")).toBe(false);
+    expect(showsRoster("regular_season")).toBe(false);
   });
 });
 

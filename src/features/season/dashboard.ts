@@ -35,6 +35,18 @@ export function dashboardState(input: {
   return input.hasRegistration ? "registered_closed" : "not_registered_closed";
 }
 
+// Whether the dashboard shows the Teilnehmerfeld — the roster of registered
+// players. It runs the whole pre-season stretch: from the moment registration
+// opens until the season starts. Before that there is nothing to show; once the
+// season runs, the group standings carry the same information better.
+export function showsRoster(phase: SeasonPhase): boolean {
+  return (
+    phase === "registration_open" ||
+    phase === "registration_closed" ||
+    phase === "seeded"
+  );
+}
+
 export type Identity = {
   userId: string;
   name: string;

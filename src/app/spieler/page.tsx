@@ -1,9 +1,13 @@
 import { redirect } from "next/navigation";
+import type { RegisteredPlayer } from "@/components/player-grid";
 import { SiteHeader } from "@/components/site-header";
 import { markDropped } from "@/features/drops/drops";
 import { droppedIdsForWindow } from "@/features/drops/queries";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
-import { getRegistration } from "@/features/registration/queries";
+import {
+  getRegistration,
+  listRegistrations,
+} from "@/features/registration/queries";
 import {
   divisionGroups,
   subDivisionResults,
@@ -14,6 +18,7 @@ import {
 } from "@/features/reporting/standings";
 import { currentUser } from "@/features/roles/guard";
 import { hasSchedule } from "@/features/schedule/queries";
+import { ParticipantList } from "@/features/season/components/participant-list";
 import {
   ComingSoonPanel,
   RegisterCtaPanel,
@@ -24,6 +29,7 @@ import {
   buildPlayerMatches,
   currentMatchday,
   dashboardState,
+  showsRoster,
   splitPlayerMatches,
 } from "@/features/season/dashboard";
 import {
@@ -45,6 +51,7 @@ import {
 } from "@/features/staff/registration-window";
 import { seasonPhase } from "@/features/staff/season-phase";
 import { germanToday } from "@/lib/german-time";
+import { playerName } from "@/lib/player-name";
 
 // Narrow shell with the plain title — used by every non-in-season state.
 function Shell({ children }: { children: React.ReactNode }) {
@@ -87,6 +94,17 @@ export default async function SpielerPage() {
     window && phase === "regular_season"
       ? await playerPlacement(window.id, current.userId)
       : null;
+
+  // Teilnehmerfeld: the same roster the staff dashboard lists, reduced to
+  // identity and rendered alphabetically. Only fetched in the phases that show it.
+  const roster: RegisteredPlayer[] =
+    window && showsRoster(phase)
+      ? (await listRegistrations(window.id)).map((row) => ({
+          id: row.id,
+          name: playerName(row.displayName, row.username),
+          avatarUrl: row.avatarUrl ?? undefined,
+        }))
+      : [];
 
   const view = dashboardState({
     phase,
@@ -229,38 +247,44 @@ export default async function SpielerPage() {
 
   const closesAt = window?.closesAt ?? null;
   const seasonLabel = window ? seasonName(window.seasonNumber) : "";
+  const panel =
+    view === "register_cta" ? (
+      <RegisterCtaPanel seasonName={seasonLabel} />
+    ) : view === "registered_open" && registration ? (
+      <RegistrationConfirmation
+        data={registration}
+        seasonName={seasonLabel}
+        canWithdraw
+        closesAt={closesAt}
+      />
+    ) : view === "registered_closed" && registration ? (
+      <RegistrationConfirmation
+        data={registration}
+        seasonName={seasonLabel}
+        canWithdraw={false}
+        closesAt={closesAt}
+        note="Die Anmeldung ist geschlossen. Du kannst deine Angaben nicht mehr ändern — warte auf deine Paarungen."
+      />
+    ) : view === "not_registered_closed" ? (
+      <SeasonMessagePanel
+        title="Du bist in dieser Saison nicht dabei"
+        body="Die Anmeldung ist bereits geschlossen. Die nächste Chance kommt — schau im Discord vorbei."
+      />
+    ) : view === "not_placed" ? (
+      <SeasonMessagePanel
+        title="Du bist in der laufenden Saison nicht dabei"
+        body="Für diese Saison liegt keine Einteilung für dich vor. Die nächste Anmeldung wird im Discord angekündigt."
+      />
+    ) : (
+      <ComingSoonPanel />
+    );
+
   return (
     <Shell>
-      {view === "register_cta" ? (
-        <RegisterCtaPanel seasonName={seasonLabel} />
-      ) : view === "registered_open" && registration ? (
-        <RegistrationConfirmation
-          data={registration}
-          seasonName={seasonLabel}
-          canWithdraw
-          closesAt={closesAt}
-        />
-      ) : view === "registered_closed" && registration ? (
-        <RegistrationConfirmation
-          data={registration}
-          seasonName={seasonLabel}
-          canWithdraw={false}
-          closesAt={closesAt}
-          note="Die Anmeldung ist geschlossen. Du kannst deine Angaben nicht mehr ändern — warte auf deine Paarungen."
-        />
-      ) : view === "not_registered_closed" ? (
-        <SeasonMessagePanel
-          title="Du bist in dieser Saison nicht dabei"
-          body="Die Anmeldung ist bereits geschlossen. Die nächste Chance kommt — schau im Discord vorbei."
-        />
-      ) : view === "not_placed" ? (
-        <SeasonMessagePanel
-          title="Du bist in der laufenden Saison nicht dabei"
-          body="Für diese Saison liegt keine Einteilung für dich vor. Die nächste Anmeldung wird im Discord angekündigt."
-        />
-      ) : (
-        <ComingSoonPanel />
-      )}
+      {panel}
+      {window && showsRoster(phase) ? (
+        <ParticipantList players={roster} seasonName={seasonLabel} />
+      ) : null}
     </Shell>
   );
 }

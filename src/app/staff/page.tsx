@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyStateCard } from "@/components/empty-state-card";
+import { PlayerGrid, type RegisteredPlayer } from "@/components/player-grid";
 import { SectionHeader } from "@/components/section-header";
 import { SiteHeader } from "@/components/site-header";
 import { Tick } from "@/components/tick";
@@ -28,11 +30,7 @@ import {
 } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
 import { getSeeding } from "@/features/seeding/queries";
-import {
-  PlayerGrid,
-  type RegisteredPlayer,
-  SeasonCard,
-} from "@/features/staff/components/registration-status";
+import { SeasonCard } from "@/features/staff/components/registration-status";
 import { latestWindow } from "@/features/staff/queries";
 import {
   registrationState,
@@ -252,7 +250,15 @@ export default async function StaffPage() {
               <SectionHeader meta={`${players.length} gesamt`}>
                 Anmeldungen
               </SectionHeader>
-              <PlayerGrid players={players} />
+              <PlayerGrid
+                players={players}
+                empty={
+                  <EmptyStateCard title="Noch keine Anmeldungen" informational>
+                    Sobald sich die ersten Spieler über den Anmeldelink
+                    registrieren, erscheinen sie hier.
+                  </EmptyStateCard>
+                }
+              />
             </section>
           ) : null}
 

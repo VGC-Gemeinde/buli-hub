@@ -1,19 +1,9 @@
-import { EmptyStateCard } from "@/components/empty-state-card";
 import { Tick } from "@/components/tick";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatGermanDateTime } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import type { RegistrationState } from "../registration-window";
 import { CopyLinkButton } from "./copy-link-button";
 import { OpenRegistrationForm } from "./open-registration-form";
-
-// A registered player. The list is empty for now — the registration feature
-// will populate it — so only the shape the view needs is defined here.
-export type RegisteredPlayer = {
-  id: string;
-  name: string;
-  avatarUrl?: string;
-};
 
 const STATUS_LABEL: Record<RegistrationState, string> = {
   not_started: "Anmeldung noch nicht geöffnet",
@@ -100,42 +90,6 @@ export function SeasonCard({
           Geschlossen seit {formatCloses(closesAt)}.
         </p>
       ) : null}
-    </div>
-  );
-}
-
-export function PlayerGrid({ players }: { players: RegisteredPlayer[] }) {
-  if (players.length === 0) {
-    return (
-      <EmptyStateCard title="Noch keine Anmeldungen" informational>
-        Sobald sich die ersten Spieler über den Anmeldelink registrieren,
-        erscheinen sie hier.
-      </EmptyStateCard>
-    );
-  }
-
-  const sorted = players.toSorted((a, b) =>
-    a.name.localeCompare(b.name, "de", { sensitivity: "base" }),
-  );
-
-  return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
-      {sorted.map((player) => (
-        <div
-          key={player.id}
-          className="flex h-9 min-w-0 items-center gap-2 rounded-lg border pr-2.5 pl-1"
-        >
-          <Avatar className="size-6">
-            {player.avatarUrl ? (
-              <AvatarImage src={player.avatarUrl} alt="" />
-            ) : null}
-            <AvatarFallback className="font-semibold text-[10px] text-foreground">
-              {player.name.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <span className="truncate font-medium text-sm">{player.name}</span>
-        </div>
-      ))}
     </div>
   );
 }

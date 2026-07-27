@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DateTimePicker } from "@/components/date-picker";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { ActionLink, InlineLink } from "@/components/links";
+import { PlayerGrid, type RegisteredPlayer } from "@/components/player-grid";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ import type {
 import type { StandingsRow } from "@/features/reporting/standings";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
 import { defaultDeadlines } from "@/features/schedule/spieltage";
+import { ParticipantList } from "@/features/season/components/participant-list";
 import {
   ComingSoonPanel,
   RegisterCtaPanel,
@@ -69,13 +71,18 @@ import { seedingSteps } from "@/features/seeding/steps";
 import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
 import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
-import {
-  PlayerGrid,
-  SeasonCard,
-} from "@/features/staff/components/registration-status";
+import { SeasonCard } from "@/features/staff/components/registration-status";
 import type { RegistrationState } from "@/features/staff/registration-window";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
+
+// Shared roster mock for the player-grid specimens.
+const ROSTER: RegisteredPlayer[] = [
+  { id: "1", name: "Testerino", avatarUrl: AVATAR_URL },
+  { id: "2", name: "annegret" },
+  { id: "3", name: "Blaubeerkuchen" },
+  { id: "4", name: "Yannick mit sehr langem Namen" },
+];
 
 // Mock data for the Spieler-Dashboard specimen.
 const DASH_TODAY = "2026-07-10";
@@ -1006,18 +1013,33 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Staff: Anmeldungs-Grid</h2>
-        <Specimen label="leer">
-          <PlayerGrid players={[]} />
+        <h2 className="text-2xl">Anmeldungs-Grid</h2>
+        <Specimen label="leer (Staff-Text)">
+          <PlayerGrid
+            players={[]}
+            empty={
+              <EmptyStateCard title="Noch keine Anmeldungen" informational>
+                Sobald sich die ersten Spieler über den Anmeldelink
+                registrieren, erscheinen sie hier.
+              </EmptyStateCard>
+            }
+          />
         </Specimen>
         <Specimen label="mit Spielern">
           <PlayerGrid
-            players={[
-              { id: "1", name: "Testerino", avatarUrl: AVATAR_URL },
-              { id: "2", name: "annegret" },
-              { id: "3", name: "Blaubeerkuchen" },
-            ]}
+            players={ROSTER}
+            empty={<EmptyStateCard title="leer" informational />}
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Dashboard: Teilnehmerfeld</h2>
+        <Specimen label="mit Spielern">
+          <ParticipantList players={ROSTER} seasonName="Saison 9" />
+        </Specimen>
+        <Specimen label="noch niemand angemeldet">
+          <ParticipantList players={[]} seasonName="Saison 9" />
         </Specimen>
       </section>
 

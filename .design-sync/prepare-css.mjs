@@ -51,7 +51,10 @@ const CONFIG = resolve(ROOT, ".design-sync/config.json");
 const OUT_ENTRY = resolve(ROOT, ".design-sync/.cache/entry.mjs");
 const OUT_SHIM = resolve(ROOT, ".design-sync/.cache/process-shim.mjs");
 const OUT_DTS = resolve(ROOT, "index.d.ts");
-const TW_CLI = resolve(ROOT, ".ds-sync/node_modules/@tailwindcss/cli/dist/index.mjs");
+const TW_CLI = resolve(
+  ROOT,
+  ".ds-sync/node_modules/@tailwindcss/cli/dist/index.mjs",
+);
 
 // Weights the app actually loads (layout.tsx): body 400/500/600, headings 700/800.
 const WEIGHTS = [400, 500, 600, 700, 800];
@@ -70,9 +73,7 @@ function log(msg) {
 function parseGoogleCss(css) {
   const blocks = [];
   const re = /\/\*\s*([a-z0-9-]+)\s*\*\/\s*(@font-face\s*\{[^}]*\})/gi;
-  let m;
-  while ((m = re.exec(css))) {
-    const [, subset, block] = m;
+  for (const [, subset, block] of css.matchAll(re)) {
     const weight = block.match(/font-weight:\s*(\d+)/)?.[1];
     const url = block.match(/url\(([^)]+)\)/)?.[1];
     const range = block.match(/unicode-range:\s*([^;]+);/)?.[1]?.trim();
@@ -88,7 +89,9 @@ async function main() {
   // --- fonts -------------------------------------------------------------
   const api = `https://fonts.googleapis.com/css2?family=Montserrat:wght@${WEIGHTS.join(";")}&display=swap`;
   const needsAny = WEIGHTS.some((w) =>
-    [...SUBSETS].some((s) => !existsSync(resolve(FONT_DIR, `Montserrat-${w}-${s}.woff2`))),
+    [...SUBSETS].some(
+      (s) => !existsSync(resolve(FONT_DIR, `Montserrat-${w}-${s}.woff2`)),
+    ),
   );
 
   let faces = [];
@@ -96,15 +99,24 @@ async function main() {
     log("fetching Montserrat metadata from Google Fonts");
     const res = await fetch(api, { headers: { "User-Agent": UA } });
     if (!res.ok) throw new Error(`Google Fonts returned ${res.status}`);
-    faces = parseGoogleCss(await res.text()).filter((f) => SUBSETS.has(f.subset));
-    if (!faces.length) throw new Error("parsed zero @font-face blocks — endpoint format changed?");
+    faces = parseGoogleCss(await res.text()).filter((f) =>
+      SUBSETS.has(f.subset),
+    );
+    if (!faces.length)
+      throw new Error(
+        "parsed zero @font-face blocks — endpoint format changed?",
+      );
 
     for (const f of faces) {
-      const file = resolve(FONT_DIR, `Montserrat-${f.weight}-${f.subset}.woff2`);
+      const file = resolve(
+        FONT_DIR,
+        `Montserrat-${f.weight}-${f.subset}.woff2`,
+      );
       f.file = file;
       if (existsSync(file)) continue;
       const r = await fetch(f.url, { headers: { "User-Agent": UA } });
-      if (!r.ok) throw new Error(`font download failed (${r.status}): ${f.url}`);
+      if (!r.ok)
+        throw new Error(`font download failed (${r.status}): ${f.url}`);
       writeFileSync(file, Buffer.from(await r.arrayBuffer()));
       log(`downloaded ${f.weight}/${f.subset}`);
     }
@@ -126,20 +138,25 @@ async function main() {
     for (const s of SUBSETS) {
       const name = `Montserrat-${w}-${s}.woff2`;
       if (!existsSync(resolve(FONT_DIR, name))) continue;
+      /* Double quotes, not single: this file is committed, so `biome ci .`
+       * formats it — emitting biome's preferred style keeps CI green without
+       * having to exclude a generated file from the check. */
       lines.push(
         "@font-face {",
-        "  font-family: 'Montserrat';",
+        '  font-family: "Montserrat";',
         "  font-style: normal;",
         `  font-weight: ${w};`,
         "  font-display: swap;",
-        `  src: url('./fonts/${name}') format('woff2');`,
+        `  src: url("./fonts/${name}") format("woff2");`,
         "}",
         "",
       );
     }
   }
   writeFileSync(FONTS_CSS, lines.join("\n"));
-  log(`wrote fonts.css (${lines.filter((l) => l === "@font-face {").length} faces)`);
+  log(
+    `wrote fonts.css (${lines.filter((l) => l === "@font-face {").length} faces)`,
+  );
 
   // --- tailwind ----------------------------------------------------------
   if (!existsSync(TW_CLI)) {
@@ -149,10 +166,14 @@ async function main() {
   }
   log("compiling Tailwind from .design-sync/ds-entry.css");
   const tmp = resolve(dirname(OUT_CSS), "tailwind.css");
-  execFileSync(process.execPath, [TW_CLI, "-i", ".design-sync/ds-entry.css", "-o", tmp], {
-    cwd: ROOT,
-    stdio: ["ignore", "ignore", "inherit"],
-  });
+  execFileSync(
+    process.execPath,
+    [TW_CLI, "-i", ".design-sync/ds-entry.css", "-o", tmp],
+    {
+      cwd: ROOT,
+      stdio: ["ignore", "ignore", "inherit"],
+    },
+  );
   const tw = readFileSync(tmp, "utf8");
 
   /* globals.css maps the font utilities onto `var(--font-sans)` /
@@ -176,10 +197,16 @@ async function main() {
   /* `null` values are deliberate exclusions (subparts that ride on the global
    * but get no card) — they name no file, so drop them before building the
    * file list. */
-  const files = [...new Set(Object.values(cfg.componentSrcMap ?? {}).filter(Boolean))].sort();
-  if (!files.length) throw new Error("cfg.componentSrcMap is empty — nothing to build an entry from");
+  const files = [
+    ...new Set(Object.values(cfg.componentSrcMap ?? {}).filter(Boolean)),
+  ].sort();
+  if (!files.length)
+    throw new Error(
+      "cfg.componentSrcMap is empty — nothing to build an entry from",
+    );
   for (const f of files) {
-    if (!existsSync(resolve(ROOT, f))) throw new Error(`componentSrcMap path does not exist: ${f}`);
+    if (!existsSync(resolve(ROOT, f)))
+      throw new Error(`componentSrcMap path does not exist: ${f}`);
   }
   /* next/link reads a batch of process.env.__NEXT_* flags at module scope. The
    * converter defines process.env.NODE_ENV, but not those, so they stay as real
@@ -211,7 +238,9 @@ async function main() {
       "",
     ].join("\n"),
   );
-  log(`wrote entry.mjs (${files.length} files, ${Object.keys(cfg.componentSrcMap).length} mapped components)`);
+  log(
+    `wrote entry.mjs (${files.length} files, ${Object.keys(cfg.componentSrcMap).length} mapped components)`,
+  );
 
   /* --- types entry -------------------------------------------------------
    * The converter resolves each component's prop contract by looking up the
@@ -230,7 +259,10 @@ async function main() {
       "// Generated by .design-sync/prepare-css.mjs — do not edit by hand, do not commit.",
       "// Types entry for the design-sync converter only (see .design-sync/NOTES.md).",
       "",
-      ...files.map((f) => `export * from ${JSON.stringify(`./${f.replace(/\.tsx?$/, "")}`)};`),
+      ...files.map(
+        (f) =>
+          `export * from ${JSON.stringify(`./${f.replace(/\.tsx?$/, "")}`)};`,
+      ),
       "",
     ].join("\n"),
   );

@@ -9,7 +9,11 @@ const SHEET_ROWS = [
   { name: "Testerino", group: "Division 1a", selected: true },
   { name: "annegret", group: "Division 1a", selected: true },
   { name: "Blaubeerkuchen", group: "Division 1b", selected: false },
-  { name: "Yannick mit sehr langem Namen", group: "Division 2a", selected: false },
+  {
+    name: "Yannick mit sehr langem Namen",
+    group: "Division 2a",
+    selected: false,
+  },
 ];
 
 export function SeedingAuswahl() {

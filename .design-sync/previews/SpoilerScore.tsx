@@ -31,9 +31,7 @@ function MatchRow({
 }) {
   return (
     <div
-      className={
-        mine ? `${ROW} border-brand-orange/40 bg-brand-orange/5` : ROW
-      }
+      className={mine ? `${ROW} border-brand-orange/40 bg-brand-orange/5` : ROW}
     >
       <span
         className={`min-w-0 flex-1 truncate ${winner === "a" ? "font-semibold" : "font-medium"}`}
@@ -56,12 +54,7 @@ export function Spieltagsliste() {
   return (
     <div className="flex flex-col gap-2">
       <MatchRow playerA="Testerino" playerB="Falinks" winner="a" mine>
-        <SpoilerScore
-          scoreA={2}
-          scoreB={1}
-          covered={false}
-          onReveal={noop}
-        />
+        <SpoilerScore scoreA={2} scoreB={1} covered={false} onReveal={noop} />
       </MatchRow>
       <MatchRow playerA="Blaubeerkuchen" playerB="Wooloo">
         <SpoilerScore scoreA={2} scoreB={0} covered onReveal={noop} />

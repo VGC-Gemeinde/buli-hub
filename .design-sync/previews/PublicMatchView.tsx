@@ -1,5 +1,5 @@
 import { PublicMatchView } from "buli-hub";
-import { asIdentity, AVATAR_URL, STANDINGS } from "./_fixtures";
+import { AVATAR_URL, asIdentity, STANDINGS } from "./_fixtures";
 
 /* The whole `/match/[matchId]` page as a neutral visitor sees it before a
  * result exists (GO-LIVE-POLISH §4.4): back link, Spieltag · Division · Saison

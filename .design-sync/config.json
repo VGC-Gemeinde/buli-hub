@@ -7,13 +7,8 @@
   "tsconfig": "tsconfig.json",
   "buildCmd": "node .design-sync/prepare-css.mjs",
   "cssEntry": ".design-sync/.cache/css/ds.css",
-  "extraFonts": [
-    ".design-sync/fonts.css"
-  ],
-  "guidelinesGlob": [
-    "design/*.md",
-    "docs/decisions/*.md"
-  ],
+  "extraFonts": [".design-sync/fonts.css"],
+  "guidelinesGlob": ["design/*.md", "docs/decisions/*.md"],
   "entry": ".design-sync/.cache/entry.mjs",
   "componentSrcMap": {
     "ActionLink": "src/components/links.tsx",

@@ -17,7 +17,11 @@ import { AVATAR_URL, MATCHDAYS } from "./_fixtures";
  * Cell names sort so the canonical protected state comes first.
  */
 
-const EXTRA_MATCHDAY = { round: 5, startsOn: "2026-02-02", endsOn: "2026-02-08" };
+const EXTRA_MATCHDAY = {
+  round: 5,
+  startsOn: "2026-02-02",
+  endsOn: "2026-02-08",
+};
 
 const row = (
   matchday: { round: number; startsOn: string; endsOn: string },
@@ -42,27 +46,39 @@ const row = (
  *  viewer played themselves (never a spoiler), and a bye. Week ranges come from
  *  the shared matchday calendar, so the Spieltage really are consecutive. */
 const ROWS: ProfileScheduleRow[] = [
-  row(MATCHDAYS[0], { userId: "3", name: "Blaubeerkuchen", avatarUrl: AVATAR_URL }, {
-    reported: true,
-    scoreSelf: 2,
-    scoreOpponent: 0,
-  }),
-  row(MATCHDAYS[1], { userId: "e", name: "Kilowattrel", avatarUrl: null }, {
-    reported: true,
-    scoreSelf: 0,
-    scoreOpponent: 2,
-  }),
+  row(
+    MATCHDAYS[0],
+    { userId: "3", name: "Blaubeerkuchen", avatarUrl: AVATAR_URL },
+    {
+      reported: true,
+      scoreSelf: 2,
+      scoreOpponent: 0,
+    },
+  ),
+  row(
+    MATCHDAYS[1],
+    { userId: "e", name: "Kilowattrel", avatarUrl: null },
+    {
+      reported: true,
+      scoreSelf: 0,
+      scoreOpponent: 2,
+    },
+  ),
   row(
     MATCHDAYS[2],
     { userId: "4", name: "Yannick mit sehr langem Namen", avatarUrl: null },
     { reported: true, scoreSelf: 2, scoreOpponent: 1, isMotw: true },
   ),
-  row(MATCHDAYS[3], { userId: "me", name: "Testerino", avatarUrl: AVATAR_URL }, {
-    reported: true,
-    scoreSelf: 1,
-    scoreOpponent: 2,
-    isMine: true,
-  }),
+  row(
+    MATCHDAYS[3],
+    { userId: "me", name: "Testerino", avatarUrl: AVATAR_URL },
+    {
+      reported: true,
+      scoreSelf: 1,
+      scoreOpponent: 2,
+      isMine: true,
+    },
+  ),
   row(EXTRA_MATCHDAY, null),
 ];
 

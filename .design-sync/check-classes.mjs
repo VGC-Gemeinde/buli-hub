@@ -21,7 +21,7 @@
  * real false-negative during the first authoring wave).
  */
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -29,7 +29,8 @@ const CSS = readFileSync(resolve(ROOT, "ds-bundle/_ds_bundle.css"), "utf8");
 const PREVIEWS = resolve(ROOT, ".design-sync/previews");
 
 /** CSS.escape for the subset that appears in Tailwind class names. */
-const escapeSelector = (cls) => cls.replace(/[^A-Za-z0-9_-]/g, (ch) => `\\${ch}`);
+const escapeSelector = (cls) =>
+  cls.replace(/[^A-Za-z0-9_-]/g, (ch) => `\\${ch}`);
 
 /* Variants are separate selectors (`.dark\:bg-card`, `.sm\:flex`) and
  * `group-*`/`peer-*`/`data-*` compile to shapes we can't check naively — check
@@ -77,7 +78,9 @@ if (missing.size === 0) {
   console.log(`✓ all ${checked} preview classes resolve in _ds_bundle.css`);
   process.exit(0);
 }
-console.log(`✗ ${[...missing.values()].reduce((n, s) => n + s.size, 0)} of ${checked} preview classes are MISSING from _ds_bundle.css:\n`);
+console.log(
+  `✗ ${[...missing.values()].reduce((n, s) => n + s.size, 0)} of ${checked} preview classes are MISSING from _ds_bundle.css:\n`,
+);
 for (const [file, set] of [...missing].sort()) {
   console.log(`  ${file}`);
   for (const c of [...set].sort()) console.log(`      ${c}`);
@@ -85,5 +88,7 @@ for (const [file, set] of [...missing].sort()) {
 console.log(
   "\nArbitrary values (w-[620px]) cannot be safelisted — swap for the named scale.",
 );
-console.log("Named utilities missing here should be added to .design-sync/ds-entry.css.");
+console.log(
+  "Named utilities missing here should be added to .design-sync/ds-entry.css.",
+);
 process.exit(1);

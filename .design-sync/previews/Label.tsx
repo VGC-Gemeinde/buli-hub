@@ -87,7 +87,11 @@ export function MitZusatz() {
             (nur für den Staff sichtbar)
           </span>
         </Label>
-        <Input id="label-drop-reason" defaultValue="Zeitmangel" autoComplete="off" />
+        <Input
+          id="label-drop-reason"
+          defaultValue="Zeitmangel"
+          autoComplete="off"
+        />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="label-confirm">

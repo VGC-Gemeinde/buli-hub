@@ -11,7 +11,10 @@
  * would drag the db into the bundle. See .design-sync/NOTES.md.
  */
 import type { MotwBlockData } from "@/features/motw/motw";
-import type { PublicMatch, PublicOverview } from "@/features/public-league/queries";
+import type {
+  PublicMatch,
+  PublicOverview,
+} from "@/features/public-league/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
 import type { PlayerMatch } from "@/features/season/dashboard";
 
@@ -28,22 +31,143 @@ export const ROSTER = [
 /** One group's table. `c` is dropped → exercises the „Drop" tag; b/c share
  *  rank 3 → exercises the tie rendering (no rank 4). */
 export const STANDINGS: StandingsRow[] = [
-  { userId: "me", name: "Testerino", avatarUrl: AVATAR_URL, wins: 1, losses: 0, points: 3, gamesWon: 2, gamesLost: 0, rank: 1 },
-  { userId: "a", name: "Falinks", avatarUrl: null, wins: 0, losses: 1, points: 0, gamesWon: 0, gamesLost: 2, rank: 2 },
-  { userId: "b", name: "Wooloo", avatarUrl: AVATAR_URL, wins: 0, losses: 0, points: 0, gamesWon: 0, gamesLost: 0, rank: 3 },
-  { userId: "c", name: "Pawmi", avatarUrl: null, wins: 0, losses: 0, points: 0, gamesWon: 0, gamesLost: 0, rank: 3, dropped: true },
+  {
+    userId: "me",
+    name: "Testerino",
+    avatarUrl: AVATAR_URL,
+    wins: 1,
+    losses: 0,
+    points: 3,
+    gamesWon: 2,
+    gamesLost: 0,
+    rank: 1,
+  },
+  {
+    userId: "a",
+    name: "Falinks",
+    avatarUrl: null,
+    wins: 0,
+    losses: 1,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 2,
+    rank: 2,
+  },
+  {
+    userId: "b",
+    name: "Wooloo",
+    avatarUrl: AVATAR_URL,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 3,
+  },
+  {
+    userId: "c",
+    name: "Pawmi",
+    avatarUrl: null,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 3,
+    dropped: true,
+  },
 ];
 
 /** Groups 1a + 1b merged — the „Gesamttabelle" view of the division switcher. */
 export const DIVISION_STANDINGS: StandingsRow[] = [
-  { userId: "d", name: "Grafaiai", avatarUrl: null, wins: 1, losses: 0, points: 3, gamesWon: 2, gamesLost: 1, rank: 1 },
-  { userId: "me", name: "Testerino", avatarUrl: AVATAR_URL, wins: 1, losses: 0, points: 3, gamesWon: 2, gamesLost: 0, rank: 1 },
-  { userId: "e", name: "Kilowattrel", avatarUrl: null, wins: 1, losses: 0, points: 3, gamesWon: 2, gamesLost: 0, rank: 1 },
-  { userId: "a", name: "Falinks", avatarUrl: null, wins: 0, losses: 1, points: 0, gamesWon: 0, gamesLost: 2, rank: 4 },
-  { userId: "f", name: "Maushold", avatarUrl: null, wins: 0, losses: 1, points: 0, gamesWon: 0, gamesLost: 2, rank: 4 },
-  { userId: "b", name: "Wooloo", avatarUrl: AVATAR_URL, wins: 0, losses: 0, points: 0, gamesWon: 0, gamesLost: 0, rank: 6 },
-  { userId: "c", name: "Pawmi", avatarUrl: null, wins: 0, losses: 0, points: 0, gamesWon: 0, gamesLost: 0, rank: 6 },
-  { userId: "g", name: "Tinkatink", avatarUrl: null, wins: 0, losses: 0, points: 0, gamesWon: 0, gamesLost: 0, rank: 6 },
+  {
+    userId: "d",
+    name: "Grafaiai",
+    avatarUrl: null,
+    wins: 1,
+    losses: 0,
+    points: 3,
+    gamesWon: 2,
+    gamesLost: 1,
+    rank: 1,
+  },
+  {
+    userId: "me",
+    name: "Testerino",
+    avatarUrl: AVATAR_URL,
+    wins: 1,
+    losses: 0,
+    points: 3,
+    gamesWon: 2,
+    gamesLost: 0,
+    rank: 1,
+  },
+  {
+    userId: "e",
+    name: "Kilowattrel",
+    avatarUrl: null,
+    wins: 1,
+    losses: 0,
+    points: 3,
+    gamesWon: 2,
+    gamesLost: 0,
+    rank: 1,
+  },
+  {
+    userId: "a",
+    name: "Falinks",
+    avatarUrl: null,
+    wins: 0,
+    losses: 1,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 2,
+    rank: 4,
+  },
+  {
+    userId: "f",
+    name: "Maushold",
+    avatarUrl: null,
+    wins: 0,
+    losses: 1,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 2,
+    rank: 4,
+  },
+  {
+    userId: "b",
+    name: "Wooloo",
+    avatarUrl: AVATAR_URL,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 6,
+  },
+  {
+    userId: "c",
+    name: "Pawmi",
+    avatarUrl: null,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 6,
+  },
+  {
+    userId: "g",
+    name: "Tinkatink",
+    avatarUrl: null,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    rank: 6,
+  },
 ];
 
 export const asIdentity = (row: StandingsRow) => ({
@@ -83,10 +207,34 @@ export const MOTW_BLOCK: MotwBlockData = {
 
 /** A player's own schedule — used by the season/profile dashboards. */
 export const PLAYER_MATCHES: PlayerMatch[] = [
-  { matchId: "m1", round: 1, startsOn: "2026-01-05", endsOn: "2026-01-11", opponent: { userId: "a", name: "Falinks", avatarUrl: null } },
-  { matchId: "m2", round: 2, startsOn: "2026-01-12", endsOn: "2026-01-18", opponent: { userId: "b", name: "Wooloo", avatarUrl: AVATAR_URL } },
-  { matchId: "m3", round: 3, startsOn: "2026-01-19", endsOn: "2026-01-25", opponent: { userId: "c", name: "Pawmi", avatarUrl: null } },
-  { matchId: "m4", round: 4, startsOn: "2026-01-26", endsOn: "2026-02-01", opponent: null },
+  {
+    matchId: "m1",
+    round: 1,
+    startsOn: "2026-01-05",
+    endsOn: "2026-01-11",
+    opponent: { userId: "a", name: "Falinks", avatarUrl: null },
+  },
+  {
+    matchId: "m2",
+    round: 2,
+    startsOn: "2026-01-12",
+    endsOn: "2026-01-18",
+    opponent: { userId: "b", name: "Wooloo", avatarUrl: AVATAR_URL },
+  },
+  {
+    matchId: "m3",
+    round: 3,
+    startsOn: "2026-01-19",
+    endsOn: "2026-01-25",
+    opponent: { userId: "c", name: "Pawmi", avatarUrl: null },
+  },
+  {
+    matchId: "m4",
+    round: 4,
+    startsOn: "2026-01-26",
+    endsOn: "2026-02-01",
+    opponent: null,
+  },
 ];
 
 /** Between rounds / no pick yet: the prominent MotW block is absent entirely.

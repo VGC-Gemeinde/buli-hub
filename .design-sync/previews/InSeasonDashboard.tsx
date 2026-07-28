@@ -2,11 +2,7 @@ import { InSeasonDashboard } from "buli-hub";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
 import { assignZones } from "@/features/seeding/post-season";
-import {
-  DIVISION_STANDINGS,
-  PLAYER_MATCHES,
-  STANDINGS,
-} from "./_fixtures";
+import { DIVISION_STANDINGS, PLAYER_MATCHES, STANDINGS } from "./_fixtures";
 
 /* The whole running-season Spieler-Dashboard: progress strip → hero (next match
  * or its result) → „Dein Spielplan" + „Tabelle" side by side. Wide by nature —

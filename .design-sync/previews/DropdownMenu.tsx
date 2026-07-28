@@ -117,15 +117,21 @@ export function Spieltagsauswahl() {
           <DropdownMenuRadioGroup value="2">
             <DropdownMenuRadioItem value="1">
               Spieltag 1
-              <span className="ml-auto text-muted-foreground text-xs">fertig</span>
+              <span className="ml-auto text-muted-foreground text-xs">
+                fertig
+              </span>
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="2">
               Spieltag 2
-              <span className="ml-auto text-muted-foreground text-xs">läuft</span>
+              <span className="ml-auto text-muted-foreground text-xs">
+                läuft
+              </span>
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="3" disabled>
               Spieltag 3
-              <span className="ml-auto text-muted-foreground text-xs">ab 19.01.</span>
+              <span className="ml-auto text-muted-foreground text-xs">
+                ab 19.01.
+              </span>
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />

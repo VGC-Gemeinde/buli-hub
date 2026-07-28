@@ -1,0 +1,26 @@
+/* Type-checks the authored previews in .design-sync/previews/.
+ *
+ * Worth having because esbuild compiles previews by STRIPPING types, never
+ * checking them: a fixture with the wrong shape builds fine and then renders a
+ * blank card at capture time, costing a full build+capture cycle to discover.
+ * This catches it in seconds.
+ *
+ *   npx tsc -p .design-sync/tsconfig.previews.json
+ *
+ * `buli-hub` resolves to the generated root index.d.ts (the same types entry the
+ * converter reads), so previews are checked against the real component props.
+ * Run .design-sync/prepare-css.mjs first — index.d.ts is generated.
+ */
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["./src/*"],
+      "buli-hub": ["./index.d.ts"]
+    }
+  },
+  "include": ["previews/**/*.ts", "previews/**/*.tsx", "../index.d.ts"],
+  "exclude": []
+}

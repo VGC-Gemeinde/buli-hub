@@ -207,14 +207,16 @@ export function SettingsForm({ initial }: SettingsFormProps) {
             Du besitzt eine Capture Card, um Gameplay aufzunehmen.
           </p>
         </div>
-        {/* Track 40×22, white 18px knob, orange when on (§4.1). The shared
-            Switch already uses the orange primary for its checked state; the
-            dimensions and thumb translate are tuned here via className. */}
+        {/* Track 40×22, white 18px knob, orange when on (§4.1) — that is the
+            shared Switch's `lg` size. This used to be patched in from here with
+            className overrides, but the track dimensions sit behind
+            `data-[size=…]` selectors that outrank plain utilities, so only the
+            thumb rules landed and the knob rendered outside its rail. */}
         <Switch
           id="capture-card"
+          size="lg"
           checked={values.hasCaptureCard}
           onCheckedChange={(checked) => change({ hasCaptureCard: checked })}
-          className="h-[22px] w-[40px] p-0.5 [&_[data-slot=switch-thumb]]:size-[18px]! [&_[data-slot=switch-thumb]]:translate-x-0! [&_[data-slot=switch-thumb]]:bg-white! data-checked:[&_[data-slot=switch-thumb]]:translate-x-[18px]!"
         />
       </div>
     </section>

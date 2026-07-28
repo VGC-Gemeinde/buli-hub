@@ -393,7 +393,10 @@ function MatchRow({
       ) : (
         // Fixed-width slot: pill ⇄ score ⇄ „offen" swap without any shift.
         // `relative` lifts the pill above the stretched match link.
-        <span className="relative flex w-12 shrink-0 items-center justify-center font-semibold text-muted-foreground text-xs tabular-nums">
+        // w-14, not w-12: the slot also holds the MotW pill, which measures 54px
+        // in Montserrat and overflowed a 48px slot. Kept a fixed width rather
+        // than fit-content so the column stays aligned across rows.
+        <span className="relative flex w-14 shrink-0 items-center justify-center font-semibold text-muted-foreground text-xs tabular-nums">
           {match.reported ? (
             // A pending free win is not shown publicly until confirmed → „offen".
             <SpoilerScore

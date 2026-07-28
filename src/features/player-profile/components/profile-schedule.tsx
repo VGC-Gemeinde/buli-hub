@@ -133,7 +133,9 @@ function ScheduleRow({
               className="relative truncate font-medium"
             />
           </span>
-          <span className="relative flex w-12 shrink-0 items-center justify-center font-semibold text-muted-foreground text-xs tabular-nums">
+          {/* w-14, not w-12: this slot also holds the MotW pill, which measures
+              54px in Montserrat and overflowed a 48px slot. */}
+          <span className="relative flex w-14 shrink-0 items-center justify-center font-semibold text-muted-foreground text-xs tabular-nums">
             {row.reported ? (
               <SpoilerScore
                 scoreA={row.scoreSelf}

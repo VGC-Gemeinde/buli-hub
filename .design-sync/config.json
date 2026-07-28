@@ -1,0 +1,202 @@
+{
+  "projectId": "10803020-3e43-41f1-80f1-029698d498ad",
+  "shape": "package",
+  "pkg": "buli-hub",
+  "globalName": "VgcGemeinde",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.json",
+  "buildCmd": "node .design-sync/prepare-css.mjs",
+  "cssEntry": ".design-sync/.cache/css/ds.css",
+  "extraFonts": [
+    ".design-sync/fonts.css"
+  ],
+  "guidelinesGlob": [
+    "design/*.md",
+    "docs/decisions/*.md"
+  ],
+  "entry": ".design-sync/.cache/entry.mjs",
+  "componentSrcMap": {
+    "ActionLink": "src/components/links.tsx",
+    "Avatar": "src/components/ui/avatar.tsx",
+    "AvatarBadge": null,
+    "AvatarFallback": null,
+    "AvatarGroup": null,
+    "AvatarGroupCount": null,
+    "AvatarImage": null,
+    "Badge": "src/components/ui/badge.tsx",
+    "Button": "src/components/ui/button.tsx",
+    "Calendar": "src/components/ui/calendar.tsx",
+    "Checkbox": "src/components/ui/checkbox.tsx",
+    "ComingSoonPanel": "src/features/season/components/pre-season.tsx",
+    "ControlPill": "src/features/seeding/components/control-bar.tsx",
+    "CopyLinkButton": "src/features/staff/components/copy-link-button.tsx",
+    "DatePicker": "src/components/date-picker.tsx",
+    "DateTimePicker": "src/components/date-picker.tsx",
+    "Dialog": "src/components/ui/dialog.tsx",
+    "DialogClose": null,
+    "DialogContent": null,
+    "DialogDescription": null,
+    "DialogFooter": null,
+    "DialogHeader": null,
+    "DialogOverlay": null,
+    "DialogPortal": null,
+    "DialogTitle": null,
+    "DialogTrigger": null,
+    "DropBanner": "src/features/drops/components/drop-banner.tsx",
+    "DropdownMenu": "src/components/ui/dropdown-menu.tsx",
+    "DropdownMenuCheckboxItem": null,
+    "DropdownMenuContent": null,
+    "DropdownMenuGroup": null,
+    "DropdownMenuItem": null,
+    "DropdownMenuLabel": null,
+    "DropdownMenuPortal": null,
+    "DropdownMenuRadioGroup": null,
+    "DropdownMenuRadioItem": null,
+    "DropdownMenuSeparator": null,
+    "DropdownMenuShortcut": null,
+    "DropdownMenuSub": null,
+    "DropdownMenuSubContent": null,
+    "DropdownMenuSubTrigger": null,
+    "DropdownMenuTrigger": null,
+    "EmptyStateCard": "src/components/empty-state-card.tsx",
+    "FinalizeDialog": "src/features/seeding/components/finalize-dialog.tsx",
+    "InSeasonDashboard": "src/features/season/components/season-dashboard.tsx",
+    "InlineLink": "src/components/links.tsx",
+    "Input": "src/components/ui/input.tsx",
+    "Label": "src/components/ui/label.tsx",
+    "MotwBlock": "src/features/motw/components/motw-block.tsx",
+    "MotwMatchBanner": "src/features/motw/components/motw-match-banner.tsx",
+    "MotwTodoCard": "src/features/motw/components/motw-todo-card.tsx",
+    "ParticipantList": "src/features/season/components/participant-list.tsx",
+    "PlayerGrid": "src/components/player-grid.tsx",
+    "Popover": "src/components/ui/popover.tsx",
+    "PopoverContent": null,
+    "PopoverTrigger": null,
+    "PostSeasonPanel": "src/features/seeding/components/post-season-panel.tsx",
+    "ProfileHeader": "src/features/profile/components/profile-header.tsx",
+    "ProfileSchedule": "src/features/player-profile/components/profile-schedule.tsx",
+    "ProfileSpielplan": "src/features/player-profile/components/profile-schedule.tsx",
+    "PublicLeague": "src/features/public-league/components/public-league.tsx",
+    "PublicMatchView": "src/features/reporting/components/public-match-view.tsx",
+    "RadioGroup": "src/components/ui/radio-group.tsx",
+    "RadioGroupItem": null,
+    "RegisterCtaPanel": "src/features/season/components/pre-season.tsx",
+    "ReportSummary": "src/features/reporting/components/report-summary.tsx",
+    "SeasonMessagePanel": "src/features/season/components/pre-season.tsx",
+    "SectionHeader": "src/components/section-header.tsx",
+    "SeedingSheet": "src/features/seeding/components/seeding-sheet.tsx",
+    "Select": "src/components/ui/select.tsx",
+    "SelectContent": null,
+    "SelectGroup": null,
+    "SelectItem": null,
+    "SelectLabel": null,
+    "SelectScrollDownButton": null,
+    "SelectScrollUpButton": null,
+    "SelectSeparator": null,
+    "SelectTrigger": null,
+    "SelectValue": null,
+    "Slider": "src/components/ui/slider.tsx",
+    "SpoilerPill": "src/features/spoilers/components/spoiler-score.tsx",
+    "SpoilerScore": "src/features/spoilers/components/spoiler-score.tsx",
+    "SpoilerSwitch": "src/features/spoilers/components/spoiler-switch.tsx",
+    "StepBar": "src/features/seeding/components/step-bar.tsx",
+    "Switch": "src/components/ui/switch.tsx",
+    "Textarea": "src/components/ui/textarea.tsx",
+    "Tick": "src/components/tick.tsx",
+    "TimePicker": "src/components/date-picker.tsx",
+    "TypeToConfirm": "src/components/type-to-confirm.tsx"
+  },
+  "overrides": {
+    "Dialog": {
+      "cardMode": "single",
+      "viewport": "640x420"
+    },
+    "PublicLeague": {
+      "cardMode": "column",
+      "viewport": "1120x900"
+    },
+    "DropdownMenu": {
+      "cardMode": "single",
+      "viewport": "520x420",
+      "primaryStory": "Benutzermenue"
+    },
+    "Popover": {
+      "cardMode": "single",
+      "viewport": "520x380",
+      "primaryStory": "Erklaerung"
+    },
+    "Select": {
+      "cardMode": "single",
+      "viewport": "520x420",
+      "primaryStory": "HerkunftOffen"
+    },
+    "FinalizeDialog": {
+      "cardMode": "single",
+      "viewport": "720x520"
+    },
+    "SeedingSheet": {
+      "cardMode": "column",
+      "viewport": "1440x900"
+    },
+    "InSeasonDashboard": {
+      "cardMode": "column",
+      "viewport": "1120x900"
+    },
+    "PostSeasonPanel": {
+      "cardMode": "column",
+      "viewport": "1120x900"
+    },
+    "PublicMatchView": {
+      "cardMode": "column",
+      "viewport": "1040x800"
+    },
+    "ProfileSpielplan": {
+      "cardMode": "column",
+      "viewport": "760x560"
+    },
+    "ProfileSchedule": {
+      "cardMode": "column",
+      "viewport": "760x620"
+    },
+    "MotwBlock": {
+      "cardMode": "column",
+      "viewport": "1000x340"
+    },
+    "ActionLink": {
+      "cardMode": "column"
+    },
+    "Switch": {
+      "cardMode": "column"
+    },
+    "SpoilerPill": {
+      "cardMode": "column"
+    },
+    "SpoilerScore": {
+      "cardMode": "column"
+    },
+    "ReportSummary": {
+      "cardMode": "column",
+      "viewport": "900x900"
+    },
+    "MotwMatchBanner": {
+      "cardMode": "column",
+      "viewport": "900x220"
+    },
+    "MotwTodoCard": {
+      "cardMode": "column",
+      "viewport": "900x220"
+    },
+    "ProfileHeader": {
+      "cardMode": "column",
+      "viewport": "900x220"
+    },
+    "StepBar": {
+      "cardMode": "column",
+      "viewport": "1240x420"
+    },
+    "ControlPill": {
+      "cardMode": "column"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}

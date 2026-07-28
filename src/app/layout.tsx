@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Barlow, Barlow_Condensed, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const barlow = Barlow({
+const montserratSans = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-sans",
 });
 
-const barlowCondensed = Barlow_Condensed({
+const montserratHeading = Montserrat({
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: ["700", "800"],
   variable: "--font-heading",
 });
 
@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="de"
-      className={`${barlow.variable} ${barlowCondensed.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${montserratSans.variable} ${montserratHeading.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

@@ -58,16 +58,26 @@ function ProgressStrip({ current, total }: { current: number; total: number }) {
             key={round}
             className={cn(
               "h-1.5 flex-1 rounded-[3px]",
+              // Played weeks are navy in light mode, but navy on the dark
+              // background scored 1.02:1 — invisible, and fainter than the
+              // not-yet-played track (1.51:1), inverting the hierarchy. White at
+              // 35% restores it, following the same light-navy/dark-white pattern
+              // as `Tick`'s navy variant.
               round < current
-                ? "bg-brand-blue/30"
+                ? "bg-brand-blue/30 dark:bg-white/35"
                 : round === current
                   ? "bg-brand-orange"
-                  : "bg-muted",
+                  : "bg-muted dark:bg-white/12",
             )}
           />
         ))}
       </div>
-      <span className="whitespace-nowrap font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.1em]">
+      {/* 12px/0.04em, not 13px/0.1em: the caption shares this row with the bar
+          (`flex-1`), so every pixel it takes is a pixel the bar loses. Montserrat
+          is wider than the Barlow Condensed this was tuned for and the caption
+          grew to 149px, visibly cutting the bar short. These values put it back
+          at ~126px — the width the layout was designed around. */}
+      <span className="whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.04em]">
         Spieltag {current} von {total}
       </span>
     </div>

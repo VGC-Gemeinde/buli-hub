@@ -27,31 +27,31 @@ Everything else uses the standard shadcn token names — components never hardco
 
 ## 2. Typography
 
-Two fonts, both Google Fonts, loaded via `next/font` (replaces Geist):
+One font, both roles, loaded via `next/font` (replaces Geist): **Montserrat**, matching the official VGC Gemeinde style guide (Montserrat Bold for headline use). Previously Barlow + Barlow Condensed — switched to align with the brand style guide; buli-hub has no use for the guide's display face (Fastup), so headings stay in Montserrat rather than adopting it.
 
-- **Barlow Condensed** — headings (`--font-heading`). Always `font-weight: 700`, `text-transform: uppercase`, `letter-spacing: 0.02em`. Applied globally to `h1–h3` in globals.css.
-- **Barlow** — body (`--font-sans`). Weights 400/500/600.
+- **Montserrat** — headings (`--font-heading`). Weights 700/800. Always `font-weight: 700`, `text-transform: uppercase`, `letter-spacing: 0.02em`. Applied globally to `h1–h3` in globals.css.
+- **Montserrat** — body (`--font-sans`). Weights 400/500/600.
 
 Keep `--font-geist-mono` handling as-is or drop mono until needed.
 
 ### layout.tsx font setup
 
 ```tsx
-import { Barlow, Barlow_Condensed } from "next/font/google";
+import { Montserrat } from "next/font/google";
 
-const barlow = Barlow({
+const montserratSans = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-sans",
 });
 
-const barlowCondensed = Barlow_Condensed({
+const montserratHeading = Montserrat({
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: ["700", "800"],
   variable: "--font-heading",
 });
 
-// on <html>:  className={`${barlow.variable} ${barlowCondensed.variable}`}
+// on <html>:  className={`${montserratSans.variable} ${montserratHeading.variable}`}
 ```
 
 ### Type scale (landing page)
@@ -158,13 +158,13 @@ Anchored 26px from the bottom of the viewport, centered: two skewed orange ticks
 - Focus rings are orange (`--ring`) in both modes — free sporty accent, don't override.
 - Buttons: default variant = orange primary in both modes. Destructive/outline/ghost as stock shadcn.
 - Charts (future standings/stats): `--chart-1` blue, `--chart-2` orange, then supporting navy tints.
-- Page headings: h1–h3 are automatically condensed-uppercase; don't fight it. For UI labels that must not be uppercase, use styled `div`/`p`, not heading tags.
+- Page headings: h1–h3 are automatically uppercase; don't fight it. For UI labels that must not be uppercase, use styled `div`/`p`, not heading tags.
 
 ## 7. Implementation checklist
 
 1. `npm i` nothing — fonts come from `next/font/google`, zero deps
 2. Replace `src/app/globals.css` with `handoff/globals.css`
-3. Update `src/app/layout.tsx`: swap Geist for Barlow + Barlow Condensed (§2)
+3. Update `src/app/layout.tsx`: swap Geist for Montserrat (§2)
 4. Copy `handoff/logo.svg` → `public/logo.svg`
 5. Update `src/app/page.tsx` per §5
 6. Forward `variant`/`size` props in `sign-in-button.tsx`

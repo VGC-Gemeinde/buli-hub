@@ -1,7 +1,7 @@
 /*
  * Buli Hub — brand theme (drop-in replacement for src/app/globals.css)
  * Brand: falinks-blue #021f66 · pawmo-orange #ff7b00 · wooloo-white #ffffff
- * Fonts: Barlow (body, --font-sans) + Barlow Condensed (headings, --font-heading)
+ * Fonts: Montserrat (body, --font-sans) + Montserrat (headings, --font-heading)
  *        — loaded via next/font in layout.tsx, see DESIGN.md §3
  */
 

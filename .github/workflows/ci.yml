@@ -32,9 +32,17 @@ jobs:
       - run: npx tsc --noEmit
       # The integration tests need the real local stack: they write to the
       # Supabase-managed auth schema, which plain Postgres does not have.
+      #
+      # Pinned, not `latest`: with `latest` the action resolves the release
+      # through the GitHub API on every run, and that call is rate-limited per
+      # runner IP — it failed two consecutive runs with "Failed to resolve latest
+      # Supabase CLI release: rate limit exceeded", blocking the deploy for
+      # reasons unrelated to the code. A pinned tag is downloaded directly, with
+      # no API lookup, so CI no longer depends on a shared quota. Bump
+      # deliberately; keep it in step with the CLI used locally.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.0
       - run: supabase start
       - run: supabase db reset
       - run: npm test -- --run

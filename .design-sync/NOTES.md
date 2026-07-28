@@ -253,6 +253,35 @@ Triaged as legitimate; a warn NOT in this list on a later sync is new:
 - `[RENDER_BLANK]` / `[RENDER_THIN]` on unauthored components is the floor card
   doing its job, not a failure. It disappears as previews get authored.
 
+## The repo's CI lints these files — keep them clean
+
+`.github/workflows/ci.yml` runs **`npx biome ci .`** over the whole repo, and
+`biome.json` only excludes `node_modules`, `.next`, `dist`, `build`, `design` and
+`supabase/migrations` (plus everything gitignored, via `useIgnoreFile`). So every
+committed file under `.design-sync/` is linted AND format-checked, and
+`biome ci` is stricter than `biome check`: no auto-fix, and formatting
+differences are errors. The first import broke `main`'s pipeline this way — CI
+failed at the biome step, and because `deploy` is gated on `needs: checks`,
+nothing deployed.
+
+Before committing sync inputs:
+
+```sh
+npx biome check --write .design-sync/   # fixes formatting + import order
+npx biome ci .                          # must exit 0
+```
+
+**Generated committed files must be emitted biome-clean.** `fonts.css` is
+written by `prepare-css.mjs`; formatting the file by hand would be undone on the
+next run and break CI again. The generator therefore emits biome's quote style
+(double quotes) directly — verified idle-stable, so two consecutive runs produce
+an identical, biome-clean file. If you add another generated+committed file,
+either match biome's output or exclude it in `biome.json`. Do not "fix" a
+generated file in place.
+
+Four pre-existing warnings in `src/` (one unused import in an integration test,
+three ineffective `biome-ignore` comments) do not fail `biome ci`.
+
 ## Re-sync risks
 
 - **Tailwind coverage depends on the safelist — keep it in step with the

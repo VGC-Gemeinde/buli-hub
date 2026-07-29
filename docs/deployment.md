@@ -402,9 +402,29 @@ Differences from production, each for a reason:
 - `APP_BASE_URL` must be the staging URL, or the „Zum Match" links in Discord
   posts point at production.
 - **No role variables** — see above.
-- `ENABLE_DEV_TOOLS=true` + `DEV_TOOLS_TOKEN` turn on `/dev`. Visit
-  `https://<staging-url>/dev/unlock?token=<DEV_TOOLS_TOKEN>` once per browser;
-  everything under `/dev` 404s until then.
+- `ENABLE_DEV_TOOLS=true` + `DEV_TOOLS_TOKEN` turn on `/dev` (see below).
+
+### Getting into `/dev` on staging
+
+Everything under `/dev` returns **404** until the browser holds the unlock
+cookie — the same response a missing route gives, so the staging URL alone does
+not reveal that dev tooling is there. The cost is that a legitimate 404 looks
+identical to a broken one; if `/` works and `/dev` 404s, you are simply not
+unlocked.
+
+The token lives only on the service. Print your unlock link with:
+
+```bash
+echo "$(gcloud run services describe buli-hub-staging --project=buli-hub --region=europe-west1 \
+  --format='value(status.url)')/dev/unlock?token=$(gcloud run services describe buli-hub-staging \
+  --project=buli-hub --region=europe-west1 \
+  --format='value(spec.template.spec.containers[0].env)' | tr ';' '\n' \
+  | grep DEV_TOOLS_TOKEN | sed "s/.*'value': '\([^']*\)'.*/\1/")"
+```
+
+Open it once per browser; the cookie lasts a week. Then use the picker on
+`/dev` to impersonate a cloned user — `/dev/login-as` needs `?userId=<uuid>`
+and returns 400 on its own.
 
 > **`ENABLE_DEV_TOOLS` and `DEV_TOOLS_TOKEN` must never be set on the
 > production service.** Together they allow signing in as any user. This is a

@@ -136,10 +136,15 @@ Then: install the **Renovate** GitHub app on the repo (config is
 - **Log-based alert**: Cloud Run revision logs, filter `severity>=ERROR`,
   notify on new entries (catches failed Discord syncs — they log via
   `console.error`).
-- **Backups**: ⚠️ **manual for now.** Automated backups are a Supabase Pro
-  feature and the organisation is on Free, so nothing runs on a schedule yet.
-  Take one before anything risky — a migration that rewrites data, or any
-  `db:clone-prod` run:
+- **Backups**: `.github/workflows/backup.yml` dumps production to
+  `gs://buli-hub-backups/nightly/` every night at 03:17 UTC, and on demand via
+  *Run workflow*. Supabase's own automated backups are a Pro feature and the
+  organisation is on Free, so this is the only restore point that exists.
+
+  The workflow refuses to upload a dump that looks empty, so a silent auth
+  failure cannot quietly replace a good backup with a useless one. Take a manual
+  one before anything risky — a migration that rewrites data, or any
+  `db:clone-prod` run — either with the button or by hand:
 
   ```bash
   STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ); D=$(mktemp -d)
@@ -503,24 +508,27 @@ current schema either way.
 `dev` is the working branch; `main` is the release branch. Work lands on `dev`
 and reaches production only by promotion.
 
-**Direct pushes to `main` are rejected** by `.githooks/pre-push`. Enable it once
-per clone:
+**Direct pushes to `main` are rejected server-side.** The `main-protection`
+ruleset (Settings → Rules) requires a pull request, requires the `checks` job to
+pass, allows only squash merges, and blocks force-pushes and deletion. It has no
+bypass actors, so it applies to organisation admins as well. Verified by
+attempting a direct push: GitHub rejects it with `GH013`.
+
+`.githooks/pre-push` refuses the same push locally, with a message pointing at
+the promotion commands. Enable it once per clone:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-This is a **client-side guard, not GitHub branch protection.** Server-side
-protection — rulesets or classic branch protection — requires a paid plan for
-private repositories, and this organisation is on Free; both APIs return 403.
-The hook therefore stops the reflexive `git push origin main`, which is the
-realistic failure, but not anyone who means it. The documented override is
-`git push --no-verify`, which is also how a hotfix reaches `main` directly.
+The hook is convenience rather than the control: it fails in a second instead of
+after a round trip. Since the ruleset is authoritative, `git push --no-verify`
+will not get past it. A genuine emergency means disabling the ruleset, pushing,
+and re-enabling it.
 
-If the repository ever moves to a paid plan or becomes public, replace this
-with a real ruleset on `main`: require a pull request, require the `checks`
-status, and allow only squash merges. The hook can stay alongside it — it fails
-faster and locally.
+This is free because the repository is public; GitHub charges for branch
+protection on private repositories. Secret scanning and push protection are
+enabled for the same reason.
 
 ```bash
 git checkout dev && …                       # commit freely; each push → staging

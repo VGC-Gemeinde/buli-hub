@@ -1,0 +1,97 @@
+# Backs production up to Cloud Storage. Nightly, plus a button for taking one
+# before something risky (docs/deployment.md §4).
+#
+# This exists because Supabase's automated backups are a Pro feature and the
+# organisation is on Free, so without it production has no restore point at all
+# — next to a repository that also contains a script whose job is to drop and
+# recreate schemas.
+#
+# Read-only against production. The dump covers exactly what a restore needs and
+# what Supabase does not recreate on a fresh project: `public`, the `drizzle`
+# journal, and the two auth tables.
+name: Backup production
+
+on:
+  schedule:
+    # 03:17 UTC. Off the hour because everyone schedules on the hour and the
+    # runner queue is shorter in between.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: PROD
+    concurrency:
+      group: production-backup
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same reason as the refresh workflow: the runner ships PostgreSQL 16 and
+      # /usr/bin/pg_dump is Debian's pg_wrapper, which dispatches to the default
+      # cluster's version. Supabase runs 17, and pg_dump refuses to dump from a
+      # newer server, so install 17 and put it ahead of the wrapper.
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Verify pg_dump version
+        run: |
+          pg_dump --version
+          pg_dump --version | grep -q ' 17\.' || {
+            echo "::error::pg_dump is not version 17; the dump would fail against Supabase."
+            exit 1
+          }
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Dump production
+        env:
+          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ)
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          mkdir -p backup
+          pg_dump --schema=public --schema=drizzle --no-owner \
+            --file=backup/app.sql "$PROD_DATABASE_URL"
+          pg_dump --table=auth.users --data-only --column-inserts --no-owner \
+            --file=backup/auth_users.sql "$PROD_DATABASE_URL"
+          pg_dump --table=auth.identities --data-only --column-inserts --no-owner \
+            --file=backup/auth_identities.sql "$PROD_DATABASE_URL"
+
+      # A backup nobody looked at is a guess. Check the dump actually contains
+      # rows before it replaces yesterday's, so a silent auth failure or an empty
+      # database cannot quietly become the newest "backup".
+      - name: Check the dump is not empty
+        run: |
+          set -euo pipefail
+          users=$(grep -c '^INSERT INTO auth.users' backup/auth_users.sql || true)
+          tables=$(grep -c '^CREATE TABLE' backup/app.sql || true)
+          echo "auth.users rows: $users, tables: $tables"
+          if [ "$users" -lt 1 ] || [ "$tables" -lt 10 ]; then
+            echo "::error::Dump looks empty (users=$users tables=$tables). Not uploading."
+            exit 1
+          fi
+
+      - name: Upload
+        run: |
+          set -euo pipefail
+          tar -czf "buli-hub-$STAMP.tar.gz" -C backup app.sql auth_users.sql auth_identities.sql
+          gcloud storage cp "buli-hub-$STAMP.tar.gz" gs://buli-hub-backups/nightly/
+          echo "Uploaded buli-hub-$STAMP.tar.gz ($(du -h "buli-hub-$STAMP.tar.gz" | cut -f1))" >> "$GITHUB_STEP_SUMMARY"

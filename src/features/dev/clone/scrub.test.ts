@@ -120,6 +120,26 @@ describe("buildScrubSql", () => {
     expect(buildScrubSql([]).join("\n")).not.toContain("origin =");
   });
 
+  // A published season/division/placement triple names a real person even
+  // after the display name is gone, and nearly all of them are unique.
+  it("permutes veteran history instead of keeping it with its owner", () => {
+    const sql = buildScrubSql([]).join("\n");
+
+    expect(sql).toContain("prev_placement = donor.prev_placement");
+    expect(sql).toContain("row_number() over (order by md5(id::text))");
+    // Permuted, not deleted: the distribution must survive for the seeding tool.
+    expect(sql).not.toContain("prev_placement = null");
+  });
+
+  it("permutes only among scrubbed users, leaving testers' history alone", () => {
+    const sql = buildScrubSql([]).join("\n");
+    const statement = sql.slice(sql.indexOf("with numbered as"));
+
+    expect(statement).toContain(
+      "user_id in (select user_id from _scrub_identities)",
+    );
+  });
+
   it("preserves null-ness of the optional free-text columns", () => {
     const sql = buildScrubSql([]).join("\n");
 

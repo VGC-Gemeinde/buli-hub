@@ -202,6 +202,30 @@ set prev_name = case
     end
 where r.user_id in (select user_id from _scrub_identities);`,
 
+    // Veteran history is a quasi-identifier: a past season/division/placement
+    // triple is a published result, and almost every one of them is unique, so
+    // it names a real person even after their display name is gone.
+    //
+    // Permuted among the scrubbed users rather than nulled. The multiset of
+    // values is unchanged — so the seeding tool still sees a realistic spread
+    // of veterans and placements — but no row keeps the history of the person
+    // it belongs to. Ordering by a hash makes the permutation deterministic.
+    `with numbered as (
+  select id, prev_season, prev_division, prev_placement,
+         row_number() over (order by id) as slot,
+         row_number() over (order by md5(id::text)) as pick
+  from "public"."registrations"
+  where prev_placement is not null
+    and user_id in (select user_id from _scrub_identities)
+)
+update "public"."registrations" r
+set prev_season = donor.prev_season,
+    prev_division = donor.prev_division,
+    prev_placement = donor.prev_placement
+from numbered target
+join numbered donor on donor.pick = target.slot
+where r.id = target.id;`,
+
     `update "public"."disputes" d
 set reason = 'Anonymisierte Begründung ' || left(md5(d.id::text), 6),
     note = case

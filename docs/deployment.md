@@ -10,8 +10,15 @@ Placeholders used below: `buli-hub`, `<DOMAIN>` (e.g. `bulihub.de`),
 
 ## 1. Supabase project
 
-1. Create a project (org plan: **Pro** — daily backups; the free tier pauses
-   on inactivity). Region: Frankfurt (`eu-central-1`).
+1. Create a project. Region: Frankfurt (`eu-central-1`). The organisation is on
+   the **Free** plan, which works but has three consequences worth knowing —
+   see §4 for the one that matters:
+   - **No automated backups.** Pro adds daily backups with retention; Free adds
+     nothing.
+   - **Projects pause after ~7 days of inactivity.** Production is used daily
+     so this never fires; staging is used rarely, so it will.
+   - **Two active projects per organisation.** Production and staging use both.
+     A third environment means upgrading or pausing one.
 2. **Auth → Providers → Discord**: enable; client ID/secret from the Discord
    Developer Portal (the production application — staging and local use a
    separate one, see §7). In the
@@ -129,8 +136,39 @@ Then: install the **Renovate** GitHub app on the repo (config is
 - **Log-based alert**: Cloud Run revision logs, filter `severity>=ERROR`,
   notify on new entries (catches failed Discord syncs — they log via
   `console.error`).
-- **Backups**: Supabase Pro does daily backups; verify the first one exists
-  after go-live and note the restore path (Dashboard → Database → Backups).
+- **Backups**: ⚠️ **manual for now.** Automated backups are a Supabase Pro
+  feature and the organisation is on Free, so nothing runs on a schedule yet.
+  Take one before anything risky — a migration that rewrites data, or any
+  `db:clone-prod` run:
+
+  ```bash
+  STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ); D=$(mktemp -d)
+  pg_dump --schema=public --schema=drizzle --no-owner --file="$D/app.sql" "$PROD_DATABASE_URL"
+  pg_dump --table=auth.users      --data-only --column-inserts --no-owner --file="$D/auth_users.sql"      "$PROD_DATABASE_URL"
+  pg_dump --table=auth.identities --data-only --column-inserts --no-owner --file="$D/auth_identities.sql" "$PROD_DATABASE_URL"
+  tar -czf "$D/buli-hub-$STAMP.tar.gz" -C "$D" app.sql auth_users.sql auth_identities.sql
+  gcloud storage cp "$D/buli-hub-$STAMP.tar.gz" gs://buli-hub-backups/manual/
+  ```
+
+  `gs://buli-hub-backups` (europe-west1) is private, uniform-access,
+  public-access-prevented and versioned. The dump covers exactly what a restore
+  needs and what Supabase does not recreate: `public`, the `drizzle` journal,
+  and `auth.users` / `auth.identities`.
+
+  **Restoring** is the clone pipeline pointed at an archive instead of at
+  production: drop `public` and `drizzle`, empty the two auth tables, then load
+  `auth_users.sql`, `auth_identities.sql`, `app.sql` in that order. Strip
+  `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` first
+  (`src/features/dev/clone/restore.ts`) or it fails on any non-superuser target.
+  This has been exercised against the local stack from a freshly downloaded
+  archive — row counts matched production.
+
+  Archives expire after 180 days (non-current versions after 30). Cost is not a
+  consideration: the whole database is ~3.6 MB and compresses to ~75 KB, so
+  daily backups run around **$0.001/month** — even fifty times the current data
+  stays under three cents.
+
+  Still to do: put the above on a schedule.
 
 ## 5. Dress rehearsal (before announcing)
 
@@ -507,11 +545,19 @@ as above.
 
 ### Cost
 
-Supabase project #2 is compute only on a Pro organisation, roughly $10/month
-for the smallest instance. The free tier is not an option: it pauses on
-inactivity, which is exactly what a rarely-used staging environment does.
-Cloud Run staging is effectively free at `min-instances=0`; staging images
-share the existing Artifact Registry repository.
+Staging runs at **no cost**: Supabase project #2 is on the Free plan, Cloud Run
+is effectively free at `min-instances=0`, and staging images share the existing
+Artifact Registry repository.
+
+The Free plan's trade is that a project **pauses after roughly 7 days of
+inactivity**, which is exactly what a rarely-used staging environment does. In
+practice that means staging will sometimes be asleep when you go to use it:
+unpause it in the dashboard, then run the refresh workflow. Expect a paused
+project to fail the refresh rather than silently do nothing.
+
+If that becomes tiresome, Pro is about $10/month for the smallest instance —
+but the stronger argument for Pro is backups for *production* (§4), not
+convenience for staging.
 
 (Supabase's own Branching feature seeds branches from migrations and a seed
 file rather than from production data — the opposite of what this is for.)

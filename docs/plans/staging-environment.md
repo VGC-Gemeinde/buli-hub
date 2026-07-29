@@ -446,10 +446,12 @@ throwaway and staging can briefly run code that never reaches production.
 
 ## 7. Cost
 
-- **Supabase project #2** — on a Pro organisation this is compute only,
-  roughly $10/month for the smallest instance. Free tier is not an option:
-  it pauses on inactivity, which is exactly what a rarely-used staging
-  environment would do.
+- **Supabase project #2** — free. The plan assumed Pro would be needed because
+  the Free tier pauses a project after ~7 days of inactivity, which is exactly
+  what a rarely-used staging environment does. It was built on Free anyway, and
+  the pause turns out to be a nuisance rather than a blocker: unpause in the
+  dashboard, then refresh. Pro remains worth considering, but for production
+  backups rather than for staging (`docs/deployment.md` §4).
 - **Cloud Run staging** — effectively free at `min-instances=0`.
 - **Artifact Registry** — negligible; staging images share the existing repo.
 

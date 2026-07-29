@@ -142,9 +142,16 @@ Then: install the **Renovate** GitHub app on the repo (config is
   organisation is on Free, so this is the only restore point that exists.
 
   The workflow refuses to upload a dump that looks empty, so a silent auth
-  failure cannot quietly replace a good backup with a useless one. Take a manual
-  one before anything risky — a migration that rewrites data, or any
-  `db:clone-prod` run — either with the button or by hand:
+  failure cannot quietly replace a good backup with a useless one.
+
+  The deploy service account holds `objectCreator` and `objectViewer` on the
+  bucket and nothing more. It can write new archives and read them back, but it
+  cannot delete or overwrite one, so a compromised workflow cannot destroy
+  history. (`objectCreator` alone is not enough: `gcloud storage cp` reads the
+  destination before writing.)
+
+  Take a manual backup before anything risky — a migration that rewrites data,
+  or any `db:clone-prod` run — either with the button or by hand:
 
   ```bash
   STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ); D=$(mktemp -d)

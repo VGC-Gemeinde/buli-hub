@@ -148,10 +148,23 @@ from ranked r;`.trim();
   return [
     buildMapping,
 
+    // Social handles are replaced rather than nulled, and only where the user
+    // had one: deleting them would mean no cloned profile ever renders a
+    // social link, so those paths would go untested — the opposite of why the
+    // clone exists. `origin` is deliberately left alone; it is a low-cardinality
+    // category (a dozen distinct values across the user base), not free text,
+    // so it identifies nobody on its own and is worth keeping realistic.
     `update "public"."profiles" p
 set display_name = s.display_name,
     username = s.username,
-    avatar_url = s.avatar_url
+    avatar_url = s.avatar_url,
+    twitter_handle = case
+      when p.twitter_handle is null then null else s.username
+    end,
+    bluesky_handle = case
+      when p.bluesky_handle is null then null
+      else s.username || '.bsky.social'
+    end
 from _scrub_identities s
 where p.user_id = s.user_id;`,
 

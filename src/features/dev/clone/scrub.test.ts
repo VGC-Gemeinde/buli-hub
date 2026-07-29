@@ -100,6 +100,26 @@ describe("buildScrubSql", () => {
     );
   });
 
+  // Directly identifying, unlike `origin`, which is a low-cardinality category.
+  it("scrubs the social handles", () => {
+    const sql = buildScrubSql([]).join("\n");
+
+    expect(sql).toContain("twitter_handle =");
+    expect(sql).toContain("bluesky_handle =");
+    expect(sql).toContain("'.bsky.social'");
+  });
+
+  it("replaces social handles rather than deleting them, so the UI still renders links", () => {
+    const sql = buildScrubSql([]).join("\n");
+
+    expect(sql).toContain("when p.twitter_handle is null then null else");
+    expect(sql).toContain("when p.bluesky_handle is null then null");
+  });
+
+  it("leaves origin alone — a category, not personal data", () => {
+    expect(buildScrubSql([]).join("\n")).not.toContain("origin =");
+  });
+
   it("preserves null-ness of the optional free-text columns", () => {
     const sql = buildScrubSql([]).join("\n");
 

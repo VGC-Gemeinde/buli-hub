@@ -13,7 +13,8 @@ Placeholders used below: `buli-hub`, `<DOMAIN>` (e.g. `bulihub.de`),
 1. Create a project (org plan: **Pro** — daily backups; the free tier pauses
    on inactivity). Region: Frankfurt (`eu-central-1`).
 2. **Auth → Providers → Discord**: enable; client ID/secret from the Discord
-   Developer Portal (the production application, not the dev one). In the
+   Developer Portal (the production application — staging and local use a
+   separate one, see §7). In the
    Discord portal, add the redirect
    `https://<project-ref>.supabase.co/auth/v1/callback`.
 3. **Auth → URL configuration**: Site URL `https://<DOMAIN>`; additional
@@ -227,7 +228,8 @@ Full flag list: `npm run db:clone-prod -- --help`.
 ### The privacy rule
 
 Cloning copies real personal data: Discord ids, usernames, nicknames, avatars,
-email addresses, and the free text players wrote about themselves.
+email addresses, social handles, the free text players wrote about themselves,
+and their competitive history.
 
 **Scrub when the clone lands somewhere that widens access.**
 
@@ -237,13 +239,52 @@ email addresses, and the free text players wrote about themselves.
 - *Staging clone → scrub.* Staging is reachable by more people. The script
   enforces this: a non-local target without `--scrub` is refused.
 
-`--scrub` replaces names, handles, avatars, emails, auth metadata and the
-free-text registration and dispute fields with synthetic values. The synthetic
-names deliberately keep the properties that break layouts — umlauts, emoji,
-very long names, mention-like strings, right-to-left text — because
-anonymising into "User 1..N" would remove exactly the realism the clone exists
-for. `CLONE_KEEP_DISCORD_IDS` exempts an allow-list of tester Discord ids, so
-those people sign in as themselves and land on their own copied data.
+`CLONE_KEEP_DISCORD_IDS` exempts an allow-list of tester Discord ids from
+everything below, so those people sign in as themselves and land on their own
+copied data.
+
+**What `--scrub` rewrites**
+
+| Kind | Fields | Treatment |
+|---|---|---|
+| Identity | `profiles.display_name`, `username`, `avatar_url`; `auth.users.email`, `raw_user_meta_data`, `phone`; `auth.identities.identity_data`, `provider_id` | replaced with synthetic values |
+| Social | `profiles.twitter_handle`, `bluesky_handle` | replaced, null stays null |
+| Free text | `registrations.prev_name`, `greatest_achievements`; `disputes.reason`, `note` | replaced, null and rough length preserved |
+| Quasi-identifier | `registrations.prev_season` / `prev_division` / `prev_placement` | **permuted between users** |
+
+Three of those choices are deliberate and worth keeping:
+
+- **Replaced, never deleted.** Nulling the social handles would mean no cloned
+  profile ever renders a social link, so that part of the UI would go untested
+  against realistic data — the opposite of why the clone exists. Same reason
+  null-ness and rough length are preserved in the free-text fields.
+- **Synthetic names keep what breaks layouts** — umlauts, emoji, very long
+  names, mention-like strings, right-to-left text. Anonymising into
+  "User 1..N" would remove exactly the realism being cloned for. A unit test
+  asserts the fixture list still has each property.
+- **Veteran history is permuted, not cleared.** A past season/division/
+  placement triple is a published result, and nearly all of them are unique, so
+  it names a real person however the display name reads. Permuting keeps the
+  multiset of values — the seeding tool still sees a realistic spread — while
+  no row keeps the history of the person it belongs to.
+
+`profiles.origin` is left alone on purpose: roughly a dozen distinct values
+across the whole user base makes it a category rather than free text.
+
+### What the scrub cannot do
+
+**A clone is pseudonymised, not anonymised.** Once a season is running, the
+placements, matches and results come across identically to production. Anyone
+holding both the staging data and the published standings can re-link every
+player — "whoever is 7–0 at the top of Division 1a" is one person, whatever
+name is displayed. That is inherent to cloning for realism: the shape of the
+data cannot be preserved and its linkage removed at the same time.
+
+So the scrub is not the primary control. The staging URL is unlisted and
+`noindex`, and `/dev` needs `DEV_TOOLS_TOKEN` — those are what limit who holds
+the data in the first place. `auth.users.created_at` / `last_sign_in_at` and
+the user UUIDs also survive, being needed for foreign keys and weakly
+identifying at most.
 
 ### Safety
 
@@ -279,7 +320,7 @@ starts), and provide a URL you can hand to a staff member.
 | **Database** | Supabase CLI (Docker) | Supabase project #2 | Supabase project #1 |
 | **Deployed from** | — | push to `dev` | push to `main` |
 | **Data** | prod clone, on demand | prod clone, on demand | real |
-| **Discord sign-in** | dev app | dev app | prod app |
+| **Discord sign-in** | personas, or non-prod app | non-prod app | prod app |
 | **Discord role reads** | off | off | real guild |
 | **Discord posting** | test server | test server | real guild |
 | **`/dev` tooling** | on | on (token) | **off** |
@@ -291,7 +332,9 @@ Three independent concerns, three independent settings — which is what makes
 this safe without any code changes:
 
 1. **Sign-in** — `SUPABASE_AUTH_EXTERNAL_DISCORD_CLIENT_ID`/`_SECRET`. Local
-   and staging both use the **dev** application.
+   and staging both use the **non-production** Discord application, never the
+   production one. Local development can also leave these as placeholders and
+   sign in through `/dev` personas instead, which never touch Discord.
 2. **Role reads** — `DISCORD_GUILD_ID` + the three role ids. **Left unset on
    local and staging.** `roleConfig()` returns null without all four, and
    `syncMember()` then returns the *stored* role unchanged, so the roles that
@@ -317,11 +360,23 @@ scrub leaves untouched.
 ### Supabase project #2
 
 Same steps as §1, with these differences: enable the Discord provider with the
-**dev** application's credentials, and add
+**non-production** application's credentials, and add
 `https://<staging-ref>.supabase.co/auth/v1/callback` to that application's
-redirect URLs in the Discord Developer Portal. Site URL and redirect URLs point
-at the staging Cloud Run URL. Email sign-ups disabled, as in production. No
-schema needs applying by hand — the first deploy or refresh supplies it.
+redirect URLs in the Discord Developer Portal. Email sign-ups disabled, as in
+production. No schema needs applying by hand — the first deploy or refresh
+supplies it.
+
+If no non-production Discord application exists yet, create one now (Developer
+Portal → *New Application*). It supplies two separate things staging needs: the
+OAuth client ID/secret above, and — under *Bot* — the token that becomes
+`DISCORD_BOT_TOKEN_TEST`. Never reuse the production application for either;
+resetting its secret to recover it would break sign-in for the whole league.
+Add `http://127.0.0.1:54321/auth/v1/callback` to the same application while you
+are there, so the OAuth round-trip can also be exercised locally.
+
+**Site URL and redirect URLs must wait for the Cloud Run URL**, which is only
+generated when the service is created. Come back and set them after the next
+step.
 
 ### Cloud Run service
 

@@ -7,13 +7,15 @@ and policies intact (§9); the `/dev` gate checked against a real production
 build (404 without the flag, 404 with the flag but no unlock cookie, 200 with
 it); `/dev/login-as` + picker rendering real cloned users; unit tests green.
 
-Slice 2's code is in place (deploy job for `dev`, refresh workflow,
-`APP_ENV=staging` noindex verified from a single build) but **the
-infrastructure it targets does not exist yet**: Supabase project #2, the
-`buli-hub-staging` Cloud Run service and the GitHub `STAGING` environment are
-still to be created (`docs/deployment.md` §7). The one remaining unknown is the
-restore against a *hosted* target, where `postgres` is less privileged than it
-is locally — watch the first staging refresh.
+Slice 2 is **live**. Supabase project #2, the `buli-hub-staging` Cloud Run
+service and the GitHub `STAGING` environment exist; pushes to `dev` deploy, and
+the refresh workflow has cloned production into staging successfully. The
+staging URL, its `noindex` behaviour and the `/dev` token gate are all verified
+against the running deployment.
+
+Open, and deliberately so: a clone is pseudonymised, not anonymised — see
+`docs/deployment.md` §6, "What the scrub cannot do". Revisit once a season is
+running, because that is when the standings make re-linking possible.
 
 Goal: a second deployment fed by real-shaped data, so features and migrations
 can be tried against something that behaves like production before production
@@ -504,9 +506,22 @@ which is the opposite of what this plan is for. Not a fit.
     not materialise. It still might against a *staging* project on a different
     Supabase version, which is why the tolerant form stays.
 
-  What remains unverified is the same path with a **hosted** target, where the
-  `postgres` role is less privileged than it is locally. That is the one thing
-  to watch on the first staging refresh.
+  The hosted-target path is **also verified now** (2026-07-29, prod → staging
+  via the refresh workflow): row counts match, the scrub and the allow-list
+  behave, and `drizzle-kit migrate` built the schema from scratch on an empty
+  hosted project. Two things only the real run could have surfaced:
+
+  - **Database identity cannot be judged from a connection string.** Supabase's
+    pooler puts every project on one hostname, port and database name,
+    distinguished only by the username, so the original self-clone guard
+    refused a legitimate prod → staging run. Worse, it would have *allowed* the
+    dangerous case: the session pooler (5432) and the transaction pooler (6543)
+    are two URLs for one database. The guard now compares
+    `pg_control_system().system_identifier` from both servers.
+  - **Installing `postgresql-client-17` does not make `pg_dump` version 17.**
+    `/usr/bin/pg_dump` is Debian's `pg_wrapper`, which dispatches to the default
+    cluster's version — 16 on GitHub runners. The workflow prepends
+    `/usr/lib/postgresql/17/bin` and asserts the version.
 
 - **`supabase db reset` does not populate `drizzle.__drizzle_migrations`** —
   the CLI replays the SQL files directly. So a fresh local stack has no

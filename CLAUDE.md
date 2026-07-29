@@ -56,7 +56,8 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
 
 - **Vitest unit tests** — the priority. Cover all domain logic (the pure functions). Correctness of computed results is critical to community trust; test exhaustively.
 - **Vitest integration tests against real local Postgres** — run against the Supabase CLI stack. Test RLS policies, constraints, and multi-step flows. Clean state per test file via `supabase db reset` or truncation; shared seed helpers provide fixtures.
-- **A test run wipes a `db:clone-prod` fixture** — the integration tests clear shared tables on startup. Re-clone afterwards.
+- **The suite refuses to run against a non-local `DATABASE_URL`** (`src/test/local-database.ts`, enforced from `src/test/setup.ts`). The integration tests delete and truncate on startup against whatever that variable points at, so a pasted production string would destroy live data — this is the only thing standing in the way. Override deliberately with `ALLOW_NONLOCAL_TEST_DATABASE=true`.
+- **A test run wipes a `db:clone-prod` fixture**, for the same reason. Re-clone afterwards.
 - **No E2E tests** — deliberate decision. Do not add Playwright or similar.
 - Do not test: UI snapshots, styling, shadcn internals.
 

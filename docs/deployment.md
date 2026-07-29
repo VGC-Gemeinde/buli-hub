@@ -10,8 +10,15 @@ Placeholders used below: `buli-hub`, `<DOMAIN>` (e.g. `bulihub.de`),
 
 ## 1. Supabase project
 
-1. Create a project (org plan: **Pro** — daily backups; the free tier pauses
-   on inactivity). Region: Frankfurt (`eu-central-1`).
+1. Create a project. Region: Frankfurt (`eu-central-1`). The organisation is on
+   the **Free** plan, which works but has three consequences worth knowing —
+   see §4 for the one that matters:
+   - **No automated backups.** Pro adds daily backups with retention; Free adds
+     nothing.
+   - **Projects pause after ~7 days of inactivity.** Production is used daily
+     so this never fires; staging is used rarely, so it will.
+   - **Two active projects per organisation.** Production and staging use both.
+     A third environment means upgrading or pausing one.
 2. **Auth → Providers → Discord**: enable; client ID/secret from the Discord
    Developer Portal (the production application — staging and local use a
    separate one, see §7). In the
@@ -129,8 +136,20 @@ Then: install the **Renovate** GitHub app on the repo (config is
 - **Log-based alert**: Cloud Run revision logs, filter `severity>=ERROR`,
   notify on new entries (catches failed Discord syncs — they log via
   `console.error`).
-- **Backups**: Supabase Pro does daily backups; verify the first one exists
-  after go-live and note the restore path (Dashboard → Database → Backups).
+- **Backups**: ⚠️ **there are none.** Automated backups are a Pro feature and
+  the organisation is on Free, so production currently has no restore point.
+  A bad migration, a mistaken `delete`, or a `db:clone-prod` pointed at the
+  wrong target would be unrecoverable — and note that the clone script drops
+  and recreates schemas, which is why its guards are written the way they are.
+
+  Until this is addressed, the only copies of production are whatever
+  `db:clone-prod` last wrote to a local machine, which is a side effect rather
+  than a backup: it is overwritten by the next clone and wiped by any test run.
+
+  Two ways out, in increasing order of cost: a scheduled `pg_dump` to durable
+  storage (a `workflow_dispatch`/`schedule` workflow writing to a GCS bucket
+  reuses everything the refresh workflow already does), or Supabase Pro, which
+  makes it someone else's problem. The first is roughly an hour of work.
 
 ## 5. Dress rehearsal (before announcing)
 
@@ -507,11 +526,19 @@ as above.
 
 ### Cost
 
-Supabase project #2 is compute only on a Pro organisation, roughly $10/month
-for the smallest instance. The free tier is not an option: it pauses on
-inactivity, which is exactly what a rarely-used staging environment does.
-Cloud Run staging is effectively free at `min-instances=0`; staging images
-share the existing Artifact Registry repository.
+Staging runs at **no cost**: Supabase project #2 is on the Free plan, Cloud Run
+is effectively free at `min-instances=0`, and staging images share the existing
+Artifact Registry repository.
+
+The Free plan's trade is that a project **pauses after roughly 7 days of
+inactivity**, which is exactly what a rarely-used staging environment does. In
+practice that means staging will sometimes be asleep when you go to use it:
+unpause it in the dashboard, then run the refresh workflow. Expect a paused
+project to fail the refresh rather than silently do nothing.
+
+If that becomes tiresome, Pro is about $10/month for the smallest instance —
+but the stronger argument for Pro is backups for *production* (§4), not
+convenience for staging.
 
 (Supabase's own Branching feature seeds branches from migrations and a seed
 file rather than from production data — the opposite of what this is for.)

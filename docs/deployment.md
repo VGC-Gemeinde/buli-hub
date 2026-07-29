@@ -465,10 +465,24 @@ current schema either way.
 `dev` is the working branch; `main` is the release branch. Work lands on `dev`
 and reaches production only by promotion.
 
-**`main` is protected** — direct pushes are rejected for everyone, including
-admins, and a promotion PR requires the `checks` job to pass. The protection is
-a GitHub ruleset named `main-protection`; to lift it in an emergency, disable
-that ruleset in Settings → Rules, push, and re-enable it.
+**Direct pushes to `main` are rejected** by `.githooks/pre-push`. Enable it once
+per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This is a **client-side guard, not GitHub branch protection.** Server-side
+protection — rulesets or classic branch protection — requires a paid plan for
+private repositories, and this organisation is on Free; both APIs return 403.
+The hook therefore stops the reflexive `git push origin main`, which is the
+realistic failure, but not anyone who means it. The documented override is
+`git push --no-verify`, which is also how a hotfix reaches `main` directly.
+
+If the repository ever moves to a paid plan or becomes public, replace this
+with a real ruleset on `main`: require a pull request, require the `checks`
+status, and allow only squash merges. The hook can stay alongside it — it fails
+faster and locally.
 
 ```bash
 git checkout dev && …                       # commit freely; each push → staging

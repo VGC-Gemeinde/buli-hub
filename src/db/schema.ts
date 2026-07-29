@@ -9,6 +9,7 @@
 import {
   boolean,
   date,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -418,3 +419,44 @@ export const disputes = pgTable("disputes", {
     .notNull()
     .defaultNow(),
 });
+
+// What a feedback report is about: a broken thing, or a wish.
+export const feedbackKindEnum = pgEnum("feedback_kind", ["bug", "idea"]);
+
+// In-app intake for bug reports and (staff+) feature ideas. Tracking happens
+// in a Discord forum, not here: the row is written first so a Discord outage
+// never loses a report, and the thread it produced is recorded afterwards.
+// `thread_guild_id` is stored per row rather than configured because the forum
+// may move servers — reports written before a move must still resolve to a
+// working link. `path`/`user_agent` are client-supplied and length-capped by
+// the Zod schema. FK + RLS in a custom migration.
+export const feedbackReports = pgTable(
+  "feedback_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: feedbackKindEnum("kind").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    path: text("path").notNull(),
+    userAgent: text("user_agent").notNull(),
+    buildSha: text("build_sha"),
+    windowId: uuid("window_id"),
+    round: integer("round"),
+    reporterId: uuid("reporter_id").notNull(),
+    // The reporter's role at submit time — roles change, reports don't.
+    reporterRole: roleEnum("reporter_role").notNull(),
+    threadId: text("thread_id"),
+    threadGuildId: text("thread_guild_id"),
+    postedAt: timestamp("posted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // The rate-limit read: this reporter's rows since a cutoff.
+  (table) => [
+    index("feedback_reports_reporter_idx").on(
+      table.reporterId,
+      table.createdAt,
+    ),
+  ],
+);

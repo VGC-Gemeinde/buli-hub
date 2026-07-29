@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -11,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import { signOut } from "../actions";
 
 export function UserMenu({
@@ -23,6 +25,7 @@ export function UserMenu({
   isStaff?: boolean;
 }) {
   const name = displayName ?? "Discord-Nutzer";
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   return (
     <DropdownMenu>
@@ -57,12 +60,28 @@ export function UserMenu({
             </Link>
           </DropdownMenuItem>
         ) : null}
+        <DropdownMenuItem
+          className="font-medium"
+          // Without preventDefault the menu closes first and takes the focus
+          // with it, so the dialog opens unfocused.
+          onSelect={(event) => {
+            event.preventDefault();
+            setFeedbackOpen(true);
+          }}
+        >
+          Feedback geben
+        </DropdownMenuItem>
         <form action={signOut}>
           <DropdownMenuItem asChild className="w-full font-medium">
             <button type="submit">Abmelden</button>
           </DropdownMenuItem>
         </form>
       </DropdownMenuContent>
+      <FeedbackDialog
+        open={feedbackOpen}
+        onOpenChange={setFeedbackOpen}
+        canSubmitIdea={isStaff}
+      />
     </DropdownMenu>
   );
 }

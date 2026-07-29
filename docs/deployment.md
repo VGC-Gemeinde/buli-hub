@@ -93,15 +93,32 @@ gcloud run deploy buli-hub --image <first image> --region europe-west1 \
   --no-invoker-iam-check \
   --min-instances=1 --max-instances=3 --memory=512Mi \
   --set-secrets=DATABASE_URL=DATABASE_URL:latest,SUPABASE_SECRET_KEY=SUPABASE_SECRET_KEY:latest,DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest \
-  --set-env-vars=APP_BASE_URL=https://<DOMAIN>,DISCORD_GUILD_ID=…,DISCORD_ROLE_ID_DEV=…,DISCORD_ROLE_ID_ADMIN=…,DISCORD_ROLE_ID_STAFF=…,DISCORD_RESULTS_CHANNEL_ID=…
+  --set-env-vars=APP_BASE_URL=https://<DOMAIN>,DISCORD_GUILD_ID=…,DISCORD_ROLE_ID_DEV=…,DISCORD_ROLE_ID_ADMIN=…,DISCORD_ROLE_ID_STAFF=…,DISCORD_RESULTS_CHANNEL_ID=…,DISCORD_FEEDBACK_FORUM_CHANNEL_ID=…,DISCORD_FEEDBACK_TAG_BUG=…,DISCORD_FEEDBACK_TAG_IDEA=…
 ```
 
 `min-instances=1` during the season (no cold starts); drop to 0 off-season.
-Later deploys from CI only swap the image — env/secrets stick to the service.
+Later deploys from CI swap the image and set `APP_BUILD_SHA` to the deployed
+commit (`--update-env-vars`, so everything else sticks to the service).
 `--no-invoker-iam-check` (instead of `--allow-unauthenticated`): the GCP
 project sits under the VGC-Gemeinde organization, whose Domain Restricted
 Sharing policy forbids `allUsers` IAM bindings — this flag is Cloud Run's
 supported way to serve public traffic under that policy.
+
+### Discord feedback forum
+
+The in-app "Feedback geben" dialog opens one forum post per report.
+`DISCORD_FEEDBACK_FORUM_CHANNEL_ID` may point at a forum in **any guild the
+bot is a member of** — the API addresses channels by id alone — so reports can
+live on the staff server while `DISCORD_GUILD_ID` stays the main server. To
+use a second server, invite the same bot there and give it *View Channel*,
+*Create Posts* and *Send Messages in Posts* on the forum.
+
+The reporter only gets a "zum Thread" link when the thread's guild is
+`DISCORD_GUILD_ID`; on any other server the app shows a plain thank-you
+instead of a link the reporter cannot open. Moving the forum to the main
+server later switches the links on by itself — but **the tag ids change with
+the forum**, so `DISCORD_FEEDBACK_TAG_BUG` / `_IDEA` must be updated at the
+same time. They fail silently: posts are simply created untagged.
 
 ### Domain
 

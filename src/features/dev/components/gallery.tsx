@@ -15,6 +15,8 @@ import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
 import { DropBanner } from "@/features/drops/components/drop-banner";
 import { DropsSection } from "@/features/drops/components/drops-section";
 import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
+import { FeedbackPanel } from "@/features/feedback/components/feedback-panel";
+import type { FeedbackKind } from "@/features/feedback/feedback";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import {
   MotwManager,
@@ -852,6 +854,44 @@ function SpoilerScoreDemo() {
       />
       <SpoilerScore scoreA={2} scoreB={0} covered={false} onReveal={() => {}} />
     </div>
+  );
+}
+
+// The dialog is 640px wide with 16px padding, so the panel really renders at
+// 608px — the gallery would otherwise stretch it across the full container and
+// show a layout that never occurs.
+function DialogWidth({ children }: { children: React.ReactNode }) {
+  return <div className="max-w-[608px]">{children}</div>;
+}
+
+// The live form, wired to local state only — the gallery must not file real
+// reports, so no server action is attached.
+function FeedbackSpecimen({
+  canSubmitIdea,
+  error = null,
+}: {
+  canSubmitIdea: boolean;
+  error?: string | null;
+}) {
+  const [kind, setKind] = useState<FeedbackKind>("bug");
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  return (
+    <DialogWidth>
+      <FeedbackPanel
+        canSubmitIdea={canSubmitIdea}
+        kind={kind}
+        onKindChange={setKind}
+        title={title}
+        onTitleChange={setTitle}
+        body={body}
+        onBodyChange={setBody}
+        capturedPath="/match/8f2c"
+        error={error}
+        onSubmit={() => {}}
+        onClose={() => {}}
+      />
+    </DialogWidth>
   );
 }
 
@@ -1792,6 +1832,54 @@ export function Gallery() {
             playerB={EDITOR_B}
             initial={EDITOR_INITIAL}
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Feedback</h2>
+        <Specimen label="Spieler: nur Fehlermeldung (kein Typ-Umschalter)">
+          <FeedbackSpecimen canSubmitIdea={false} />
+        </Specimen>
+        <Specimen label="Staff: Fehler oder Idee">
+          <FeedbackSpecimen canSubmitIdea />
+        </Specimen>
+        <Specimen label="Validierungsfehler / Rate Limit">
+          <FeedbackSpecimen
+            canSubmitIdea
+            error="Du hast gerade sehr viele Meldungen abgeschickt. Bitte versuche es in einer Stunde erneut."
+          />
+        </Specimen>
+        <Specimen label="Gesendet — mit Thread-Link (Forum auf dem Hauptserver)">
+          <DialogWidth>
+            <FeedbackPanel
+              canSubmitIdea
+              kind="bug"
+              onKindChange={() => {}}
+              title=""
+              onTitleChange={() => {}}
+              body=""
+              onBodyChange={() => {}}
+              sent={{ threadUrl: "https://discord.com/channels/1/2" }}
+              onSubmit={() => {}}
+              onClose={() => {}}
+            />
+          </DialogWidth>
+        </Specimen>
+        <Specimen label="Gesendet — ohne Link (Forum auf dem Staff-Server)">
+          <DialogWidth>
+            <FeedbackPanel
+              canSubmitIdea
+              kind="bug"
+              onKindChange={() => {}}
+              title=""
+              onTitleChange={() => {}}
+              body=""
+              onBodyChange={() => {}}
+              sent={{ threadUrl: null }}
+              onSubmit={() => {}}
+              onClose={() => {}}
+            />
+          </DialogWidth>
         </Specimen>
       </section>
 

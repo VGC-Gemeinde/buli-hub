@@ -136,39 +136,63 @@ describe("recentFeedbackCount", () => {
 // The app reaches Postgres as a superuser and RLS is bypassed there, so these
 // assertions switch to `anon` inside a transaction — the role a leaked
 // publishable key would get.
+//
+// Two mechanisms can deny anon, and which one applies depends on the
+// environment: where Supabase's default privileges granted anon table access
+// (a long-lived local stack, and production) RLS is what stops it; on a stack
+// where the grant was never issued (CI's fresh `supabase db reset`) it is
+// denied before RLS is consulted. Asserting one specific message would test
+// the environment, not the table — so these assert the property: anon can
+// neither read a row nor write one.
+const DENIED = /row-level security|permission denied/;
+
+type AnonResult<T> = { ok: true; value: T } | { ok: false; message: string };
+
+async function asAnon<T>(
+  run: (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<T>,
+): Promise<AnonResult<T>> {
+  try {
+    const value = await db.transaction(async (tx) => {
+      await tx.execute(sql`set local role anon`);
+      return run(tx);
+    });
+    return { ok: true, value };
+  } catch (error) {
+    // Drizzle wraps the driver error; the denial is the cause.
+    const cause = (error as Error).cause as Error | undefined;
+    return { ok: false, message: cause?.message ?? (error as Error).message };
+  }
+}
+
 describe("row level security", () => {
-  it("hides every row from anon", async () => {
+  it("never lets anon observe a row", async () => {
     const id = await insertFeedback(report());
 
-    const rows = await db.transaction(async (tx) => {
-      await tx.execute(sql`set local role anon`);
-      return tx.execute<{ count: string }>(
+    const result = await asAnon((tx) =>
+      tx.execute<{ count: string }>(
         sql`select count(*)::text as count from feedback_reports`,
-      );
-    });
-    expect(rows[0].count).toBe("0");
+      ),
+    );
+    if (result.ok) {
+      expect(result.value[0].count).toBe("0");
+    } else {
+      expect(result.message).toMatch(DENIED);
+    }
 
     await db.delete(feedbackReports).where(eq(feedbackReports.id, id));
   });
 
   it("rejects an anon insert", async () => {
-    // Drizzle wraps the driver error; the policy violation is the cause.
-    const failure = await db
-      .transaction(async (tx) => {
-        await tx.execute(sql`set local role anon`);
-        await tx.execute(
-          sql`insert into feedback_reports (kind, title, body, path, user_agent, reporter_id, reporter_role)
-              values ('bug', 't', 'body text', '/', 'ua', ${alice}, 'player')`,
-        );
-      })
-      .then(
-        () => null,
-        (error: Error) => error,
-      );
-
-    expect(failure).not.toBeNull();
-    expect((failure?.cause as Error | undefined)?.message).toMatch(
-      /row-level security/,
+    const result = await asAnon((tx) =>
+      tx.execute(
+        sql`insert into feedback_reports (kind, title, body, path, user_agent, reporter_id, reporter_role)
+            values ('bug', 't', 'body text', '/', 'ua', ${alice}, 'player')`,
+      ),
     );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toMatch(DENIED);
+    }
   });
 });

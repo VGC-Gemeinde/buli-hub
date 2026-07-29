@@ -103,15 +103,25 @@ function describe(url: string): {
   }
   const host = `${parsed.hostname}:${parsed.port || "5432"}`;
   const database = parsed.pathname.replace(/^\//, "") || "postgres";
-  return { host, database, key: `${host}/${database}` };
+  // The username belongs in the identity: on Supabase's pooler every project
+  // shares one hostname, port and database name, and only the username carries
+  // the project ref. Keying on host alone reports two unrelated projects as the
+  // same database.
+  return {
+    host,
+    database,
+    key: `${parsed.username}@${host}/${database}`,
+  };
 }
 
 const from = describe(source);
 const to = describe(target);
 
 // The script drops and recreates the target's public and drizzle schemas, so
-// the guards below are the only thing between a mistyped flag and wiping the
-// league. They are deliberately blunt.
+// these guards are the only thing between a mistyped flag and wiping the
+// league. They are deliberately blunt. The authoritative "not the same
+// database" check is assertDistinctDatabases() below, which asks the servers
+// themselves rather than trusting the shape of a URL.
 if (from.key === to.key) {
   fail(`Refusing to clone ${from.key} onto itself.`);
 }
@@ -196,6 +206,31 @@ function checkTooling(sourceUrl: string): void {
   console.log(`  server  PostgreSQL ${sourceMajor} (pg_dump ${dumpMajor})`);
 }
 
+/**
+ * The authoritative "these are not the same database" check: ask both servers
+ * for their cluster's `system_identifier` — assigned at initdb, so it is a
+ * genuine fingerprint — together with the database oid.
+ *
+ * Comparing connection strings cannot do this. Supabase's pooler puts every
+ * project on one hostname, port and database name, distinguished only by the
+ * username, while the same database is also reachable by several different
+ * URLs. Only the server can answer the question.
+ */
+function assertDistinctDatabases(sourceUrl: string, targetUrl: string): void {
+  const fingerprint = (url: string) =>
+    psqlQuery(
+      "select system_identifier || '/' || (select oid from pg_database where datname = current_database()) from pg_control_system();",
+      url,
+    ).trim();
+
+  if (fingerprint(sourceUrl) === fingerprint(targetUrl)) {
+    fail(
+      "Refusing to run: source and target are the same database.\n" +
+        "  The connection strings differ, but both resolve to one cluster and database.",
+    );
+  }
+}
+
 // --- Steps -----------------------------------------------------------------
 
 function run(tool: string, args: string[], url: string): void {
@@ -255,6 +290,7 @@ console.log(`clone-prod
 
 if (!dryRun) {
   checkTooling(source);
+  assertDistinctDatabases(source, target);
 }
 
 if (dryRun) {

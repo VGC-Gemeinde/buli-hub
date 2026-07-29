@@ -1,0 +1,38 @@
+#!/bin/sh
+# Rejects direct pushes to main. Production deploys from main, and the workflow
+# is: work on dev -> staging -> promotion PR -> main (see CLAUDE.md).
+#
+# This is a client-side guard, not branch protection. GitHub's server-side
+# protection needs a paid plan for private repos, and this org is on Free. It
+# therefore stops accidents, which is the realistic failure here — it does not
+# stop anyone who means it.
+#
+# Deliberate override (documented hotfix path): git push --no-verify
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main)
+      cat >&2 <<'MSG'
+
+  Refusing to push directly to main.
+
+  Production deploys from main. Promote instead, so the change has run on
+  staging first:
+
+    gh pr create --base main --head dev --title "<feature>"
+    gh pr merge --squash --delete-branch=false
+    git checkout dev && git fetch origin \
+      && git reset --hard origin/main && git push --force-with-lease
+
+  The reset is required: without it the next promotion replays commits that
+  are already on main and conflicts.
+
+  Genuine hotfix, or restoring a protected main? git push --no-verify
+
+MSG
+      exit 1
+      ;;
+  esac
+done
+
+exit 0

@@ -10,6 +10,8 @@ import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
+import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
+import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
 import { DropBanner } from "@/features/drops/components/drop-banner";
 import { DropsSection } from "@/features/drops/components/drops-section";
 import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
@@ -1792,9 +1794,65 @@ export function Gallery() {
           />
         </Specimen>
       </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Dev: Impersonation</h2>
+        <Specimen label="Picker — Suche, Rollen, Drop-Markierung, Kappung">
+          <ImpersonationPicker users={IMPERSONATION_USERS} />
+        </Specimen>
+        <Specimen label="Picker — ohne Nutzer (leere Datenbank)">
+          <ImpersonationPicker users={[]} />
+        </Specimen>
+      </section>
     </div>
   );
 }
+
+// Deliberately includes the shapes a cloned season produces: umlauts, an
+// overlong name, a dropped player, a user with no profile identity at all, and
+// enough rows to trip the „weitere Treffer" cap.
+const IMPERSONATION_USERS: ImpersonatableUser[] = [
+  {
+    userId: "11111111-1111-4111-8111-111111111111",
+    displayName: "Jörg Müller",
+    username: "jorgm",
+    role: "dev",
+    division: "Division 1a",
+    dropped: false,
+  },
+  {
+    userId: "22222222-2222-4222-8222-222222222222",
+    displayName: "Blaubeerkuchenbäckermeisterin Annegret III.",
+    username: "annegret",
+    role: "admin",
+    division: "Division 1b",
+    dropped: false,
+  },
+  {
+    userId: "33333333-3333-4333-8333-333333333333",
+    displayName: "Kai",
+    username: "kai",
+    role: "staff",
+    division: "Division 2a",
+    dropped: true,
+  },
+  {
+    userId: "44444444-4444-4444-8444-444444444444",
+    displayName: null,
+    username: null,
+    role: "player",
+    division: null,
+    dropped: false,
+  },
+  ...Array.from({ length: 26 }, (_, i) => ({
+    userId: `55555555-5555-4555-8555-${String(i).padStart(12, "0")}`,
+    displayName: `Spielerin ${i + 1}`,
+    username: `spielerin_${i + 1}`,
+    role: "player" as const,
+    division: `Division ${1 + (i % 3)}${"abc"[i % 3]}`,
+    dropped: false,
+  })),
+];
 
 const SEEDING_DIVISIONS = [
   { id: "d1", tier: 1 },

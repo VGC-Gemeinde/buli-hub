@@ -1,15 +1,16 @@
 import { redirect } from "next/navigation";
 import { devToolsEnabled } from "@/features/dev/enabled";
-import { loginAsPersona } from "@/features/dev/login";
+import { loginAsUser } from "@/features/dev/impersonation/queries";
 
-// Dev-only: /dev/login?persona=<id> signs the browser in as a test persona.
+// Dev-only: /dev/login-as?userId=<uuid> signs the browser in as an existing
+// (cloned) user — the counterpart to /dev/login for real data.
 export async function GET(request: Request) {
   if (!(await devToolsEnabled())) {
     return new Response("Not found", { status: 404 });
   }
 
-  const persona = new URL(request.url).searchParams.get("persona") ?? "";
-  const result = await loginAsPersona(persona);
+  const userId = new URL(request.url).searchParams.get("userId") ?? "";
+  const result = await loginAsUser(userId);
   if (!result.ok) {
     return new Response(result.error, { status: 400 });
   }

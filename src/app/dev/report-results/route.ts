@@ -1,3 +1,4 @@
+import { devToolsEnabled } from "@/features/dev/enabled";
 import { reportDevResults } from "@/features/dev/seed";
 
 // Dev-only: reports up to `count` (default 5, max 20) open matches of the
@@ -5,7 +6,7 @@ import { reportDevResults } from "@/features/dev/seed";
 // sync — the manual test path for the results channel.
 // /dev/report-results?count=5
 export async function GET(request: Request) {
-  if (process.env.NODE_ENV !== "development") {
+  if (!(await devToolsEnabled())) {
     return new Response("Not found", { status: 404 });
   }
 

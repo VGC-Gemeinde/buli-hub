@@ -47,12 +47,16 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
     db/
       schema.ts         # Drizzle schema stays central (tables cross features)
     app/                # Next.js routes — thin wrappers importing from features/
+  scripts/              # maintenance entry points, run via `node scripts/<x>.ts`
   ```
+
+  `scripts/` holds orchestration only (spawning `pg_dump`, `psql`, `drizzle-kit`). Anything with logic worth testing lives under `src/features/` as a pure function and is imported from there — Node 24 runs TypeScript directly, so scripts need no build step and no extra dependency.
 
 ## Testing strategy (pinned)
 
 - **Vitest unit tests** — the priority. Cover all domain logic (the pure functions). Correctness of computed results is critical to community trust; test exhaustively.
 - **Vitest integration tests against real local Postgres** — run against the Supabase CLI stack. Test RLS policies, constraints, and multi-step flows. Clean state per test file via `supabase db reset` or truncation; shared seed helpers provide fixtures.
+- **A test run wipes a `db:clone-prod` fixture** — the integration tests clear shared tables on startup. Re-clone afterwards.
 - **No E2E tests** — deliberate decision. Do not add Playwright or similar.
 - Do not test: UI snapshots, styling, shadcn internals.
 
@@ -78,7 +82,10 @@ npx drizzle-kit generate   # diff schema.ts → new SQL migration file
 npx drizzle-kit migrate    # apply migrations to local DB
 npx drizzle-kit studio     # browser GUI to inspect data
 supabase db reset          # wipe local DB, re-run all migrations + seed
+npm run db:clone-prod      # replace the local DB with production-shaped data
 ```
+`db:clone-prod` is the migration rehearsal: it copies production (including the drizzle journal) into the local stack, optionally shifts every date by one interval, then runs `drizzle-kit migrate` — so pending migrations meet real data before production does. Needs `pg_dump`/`psql` ≥ 17 and `PROD_DATABASE_URL`. Details, flags and the scrub-vs-no-scrub privacy rule: `docs/deployment.md` §6.
+
 Workflow: edit `schema.ts` → `generate` → review generated SQL → `migrate`. Migrations are committed and versioned. SQL that `schema.ts` cannot express (RLS policies, FKs into `auth.users`, grants) goes in a **custom** migration authored with `npx drizzle-kit generate --custom --name <x>` — this writes the file *and* its journal/snapshot entry; a hand-written `.sql` file is silently skipped by `migrate`. Migrations are per-feature and **append-only** — the pre-launch chain was squashed into a baseline at go-live (see `docs/decisions/migrations-squash-at-launch.md`); the deploy workflow applies new migrations to production with each release.
 
 ### Testing
@@ -110,7 +117,8 @@ npx drizzle-kit migrate    # against prod DB URL when deploying schema changes
 - **Documentation describes the present, not the journey.** Plans, decision docs, and code comments must make sense to a reader with zero conversation or revision history. When a spec changes, rewrite the affected text as if the current design had always been the design — no correction notes, no "previously X, now Y". History lives in git; reasoning that is still relevant to the current state belongs in `docs/decisions/`.
 - **Session independence: if knowledge only exists in a chat, it doesn't exist.** Any AI session must be able to start fresh from repo state alone. A feature is only complete when: code is committed, its plan is marked done, and CLAUDE.md is updated if anything structural changed. Cross-feature decisions and their reasoning go into `docs/decisions/`.
 - **Design happens in two passes.** A feature's first implementation carries a *rudimentary but intentional* design: functional and laid out, built with the design-system tokens (`design/DESIGN.md`) so it is on-brand and coherent — a viewer should not read it as a throwaway placeholder — but deliberately not polished. That working feature is what the maintainer takes to the designer, who returns a polished design as a hand-off doc at `design/<FEATURE>.md` (companion to `DESIGN.md`). A later **design pass** implements the hand-off and changes **views only** — domain logic, queries and tests stay as-is. So the arc is: functional build → designer hand-off → design pass. Do not wait for a hand-off to build; do not ship bare, unstyled controls either. The design passes are made for desktop views first. You still need to optimize for mobile your self.
-- **The `/dev` tooling tracks the UI.** `/dev` (development-only, 404 in production builds) offers test-persona logins and a component-state gallery at `/dev/ui`. A feature that adds components with visual states extends the gallery (`src/features/dev/components/gallery.tsx`); a feature that adds user-specific data or new auth-metadata shapes extends the personas (`src/features/dev/personas.ts`). This is part of a feature's definition of done.
+- **The `/dev` tooling tracks the UI.** `/dev` offers test-persona logins, impersonation of any real user, and a component-state gallery at `/dev/ui`. A feature that adds components with visual states extends the gallery (`src/features/dev/components/gallery.tsx`); a feature that adds user-specific data or new auth-metadata shapes extends the personas (`src/features/dev/personas.ts`). This is part of a feature's definition of done.
+  - The gate is `devToolsEnabled()` (`src/features/dev/enabled.ts`): always on in `npm run dev`; outside development it needs `ENABLE_DEV_TOOLS=true` **and** an unlock cookie set via `/dev/unlock?token=<DEV_TOOLS_TOKEN>`. Pages are gated once in `src/app/dev/layout.tsx`; route handlers are not covered by layouts and must call `devToolsEnabled()` themselves. **Neither variable is ever set on the production Cloud Run service** — together they allow signing in as any user.
 - **Don't be a yes-sayer.** The maintainer explicitly wants pushback: critically evaluate suggestions, call out wrong or suboptimal decisions, and ask for justification when a decision seems doubtful. Challenge first, then implement.
 
 ## The development loop

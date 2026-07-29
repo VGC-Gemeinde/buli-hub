@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
+import { listImpersonatableUsers } from "@/features/dev/impersonation/queries";
 import { PERSONAS } from "@/features/dev/personas";
 
-export default function DevPage() {
-  if (process.env.NODE_ENV !== "development") {
-    notFound();
-  }
+// Gated by src/app/dev/layout.tsx.
+export default async function DevPage() {
+  const users = await listImpersonatableUsers();
 
   return (
     <div className="flex flex-1 flex-col">
@@ -33,6 +33,15 @@ export default function DevPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-2xl">Als echten Nutzer anmelden</h2>
+          <p className="text-[13px] text-muted-foreground">
+            Sieht genau das, was diese Person sieht — Saison, Division, Matches.
+            Am nützlichsten nach <code>npm run db:clone-prod</code>.
+          </p>
+          <ImpersonationPicker users={users} />
         </section>
 
         <section className="flex flex-col gap-3">

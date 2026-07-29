@@ -1,12 +1,8 @@
-import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { Gallery } from "@/features/dev/components/gallery";
 
+// Gated by src/app/dev/layout.tsx.
 export default function DevUiPage() {
-  if (process.env.NODE_ENV !== "development") {
-    notFound();
-  }
-
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />

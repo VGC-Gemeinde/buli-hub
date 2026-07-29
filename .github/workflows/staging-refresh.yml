@@ -1,0 +1,69 @@
+# Refreshes the staging database from production. Manual only, deliberately
+# separate from the staging deploy (docs/deployment.md §7).
+#
+# Why not on every push to `dev`: you deploy, build up test state, find a bug,
+# push a fix — and an automatic refresh wipes the state you were testing with.
+# Every push would destroy the setup you just made. A button respects an
+# in-progress test; a schedule can be added later if it turns out to be wanted.
+#
+# This is the one place production and staging credentials meet: PROD_DATABASE_URL
+# is read from, STAGING_DATABASE_URL is written to. Both must exist in the
+# STAGING environment.
+name: Refresh staging from production
+
+on:
+  workflow_dispatch:
+    inputs:
+      shift:
+        description: 'Date shift, e.g. "30 days" or "-2 weeks 6 hours". Empty = keep production dates.'
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment: STAGING
+    concurrency:
+      group: staging-database
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # The runner image ships an older client than Supabase's server, and
+      # pg_dump refuses to dump from a server newer than itself.
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+
+      # --scrub is mandatory here and the script enforces it for any non-local
+      # target: staging is reachable by more people than production's database,
+      # so the clone must not carry real personal data.
+      #
+      # The shift is passed through the environment, not interpolated into the
+      # run block: `${{ inputs… }}` is substituted before the shell sees it, so
+      # inline expansion would let the input run arbitrary commands.
+      - name: Clone production into staging
+        run: |
+          if [ -n "$SHIFT" ]; then
+            npm run db:clone-prod -- --scrub --shift="$SHIFT"
+          else
+            npm run db:clone-prod -- --scrub
+          fi
+        env:
+          SHIFT: ${{ inputs.shift }}
+          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          CLONE_TARGET_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          CLONE_KEEP_DISCORD_IDS: ${{ vars.CLONE_KEEP_DISCORD_IDS }}
+          CLONE_ALLOW_REMOTE_TARGET: "true"

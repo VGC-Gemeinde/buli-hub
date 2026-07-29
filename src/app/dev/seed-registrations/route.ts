@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { devToolsEnabled } from "@/features/dev/enabled";
 import {
   generateEvenRunningSeason,
   generateLadderSeason,
@@ -19,7 +20,7 @@ import { currentUser } from "@/features/roles/guard";
 // - &ladder=division|sub_division is a 3-division running season with the persona
 //   in a fully-zoned middle division, decided by the Gesamt- or Gruppentabelle.
 export async function GET(request: Request) {
-  if (process.env.NODE_ENV !== "development") {
+  if (!(await devToolsEnabled())) {
     return new Response("Not found", { status: 404 });
   }
 

@@ -139,3 +139,269 @@ close → seed → create schedule → report a match → the post appears in th
 results channel → drop/un-drop a player → wipe the throwaway season
 (open a fresh registration window when the real one starts). Verify the
 uptime check is green and a forced error shows up in Cloud Logging.
+
+## 6. Cloning production
+
+`npm run db:clone-prod` copies production into another database and turns it
+into a test fixture. It solves two problems the local stack cannot:
+
+- **Migrations are otherwise only ever tested against an empty database.** CI
+  builds the schema from scratch with no rows in it, so the migrations that
+  actually break — a `NOT NULL` on a column that has nulls, a unique index
+  existing rows violate, a backfill that is instant on 10 rows — can only fail
+  in production, during a deploy.
+- **Features are otherwise only ever tested against invented data.** Seed
+  fixtures cover the edge cases you thought of. The half-finished season, the
+  division with an odd player count, the player who dropped mid-matchday and
+  the name with an emoji in it are the ones you didn't.
+
+### Prerequisites
+
+- `pg_dump` and `psql` on PATH, at least as new as the server's major version
+  (`pg_dump` refuses to dump from a newer server). The script checks this and
+  names the version you need. Ubuntu ships 16; newer needs the PGDG repository.
+- `PROD_DATABASE_URL` in `.env` — a **session-mode** connection to production
+  (port 5432, not the 6543 transaction pooler: a dump needs a stable session
+  and DDL).
+
+  Take the **Session pooler** string from the dashboard (*Connect* → *Session
+  pooler*), not the direct `db.<ref>.supabase.co` one. Supabase serves direct
+  connections over **IPv6 only** unless the project has the IPv4 add-on, and
+  most networks — WSL2 and GitHub-hosted runners among them — have no IPv6
+  egress, so the direct string fails with `Network is unreachable`. The session
+  pooler is IPv4 and is also port 5432. Its username carries the project ref:
+
+  ```
+  postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+  ```
+
+> `DATABASE_URL` stays pointed at the local stack — it is the *write target*,
+> and it is also what `npm run dev`, `drizzle-kit` and the integration tests
+> use. Putting a production string there points the whole toolchain at
+> production; the test suite truncates tables on startup.
+
+> **`npm test` destroys a clone.** The integration tests clear shared tables in
+> `beforeAll`, against whatever `DATABASE_URL` points at. That is harmless — it
+> is only ever the local stack — but it means a clone and a test run cannot
+> coexist. Re-run `db:clone-prod` afterwards; it takes well under a minute.
+
+### Usage
+
+```bash
+npm run db:clone-prod -- --dry-run                 # show the plan, touch nothing
+npm run db:clone-prod                              # clone as-is into the local stack
+npm run db:clone-prod -- --shift="30 days"         # …and move every date 30 days later
+npm run db:clone-prod -- --shift="-2 weeks 6 hours"
+```
+
+`--shift` is the highest-value flag: a dump is frozen at one moment in the
+season, and offsetting every timestamp by one interval moves "today" to
+wherever the test needs it — the day before a deadline, mid-matchday,
+post-season. The same interval applies to every timestamp column in `public`
+(enumerated from `information_schema`, so new tables are covered automatically),
+which is what keeps the data internally consistent.
+
+Full flag list: `npm run db:clone-prod -- --help`.
+
+### What it does
+
+1. **Dump** `public`, `drizzle` and the two `auth` tables from production.
+   Read-only; production is never written to. The app dump is then filtered:
+   production carries default-privilege ACLs for `supabase_admin`, and
+   replaying those fails with `permission denied to change default privileges`
+   on any target where you are not that role. Only those statements are
+   removed — grants, policies and RLS all come across
+   (`src/features/dev/clone/restore.ts`).
+2. **Restore** into the target, replacing its `public` and `drizzle` schemas
+   and its auth users outright.
+3. **Scrub** (only with `--scrub`, see below).
+4. **Clear `discord_posts`** — the copied rows point at message ids in the
+   production channels, which the local/staging bot cannot reach.
+5. **Shift dates** (only with `--shift`).
+6. **Migrate.** Because the drizzle journal came across with the dump, the
+   target inherits production's migration position, so `drizzle-kit migrate`
+   applies exactly the migrations production has not seen yet — against
+   production-shaped data. **This step is the migration rehearsal.** If it
+   fails here, it would have failed in production.
+
+### The privacy rule
+
+Cloning copies real personal data: Discord ids, usernames, nicknames, avatars,
+email addresses, and the free text players wrote about themselves.
+
+**Scrub when the clone lands somewhere that widens access.**
+
+- *Local clone → no scrub.* You already have production database access; a
+  clone on your own machine does not expand who can see the data, and
+  scrubbing would only reduce the realism you are cloning for.
+- *Staging clone → scrub.* Staging is reachable by more people. The script
+  enforces this: a non-local target without `--scrub` is refused.
+
+`--scrub` replaces names, handles, avatars, emails, auth metadata and the
+free-text registration and dispute fields with synthetic values. The synthetic
+names deliberately keep the properties that break layouts — umlauts, emoji,
+very long names, mention-like strings, right-to-left text — because
+anonymising into "User 1..N" would remove exactly the realism the clone exists
+for. `CLONE_KEEP_DISCORD_IDS` exempts an allow-list of tester Discord ids, so
+those people sign in as themselves and land on their own copied data.
+
+### Safety
+
+The script drops and recreates the target's `public` and `drizzle` schemas, so
+it refuses to run when:
+
+- source and target are the same database,
+- the target is `PROD_DATABASE_URL`,
+- the target is not localhost and `CLONE_ALLOW_REMOTE_TARGET=true` is not set,
+- the target is not localhost and `--scrub` was not passed.
+
+### Working with cloned data
+
+`/dev` gains a picker listing every copied user with their role and division.
+Choosing one signs you in as that person via `/dev/login-as`, so you see
+exactly their season, matches and results — the fastest way to reproduce
+what a player reports. Role sync stays off outside production
+(`DISCORD_GUILD_ID` and the three role ids unset), so the roles that came
+across in the clone freeze exactly as they were.
+
+## 7. Staging environment
+
+A second deployment fed by cloned production data, so features and migrations
+meet realistic data before production does. Local development covers most of
+that (§6); staging exists for what local cannot do — rehearse migrations at
+production data volume, exercise the real Discord OAuth round-trip through a
+hosted Supabase project, verify Cloud Run behaviour (container, secrets, cold
+starts), and provide a URL you can hand to a staff member.
+
+| | Local | Staging | Production |
+|---|---|---|---|
+| **Runs** | `npm run dev` | Cloud Run `buli-hub-staging` | Cloud Run `buli-hub` |
+| **Database** | Supabase CLI (Docker) | Supabase project #2 | Supabase project #1 |
+| **Deployed from** | — | push to `dev` | push to `main` |
+| **Data** | prod clone, on demand | prod clone, on demand | real |
+| **Discord sign-in** | dev app | dev app | prod app |
+| **Discord role reads** | off | off | real guild |
+| **Discord posting** | test server | test server | real guild |
+| **`/dev` tooling** | on | on (token) | **off** |
+| **Public** | no | unlisted | yes |
+
+### How the Discord configuration splits
+
+Three independent concerns, three independent settings — which is what makes
+this safe without any code changes:
+
+1. **Sign-in** — `SUPABASE_AUTH_EXTERNAL_DISCORD_CLIENT_ID`/`_SECRET`. Local
+   and staging both use the **dev** application.
+2. **Role reads** — `DISCORD_GUILD_ID` + the three role ids. **Left unset on
+   local and staging.** `roleConfig()` returns null without all four, and
+   `syncMember()` then returns the *stored* role unchanged, so the roles that
+   came across in the clone freeze as they were. Nothing needs a test-server
+   membership, and the staging role distribution mirrors the real one — more
+   realistic than live reads would be.
+3. **Posting** — `DISCORD_BOT_TOKEN` + channel ids. Staging posts to the
+   **test** server. An unset channel id skips posting entirely, so a
+   half-configured test server degrades to silence rather than to errors or
+   misdirected messages.
+
+Because they are independent, needing a test server for *posting* does not
+force *role reads* through it. (Pointing role reads at the real guild from
+staging would need the bot in both guilds, and "invite it with no permissions"
+is not safe — a bot inherits `@everyone` permissions and can end up able to
+post in public production channels. Keeping reads off avoids this entirely.)
+
+Discord user ids are global, so `auth.identities.provider_id` stays valid in a
+clone: signing into staging with a real Discord account resolves to the copied
+user row — for the tester ids listed in `CLONE_KEEP_DISCORD_IDS`, which the
+scrub leaves untouched.
+
+### Supabase project #2
+
+Same steps as §1, with these differences: enable the Discord provider with the
+**dev** application's credentials, and add
+`https://<staging-ref>.supabase.co/auth/v1/callback` to that application's
+redirect URLs in the Discord Developer Portal. Site URL and redirect URLs point
+at the staging Cloud Run URL. Email sign-ups disabled, as in production. No
+schema needs applying by hand — the first deploy or refresh supplies it.
+
+### Cloud Run service
+
+Same project, region and Artifact Registry repository as production; image tags
+differentiate.
+
+```bash
+gcloud run deploy buli-hub-staging --image <first image> --region europe-west1 \
+  --no-invoker-iam-check \
+  --min-instances=0 --max-instances=2 --memory=512Mi \
+  --set-secrets=DATABASE_URL=STAGING_DATABASE_URL_POOLER:latest,SUPABASE_SECRET_KEY=STAGING_SUPABASE_SECRET_KEY:latest,DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN_TEST:latest \
+  --set-env-vars=APP_ENV=staging,APP_BASE_URL=https://<staging-url>,ENABLE_DEV_TOOLS=true,DEV_TOOLS_TOKEN=<long random string>,DISCORD_RESULTS_CHANNEL_ID=<test server channel>
+```
+
+Differences from production, each for a reason:
+
+- `--min-instances=0` — cold starts are fine here, and it costs nothing idle.
+- **No custom domain.** Staging is reachable only at its generated
+  `*.run.app` URL: public, but unguessable and unlisted. `APP_ENV=staging`
+  makes the app serve a disallow-all `robots.txt` and an
+  `X-Robots-Tag: noindex, nofollow` header, so a pasted link cannot get it
+  indexed.
+- `APP_BASE_URL` must be the staging URL, or the „Zum Match" links in Discord
+  posts point at production.
+- **No role variables** — see above.
+- `ENABLE_DEV_TOOLS=true` + `DEV_TOOLS_TOKEN` turn on `/dev`. Visit
+  `https://<staging-url>/dev/unlock?token=<DEV_TOOLS_TOKEN>` once per browser;
+  everything under `/dev` 404s until then.
+
+> **`ENABLE_DEV_TOOLS` and `DEV_TOOLS_TOKEN` must never be set on the
+> production service.** Together they allow signing in as any user. This is a
+> deployment property, not a code guarantee: nothing in CI can catch it,
+> because CI never inspects the production service's environment. If you ever
+> touch production's env vars, check these two are absent.
+
+### GitHub environment `STAGING`
+
+Settings → Environments → **STAGING**, same variables as PROD (§3) with
+staging values — `GCP_SERVICE` is `buli-hub-staging`, `NEXT_PUBLIC_SUPABASE_*`
+point at project #2 — plus:
+
+| Kind | Name | Value |
+|---|---|---|
+| Secret | `STAGING_DATABASE_URL` | staging **session** connection string (port 5432) |
+| Secret | `PROD_DATABASE_URL` | production session string — the refresh workflow reads from it |
+| Variable | `CLONE_KEEP_DISCORD_IDS` | comma-separated tester Discord ids exempt from the scrub |
+
+`GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_DEPLOYER_SA` are the same values as
+PROD; the deployer service account already has `run.admin` on the project.
+
+### Two triggers, deliberately separate
+
+| Action | Trigger | Effect |
+|---|---|---|
+| Build, migrate, deploy | push to `dev` | Fast. **Keeps existing data.** |
+| Clone production | *Refresh staging from production* → Run workflow | Fresh prod-shaped baseline, scrubbed, then migrate. |
+
+The instinct is "every staging deploy refreshes the database". That backfires:
+you deploy, build up test state, find a bug, push a fix — and the refresh wipes
+the state you were testing with. Every push would destroy the setup you just
+made. Both paths end with `drizzle-kit migrate`, so staging is always at the
+current schema either way.
+
+### Working on `dev`
+
+`dev` is a scratch integration branch, not a release branch:
+
+- Feature work branches off `main` and merges into `dev` freely for testing.
+- When a feature is approved it is **squash-merged into `main`** as one commit
+  (CLAUDE.md's one-commit-per-feature rule is unchanged).
+- `dev` may be reset to `main` whenever it drifts. Nothing of value lives only
+  there, and staging may briefly run code that never reaches production.
+
+### Cost
+
+Supabase project #2 is compute only on a Pro organisation, roughly $10/month
+for the smallest instance. The free tier is not an option: it pauses on
+inactivity, which is exactly what a rarely-used staging environment does.
+Cloud Run staging is effectively free at `min-instances=0`; staging images
+share the existing Artifact Registry repository.
+
+(Supabase's own Branching feature seeds branches from migrations and a seed
+file rather than from production data — the opposite of what this is for.)

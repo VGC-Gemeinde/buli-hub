@@ -5,11 +5,14 @@
 #              GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_DEPLOYER_SA,
 #              NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 #   Secrets:   PROD_DATABASE_URL
+#
+# `dev` runs the same checks and then deploys to staging via
+# .github/workflows/staging.yml (docs/deployment.md §7).
 name: CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
 
 jobs:
@@ -52,16 +55,20 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-dummy
           SUPABASE_SECRET_KEY: ci-dummy
 
+  # One job, two targets. `main` deploys to PROD, `dev` to STAGING; every
+  # vars.*/secrets.* below then resolves from whichever environment is
+  # selected, so the two deployments cannot drift apart in their steps.
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
     needs: checks
     runs-on: ubuntu-latest
     # All deploy variables/secrets live in this environment (single source
     # of truth) — without declaring it, none of them resolve.
-    environment: PROD
-    # Serialize deploys; a superseded run is cancelled before it ships.
+    environment: ${{ github.ref == 'refs/heads/main' && 'PROD' || 'STAGING' }}
+    # Serialize deploys per target; a superseded run is cancelled before it
+    # ships. Staging and production never queue behind each other.
     concurrency:
-      group: deploy
+      group: deploy-${{ github.ref_name }}
       cancel-in-progress: true
     permissions:
       contents: read
@@ -90,10 +97,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Apply migrations to production
+      # STAGING defines STAGING_DATABASE_URL; PROD does not, so the fallback
+      # picks PROD_DATABASE_URL there. Both are *session* connection strings
+      # (port 5432) — migrations need DDL over a stable session.
+      - name: Apply migrations
         run: npx drizzle-kit migrate
         env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL || secrets.PROD_DATABASE_URL }}
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy '${{ vars.GCP_SERVICE }}' \

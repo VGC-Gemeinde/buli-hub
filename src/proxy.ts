@@ -28,6 +28,14 @@ export async function proxy(request: NextRequest) {
   // The call itself triggers the token refresh; the result is not needed.
   await supabase.auth.getUser();
 
+  // Staging is served on a public but unguessable URL (docs/deployment.md §7).
+  // Set here rather than in next.config.ts `headers()`, which is baked into
+  // the build — this reads the Cloud Run environment at request time, so the
+  // same image behaves correctly wherever it runs. Pairs with app/robots.ts.
+  if (process.env.APP_ENV === "staging") {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
+
   return response;
 }
 

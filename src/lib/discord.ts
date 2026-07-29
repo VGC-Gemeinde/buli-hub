@@ -77,6 +77,47 @@ export async function postChannelMessage(
   return messageId ? { ok: true, messageId } : { ok: false, status: 500 };
 }
 
+// Opens a forum post: a thread plus its first message, in one call. The
+// channel may live in *any* guild the bot is a member of — the API addresses
+// it by channel id alone — so the returned thread's `guild_id` is reported
+// back rather than assumed from configuration.
+export async function createForumThread(
+  channelId: string,
+  thread: { name: string; content: string; appliedTags?: string[] },
+): Promise<
+  | { ok: true; threadId: string; guildId: string | null }
+  | { ok: false; status: number }
+> {
+  const response = await fetch(`${API_BASE}/channels/${channelId}/threads`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${botToken()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: thread.name,
+      ...(thread.appliedTags && thread.appliedTags.length > 0
+        ? { applied_tags: thread.appliedTags }
+        : {}),
+      message: {
+        content: thread.content,
+        allowed_mentions: { parse: [] },
+      },
+    }),
+  });
+  if (!response.ok) {
+    return { ok: false, status: response.status };
+  }
+  const created = (await response.json()) as {
+    id?: unknown;
+    guild_id?: unknown;
+  };
+  const threadId = asString(created.id);
+  return threadId
+    ? { ok: true, threadId, guildId: asString(created.guild_id) }
+    : { ok: false, status: 500 };
+}
+
 export async function editChannelMessage(
   channelId: string,
   messageId: string,

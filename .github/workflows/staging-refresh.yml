@@ -46,6 +46,19 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends postgresql-client-17
+          # Installing the package is not enough. /usr/bin/pg_dump is Debian's
+          # pg_wrapper, which dispatches to the *default cluster's* version —
+          # the runner has a PostgreSQL 16 cluster, so it kept choosing 16 even
+          # with 17 installed. Put the versioned binaries ahead of the wrapper.
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Verify pg_dump version
+        run: |
+          pg_dump --version
+          pg_dump --version | grep -q ' 17\.' || {
+            echo "::error::pg_dump is not version 17; the dump would fail against Supabase."
+            exit 1
+          }
 
       # --scrub is mandatory here and the script enforces it for any non-local
       # target: staging is reachable by more people than production's database,

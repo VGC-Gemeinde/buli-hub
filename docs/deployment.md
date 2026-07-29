@@ -136,10 +136,15 @@ Then: install the **Renovate** GitHub app on the repo (config is
 - **Log-based alert**: Cloud Run revision logs, filter `severity>=ERROR`,
   notify on new entries (catches failed Discord syncs — they log via
   `console.error`).
-- **Backups**: ⚠️ **manual for now.** Automated backups are a Supabase Pro
-  feature and the organisation is on Free, so nothing runs on a schedule yet.
-  Take one before anything risky — a migration that rewrites data, or any
-  `db:clone-prod` run:
+- **Backups**: `.github/workflows/backup.yml` dumps production to
+  `gs://buli-hub-backups/nightly/` every night at 03:17 UTC, and on demand via
+  *Run workflow*. Supabase's own automated backups are a Pro feature and the
+  organisation is on Free, so this is the only restore point that exists.
+
+  The workflow refuses to upload a dump that looks empty, so a silent auth
+  failure cannot quietly replace a good backup with a useless one. Take a manual
+  one before anything risky — a migration that rewrites data, or any
+  `db:clone-prod` run — either with the button or by hand:
 
   ```bash
   STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ); D=$(mktemp -d)

@@ -136,20 +136,39 @@ Then: install the **Renovate** GitHub app on the repo (config is
 - **Log-based alert**: Cloud Run revision logs, filter `severity>=ERROR`,
   notify on new entries (catches failed Discord syncs — they log via
   `console.error`).
-- **Backups**: ⚠️ **there are none.** Automated backups are a Pro feature and
-  the organisation is on Free, so production currently has no restore point.
-  A bad migration, a mistaken `delete`, or a `db:clone-prod` pointed at the
-  wrong target would be unrecoverable — and note that the clone script drops
-  and recreates schemas, which is why its guards are written the way they are.
+- **Backups**: ⚠️ **manual for now.** Automated backups are a Supabase Pro
+  feature and the organisation is on Free, so nothing runs on a schedule yet.
+  Take one before anything risky — a migration that rewrites data, or any
+  `db:clone-prod` run:
 
-  Until this is addressed, the only copies of production are whatever
-  `db:clone-prod` last wrote to a local machine, which is a side effect rather
-  than a backup: it is overwritten by the next clone and wiped by any test run.
+  ```bash
+  STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ); D=$(mktemp -d)
+  pg_dump --schema=public --schema=drizzle --no-owner --file="$D/app.sql" "$PROD_DATABASE_URL"
+  pg_dump --table=auth.users      --data-only --column-inserts --no-owner --file="$D/auth_users.sql"      "$PROD_DATABASE_URL"
+  pg_dump --table=auth.identities --data-only --column-inserts --no-owner --file="$D/auth_identities.sql" "$PROD_DATABASE_URL"
+  tar -czf "$D/buli-hub-$STAMP.tar.gz" -C "$D" app.sql auth_users.sql auth_identities.sql
+  gcloud storage cp "$D/buli-hub-$STAMP.tar.gz" gs://buli-hub-backups/manual/
+  ```
 
-  Two ways out, in increasing order of cost: a scheduled `pg_dump` to durable
-  storage (a `workflow_dispatch`/`schedule` workflow writing to a GCS bucket
-  reuses everything the refresh workflow already does), or Supabase Pro, which
-  makes it someone else's problem. The first is roughly an hour of work.
+  `gs://buli-hub-backups` (europe-west1) is private, uniform-access,
+  public-access-prevented and versioned. The dump covers exactly what a restore
+  needs and what Supabase does not recreate: `public`, the `drizzle` journal,
+  and `auth.users` / `auth.identities`.
+
+  **Restoring** is the clone pipeline pointed at an archive instead of at
+  production: drop `public` and `drizzle`, empty the two auth tables, then load
+  `auth_users.sql`, `auth_identities.sql`, `app.sql` in that order. Strip
+  `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` first
+  (`src/features/dev/clone/restore.ts`) or it fails on any non-superuser target.
+  This has been exercised against the local stack from a freshly downloaded
+  archive — row counts matched production.
+
+  Archives expire after 180 days (non-current versions after 30). Cost is not a
+  consideration: the whole database is ~3.6 MB and compresses to ~75 KB, so
+  daily backups run around **$0.001/month** — even fifty times the current data
+  stays under three cents.
+
+  Still to do: put the above on a schedule.
 
 ## 5. Dress rehearsal (before announcing)
 

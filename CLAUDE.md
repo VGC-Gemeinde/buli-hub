@@ -115,8 +115,22 @@ npx drizzle-kit migrate    # against prod DB URL when deploying schema changes
 - **Features are vertical slices.** A feature is the complete cross-section needed to realize a piece of functionality: view + server actions/routes + schema changes/migration + Discord calls + tests. A backend route alone is not a feature. Work is planned, implemented, and committed as whole slices.
 - **Commits only after maintainer approval.** Present the finished, verified work first; commit (or amend) only when the maintainer explicitly approves. This applies to every commit, including small fixups.
 - **One commit per feature on main.** This is a forcing function for scope discipline: if a feature doesn't fit a reviewable commit, it's too big — split it into smaller features. Migrations ship in the same commit as the code using them, so a revert takes both. Escape hatch: commit freely on a feature branch, squash-merge to main.
-- **Branches: `main` ships to production, `dev` ships to staging.** Feature work branches off `main`. Merge into `dev` as often as you like to exercise it on staging — `dev` is a scratch integration branch, its history is throwaway, and it may be reset to `main` whenever it drifts. When the feature is approved it is **squash-merged into `main`** as one commit, which is what reaches production. Never treat `dev` as the source of truth, and never let work exist only there.
-  - **Do not switch to `dev` by default.** Start a feature from `main`; use `dev` only when something needs trying on a real deployment (hosted Supabase, the Discord OAuth round-trip, Cloud Run behaviour). Most work never needs it — the local stack with `npm run db:clone-prod` covers realistic data, and it is faster.
+- **`dev` is where work happens; `main` is the release branch.** Default to `dev` — commit there freely, push as often as you like, and every push deploys to staging. Production only ever changes by promoting `dev` into `main`. **`main` is protected: direct pushes are rejected**, so promotion is always a pull request.
+
+  ```bash
+  # work
+  git checkout dev && …                      # commit freely; each push → staging
+  # promote, once staging looks right
+  gh pr create --base main --head dev --title "<feature>"
+  gh pr merge --squash --delete-branch=false  # one commit on main → production
+  # REQUIRED afterwards, see below
+  git checkout dev && git fetch origin && git reset --hard origin/main && git push --force-with-lease
+  ```
+
+  **The reset is not optional.** A squash-merge puts one new commit on `main` while `dev` keeps the originals — same tree, divergent history. Skip the reset and the *next* promotion takes the old merge base, replays commits already on `main`, and conflicts. Resetting `dev` onto `main` after every promotion keeps them a single line. (Merge commits would avoid the reset but put every intermediate commit on `main`, breaking one-commit-per-feature.)
+
+  Corollaries: never let work exist only on `dev` for long — it is promoted or discarded. A production hotfix that cannot wait for `dev` goes on a branch off `main` and straight into a PR to `main`, then `dev` is reset onto it.
+  - **Staging is not a substitute for the local loop.** Push to `dev` when something genuinely needs a real deployment — hosted Supabase, the Discord OAuth round-trip, Cloud Run behaviour, a migration meeting production-sized data. For everything else the local stack with `npm run db:clone-prod` is more realistic *and* faster than waiting for a deploy.
 - **Plan before implementing — always.** Every feature starts with a written plan (`docs/plans/<feature>.md` or `features/<name>/PLAN.md`): scope (in/out), schema changes, affected routes/views, Discord touchpoints, test cases, open questions. The plan is approved before implementation starts. Plan size scales with feature size — three bullet points is a valid plan for a tiny feature.
 - **Documentation describes the present, not the journey.** Plans, decision docs, and code comments must make sense to a reader with zero conversation or revision history. When a spec changes, rewrite the affected text as if the current design had always been the design — no correction notes, no "previously X, now Y". History lives in git; reasoning that is still relevant to the current state belongs in `docs/decisions/`.
 - **Session independence: if knowledge only exists in a chat, it doesn't exist.** Any AI session must be able to start fresh from repo state alone. A feature is only complete when: code is committed, its plan is marked done, and CLAUDE.md is updated if anything structural changed. Cross-feature decisions and their reasoning go into `docs/decisions/`.

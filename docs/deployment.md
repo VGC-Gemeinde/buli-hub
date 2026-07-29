@@ -462,13 +462,34 @@ current schema either way.
 
 ### Working on `dev`
 
-`dev` is a scratch integration branch, not a release branch:
+`dev` is the working branch; `main` is the release branch. Work lands on `dev`
+and reaches production only by promotion.
 
-- Feature work branches off `main` and merges into `dev` freely for testing.
-- When a feature is approved it is **squash-merged into `main`** as one commit
-  (CLAUDE.md's one-commit-per-feature rule is unchanged).
-- `dev` may be reset to `main` whenever it drifts. Nothing of value lives only
-  there, and staging may briefly run code that never reaches production.
+**`main` is protected** — direct pushes are rejected for everyone, including
+admins, and a promotion PR requires the `checks` job to pass. The protection is
+a GitHub ruleset named `main-protection`; to lift it in an emergency, disable
+that ruleset in Settings → Rules, push, and re-enable it.
+
+```bash
+git checkout dev && …                       # commit freely; each push → staging
+gh pr create --base main --head dev --title "<feature>"
+gh pr merge --squash --delete-branch=false   # one commit on main → production
+git checkout dev && git fetch origin && git reset --hard origin/main && git push --force-with-lease
+```
+
+That last line is required, not tidying. A squash-merge creates one new commit
+on `main` while `dev` keeps the originals: same tree, divergent history. Without
+the reset the next promotion computes the old merge base, replays commits that
+are already on `main`, and conflicts. Resetting `dev` onto `main` after every
+promotion keeps the two a single line.
+
+Merge commits would avoid the reset, at the cost of putting every intermediate
+`dev` commit on `main` — which is why the squash is kept (see CLAUDE.md's
+one-commit-per-feature rule).
+
+A production hotfix that cannot wait for whatever is on `dev` goes on a branch
+off `main` and straight into a PR to `main`; afterwards reset `dev` onto `main`
+as above.
 
 ### Cost
 

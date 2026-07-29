@@ -4,6 +4,13 @@ import { ImpersonationPicker } from "@/features/dev/components/impersonation-pic
 import { listImpersonatableUsers } from "@/features/dev/impersonation/queries";
 import { PERSONAS } from "@/features/dev/personas";
 
+// This page queries the database for the impersonation picker, so it must
+// never be prerendered: `next build` runs with an unreachable placeholder
+// DATABASE_URL (see Dockerfile), and the export would fail with ECONNREFUSED.
+// The layout's cookie check already makes the route dynamic at request time;
+// this states it at build time, which is when it matters.
+export const dynamic = "force-dynamic";
+
 // Gated by src/app/dev/layout.tsx.
 export default async function DevPage() {
   const users = await listImpersonatableUsers();

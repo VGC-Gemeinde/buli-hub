@@ -83,11 +83,8 @@ export function FeedbackPanel({
   onAddFiles,
   onRemoveAttachment,
   capturedPath = "/",
-  pending = false,
   error = null,
   sent = null,
-  onSubmit,
-  onClose,
 }: {
   canSubmitIdea: boolean;
   kind: FeedbackKind;
@@ -100,11 +97,8 @@ export function FeedbackPanel({
   onAddFiles?: (files: File[]) => void;
   onRemoveAttachment?: (id: string) => void;
   capturedPath?: string;
-  pending?: boolean;
   error?: string | null;
   sent?: FeedbackSent | null;
-  onSubmit: () => void;
-  onClose: () => void;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -149,22 +143,11 @@ export function FeedbackPanel({
         {sent.threadUrl ? (
           <ActionLink href={sent.threadUrl}>Zum Discord-Thread</ActionLink>
         ) : null}
-
-        <DialogFooter>
-          <Button type="button" className="w-full sm:w-auto" onClick={onClose}>
-            Schließen
-          </Button>
-        </DialogFooter>
       </div>
     );
   }
 
   const trimmedBody = body.trim();
-  const incomplete =
-    title.trim().length < 3 ||
-    trimmedBody.length < 10 ||
-    title.trim().length > TITLE_MAX ||
-    trimmedBody.length > BODY_MAX;
   const roomLeft = MAX_ATTACHMENTS - attachments.length;
 
   function add(files: File[]) {
@@ -381,25 +364,56 @@ export function FeedbackPanel({
           {error}
         </p>
       ) : null}
+    </div>
+  );
+}
 
-      <DialogFooter>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full sm:w-auto"
-          onClick={onClose}
-        >
-          Abbrechen
-        </Button>
-        <Button
-          type="button"
-          className="w-full sm:w-auto"
-          disabled={incomplete || pending}
-          onClick={onSubmit}
-        >
-          {pending ? "Wird gesendet…" : "Absenden"}
+/**
+ * The action bar. Separate from the panel because the dialog pins it below a
+ * scrolling body — on a phone the form is taller than the screen, and
+ * „Absenden" must not be the thing you have to scroll to find.
+ */
+export function FeedbackActions({
+  sent = false,
+  pending = false,
+  disabled = false,
+  onSubmit,
+  onClose,
+}: {
+  // Only which variant to show — the bar needs nothing from the payload.
+  sent?: boolean;
+  pending?: boolean;
+  disabled?: boolean;
+  onSubmit: () => void;
+  onClose: () => void;
+}) {
+  if (sent) {
+    return (
+      <DialogFooter className="m-0 shrink-0 rounded-b-xl">
+        <Button type="button" className="w-full sm:w-auto" onClick={onClose}>
+          Schließen
         </Button>
       </DialogFooter>
-    </div>
+    );
+  }
+  return (
+    <DialogFooter className="m-0 shrink-0 rounded-b-xl">
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full sm:w-auto"
+        onClick={onClose}
+      >
+        Abbrechen
+      </Button>
+      <Button
+        type="button"
+        className="w-full sm:w-auto"
+        disabled={disabled || pending}
+        onClick={onSubmit}
+      >
+        {pending ? "Wird gesendet…" : "Absenden"}
+      </Button>
+    </DialogFooter>
   );
 }

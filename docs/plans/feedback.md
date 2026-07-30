@@ -146,8 +146,16 @@ guild-agnostic — the app never has to be told where the forum lives.
 
 ## Views
 
-- `<FeedbackDialog>` (client) — 640px on desktop (`sm:max-w-[640px]`, keeping
-  the default `p-4` so `DialogFooter`'s bleed bar lines up), Input (Titel) +
+- `<FeedbackDialog>` (client) — 640px on desktop (`sm:max-w-[640px]`). The
+  shared `DialogContent` now caps every dialog at `calc(100dvh-2rem)` and
+  scrolls (it previously constrained neither, so any dialog taller than the
+  viewport ran off a phone screen unreachable). This one goes further and turns
+  that scrolling off (`overflow-y-hidden`) in favour of its own flex layout, so
+  only the middle section scrolls and „Absenden" is never something you have to
+  scroll to find. That is why the action bar is a separate
+  `<FeedbackActions>` — it must sit outside the scrolling body. `min-h-0` on
+  the scroll container is what lets a flex child actually shrink.
+  Input (Titel) +
   Textarea (Beschreibung), plus a Bug/Idee RadioGroup rendered only when
   `canSubmitIdea` — two cards side by side, stacked below the `sm` breakpoint.
   Captures `usePathname()` and `navigator.userAgent` on open. States: form,

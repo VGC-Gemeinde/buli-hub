@@ -15,8 +15,11 @@ import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
 import { DropBanner } from "@/features/drops/components/drop-banner";
 import { DropsSection } from "@/features/drops/components/drops-section";
 import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
-import { FeedbackPanel } from "@/features/feedback/components/feedback-panel";
-import type { FeedbackKind } from "@/features/feedback/feedback";
+import {
+  FeedbackActions,
+  FeedbackPanel,
+} from "@/features/feedback/components/feedback-panel";
+import { canSend, type FeedbackKind } from "@/features/feedback/feedback";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import {
   MotwManager,
@@ -910,6 +913,9 @@ function FeedbackSpecimen({
         }
         capturedPath="/match/8f2c"
         error={error}
+      />
+      <FeedbackActions
+        disabled={!canSend({ title, body })}
         onSubmit={() => {}}
         onClose={() => {}}
       />
@@ -1896,9 +1902,8 @@ export function Gallery() {
                 attachmentCount: 2,
                 attachmentsPosted: false,
               }}
-              onSubmit={() => {}}
-              onClose={() => {}}
             />
+            <FeedbackActions sent onSubmit={() => {}} onClose={() => {}} />
           </DialogWidth>
         </Specimen>
         <Specimen label="Gesendet — mit Thread-Link (Forum auf dem Hauptserver)">
@@ -1916,9 +1921,8 @@ export function Gallery() {
                 attachmentCount: 2,
                 attachmentsPosted: true,
               }}
-              onSubmit={() => {}}
-              onClose={() => {}}
             />
+            <FeedbackActions sent onSubmit={() => {}} onClose={() => {}} />
           </DialogWidth>
         </Specimen>
         <Specimen label="Gesendet — ohne Link (Forum auf dem Staff-Server)">
@@ -1936,9 +1940,8 @@ export function Gallery() {
                 attachmentCount: 0,
                 attachmentsPosted: true,
               }}
-              onSubmit={() => {}}
-              onClose={() => {}}
             />
+            <FeedbackActions sent onSubmit={() => {}} onClose={() => {}} />
           </DialogWidth>
         </Specimen>
       </section>

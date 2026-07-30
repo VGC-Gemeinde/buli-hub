@@ -11,10 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { submitFeedback } from "../actions";
 import { MAX_ATTACHMENTS, validateAttachments } from "../attachments";
-import type { FeedbackKind } from "../feedback";
+import { canSend, type FeedbackKind } from "../feedback";
 import { compressImage } from "./compress";
 import {
   type Attachment,
+  FeedbackActions,
   FeedbackPanel,
   type FeedbackSent,
 } from "./feedback-panel";
@@ -148,10 +149,13 @@ export function FeedbackDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* Default p-4 kept on purpose: DialogFooter's bleed bar (-mx-4 -mb-4)
-          only lines up with that padding. */}
-      <DialogContent className="sm:max-w-[640px]">
-        <DialogHeader className="gap-1.5 pr-8">
+      {/* DialogContent caps the height and scrolls itself; here the whole form
+          scrolling would push „Absenden" out of reach on a phone. So take over:
+          `overflow-y-hidden` turns the primitive's scrolling off (same
+          Tailwind group, so it replaces it), padding moves inside, and only the
+          middle section scrolls — title and action bar stay pinned. */}
+      <DialogContent className="flex flex-col gap-0 overflow-y-hidden p-0 sm:max-w-[640px]">
+        <DialogHeader className="shrink-0 gap-1.5 p-4 pr-12 pb-3">
           <DialogTitle className="text-[22px] uppercase tracking-[0.02em]">
             {sent ? "Danke!" : "Feedback geben"}
           </DialogTitle>
@@ -163,21 +167,28 @@ export function FeedbackDialog({
             </DialogDescription>
           )}
         </DialogHeader>
-        <FeedbackPanel
-          canSubmitIdea={canSubmitIdea}
-          kind={kind}
-          onKindChange={setKind}
-          title={title}
-          onTitleChange={setTitle}
-          body={body}
-          onBodyChange={setBody}
-          attachments={attachments}
-          onAddFiles={addFiles}
-          onRemoveAttachment={removeAttachment}
-          capturedPath={pathname}
+        {/* min-h-0 is what lets a flex child actually shrink and scroll. */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+          <FeedbackPanel
+            canSubmitIdea={canSubmitIdea}
+            kind={kind}
+            onKindChange={setKind}
+            title={title}
+            onTitleChange={setTitle}
+            body={body}
+            onBodyChange={setBody}
+            attachments={attachments}
+            onAddFiles={addFiles}
+            onRemoveAttachment={removeAttachment}
+            capturedPath={pathname}
+            error={error}
+            sent={sent}
+          />
+        </div>
+        <FeedbackActions
+          sent={sent !== null}
           pending={pending}
-          error={error}
-          sent={sent}
+          disabled={!canSend({ title, body })}
           onSubmit={submit}
           onClose={close}
         />

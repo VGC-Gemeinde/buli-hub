@@ -34,6 +34,21 @@ export const feedbackInputSchema = z.object({
 
 export type FeedbackInput = z.infer<typeof feedbackInputSchema>;
 
+// Whether the form may be submitted. Shared by the dialog's disabled state and
+// the action bar so the same thresholds as `feedbackInputSchema` are applied in
+// one place instead of being restated in a view.
+export function canSend({
+  title,
+  body,
+}: {
+  title: string;
+  body: string;
+}): boolean {
+  const t = title.trim().length;
+  const b = body.trim().length;
+  return t >= 3 && t <= TITLE_MAX && b >= 10 && b <= BODY_MAX;
+}
+
 // Bugs from anyone signed in; ideas are staff+. Used by the action's gate and
 // by the dialog to decide whether the type switch appears at all.
 export function canSubmit(role: Role, kind: FeedbackKind): boolean {

@@ -447,6 +447,10 @@ export const feedbackReports = pgTable(
     reporterRole: roleEnum("reporter_role").notNull(),
     threadId: text("thread_id"),
     threadGuildId: text("thread_guild_id"),
+    // How many screenshots rode along. The images themselves live only in the
+    // Discord thread, so if the post failed this is the only trace that the
+    // report had them — staff can ask the reporter to resend.
+    attachmentCount: integer("attachment_count").notNull().default(0),
     postedAt: timestamp("posted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

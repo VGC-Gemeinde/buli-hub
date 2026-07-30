@@ -4,8 +4,13 @@ import { currentUser } from "@/features/roles/guard";
 import { currentMatchday } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
 import { latestWindow } from "@/features/staff/queries";
-import { createForumThread } from "@/lib/discord";
+import { createForumThread, type DiscordUpload } from "@/lib/discord";
 import { germanToday } from "@/lib/german-time";
+import {
+  attachmentFileName,
+  sniffImageType,
+  validateAttachments,
+} from "./attachments";
 import {
   canSubmit,
   feedbackInputSchema,
@@ -18,8 +23,46 @@ import {
 import { insertFeedback, markPosted, recentFeedbackCount } from "./queries";
 
 export type FeedbackActionResult =
-  | { ok: true; threadUrl: string | null }
+  | {
+      ok: true;
+      threadUrl: string | null;
+      // What became of the screenshots. The reporter cannot open the
+      // staff-server thread, so the app has to say.
+      attachmentCount: number;
+      attachmentsPosted: boolean;
+    }
   | { ok: false; error: string };
+
+/**
+ * Reads the submitted images, identifying each by its magic bytes rather than
+ * its declared type: the browser's `type` is just a string, and this forum is
+ * read by staff. Returns null when anything fails the gate.
+ */
+async function readAttachments(
+  images: readonly File[],
+): Promise<DiscordUpload[] | null> {
+  const validated = validateAttachments(
+    images.map((image) => ({ size: image.size, type: image.type })),
+  );
+  if (!validated.ok) {
+    return null;
+  }
+
+  const uploads: DiscordUpload[] = [];
+  for (const [index, image] of images.entries()) {
+    const bytes = new Uint8Array(await image.arrayBuffer());
+    const sniffed = sniffImageType(bytes);
+    if (!sniffed) {
+      return null;
+    }
+    uploads.push({
+      name: attachmentFileName(index, sniffed),
+      contentType: sniffed,
+      bytes,
+    });
+  }
+  return uploads;
+}
 
 // Unset → no thread is created and the row is all there is (local dev stays
 // silent, like DISCORD_RESULTS_CHANNEL_ID). The forum may sit in any guild
@@ -76,6 +119,7 @@ async function seasonContext(): Promise<{
  */
 export async function submitFeedback(
   input: unknown,
+  images: readonly File[] = [],
 ): Promise<FeedbackActionResult> {
   const current = await currentUser();
   if (!current) {
@@ -104,6 +148,17 @@ export async function submitFeedback(
     return allowed;
   }
 
+  // Before the row: a rejected image should not leave a half-told report
+  // behind, and the reporter can fix it and resubmit.
+  const uploads = await readAttachments(images);
+  if (uploads === null) {
+    return {
+      ok: false,
+      error:
+        "Die Bilder konnten nicht angenommen werden. Erlaubt sind bis zu 3 Bilder (PNG, JPEG, WebP, GIF), zusammen maximal 6 MB.",
+    };
+  }
+
   const season = await seasonContext();
   const sha = buildSha();
 
@@ -118,12 +173,22 @@ export async function submitFeedback(
     round: season.round,
     reporterId: current.userId,
     reporterRole: current.role,
+    attachmentCount: uploads.length,
   });
 
-  // Everything below is best-effort: the report is already safe.
+  // Everything below is best-effort: the report is already safe. The images
+  // are not — they live only in the thread, so a failed post loses them, and
+  // `attachmentsPosted: false` is what tells the reporter that.
+  const failed = {
+    ok: true as const,
+    threadUrl: null,
+    attachmentCount: uploads.length,
+    attachmentsPosted: false,
+  };
+
   const channelId = forumChannel();
   if (!channelId) {
-    return { ok: true, threadUrl: null };
+    return failed;
   }
 
   try {
@@ -140,10 +205,11 @@ export async function submitFeedback(
         seasonNumber: season.seasonNumber,
       }),
       appliedTags: tagFor(report.kind),
+      files: uploads,
     });
     if (!created.ok) {
       console.error(`[feedback] thread creation failed (${created.status})`);
-      return { ok: true, threadUrl: null };
+      return failed;
     }
     await markPosted(id, created);
     return {
@@ -153,9 +219,11 @@ export async function submitFeedback(
         threadGuildId: created.guildId,
         mainGuildId: mainGuildId(),
       }),
+      attachmentCount: uploads.length,
+      attachmentsPosted: true,
     };
   } catch (error) {
     console.error("[feedback] thread creation failed", error);
-    return { ok: true, threadUrl: null };
+    return failed;
   }
 }

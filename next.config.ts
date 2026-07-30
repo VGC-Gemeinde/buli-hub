@@ -12,6 +12,15 @@ const allowedDevOrigins = (process.env.DEV_LAN_ORIGIN ?? "")
 const nextConfig: NextConfig = {
   // Self-contained server bundle for the Docker image (see Dockerfile).
   output: "standalone",
+  experimental: {
+    serverActions: {
+      // Feedback reports carry up to 3 screenshots (6 MiB total, see
+      // src/features/feedback/attachments.ts). The default is 1 MB, which a
+      // single screenshot exceeds — the request would be rejected before the
+      // action runs.
+      bodySizeLimit: "12mb",
+    },
+  },
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
 };
 

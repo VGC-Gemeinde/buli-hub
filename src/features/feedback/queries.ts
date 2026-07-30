@@ -19,6 +19,7 @@ export type NewFeedbackReport = {
   round: number | null;
   reporterId: string;
   reporterRole: Role;
+  attachmentCount: number;
 };
 
 export async function insertFeedback(

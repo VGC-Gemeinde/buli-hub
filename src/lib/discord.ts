@@ -81,29 +81,75 @@ export async function postChannelMessage(
 // channel may live in *any* guild the bot is a member of — the API addresses
 // it by channel id alone — so the returned thread's `guild_id` is reported
 // back rather than assumed from configuration.
+export type DiscordUpload = {
+  name: string;
+  contentType: string;
+  bytes: Uint8Array;
+};
+
 export async function createForumThread(
   channelId: string,
-  thread: { name: string; content: string; appliedTags?: string[] },
+  thread: {
+    name: string;
+    content: string;
+    appliedTags?: string[];
+    files?: readonly DiscordUpload[];
+  },
 ): Promise<
   | { ok: true; threadId: string; guildId: string | null }
   | { ok: false; status: number }
 > {
+  const payload = {
+    name: thread.name,
+    ...(thread.appliedTags && thread.appliedTags.length > 0
+      ? { applied_tags: thread.appliedTags }
+      : {}),
+    message: {
+      content: thread.content,
+      allowed_mentions: { parse: [] },
+      ...(thread.files && thread.files.length > 0
+        ? {
+            attachments: thread.files.map((file, index) => ({
+              id: index,
+              filename: file.name,
+            })),
+          }
+        : {}),
+    },
+  };
+
+  // With files this has to be multipart: `payload_json` plus one `files[n]`
+  // part per upload, whose index matches the attachment id above. Without
+  // files, plain JSON — the common case stays as simple as it was.
+  let body: BodyInit;
+  const headers: Record<string, string> = {
+    Authorization: `Bot ${botToken()}`,
+  };
+  if (thread.files && thread.files.length > 0) {
+    const form = new FormData();
+    form.append("payload_json", JSON.stringify(payload));
+    thread.files.forEach((file, index) => {
+      form.append(
+        `files[${index}]`,
+        // Copy into a fresh ArrayBuffer: a Uint8Array view may sit on a larger
+        // pooled buffer, and Blob would otherwise take the whole thing.
+        new Blob([file.bytes.slice().buffer as ArrayBuffer], {
+          type: file.contentType,
+        }),
+        file.name,
+      );
+    });
+    body = form;
+    // Deliberately no Content-Type — fetch must set the multipart boundary.
+  } else {
+    body = JSON.stringify(payload);
+    headers["Content-Type"] = "application/json";
+  }
+
   const response = await fetch(`${API_BASE}/channels/${channelId}/threads`, {
     method: "POST",
-    headers: {
-      Authorization: `Bot ${botToken()}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name: thread.name,
-      ...(thread.appliedTags && thread.appliedTags.length > 0
-        ? { applied_tags: thread.appliedTags }
-        : {}),
-      message: {
-        content: thread.content,
-        allowed_mentions: { parse: [] },
-      },
-    }),
+    headers,
+    body,
   });
   if (!response.ok) {
     return { ok: false, status: response.status };

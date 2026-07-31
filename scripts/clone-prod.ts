@@ -19,7 +19,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { stripForeignDefaultPrivileges } from "../src/features/dev/clone/restore.ts";
-import { buildScrubSql } from "../src/features/dev/clone/scrub.ts";
+import { buildScrubSql, KEPT_ROLES } from "../src/features/dev/clone/scrub.ts";
 import {
   buildShiftSql,
   parseShiftInterval,
@@ -38,7 +38,6 @@ const { values } = parseArgs({
     source: { type: "string" },
     target: { type: "string" },
     scrub: { type: "boolean", default: false },
-    "keep-ids": { type: "string" },
     "no-migrate": { type: "boolean", default: false },
     "dry-run": { type: "boolean", default: false },
     help: { type: "boolean", default: false },
@@ -52,8 +51,8 @@ Clone production into a target database.
   --shift="<interval>"  Offset every timestamp, e.g. "30 days", "-2 weeks 6 hours".
                         Omit to keep the snapshot's own dates.
   --scrub               Replace personal data with synthetic equivalents.
+                        Staff+ keep their identity; everyone else is anonymised.
                         Required for any target other than your own machine.
-  --keep-ids=<a,b>      Discord ids exempt from the scrub (default: CLONE_KEEP_DISCORD_IDS).
   --source=<url>        Source connection (default: PROD_DATABASE_URL).
   --target=<url>        Target connection (default: CLONE_TARGET_DATABASE_URL, then DATABASE_URL).
   --no-migrate          Skip the closing drizzle-kit migrate.
@@ -142,11 +141,6 @@ if (!targetIsLocal && !values.scrub) {
   );
 }
 
-const keepIds = (values["keep-ids"] ?? process.env.CLONE_KEEP_DISCORD_IDS ?? "")
-  .split(",")
-  .map((id) => id.trim())
-  .filter((id) => id.length > 0);
-
 // Validate the inputs that build SQL up front, so a typo fails on the command
 // line rather than three minutes into a dump.
 function validated<T>(build: () => T): T {
@@ -160,7 +154,6 @@ function validated<T>(build: () => T): T {
 const shift = values.shift
   ? validated(() => parseShiftInterval(values.shift as string))
   : null;
-validated(() => buildScrubSql(keepIds));
 
 // --- Tooling ---------------------------------------------------------------
 
@@ -284,7 +277,7 @@ const step = (n: number, what: string) => console.log(`\n[${n}/6] ${what}`);
 console.log(`clone-prod
   source  ${from.key} (read-only)
   target  ${to.key}
-  scrub   ${values.scrub ? `yes${keepIds.length ? ` (keeping ${keepIds.length} tester id(s))` : ""}` : "no"}
+  scrub   ${values.scrub ? "yes (staff+ keep their identity)" : "no"}
   shift   ${shift ?? "none"}
   migrate ${values["no-migrate"] ? "no" : "yes"}`);
 
@@ -297,7 +290,7 @@ if (dryRun) {
   console.log("\n--dry-run: nothing will be executed.\n");
   if (values.scrub) {
     console.log("--- scrub SQL ---");
-    console.log(buildScrubSql(keepIds).join("\n\n"));
+    console.log(buildScrubSql().join("\n\n"));
   }
   if (shift) {
     console.log("\n--- shift SQL (columns resolved at run time) ---");
@@ -405,7 +398,21 @@ delete from auth.users;`,
   // 3. Scrub.
   if (values.scrub) {
     step(3, "Scrubbing personal data");
-    psqlScript(buildScrubSql(keepIds).join("\n"), target);
+    psqlScript(buildScrubSql().join("\n"), target);
+    // Reported after the fact, not before: who is exempt is a property of the
+    // copied data, not of the command line.
+    const [kept, total] = psqlQuery(
+      `select count(*) filter (where p.role::text = any(array[${KEPT_ROLES.map((r) => `'${r}'`).join(", ")}])),
+              count(*)
+       from auth.users u
+       left join "public"."profiles" p on p.user_id = u.id;`,
+      target,
+    )
+      .trim()
+      .split("\t");
+    console.log(
+      `      ${kept} of ${total} user(s) kept their identity (staff+)`,
+    );
   } else {
     step(3, "Scrub skipped (--scrub not given)");
   }

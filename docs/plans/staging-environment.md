@@ -255,11 +255,11 @@ Two details that matter:
   matters for layout bugs while removing the identity. A unit test asserts the
   fixture list still has each of those properties, so shortening it later
   cannot quietly remove the coverage.
-- **`provider_id` follows the allow-list** (§8.1). It is the Discord
+- **`provider_id` follows the role exemption** (§8.1). It is the Discord
   snowflake, so it is personal data, but it is also what maps a real Discord
-  login onto a copied user row. Ids listed in `CLONE_KEEP_DISCORD_IDS` survive
-  the scrub; every other row gets a synthetic snowflake above the real Discord
-  id range, so a scrubbed id can never collide with a genuine account.
+  login onto a copied user row. Staff and above keep theirs; every other row
+  gets a synthetic snowflake above the real Discord id range, so a scrubbed id
+  can never collide with a genuine account.
 
 ### 4.4 Impersonation
 
@@ -408,8 +408,7 @@ production:
   image (`src/app/robots.ts`, `src/proxy.ts`).
 
 **GitHub environment `STAGING`** — the same variable set as `PROD` with
-staging values, plus `STAGING_DATABASE_URL` as a secret and
-`CLONE_KEEP_DISCORD_IDS` as a variable. Both `PROD` and `STAGING` need
+staging values, plus `STAGING_DATABASE_URL` as a secret. Both `PROD` and `STAGING` need
 `PROD_DATABASE_URL`: the deploy job migrates with it on `main`, and the
 refresh workflow reads production through it on `dev`.
 
@@ -463,12 +462,16 @@ which is the opposite of what this plan is for. Not a fit.
 
 ## 8. Decisions taken
 
-1. **`provider_id` in the staging scrub — allow-list.**
-   `CLONE_KEEP_DISCORD_IDS` names the tester accounts; their identity survives
-   the scrub so they sign into staging as themselves and land on their own
-   copied data. Everyone else is anonymised. Scrubbing every id would have
-   been more private but would have left staging unable to exercise the real
-   Discord OAuth round-trip, which is one of the reasons it exists (§2).
+1. **`provider_id` in the staging scrub — exempt staff and above.**
+   Everyone with a `profiles.role` of `staff`, `admin` or `dev` keeps their
+   identity through the scrub, so they sign into staging as themselves and land
+   on their own copied data. Everyone else is anonymised. Scrubbing every id
+   would have been more private but would have left staging unable to exercise
+   the real Discord OAuth round-trip, which is one of the reasons it exists
+   (§2). The role is the right predicate rather than a maintained id list:
+   staff are the people who have staging access in the first place, so
+   exempting them widens access to nothing, and a role change in Discord is
+   carried by the next refresh without touching any configuration.
 2. **Staging access — unlisted URL plus `noindex`, not IAM.** Chosen so the
    URL can be handed to a player for feedback without a `gcloud` install. The
    security budget moves to the scrub and to `DEV_TOOLS_TOKEN` (§5.1, §5.4).

@@ -185,7 +185,7 @@ function ZoneLegend({ zones }: { zones?: ZoneMap }) {
     {
       show: present.has("champion"),
       bar: "bg-zone-champion",
-      label: "Meister-Playoff",
+      label: "Playoffs",
     },
     {
       show: present.has("promote"),

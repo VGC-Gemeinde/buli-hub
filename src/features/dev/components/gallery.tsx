@@ -2008,9 +2008,9 @@ export function Gallery() {
         </Specimen>
         <Specimen label="Callout — orange (kostet den Spieler etwas) · navy (strukturell)">
           <div className="flex flex-col gap-4">
-            <Callout title="Replay-Pflicht" tickColor="orange">
+            <Callout title="Replay-Pflicht" tickColor="orange" emphasis>
               Von den Spielen in Division 1 &amp; 2 müssen Replays hochgeladen
-              werden.
+              werden!
             </Callout>
             <Callout title="Nachrichten sind unveränderlich">
               Die Nachrichten dürfen nicht bearbeitet oder gelöscht werden.

@@ -192,7 +192,7 @@ export const SAISON_9: RegelwerkDocument = {
               </Bullet>
               <Bullet>
                 Die besten Spieler aus Division 1 werden am Ende in den{" "}
-                <Key>Meister-Play-Offs</Key> um den Titel spielen.
+                <Key>Playoffs</Key> um den Titel spielen.
               </Bullet>
               <Bullet>
                 Das genaue System wird kommuniziert, sobald die Einteilung der
@@ -355,6 +355,13 @@ export const SAISON_9: RegelwerkDocument = {
           title: "Reporten der Ergebnisse",
           body: (
             <>
+              {/* Above the bullets, not after them: players kept scrolling
+                  past this one, and a rule you meet before the list is harder
+                  to miss than a box that closes it. */}
+              <Callout title="Replay-Pflicht" tickColor="orange" emphasis>
+                Von den Spielen in <Key>Division 1 &amp; 2</Key> müssen Replays
+                hochgeladen werden!
+              </Callout>
               <Bullets>
                 <Bullet>
                   Nach beendetem Match trägt einer der Spieler das Ergebnis
@@ -378,10 +385,6 @@ export const SAISON_9: RegelwerkDocument = {
                   zur Datenanalyse zu nutzen.
                 </Bullet>
               </Bullets>
-              <Callout title="Replay-Pflicht" tickColor="orange">
-                Von den Spielen in <Key>Division 1 &amp; 2</Key> müssen Replays
-                hochgeladen werden.
-              </Callout>
             </>
           ),
         },
@@ -406,7 +409,7 @@ export const SAISON_9: RegelwerkDocument = {
                 Dann teilen sich die Spieler den Platz, und der darauffolgende
                 Platz entfällt (zwei dritte Plätze, weiter geht es mit Platz 5).
                 Hängt an einem geteilten Platz ein Auf- oder Abstieg oder eine
-                Play-Off-Qualifikation, müssen Tie-Breaker-Matches gespielt
+                Playoff-Qualifikation, müssen Tie-Breaker-Matches gespielt
                 werden.
               </Callout>
             </>

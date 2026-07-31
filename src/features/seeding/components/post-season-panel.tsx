@@ -50,7 +50,7 @@ type Row = {
 type PreviewCell = Zone | "overbooked";
 
 const ZONE_NAME: Record<Zone, string> = {
-  champion: "Meister-Playoff",
+  champion: "Playoffs",
   promote: "Direkter Aufstieg",
   promotion_playoff: "Aufstiegs-Playoff",
   demotion_playoff: "Abstiegs-Playoff",
@@ -170,7 +170,7 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
     case "missing_demotion_path":
       return `Division ${issue.tier}: kein Abstiegsweg — mindestens ein Platz oder Playoff-Slot nötig.`;
     case "championship_not_top":
-      return `Division ${issue.tier}: ein Meister-Playoff gibt es nur in Division 1.`;
+      return `Division ${issue.tier}: Playoffs gibt es nur in Division 1.`;
   }
 }
 
@@ -511,7 +511,7 @@ function DivisionCard({
             // to the title playoff that crowns the champion.
             <Cluster
               zoneClass="bg-zone-champion"
-              label="Meister-Playoff"
+              label="Playoffs"
               value={row.championshipPlayoffSlots}
               disabled={readOnly}
               note={note(row.championshipPlayoffSlots, null)}

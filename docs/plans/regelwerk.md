@@ -51,11 +51,15 @@ splitting them after the fact would produce a first commit that never existed.
    player profiles all stay open to an unaccepted player. Only mutations are
    blocked — a player who can still see the table reads the rules; a player who
    sees nothing writes to the Orga.
-5. **Registrations that predate acceptance stay valid.** Registration is already
+5. **Withdrawing removes the acceptance.** It was given as part of
+   registering, so it does not outlive the registration: someone who is not in
+   the season must not count as having agreed to its rules, and re-registering
+   asks again rather than silently reusing the old agreement.
+6. **Registrations that predate acceptance stay valid.** Registration is already
    open for Saison 9, so registered players exist who never saw an acceptance
    step. They are „registered, not accepted" and get the reminder. Retroactively
    voiding a real registration for a step that did not exist is not defensible.
-6. **Acceptance happens where the player is asked, never on the rules page.**
+7. **Acceptance happens where the player is asked, never on the rules page.**
    `/regelwerk` is a document and carries no acceptance control. A player
    confirms in exactly two places: the checkbox on `/anmeldung`, which is part
    of registering, and the prompt dialog, which is the thing telling them
@@ -63,13 +67,17 @@ splitting them after the fact would produce a first commit that never existed.
    button that opens that same dialog, so the page is a way *in* to accepting
    without being the place it happens.
 
+   The block is shown only to players **registered for the running season** —
+   signed-out visitors and signed-in non-participants read the document and are
+   asked nothing, because for them acceptance is part of registering.
+
    **This supersedes hand-off §4 and §5.3**, which put the control at the end
    of the document behind a checkbox and a sticky bar, on the reasoning that a
    player who can tick a box in a modal has not read the rules. The maintainer's
    call: we trust our players, and the record exists to answer „did they agree",
    not to prove they were on the page. A future session should not restore the
    inline block from the hand-off.
-7. **One button, no confirmation checkbox in the dialog.** The dialog's copy
+8. **One button, no confirmation checkbox in the dialog.** The dialog's copy
    already says what is being confirmed. The `/anmeldung` checkbox stays,
    because there it is one item in a form rather than the whole ask.
 

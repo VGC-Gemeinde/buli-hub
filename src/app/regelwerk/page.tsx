@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { RegelwerkDocumentView } from "@/features/regelwerk/components/regelwerk-document";
 import { regelwerkForSeason } from "@/features/regelwerk/content";
 import { acceptedAt } from "@/features/regelwerk/queries";
+import { getRegistration } from "@/features/registration/queries";
 import { currentUser } from "@/features/roles/guard";
 import { latestWindow } from "@/features/staff/queries";
 
@@ -23,10 +24,14 @@ export default async function RegelwerkPage() {
     window === null ? null : regelwerkForSeason(window.seasonNumber);
   const current = await currentUser();
 
-  // Signed-out visitors read the document without an acceptance control — they
-  // have nothing to accept yet, and meet the checkbox at registration instead.
+  // The acceptance block belongs to players who are in this season. Everyone
+  // else — signed out, or signed in but not registered — reads the document
+  // and is asked nothing: for them acceptance is part of registering, and the
+  // checkbox on /anmeldung is where it happens.
+  const registration =
+    current && window ? await getRegistration(window.id, current.userId) : null;
   const acceptance =
-    current && window
+    current && window && registration
       ? {
           acceptedAt:
             (await acceptedAt(window.id, current.userId))?.toISOString() ??

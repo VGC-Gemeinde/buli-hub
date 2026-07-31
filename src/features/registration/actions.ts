@@ -1,7 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { recordAcceptance } from "@/features/regelwerk/queries";
+import {
+  clearAcceptance,
+  recordAcceptance,
+} from "@/features/regelwerk/queries";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
 import { createClient } from "@/lib/supabase/server";
@@ -130,7 +133,14 @@ export async function withdraw(): Promise<RegisterResult> {
   }
 
   await deleteRegistration(window.id, user.id);
+  // The acceptance goes with it. It was given as part of registering, so
+  // leaving it behind would mean someone who is not in the season still counts
+  // as having agreed to its rules — and a later re-registration would silently
+  // reuse the old agreement instead of asking again.
+  await clearAcceptance(window.id, user.id);
+
   revalidatePath("/anmeldung");
   revalidatePath("/staff");
+  revalidatePath("/regelwerk");
   return { ok: true };
 }

@@ -20,8 +20,9 @@ export function RegelwerkDocumentView({
 }: {
   document: RegelwerkDocument;
   /**
-   * Null for a visitor who cannot accept (signed out, or not in a running
-   * season) — the document then simply ends after the signature.
+   * Null for anyone who is not registered for this season — signed out, or
+   * signed in but not taking part. The document then simply ends after the
+   * signature, because there is nothing to ask them.
    */
   acceptance: { acceptedAt: string | null } | null;
 }) {

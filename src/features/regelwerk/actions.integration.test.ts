@@ -40,7 +40,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 const { acceptRegelwerk } = await import("./actions");
 const { acceptedAt, recordAcceptance } = await import("./queries");
-const { register } = await import("@/features/registration/actions");
+const { register, withdraw } = await import("@/features/registration/actions");
 
 const player = randomUUID();
 const other = randomUUID();
@@ -159,20 +159,61 @@ describe("acceptRegelwerk", () => {
 // The main path: almost every acceptance in the database gets here, not
 // through a dialog. The registration form gates its own submit on the
 // Regelwerk checkbox, so reaching `register` means the player agreed.
-describe("register", () => {
-  it("records the acceptance along with the registration", async () => {
-    const windowId = await openSeason(9);
-    signedInAs(player);
+describe("register / withdraw", () => {
+  async function registerPlayer() {
     supabaseUser = player;
-
-    const result = await register({
+    return register({
       platform: "showdown",
       participatedBefore: false,
       newPlayer: { skillSelfRating: 5, greatestAchievements: "" },
     });
+  }
 
-    expect(result).toEqual({ ok: true });
+  it("records the acceptance along with the registration", async () => {
+    const windowId = await openSeason(9);
+    signedInAs(player);
+
+    expect(await registerPlayer()).toEqual({ ok: true });
     expect(await acceptedAt(windowId, player)).not.toBeNull();
+  });
+
+  // The acceptance was given as part of registering, so it must not outlive
+  // it: someone who is not in the season should not count as having agreed to
+  // its rules, and re-registering has to ask again rather than silently
+  // reusing the old agreement.
+  it("removes the acceptance when the player withdraws", async () => {
+    const windowId = await openSeason(9);
+    signedInAs(player);
+    await registerPlayer();
+
+    expect(await withdraw()).toEqual({ ok: true });
+
+    expect(await acceptedAt(windowId, player)).toBeNull();
+  });
+
+  it("asks again on re-registration", async () => {
+    const windowId = await openSeason(9);
+    signedInAs(player);
+    await registerPlayer();
+    const first = await acceptedAt(windowId, player);
+    await withdraw();
+
+    await registerPlayer();
+
+    const second = await acceptedAt(windowId, player);
+    expect(second).not.toBeNull();
+    expect(second).not.toEqual(first);
+  });
+
+  it("leaves other players' acceptances alone on withdrawal", async () => {
+    const windowId = await openSeason(9);
+    await recordAcceptance(windowId, other);
+    signedInAs(player);
+    await registerPlayer();
+
+    await withdraw();
+
+    expect(await acceptedAt(windowId, other)).not.toBeNull();
   });
 });
 

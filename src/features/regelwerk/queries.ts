@@ -43,9 +43,10 @@ export async function recordAcceptance(
 }
 
 /**
- * Removes an acceptance. Dev tooling only (`/dev/regelwerk?accept=0`) — the
- * product has no un-accept, so this exists purely so the reminder and gate
- * dialogs stay reachable more than once while working on them.
+ * Removes an acceptance. Two callers: `withdraw`, because an acceptance given
+ * as part of registering should not outlive the registration, and
+ * `/dev/regelwerk?accept=0`, which exists because the product otherwise has no
+ * un-accept and the prompts would be reachable once per season.
  */
 export async function clearAcceptance(
   windowId: string,

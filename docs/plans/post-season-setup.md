@@ -90,7 +90,8 @@ carries zones: the division's relevant table.
 - Actually **executing** promotion/demotion between seasons (moving players to new
   divisions next season).
 - Genuine-tie resolution at a zone boundary (still deferred; see
-  [[standings-tiebreakers]]).
+  [[standings-tiebreakers]] and [[standings-head-to-head]] — head-to-head resolves
+  many of these in group mode, but not in `division` mode, where it is off).
 
 ## Schema
 

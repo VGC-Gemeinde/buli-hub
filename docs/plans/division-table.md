@@ -8,12 +8,17 @@ table, alongside the existing per-sub-division table. The player dashboard's
 "Tabelle" section gains a switcher between **the player's own group** (e.g.
 Division 1a) and **the whole division** (Division 1).
 
-The division table reuses the existing ranking untouched: `computeStandings` was
-built for this — its keys (match wins → game differential → game win rate) are all
+The division table reuses the existing ranking: `computeStandings` was built for
+this — its keys (match wins → game differential → game win rate) are all
 opponent-independent, "so the same order holds when comparing players from
-different (equal-size) sub-divisions" (see `standings.ts` header and
-`standings-tiebreakers.md`). A division table is just `computeStandings` over the
-merged roster + results of all its groups.
+different (equal-size) sub-divisions" (see `standings.ts` header). A division table
+is just `computeStandings` over the merged roster + results of all its groups.
+
+The one exception, added later: group standings also rank on **head-to-head**,
+between differential and rate. That key is opponent-dependent and does not exist for
+most pairs in a division table, so `divisionStandings` switches it off
+(`headToHead: false`). See [[standings-head-to-head]] — including the accepted
+consequence for divisions whose `relevantTable` is `division`.
 
 ## Why the equal-size gate
 
@@ -114,6 +119,8 @@ Pure (`standings.test.ts` or a new `division.test.ts`):
 - two equal-size groups merge and rank cross-group: a 3–0 player in group A outranks
   a 2–1 player in group B; game differential/rate break ties across groups.
 - genuinely tied players from different groups share a rank (…, 3, 3, 5, …).
+- head-to-head is off: a tied pair from the *same* group still shares a rank here,
+  even when one beat the other (see [[standings-head-to-head]]).
 
 Integration (`queries.integration.test.ts`):
 

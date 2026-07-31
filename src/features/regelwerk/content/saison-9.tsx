@@ -359,8 +359,8 @@ export const SAISON_9: RegelwerkDocument = {
                   past this one, and a rule you meet before the list is harder
                   to miss than a box that closes it. */}
               <Callout title="Replay-Pflicht" tickColor="orange" emphasis>
-                Von den Spielen in <Key>Division 1 &amp; 2</Key> müssen Replays
-                hochgeladen werden!
+                Von den Spielen in <Key>Division 1 &amp; 2</Key> müssen{" "}
+                <Key>Replays hochgeladen</Key> werden!
               </Callout>
               <Bullets>
                 <Bullet>

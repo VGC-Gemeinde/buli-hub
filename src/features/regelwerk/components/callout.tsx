@@ -27,8 +27,12 @@ export function Callout({
     <div
       className={cn(
         "flex flex-col gap-2 rounded-lg border p-4",
+        // Light and dark need different weights for the same loudness: a 5%
+        // orange wash on white is almost nothing, while on the dark navy
+        // background it already reads. So light gets a heavier tint and a
+        // double border, and dark keeps what it had.
         emphasis
-          ? "border-brand-orange bg-brand-orange/5 p-5"
+          ? "border-2 border-brand-orange bg-brand-orange/12 p-5 dark:border dark:bg-brand-orange/5"
           : "border-border bg-muted",
       )}
     >
@@ -47,10 +51,9 @@ export function Callout({
       </div>
       <p
         className={cn(
-          "leading-[1.55]",
           emphasis
-            ? "text-[14.5px] text-foreground"
-            : "text-[13px] text-muted-foreground",
+            ? "text-[16px] text-foreground leading-[1.5]"
+            : "text-[13px] text-muted-foreground leading-[1.55]",
         )}
       >
         {children}

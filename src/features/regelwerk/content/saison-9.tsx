@@ -472,10 +472,10 @@ export const SAISON_9: RegelwerkDocument = {
                 der Tabelle gesetzt und <Key>steigen garantiert ab</Key>.
                 <SubBullets>
                   <Bullet>
-                    Alle Matches eines gedroppten Spielers — auch bereits
-                    gespielte — zählen als <Key>2-0 Freewin für den Gegner</Key>
-                    ; sind beide Spieler eines Matches gedroppt, zählt es als{" "}
-                    <Key>Doppelniederlage</Key>.
+                    Alle Matches eines gedroppten Spielers zählen als{" "}
+                    <Key>2-0 Freewin für den Gegner</Key>, auch die bereits
+                    gespielten. Sind beide Spieler eines Matches gedroppt, zählt
+                    es als <Key>Doppelniederlage</Key>.
                   </Bullet>
                 </SubBullets>
               </Bullet>

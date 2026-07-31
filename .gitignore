@@ -41,6 +41,10 @@ yarn-error.log*
 next-env.d.ts
 !.env.example
 
+# Designer reference exports. The committed hand-off is the „.md" next to them;
+# these are multi-megabyte HTML renders that implementation never reads.
+design/*.reference.html
+
 # design-sync (claude.ai/design import — see .design-sync/NOTES.md)
 # Staged converter scripts, their deps, generated bundle output, machine state.
 # Everything else under .design-sync/ is a committed sync input.

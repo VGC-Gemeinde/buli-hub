@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { syncResultPost } from "@/features/discord-posts/sync";
 import { droppedIdsForSubDivision } from "@/features/drops/queries";
+import { regelwerkBlock } from "@/features/regelwerk/guard";
 import { currentUser } from "@/features/roles/guard";
 import {
   getMatchForReport,
@@ -24,6 +25,11 @@ export async function reportMatch(input: {
   const current = await currentUser();
   if (!current) {
     return { ok: false, error: "Nicht angemeldet" };
+  }
+
+  const blocked = await regelwerkBlock(current.userId);
+  if (blocked) {
+    return blocked;
   }
 
   const match = await getMatchForReport(input.matchId);

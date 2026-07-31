@@ -50,6 +50,20 @@
       "when": 1785388960627,
       "tag": "20260730052240_feedback_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785511453798,
+      "tag": "20260731152413_regelwerk_acceptances",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785511466569,
+      "tag": "20260731152426_regelwerk_acceptances_fk_rls",
+      "breakpoints": true
     }
   ]
 }

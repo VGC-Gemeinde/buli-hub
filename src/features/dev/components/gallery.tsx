@@ -8,6 +8,7 @@ import { PlayerGrid, type RegisteredPlayer } from "@/components/player-grid";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
@@ -38,6 +39,32 @@ import type {
   PublicMatch,
   PublicOverview,
 } from "@/features/public-league/queries";
+import { AcceptanceStatus } from "@/features/regelwerk/components/acceptance-status";
+import { Callout } from "@/features/regelwerk/components/callout";
+import {
+  ChapterDisclosure,
+  ChapterSidebar,
+} from "@/features/regelwerk/components/chapter-list";
+import { RegelwerkCard } from "@/features/regelwerk/components/dashboard-card";
+import { FactsGrid } from "@/features/regelwerk/components/facts";
+import { PenaltyCard } from "@/features/regelwerk/components/penalty-card";
+import {
+  GateBody,
+  ReminderBody,
+} from "@/features/regelwerk/components/prompt-dialogs";
+import {
+  Bullet,
+  Bullets,
+  Key,
+  SubBullets,
+} from "@/features/regelwerk/components/prose";
+import {
+  NichtantretenPullOut,
+  PunktePullOut,
+  SpielwochePullOut,
+  TiebreakerPullOut,
+} from "@/features/regelwerk/components/pull-outs";
+import { SAISON_9 } from "@/features/regelwerk/content/saison-9";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
@@ -1693,6 +1720,7 @@ export function Gallery() {
             defaultScope="division"
             meId="me"
             today={DASH_TODAY}
+            seasonNumber={9}
           />
         </Specimen>
         <Specimen label="Gruppentabelle (Sub-Division-Modus, Zonen pro Gruppe)">
@@ -1715,6 +1743,7 @@ export function Gallery() {
             defaultScope="group"
             meId="me"
             today={DASH_TODAY}
+            seasonNumber={9}
           />
         </Specimen>
         <Specimen label="Vorsaison: keine Saison">
@@ -1947,6 +1976,117 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Regelwerk</h2>
+        <Specimen label="Auf einen Blick — sechs Kacheln, eine hervorgehoben">
+          <FactsGrid
+            facts={SAISON_9.facts}
+            emphasisIndex={SAISON_9.emphasisIndex}
+          />
+        </Specimen>
+        <Specimen label="Kapitelliste — Sidebar (Desktop) · aufklappbar (Mobil)">
+          {/* Both variants side by side: on the document itself only one is
+              ever visible, so the gallery is the only place to compare them. */}
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+            <ChapterSidebar chapters={REGELWERK_CHAPTERS} />
+            <ChapterDisclosure
+              chapters={REGELWERK_CHAPTERS}
+              className="w-full sm:max-w-xs"
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Pull-out: Deine Spielwoche (Mi = Meldefrist)">
+          <SpielwochePullOut />
+        </Specimen>
+        <Specimen label="Pull-out: Punkte (orange = Sieg, Niederlagen neutral)">
+          <PunktePullOut />
+        </Specimen>
+        <Specimen label="Pull-out: Tiebreaker — geordnete Leiter mit Qualifier-Pill">
+          <TiebreakerPullOut />
+        </Specimen>
+        <Specimen label="Pull-out: Nichtantreten — Zeitleiste (orange = Anspruch)">
+          <NichtantretenPullOut />
+        </Specimen>
+        <Specimen label="Callout — orange (kostet den Spieler etwas) · navy (strukturell)">
+          <div className="flex flex-col gap-4">
+            <Callout title="Replay-Pflicht" tickColor="orange">
+              Von den Spielen in Division 1 &amp; 2 müssen Replays hochgeladen
+              werden.
+            </Callout>
+            <Callout title="Nachrichten sind unveränderlich">
+              Die Nachrichten dürfen nicht bearbeitet oder gelöscht werden.
+            </Callout>
+          </div>
+        </Specimen>
+        <Specimen label="Strafen-Karte — mit und ohne „Champions“-Qualifier">
+          <div className="flex flex-col gap-4">
+            <PenaltyCard title="Teamsheet-Fehler" qualifier="Champions">
+              <Bullets className="text-[13px]">
+                <Bullet>
+                  Bei Verdacht sollte die Orga hinzugezogen werden.
+                </Bullet>
+              </Bullets>
+            </PenaltyCard>
+            <PenaltyCard title="Ghosting">
+              <Bullets className="text-[13px]">
+                <Bullet>
+                  Das Annehmen von Hinweisen zu einem laufenden Match ist
+                  verboten.
+                </Bullet>
+              </Bullets>
+            </PenaltyCard>
+          </div>
+        </Specimen>
+        <Specimen label="Prosa — Aufzählung mit Unterpunkten und Schlüsselbegriffen">
+          <Bullets>
+            <Bullet>
+              Die Spiele dürfen von{" "}
+              <Key>Montag 0:00 Uhr bis Sonntag 23:59 Uhr</Key> abgehalten
+              werden.
+              <SubBullets>
+                <Bullet>
+                  Sämtliche Konversation muss über den Division-Channel
+                  stattfinden.
+                </Bullet>
+              </SubBullets>
+            </Bullet>
+            <Bullet>Es ist kein Startgeld nötig.</Bullet>
+          </Bullets>
+        </Specimen>
+        <Specimen label="Dashboard-Karte — leiser Einstieg während der Saison">
+          <div className="max-w-sm">
+            <RegelwerkCard seasonNumber={9} />
+          </div>
+        </Specimen>
+        <Specimen label="Regelwerk-Seite — noch nicht bestätigt (öffnet den Dialog)">
+          <AcceptanceStatus seasonNumber={9} acceptedAt={null} />
+        </Specimen>
+        <Specimen label="Regelwerk-Seite — bestätigt (nur Status, kein Steuerelement)">
+          <AcceptanceStatus
+            seasonNumber={9}
+            acceptedAt="2026-07-31T12:20:00.000Z"
+          />
+        </Specimen>
+        {/* Rendered inside a closed Dialog root: DialogTitle needs that
+            context, and Root renders its children inline — only Content
+            portals. The real gate dialog cannot be mounted here, because it is
+            deliberately non-dismissible and would take the gallery hostage. */}
+        <Specimen label="Erinnerungs-Dialog — Saison noch nicht gestartet (orange, schließbar)">
+          <Dialog>
+            <DialogWidth>
+              <ReminderBody seasonNumber={9} />
+            </DialogWidth>
+          </Dialog>
+        </Specimen>
+        <Specimen label="Sperr-Dialog — Saison läuft (navy, nicht schließbar)">
+          <Dialog>
+            <DialogWidth>
+              <GateBody seasonNumber={9} />
+            </DialogWidth>
+          </Dialog>
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Dev: Impersonation</h2>
         <Specimen label="Picker — Suche, Rollen, Drop-Markierung, Kappung">
           <ImpersonationPicker users={IMPERSONATION_USERS} />
@@ -2053,6 +2193,12 @@ function seedPlayer(overrides: Partial<SeedingPlayer>): SeedingPlayer {
     ...overrides,
   };
 }
+
+const REGELWERK_CHAPTERS = SAISON_9.chapters.map((chapter) => ({
+  id: chapter.id,
+  number: chapter.number,
+  title: chapter.title,
+}));
 
 const SEEDING_PLAYERS: SeedingPlayer[] = [
   seedPlayer({

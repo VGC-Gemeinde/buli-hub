@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recordAcceptance } from "@/features/regelwerk/queries";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
 import { createClient } from "@/lib/supabase/server";
@@ -89,8 +90,15 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
     newPlayer,
   });
 
+  // Registering means accepting: the form gates its own submit on the
+  // Regelwerk checkbox, so anyone who gets here has agreed. Recording it now
+  // is what makes „since when" answerable for the whole field, rather than
+  // only for the players who later opened a prompt.
+  await recordAcceptance(window.id, user.id);
+
   revalidatePath("/anmeldung");
   revalidatePath("/staff");
+  revalidatePath("/regelwerk");
   return { ok: true };
 }
 

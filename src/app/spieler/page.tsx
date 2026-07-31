@@ -3,6 +3,7 @@ import type { RegisteredPlayer } from "@/components/player-grid";
 import { SiteHeader } from "@/components/site-header";
 import { markDropped } from "@/features/drops/drops";
 import { droppedIdsForWindow } from "@/features/drops/queries";
+import { RegelwerkPrompt } from "@/features/regelwerk/components/prompt";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import {
   getRegistration,
@@ -207,6 +208,7 @@ export default async function SpielerPage() {
 
     return (
       <div className="flex flex-1 flex-col">
+        <RegelwerkPrompt />
         <SiteHeader />
         <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 pt-11 pb-18">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
@@ -239,6 +241,7 @@ export default async function SpielerPage() {
             defaultScope={defaultScope}
             meId={current.userId}
             today={today}
+            seasonNumber={window.seasonNumber}
           />
         </main>
       </div>
@@ -281,6 +284,7 @@ export default async function SpielerPage() {
 
   return (
     <Shell>
+      <RegelwerkPrompt />
       {panel}
       {window && showsRoster(phase) ? (
         <ParticipantList players={roster} seasonName={seasonLabel} />

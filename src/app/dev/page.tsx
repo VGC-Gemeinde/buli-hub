@@ -147,6 +147,18 @@ export default async function DevPage() {
             </span>
           </a>
           <a
+            href="/dev/regelwerk?accept=0"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Regelwerk-Bestätigung zurücksetzen
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Löscht deine Bestätigung für die laufende Saison — Erinnerungs-
+              und Sperr-Dialog werden wieder erreichbar
+            </span>
+          </a>
+          <a
             href="/dev/clear-registrations"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >

@@ -3,6 +3,7 @@ import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
+import { RegelwerkCard } from "@/features/regelwerk/components/dashboard-card";
 import { matchDisplayState, scoreFor } from "@/features/reporting/match-state";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
@@ -435,6 +436,7 @@ export function InSeasonDashboard({
   defaultScope,
   meId,
   today,
+  seasonNumber,
 }: {
   groupName: string;
   currentRound: number;
@@ -451,6 +453,7 @@ export function InSeasonDashboard({
   defaultScope: "group" | "division";
   meId: string;
   today: string;
+  seasonNumber: number;
 }) {
   return (
     <>
@@ -492,6 +495,7 @@ export function InSeasonDashboard({
             defaultScope={defaultScope}
             meId={meId}
           />
+          <RegelwerkCard seasonNumber={seasonNumber} />
         </section>
       </div>
     </>

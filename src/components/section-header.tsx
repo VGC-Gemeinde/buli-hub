@@ -11,12 +11,19 @@ export function SectionHeader({
   meta,
   count,
   tickColor = "orange",
+  wrap = false,
   className,
 }: {
   children: ReactNode;
   meta?: ReactNode;
   count?: number;
   tickColor?: "orange" | "neutral" | "navy";
+  /**
+   * Let a long title wrap instead of truncating. Truncation is right for
+   * dynamic names (a division, a player) where the column is fixed; a static
+   * heading that reads „Ablauf des Ligabet…" on a phone is not.
+   */
+  wrap?: boolean;
   className?: string;
 }) {
   return (
@@ -26,9 +33,25 @@ export function SectionHeader({
         className,
       )}
     >
-      <div className="flex min-w-0 items-center gap-2.5">
-        <Tick size="m" color={tickColor} />
-        <h2 className="min-w-0 truncate font-bold font-heading text-[24px] text-brand-blue uppercase tracking-[0.03em] dark:text-white">
+      {/* A wrapping title is top-aligned so the tick sits on the first line
+          rather than floating between two of them. */}
+      <div
+        className={cn(
+          "flex min-w-0 gap-2.5",
+          wrap ? "items-start" : "items-center",
+        )}
+      >
+        <Tick
+          size="m"
+          color={tickColor}
+          className={wrap ? "mt-2" : undefined}
+        />
+        <h2
+          className={cn(
+            "min-w-0 font-bold font-heading text-[24px] text-brand-blue uppercase tracking-[0.03em] dark:text-white",
+            wrap ? "text-balance" : "truncate",
+          )}
+        >
           {children}
         </h2>
         {count != null ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Tick } from "@/components/tick";
 import { cn } from "@/lib/utils";
@@ -150,13 +151,19 @@ export function ChapterDisclosure({
   return (
     <details
       className={cn(
-        "rounded-lg border border-border bg-card px-4 py-3",
+        "group rounded-lg border border-border bg-card px-4 py-3",
         className,
       )}
     >
-      <summary className="flex cursor-pointer items-center gap-2 font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
+      {/* A flex summary drops the native disclosure marker, so without the
+          chevron the row gives no sign it opens at all. */}
+      <summary className="flex min-h-9 cursor-pointer list-none items-center gap-2 font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em] [&::-webkit-details-marker]:hidden">
         <Tick size="s" color="neutral" />
         Inhalt
+        <ChevronDown
+          aria-hidden
+          className="ml-auto size-4 transition-transform group-open:rotate-180"
+        />
       </summary>
       <div className="mt-2.5">
         <ChapterLinks chapters={chapters} />

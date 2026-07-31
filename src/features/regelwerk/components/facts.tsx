@@ -30,7 +30,9 @@ export function FactsGrid({
           </span>
           <span
             className={cn(
-              "font-bold font-heading text-brand-blue dark:text-white",
+              // whitespace-pre-line: a value may carry its own line break where
+              // wrapping would otherwise orphan a separator.
+              "whitespace-pre-line font-bold font-heading text-brand-blue dark:text-white",
               fact.kind === "date"
                 ? "text-[20px] tabular-nums"
                 : fact.kind === "large"

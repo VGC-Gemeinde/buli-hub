@@ -33,7 +33,15 @@ export const SAISON_9: RegelwerkDocument = {
     { label: "Anmeldeschluss", value: "30.08.2026", kind: "date" },
     { label: "Saisonstart", value: "07.09.2026", kind: "date" },
     { label: "Dauer", value: "10-12 Wochen", kind: "large" },
-    { label: "Modus", value: "Best of 3 · Open Team Sheet", kind: "text" },
+    // Bo3 / OTS rather than spelled out: three items only fit the tile
+    // abbreviated, and both are the forms players use anyway. The line break is
+    // deliberate — left to wrap on its own, the tile orphans „· OTS" onto the
+    // second line with the separator leading it.
+    {
+      label: "Format",
+      value: "Aktuelle Regulation\nBo3 · OTS",
+      kind: "text",
+    },
     { label: "Spielplan", value: "Single Round Robin", kind: "text" },
     { label: "Division", value: "max. 10 Spieler", kind: "text" },
   ],

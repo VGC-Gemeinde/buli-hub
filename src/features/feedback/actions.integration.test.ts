@@ -49,6 +49,24 @@ const input = {
   userAgent: "Mozilla/5.0",
 };
 
+// Real magic bytes — the action identifies images by content, not by the
+// declared type, so a fake header would be rejected.
+function pngFile() {
+  return new File(
+    [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00])],
+    "shot.png",
+    { type: "image/png" },
+  );
+}
+
+function jpegFile() {
+  return new File(
+    [new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])],
+    "shot.jpg",
+    { type: "image/jpeg" },
+  );
+}
+
 async function storedFor(userId: string) {
   return db.query.feedbackReports.findFirst({
     where: eq(feedbackReports.reporterId, userId),
@@ -91,6 +109,8 @@ describe("submitFeedback", () => {
     expect(result).toEqual({
       ok: true,
       threadUrl: "https://discord.com/channels/main-guild/thread-1",
+      attachmentCount: 0,
+      attachmentsPosted: true,
     });
     const stored = await storedFor(player);
     expect(stored?.threadId).toBe("thread-1");
@@ -108,7 +128,12 @@ describe("submitFeedback", () => {
 
     const result = await submitFeedback(input);
 
-    expect(result).toEqual({ ok: true, threadUrl: null });
+    expect(result).toEqual({
+      ok: true,
+      threadUrl: null,
+      attachmentCount: 0,
+      attachmentsPosted: true,
+    });
     const stored = await storedFor(player);
     expect(stored?.threadGuildId).toBe("staff-guild");
   });
@@ -119,7 +144,12 @@ describe("submitFeedback", () => {
 
     const result = await submitFeedback(input);
 
-    expect(result).toEqual({ ok: true, threadUrl: null });
+    expect(result).toEqual({
+      ok: true,
+      threadUrl: null,
+      attachmentCount: 0,
+      attachmentsPosted: false,
+    });
     const stored = await storedFor(player);
     expect(stored).toBeDefined();
     expect(stored?.threadId).toBeNull();
@@ -132,7 +162,12 @@ describe("submitFeedback", () => {
 
     const result = await submitFeedback(input);
 
-    expect(result).toEqual({ ok: true, threadUrl: null });
+    expect(result).toEqual({
+      ok: true,
+      threadUrl: null,
+      attachmentCount: 0,
+      attachmentsPosted: false,
+    });
     expect(await storedFor(player)).toBeDefined();
   });
 
@@ -177,6 +212,85 @@ describe("submitFeedback", () => {
       ok: false,
       error: "Nicht angemeldet",
     });
+  });
+
+  it("uploads screenshots with generated names and records the count", async () => {
+    signedInAs(player, "player");
+    createForumThreadMock.mockResolvedValue({
+      ok: true,
+      threadId: "thread-img",
+      guildId: "staff-guild",
+    });
+
+    const result = await submitFeedback(input, [pngFile(), jpegFile()]);
+
+    expect(result).toMatchObject({
+      ok: true,
+      attachmentCount: 2,
+      attachmentsPosted: true,
+    });
+    expect(createForumThreadMock).toHaveBeenCalledWith(
+      "forum-1",
+      expect.objectContaining({
+        files: [
+          expect.objectContaining({
+            name: "screenshot-1.png",
+            contentType: "image/png",
+          }),
+          expect.objectContaining({
+            name: "screenshot-2.jpg",
+            contentType: "image/jpeg",
+          }),
+        ],
+      }),
+    );
+    expect((await storedFor(player))?.attachmentCount).toBe(2);
+  });
+
+  it("reports the loss when a post carrying screenshots fails", async () => {
+    signedInAs(player, "player");
+    createForumThreadMock.mockResolvedValue({ ok: false, status: 403 });
+
+    const result = await submitFeedback(input, [pngFile()]);
+
+    expect(result).toEqual({
+      ok: true,
+      threadUrl: null,
+      attachmentCount: 1,
+      attachmentsPosted: false,
+    });
+    // The row keeps the count, so staff can see the report had a screenshot.
+    expect((await storedFor(player))?.attachmentCount).toBe(1);
+  });
+
+  it("rejects a non-image disguised as a png, before writing anything", async () => {
+    signedInAs(player, "player");
+    const disguised = new File(
+      [new Uint8Array([0x7f, 0x45, 0x4c, 0x46, 0x02, 0x01])],
+      "screenshot.png",
+      { type: "image/png" },
+    );
+
+    const result = await submitFeedback(input, [disguised]);
+
+    expect(result.ok).toBe(false);
+    expect(createForumThreadMock).not.toHaveBeenCalled();
+    expect(await storedFor(player)).toBeUndefined();
+  });
+
+  it("rejects more images than the limit, before writing anything", async () => {
+    signedInAs(player, "player");
+
+    const result = await submitFeedback(input, [
+      pngFile(),
+      pngFile(),
+      pngFile(),
+      pngFile(),
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(createForumThreadMock).not.toHaveBeenCalled();
+    expect(await storedFor(player)).toBeUndefined();
   });
 
   it("blocks the sixth report within an hour", async () => {

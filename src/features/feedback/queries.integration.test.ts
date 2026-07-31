@@ -22,6 +22,7 @@ function report(overrides: Partial<Parameters<typeof insertFeedback>[0]> = {}) {
     round: 2,
     reporterId: alice,
     reporterRole: "player" as const,
+    attachmentCount: 0,
     ...overrides,
   };
 }

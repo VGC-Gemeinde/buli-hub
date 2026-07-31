@@ -15,8 +15,11 @@ import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
 import { DropBanner } from "@/features/drops/components/drop-banner";
 import { DropsSection } from "@/features/drops/components/drops-section";
 import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
-import { FeedbackPanel } from "@/features/feedback/components/feedback-panel";
-import type { FeedbackKind } from "@/features/feedback/feedback";
+import {
+  FeedbackActions,
+  FeedbackPanel,
+} from "@/features/feedback/components/feedback-panel";
+import { canSend, type FeedbackKind } from "@/features/feedback/feedback";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import {
   MotwManager,
@@ -864,18 +867,26 @@ function DialogWidth({ children }: { children: React.ReactNode }) {
   return <div className="max-w-[608px]">{children}</div>;
 }
 
+// A 1×1 transparent GIF, so the thumbnail specimens need no network request.
+const PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
 // The live form, wired to local state only — the gallery must not file real
-// reports, so no server action is attached.
+// reports, so no server action is attached. Attachments are live too: paste or
+// drop an image here and the thumbnail row behaves as it does in the dialog.
 function FeedbackSpecimen({
   canSubmitIdea,
   error = null,
+  attachments = [],
 }: {
   canSubmitIdea: boolean;
   error?: string | null;
+  attachments?: { id: string; name: string; previewUrl: string }[];
 }) {
   const [kind, setKind] = useState<FeedbackKind>("bug");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [held, setHeld] = useState(attachments);
   return (
     <DialogWidth>
       <FeedbackPanel
@@ -886,8 +897,25 @@ function FeedbackSpecimen({
         onTitleChange={setTitle}
         body={body}
         onBodyChange={setBody}
+        attachments={held}
+        onAddFiles={(files) =>
+          setHeld((current) => [
+            ...current,
+            ...files.map((file, index) => ({
+              id: `demo-${current.length + index}`,
+              name: file.name,
+              previewUrl: URL.createObjectURL(file),
+            })),
+          ])
+        }
+        onRemoveAttachment={(id) =>
+          setHeld((current) => current.filter((item) => item.id !== id))
+        }
         capturedPath="/match/8f2c"
         error={error}
+      />
+      <FeedbackActions
+        disabled={!canSend({ title, body })}
         onSubmit={() => {}}
         onClose={() => {}}
       />
@@ -1849,6 +1877,35 @@ export function Gallery() {
             error="Du hast gerade sehr viele Meldungen abgeschickt. Bitte versuche es in einer Stunde erneut."
           />
         </Specimen>
+        <Specimen label="Screenshots — Anhänge voll (3/3, kein „Bild“-Button mehr)">
+          <FeedbackSpecimen
+            canSubmitIdea={false}
+            attachments={[
+              { id: "s1", name: "screenshot-1.webp", previewUrl: PIXEL },
+              { id: "s2", name: "screenshot-2.webp", previewUrl: PIXEL },
+              { id: "s3", name: "screenshot-3.webp", previewUrl: PIXEL },
+            ]}
+          />
+        </Specimen>
+        <Specimen label="Gesendet — Screenshots konnten nicht angehängt werden">
+          <DialogWidth>
+            <FeedbackPanel
+              canSubmitIdea
+              kind="bug"
+              onKindChange={() => {}}
+              title=""
+              onTitleChange={() => {}}
+              body=""
+              onBodyChange={() => {}}
+              sent={{
+                threadUrl: null,
+                attachmentCount: 2,
+                attachmentsPosted: false,
+              }}
+            />
+            <FeedbackActions sent onSubmit={() => {}} onClose={() => {}} />
+          </DialogWidth>
+        </Specimen>
         <Specimen label="Gesendet — mit Thread-Link (Forum auf dem Hauptserver)">
           <DialogWidth>
             <FeedbackPanel
@@ -1859,10 +1916,13 @@ export function Gallery() {
               onTitleChange={() => {}}
               body=""
               onBodyChange={() => {}}
-              sent={{ threadUrl: "https://discord.com/channels/1/2" }}
-              onSubmit={() => {}}
-              onClose={() => {}}
+              sent={{
+                threadUrl: "https://discord.com/channels/1/2",
+                attachmentCount: 2,
+                attachmentsPosted: true,
+              }}
             />
+            <FeedbackActions sent onSubmit={() => {}} onClose={() => {}} />
           </DialogWidth>
         </Specimen>
         <Specimen label="Gesendet — ohne Link (Forum auf dem Staff-Server)">
@@ -1875,10 +1935,13 @@ export function Gallery() {
               onTitleChange={() => {}}
               body=""
               onBodyChange={() => {}}
-              sent={{ threadUrl: null }}
-              onSubmit={() => {}}
-              onClose={() => {}}
+              sent={{
+                threadUrl: null,
+                attachmentCount: 0,
+                attachmentsPosted: true,
+              }}
             />
+            <FeedbackActions sent onSubmit={() => {}} onClose={() => {}} />
           </DialogWidth>
         </Specimen>
       </section>

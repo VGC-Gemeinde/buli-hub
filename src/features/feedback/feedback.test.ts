@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Role } from "@/features/roles/roles";
 import {
   BODY_MAX,
+  canSend,
   canSubmit,
   feedbackInputSchema,
   RATE_LIMIT_PER_HOUR,
@@ -92,6 +93,30 @@ describe("feedbackInputSchema", () => {
     expect(
       feedbackInputSchema.safeParse({ ...valid, kind: "praise" }).success,
     ).toBe(false);
+  });
+});
+
+describe("canSend", () => {
+  const ok = { title: "Titel", body: "Zehn Zeichen mindestens." };
+
+  it("accepts a filled-in form", () => {
+    expect(canSend(ok)).toBe(true);
+  });
+
+  it("matches the schema's thresholds at the boundaries", () => {
+    expect(canSend({ ...ok, title: "abc" })).toBe(true);
+    expect(canSend({ ...ok, title: "ab" })).toBe(false);
+    expect(canSend({ ...ok, body: "a".repeat(10) })).toBe(true);
+    expect(canSend({ ...ok, body: "a".repeat(9) })).toBe(false);
+    expect(canSend({ ...ok, title: "a".repeat(TITLE_MAX) })).toBe(true);
+    expect(canSend({ ...ok, title: "a".repeat(TITLE_MAX + 1) })).toBe(false);
+    expect(canSend({ ...ok, body: "a".repeat(BODY_MAX) })).toBe(true);
+    expect(canSend({ ...ok, body: "a".repeat(BODY_MAX + 1) })).toBe(false);
+  });
+
+  it("does not count whitespace as content", () => {
+    expect(canSend({ title: "   ", body: "   " })).toBe(false);
+    expect(canSend({ ...ok, body: `${" ".repeat(40)}kurz` })).toBe(false);
   });
 });
 

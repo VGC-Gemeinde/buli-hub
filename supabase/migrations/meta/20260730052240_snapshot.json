@@ -1,6 +1,6 @@
 {
-  "id": "8b98168b-63d8-45c8-a123-6cf9f26acad2",
-  "prevId": "b2d4e8f4-ee3e-4704-9a09-866f42050db0",
+  "id": "2d5dd8b7-f7fc-48a7-bf2f-dc0c7b815364",
+  "prevId": "e0cc0fb4-54df-4143-97e4-d0f05d8a4bb6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -61,11 +61,11 @@
       "uniqueConstraints": {
         "discord_posts_kind_match_id_unique": {
           "name": "discord_posts_kind_match_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "kind",
             "match_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -230,11 +230,11 @@
       "uniqueConstraints": {
         "divisions_window_id_tier_unique": {
           "name": "divisions_window_id_tier_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "tier"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -326,6 +326,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "attachment_count": {
+          "name": "attachment_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "posted_at": {
           "name": "posted_at",
           "type": "timestamp with time zone",
@@ -358,9 +365,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -419,11 +426,11 @@
       "uniqueConstraints": {
         "match_games_match_id_game_number_unique": {
           "name": "match_games_match_id_game_number_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "match_id",
             "game_number"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -599,11 +606,11 @@
       "uniqueConstraints": {
         "matchdays_window_id_round_unique": {
           "name": "matchdays_window_id_round_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "round"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -723,18 +730,18 @@
       "uniqueConstraints": {
         "motw_selections_match_id_unique": {
           "name": "motw_selections_match_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "match_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "motw_selections_window_id_round_unique": {
           "name": "motw_selections_window_id_round_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "round"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -808,11 +815,11 @@
       "uniqueConstraints": {
         "placements_window_id_user_id_unique": {
           "name": "placements_window_id_user_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "user_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1060,11 +1067,11 @@
       "uniqueConstraints": {
         "registrations_window_id_user_id_unique": {
           "name": "registrations_window_id_user_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "window_id",
             "user_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1204,11 +1211,11 @@
       "uniqueConstraints": {
         "sub_divisions_division_id_position_unique": {
           "name": "sub_divisions_division_id_position_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "division_id",
             "position"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1294,10 +1301,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

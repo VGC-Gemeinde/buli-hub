@@ -62,8 +62,8 @@ export function ReminderBody({
         <Kicker color="orange">{`Saison ${seasonNumber} · Noch offen`}</Kicker>
         <DialogTitle>Regelwerk bestätigen</DialogTitle>
         <DialogDescription>
-          Du bist für Saison {seasonNumber} angemeldet. Bevor die Saison
-          startet, solltest du das Regelwerk gelesen und bestätigt haben.
+          Du bist für Saison {seasonNumber} angemeldet. Lies dir das Regelwerk
+          durch und bestätige es, bevor die Saison losgeht.
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
@@ -97,8 +97,8 @@ export function GateBody({
         <Kicker color="navy">{`Saison ${seasonNumber} · Erforderlich`}</Kicker>
         <DialogTitle>Regelwerk bestätigen</DialogTitle>
         <DialogDescription>
-          Die Saison läuft. Um Ergebnisse zu melden oder ein Ergebnis
-          anzufechten, musst du das Regelwerk zuerst bestätigen.
+          Die Saison läuft. Bevor du Ergebnisse melden oder anfechten kannst,
+          musst du das Regelwerk bestätigen.
         </DialogDescription>
       </DialogHeader>
       <Callout title="Bis dahin">

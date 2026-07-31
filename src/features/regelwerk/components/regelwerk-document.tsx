@@ -51,9 +51,8 @@ export function RegelwerkDocumentView({
             </div>
           </div>
           <p className="text-[14.5px] text-muted-foreground leading-[1.65]">
-            Mit der Anmeldung zur VGC Bundesliga bestätigt ihr, dieses Regelwerk
-            gelesen zu haben und seinen Inhalt zu akzeptieren. Änderungen werden
-            auf unserem Discord angekündigt.
+            Wer sich anmeldet, akzeptiert dieses Regelwerk. Änderungen kündigen
+            wir im Discord an.
           </p>
 
           <ChapterDisclosure chapters={chapters} className="lg:hidden" />

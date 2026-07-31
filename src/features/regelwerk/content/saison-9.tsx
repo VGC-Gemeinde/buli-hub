@@ -32,7 +32,7 @@ export const SAISON_9: RegelwerkDocument = {
   facts: [
     { label: "Anmeldeschluss", value: "30.08.2026", kind: "date" },
     { label: "Saisonstart", value: "07.09.2026", kind: "date" },
-    { label: "Dauer", value: "10–12 Wochen", kind: "large" },
+    { label: "Dauer", value: "10-12 Wochen", kind: "large" },
     { label: "Modus", value: "Best of 3 · Open Team Sheet", kind: "text" },
     { label: "Spielplan", value: "Single Round Robin", kind: "text" },
     { label: "Division", value: "max. 10 Spieler", kind: "text" },
@@ -49,7 +49,7 @@ export const SAISON_9: RegelwerkDocument = {
             <Bullets>
               <Bullet>
                 Die 9. Saison der VGC Bundesliga startet am{" "}
-                <Key>07.09.2026</Key> und dauert ca. <Key>10–12 Wochen</Key>.
+                <Key>07.09.2026</Key> und dauert ca. <Key>10-12 Wochen</Key>.
               </Bullet>
               <Bullet>
                 <Key>Online</Key>
@@ -390,7 +390,7 @@ export const SAISON_9: RegelwerkDocument = {
             <>
               <PunktePullOut />
               <Paragraph>
-                Bei gleicher Punktzahl entscheiden <Key>Tiebreaker</Key> — in
+                Bei gleicher Punktzahl entscheiden <Key>Tiebreaker</Key>, in
                 dieser Reihenfolge:
               </Paragraph>
               <TiebreakerPullOut />
@@ -473,7 +473,7 @@ export const SAISON_9: RegelwerkDocument = {
                 <SubBullets>
                   <Bullet>
                     Alle Matches eines gedroppten Spielers — auch bereits
-                    gespielte — zählen als <Key>2–0 Freewin für den Gegner</Key>
+                    gespielte — zählen als <Key>2-0 Freewin für den Gegner</Key>
                     ; sind beide Spieler eines Matches gedroppt, zählt es als{" "}
                     <Key>Doppelniederlage</Key>.
                   </Bullet>

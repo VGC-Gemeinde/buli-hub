@@ -51,8 +51,7 @@ export function actionsLocked(input: {
 }
 
 /** The refusal a locked action returns. Shown verbatim, so it says what to do. */
-export const LOCKED_ERROR =
-  "Bestätige zuerst das Regelwerk — du findest es unter „Regelwerk“ im Seitenfuß.";
+export const LOCKED_ERROR = "Bestätige zuerst das Regelwerk.";
 
 /** Disabled-state copy for a control the lock covers. */
 export const LOCKED_HINT = "Erst Regelwerk bestätigen";

@@ -48,8 +48,8 @@ export default async function RegelwerkPage() {
             Regelwerk
           </h1>
           <EmptyStateCard title="Noch nicht veröffentlicht" informational>
-            Für die kommende Saison steht das Regelwerk noch nicht fest. Sobald
-            es veröffentlicht ist, wird es hier und im Discord angekündigt.
+            Das Regelwerk für die kommende Saison steht noch nicht. Wir kündigen
+            es im Discord an, sobald es soweit ist.
           </EmptyStateCard>
         </main>
       </div>

@@ -83,10 +83,10 @@ export function SpielwochePullOut() {
         <strong className="font-semibold text-foreground">
           Sonntag 23:59 Uhr
         </strong>
-        . Die erste Kontaktaufnahme mit deinem Gegner sollte bis{" "}
+        . Melde dich bis{" "}
         <strong className="font-semibold text-foreground">Mittwochabend</strong>{" "}
-        stattfinden — meldest du dich nicht, kann dein Gegner einen Freewin
-        beanspruchen. Alle Zeiten sind deutsche Zeit.
+        bei deinem Gegner. Sonst kann er einen Freewin beanspruchen. Alle Zeiten
+        sind deutsche Zeit.
       </p>
     </PullOut>
   );
@@ -97,7 +97,7 @@ export function SpielwochePullOut() {
 const POINTS = [
   { value: "3", label: "Best of 3\ngewonnen", win: true },
   { value: "0", label: "Best of 3\nverloren", win: false },
-  { value: "0", label: "Nicht angetreten\n(gilt als 0–2)", win: false },
+  { value: "0", label: "Nicht angetreten\n(gilt als 0-2)", win: false },
 ] as const;
 
 export function PunktePullOut() {
@@ -131,11 +131,11 @@ export function PunktePullOut() {
       <p className="text-[13px] text-muted-foreground leading-[1.55]">
         Für die Game-Wertung zählen{" "}
         <strong className="font-semibold text-foreground">
-          Freewins als 2–0
+          Freewins als 2-0
         </strong>{" "}
         für den Sieger und{" "}
         <strong className="font-semibold text-foreground">
-          Doppelniederlagen als 0–2
+          Doppelniederlagen als 0-2
         </strong>{" "}
         für beide Spieler.
       </p>
@@ -157,7 +157,7 @@ const TIEBREAKERS = [
   },
   {
     title: "Game Winrate",
-    body: "Der Anteil gewonnener Games an allen ausgetragenen. 6:2 (0,75) steht über 7:3 (0,70) — bei gleicher Game Differenz gibt die bessere Quote den Ausschlag.",
+    body: "Der Anteil gewonnener Games an allen ausgetragenen. 6:2 (0,75) steht über 7:3 (0,70). Bei gleicher Game Differenz gibt die bessere Quote den Ausschlag.",
   },
 ] as const;
 
@@ -200,7 +200,7 @@ const NO_SHOW = [
   {
     time: "0 min",
     claimed: false,
-    body: "Gegner im Division-Channel taggen — ohne Tag kann später kein Win eingefordert werden.",
+    body: "Gegner im Division-Channel taggen. Ohne Tag kann später kein Win eingefordert werden.",
   },
   {
     time: "10 min",

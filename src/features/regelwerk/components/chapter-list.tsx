@@ -94,7 +94,7 @@ function Kicker() {
 function QuestionsHint() {
   return (
     <div className="border-t pt-4 text-[12.5px] text-muted-foreground leading-[1.55]">
-      Fragen? Stellt sie im Kanal{" "}
+      Fragen? Die beantworten wir im{" "}
       <a
         href="https://discord.gg/YeVggq5bgK"
         target="_blank"
@@ -102,8 +102,8 @@ function QuestionsHint() {
         className="font-semibold text-brand-blue underline underline-offset-[3px] dark:text-white"
       >
         #fragen-antworten
-      </a>{" "}
-      auf unserem Discord.
+      </a>
+      -Kanal.
     </div>
   );
 }

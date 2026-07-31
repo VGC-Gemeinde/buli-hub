@@ -43,7 +43,9 @@ export const SAISON_9: RegelwerkDocument = {
       kind: "text",
     },
     { label: "Spielplan", value: "Single Round Robin", kind: "text" },
-    { label: "Divisionsgröße", value: "max. 10 Spieler", kind: "text" },
+    // The cap is on the group, not the division: „Gruppengröße" is also what
+    // the seeding tool calls it, so the two agree.
+    { label: "Gruppengröße", value: "max. 10 Spieler", kind: "text" },
   ],
   chapters: [
     {
@@ -130,8 +132,10 @@ export const SAISON_9: RegelwerkDocument = {
                 <Key>Single Round Robin</Key> (Jeder gegen jeden)
               </Bullet>
               <Bullet>
-                Die Spieler werden in mehrere Divisionen mit maximal{" "}
-                <Key>10 Teilnehmern</Key> aufgeteilt.
+                Die Spieler werden in mehrere Divisionen aufgeteilt, die
+                wiederum aus Gruppen mit maximal <Key>10 Spielern</Key>{" "}
+                bestehen. Wie groß eine Division ist, hängt von der
+                Teilnehmerzahl ab.
                 <SubBullets>
                   <Bullet>
                     Die Spieler werden dabei{" "}

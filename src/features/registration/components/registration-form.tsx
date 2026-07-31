@@ -256,7 +256,7 @@ export function RegistrationForm({
         />
         <span>
           Ich habe das{" "}
-          <InlineLink href="/regelwerk" target="_blank">
+          <InlineLink href="/regelwerk" target="_blank" rel="noreferrer">
             Regelwerk der VGC Bundesliga
           </InlineLink>{" "}
           gelesen und akzeptiere es.

@@ -69,7 +69,11 @@ export function ReminderBody({
       <DialogFooter>
         {showReadLink ? (
           <Button asChild variant="ghost">
-            <Link href="/regelwerk">Regelwerk lesen</Link>
+            {/* New tab: reading the rules should not cost you the dialog, and
+                the prompt is still there to confirm in when you come back. */}
+            <Link href="/regelwerk" target="_blank" rel="noreferrer">
+              Regelwerk lesen
+            </Link>
           </Button>
         ) : null}
         <AcceptButton onAccepted={onAccepted} />
@@ -103,7 +107,11 @@ export function GateBody({
       </Callout>
       <DialogFooter>
         <Button asChild variant="ghost">
-          <Link href="/regelwerk">Regelwerk lesen</Link>
+          {/* Same in the gate, and more so: it cannot be dismissed, so
+              navigating away in this tab would strand the player. */}
+          <Link href="/regelwerk" target="_blank" rel="noreferrer">
+            Regelwerk lesen
+          </Link>
         </Button>
         <AcceptButton onAccepted={onAccepted} />
       </DialogFooter>

@@ -43,7 +43,7 @@ export const SAISON_9: RegelwerkDocument = {
       kind: "text",
     },
     { label: "Spielplan", value: "Single Round Robin", kind: "text" },
-    { label: "Division", value: "max. 10 Spieler", kind: "text" },
+    { label: "Divisionsgröße", value: "max. 10 Spieler", kind: "text" },
   ],
   chapters: [
     {

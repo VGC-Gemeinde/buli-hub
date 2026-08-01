@@ -306,9 +306,12 @@ and their competitive history.
 - *Staging clone → scrub.* Staging is reachable by more people. The script
   enforces this: a non-local target without `--scrub` is refused.
 
-`CLONE_KEEP_DISCORD_IDS` exempts an allow-list of tester Discord ids from
-everything below, so those people sign in as themselves and land on their own
-copied data.
+Everyone at **staff or above** (`profiles.role` of `staff`, `admin` or `dev`)
+is exempt from everything below, so those people sign in as themselves and land
+on their own copied data. They are the people who have staging access anyway,
+which is why exempting them widens nothing — and it needs no list to maintain:
+a role change in Discord is carried by the next refresh. Users below staff, and
+users with no profile row at all, are scrubbed.
 
 **What `--scrub` rewrites**
 
@@ -421,8 +424,7 @@ post in public production channels. Keeping reads off avoids this entirely.)
 
 Discord user ids are global, so `auth.identities.provider_id` stays valid in a
 clone: signing into staging with a real Discord account resolves to the copied
-user row — for the tester ids listed in `CLONE_KEEP_DISCORD_IDS`, which the
-scrub leaves untouched.
+user row — for staff and above, whom the scrub leaves untouched.
 
 ### Supabase project #2
 
@@ -509,7 +511,6 @@ point at project #2 — plus:
 |---|---|---|
 | Secret | `STAGING_DATABASE_URL` | staging **session** connection string (port 5432) |
 | Secret | `PROD_DATABASE_URL` | production session string — the refresh workflow reads from it |
-| Variable | `CLONE_KEEP_DISCORD_IDS` | comma-separated tester Discord ids exempt from the scrub |
 
 `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_DEPLOYER_SA` are the same values as
 PROD; the deployer service account already has `run.admin` on the project.

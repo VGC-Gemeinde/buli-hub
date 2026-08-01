@@ -78,5 +78,4 @@ jobs:
           SHIFT: ${{ inputs.shift }}
           PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
           CLONE_TARGET_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          CLONE_KEEP_DISCORD_IDS: ${{ vars.CLONE_KEEP_DISCORD_IDS }}
           CLONE_ALLOW_REMOTE_TARGET: "true"

@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { InlineLink } from "@/components/links";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -46,6 +48,10 @@ export function RegistrationForm({
   const [greatestAchievements, setGreatestAchievements] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // The rules require participants to understand and accept them (Regelwerk
+  // §1). Registration is the only place that becomes verifiable, so this gates
+  // the submit rather than being an optional tick.
+  const [acceptedRules, setAcceptedRules] = useState(false);
 
   // A detected veteran answers nothing beyond the base fields; an undetected
   // player must first say whether they have taken part before.
@@ -57,6 +63,7 @@ export function RegistrationForm({
 
   const canSubmit =
     platform !== "" &&
+    acceptedRules &&
     !pending &&
     (detectedReturning ||
       (participatedBefore !== null &&
@@ -234,6 +241,27 @@ export function RegistrationForm({
           </div>
         </>
       ) : null}
+
+      {/* target="_blank": the form is long, and losing a half-filled one to
+          read the rules is how people abandon a registration. */}
+      <label
+        htmlFor="regelwerk-akzeptiert"
+        className="flex min-h-11 cursor-pointer items-start gap-3 text-[13px] leading-[1.55]"
+      >
+        <Checkbox
+          id="regelwerk-akzeptiert"
+          checked={acceptedRules}
+          onCheckedChange={(value) => setAcceptedRules(value === true)}
+          className="mt-0.5"
+        />
+        <span>
+          Ich habe das{" "}
+          <InlineLink href="/regelwerk" target="_blank" rel="noreferrer">
+            Regelwerk der VGC Bundesliga
+          </InlineLink>{" "}
+          gelesen und akzeptiere es.
+        </span>
+      </label>
 
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
 

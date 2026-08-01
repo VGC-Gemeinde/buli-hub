@@ -2,20 +2,29 @@
 
 **Status: done** (2026-07-03)
 
-Rework sub-division standings so ties resolve on a principled, opponent-independent
-order instead of falling through to alphabetical. Today `computeStandings` ranks by
+> **Superseded in part — do not take the ruleset below as current.**
+> A later feature inserted a **head-to-head** level between game differential and
+> game win rate, for sub-division (group) standings only. The authoritative ruleset
+> lives in [[standings-head-to-head]]; read it before touching ranking code.
+> Everything else in this document — the game scoring table, shared ranks, and why
+> the division table's keys must stay opponent-independent — still holds.
+
+Rework sub-division standings so ties resolve on a principled order instead of falling
+through to alphabetical. Before this, `computeStandings` ranked by
 `points → fewest losses → name`; "fewest losses" is inert in a completed round-robin
 (equal matches played ⇒ equal wins imply equal losses) and mildly perverse mid-season
-(rewards games in hand), so tied players are effectively ordered by name.
+(rewards games in hand), so tied players were effectively ordered by name.
 
 Standings will later feed promotion/relegation and playoff qualification, where players
-from **different sub-divisions who never met** are compared. That rules out any
-opponent-dependent tiebreaker (head-to-head, strength of schedule). Those comparisons are
-guaranteed equal group size by the future feature, so raw match-win counts stay comparable.
+from **different sub-divisions who never met** are compared. Those comparisons must not
+depend on opponents (head-to-head, strength of schedule) — which is why the head-to-head
+level added later is switched off for the combined division table. They are guaranteed
+equal group size by the future feature, so raw match-win counts stay comparable.
 
 ## Ruleset
 
-Rank order (each level breaks ties left by the previous):
+**Historical — the current rule is in [[standings-head-to-head]].** As shipped by this
+feature, rank order was (each level breaking ties left by the previous):
 
 1. **Match wins** (raw count)
 2. **Game differential** (`gamesWon − gamesLost`)
@@ -40,7 +49,8 @@ Game scoring per outcome (only finished results count):
 
 **In:**
 
-- `computeStandings`: tally `gamesWon`/`gamesLost`; sort `wins → differential → rate → name`;
+- `computeStandings`: tally `gamesWon`/`gamesLost`; sort `wins → differential → rate → name`
+  (head-to-head was inserted before `rate` later, see [[standings-head-to-head]]);
   assign competition ranks (shared rank + gaps) where players are genuinely tied.
 - `groupResults` query: join `match_games` and pass per-game winners through.
 - Surface the game record in the standings table so the order is legible (functional; the
@@ -73,9 +83,10 @@ No Discord touchpoints.
 
 - **Genuine-tie detection uses integers, not the float rate.** Two players are genuinely
   tied iff `wins`, `gamesWon`, and `gamesLost` are all equal (given equal differential, an
-  equal rate implies equal totals). Compare the integers directly; never `===` on the
-  computed rate. The float rate is used only for *sort ordering*, where a name fallback
-  handles any residual float ambiguity.
+  equal rate implies equal totals) — plus, since [[standings-head-to-head]], an equal
+  head-to-head count. Compare the integers directly; never `===` on the computed rate. The
+  float rate is used only for *sort ordering*, where a name fallback handles any residual
+  float ambiguity.
 - `points` (= `wins × 3`) stays as a display value; ordering by match wins is identical.
 
 ## Test cases (`standings.test.ts`)

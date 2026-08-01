@@ -1,5 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { buildScrubSql, SYNTHETIC_NAMES, syntheticIdentity } from "./scrub";
+import { roleEnum } from "@/db/schema";
+import { roleAtLeast } from "@/features/roles/roles";
+import {
+  buildScrubSql,
+  KEPT_ROLES,
+  SYNTHETIC_NAMES,
+  syntheticIdentity,
+} from "./scrub";
+
+// scrub.ts spells the roles out so it stays importable from a plain
+// `node scripts/…` run. This is what keeps that copy honest.
+describe("KEPT_ROLES", () => {
+  it("is exactly the roles at or above staff", () => {
+    const expected = roleEnum.enumValues.filter((role) =>
+      roleAtLeast(role, "staff"),
+    );
+
+    expect([...KEPT_ROLES].sort()).toEqual([...expected].sort());
+  });
+});
 
 describe("syntheticIdentity", () => {
   it("cycles the fixture list", () => {
@@ -64,7 +83,7 @@ describe("SYNTHETIC_NAMES", () => {
 
 describe("buildScrubSql", () => {
   it("covers every table holding personal data", () => {
-    const sql = buildScrubSql([]).join("\n");
+    const sql = buildScrubSql().join("\n");
 
     expect(sql).toContain(`"public"."profiles"`);
     expect(sql).toContain("auth.users");
@@ -74,35 +93,32 @@ describe("buildScrubSql", () => {
   });
 
   it("escapes quotes in the fixture names", () => {
-    const [mapping] = buildScrubSql([]);
+    const [mapping] = buildScrubSql();
 
     expect(SYNTHETIC_NAMES.some((n) => n.includes("'"))).toBe(true);
     expect(mapping).toContain("O''Brien");
   });
 
-  it("embeds the allow-list so listed testers keep their identity", () => {
-    const [mapping] = buildScrubSql(["123456789012345678"]);
+  it("exempts staff and above from the mapping", () => {
+    const [mapping] = buildScrubSql();
 
-    expect(mapping).toContain("'123456789012345678'");
-    expect(mapping).toContain("identity_data->>'provider_id' = any(");
-  });
-
-  it("scrubs everyone when the allow-list is empty", () => {
-    const [mapping] = buildScrubSql([]);
-
-    expect(mapping).toContain("array[]::text[]");
-  });
-
-  it("rejects allow-list entries that are not snowflakes", () => {
-    expect(() => buildScrubSql(["not-an-id"])).toThrow(/Invalid Discord id/);
-    expect(() => buildScrubSql(["1'; drop table users; --"])).toThrow(
-      /Invalid Discord id/,
+    expect(mapping).toContain(`from "public"."profiles" p`);
+    expect(mapping).toContain(
+      "p.role::text = any(array['dev', 'admin', 'staff']::text[])",
     );
+  });
+
+  // A user who never signed in has no profile row; `not exists` must read that
+  // as "player", i.e. scrub, rather than skipping the row.
+  it("scrubs users without a profile row", () => {
+    const [mapping] = buildScrubSql();
+
+    expect(mapping).toContain("where not exists (");
   });
 
   // Directly identifying, unlike `origin`, which is a low-cardinality category.
   it("scrubs the social handles", () => {
-    const sql = buildScrubSql([]).join("\n");
+    const sql = buildScrubSql().join("\n");
 
     expect(sql).toContain("twitter_handle =");
     expect(sql).toContain("bluesky_handle =");
@@ -110,20 +126,20 @@ describe("buildScrubSql", () => {
   });
 
   it("replaces social handles rather than deleting them, so the UI still renders links", () => {
-    const sql = buildScrubSql([]).join("\n");
+    const sql = buildScrubSql().join("\n");
 
     expect(sql).toContain("when p.twitter_handle is null then null else");
     expect(sql).toContain("when p.bluesky_handle is null then null");
   });
 
   it("leaves origin alone — a category, not personal data", () => {
-    expect(buildScrubSql([]).join("\n")).not.toContain("origin =");
+    expect(buildScrubSql().join("\n")).not.toContain("origin =");
   });
 
   // A published season/division/placement triple names a real person even
   // after the display name is gone, and nearly all of them are unique.
   it("permutes veteran history instead of keeping it with its owner", () => {
-    const sql = buildScrubSql([]).join("\n");
+    const sql = buildScrubSql().join("\n");
 
     expect(sql).toContain("prev_placement = donor.prev_placement");
     expect(sql).toContain("row_number() over (order by md5(id::text))");
@@ -131,8 +147,8 @@ describe("buildScrubSql", () => {
     expect(sql).not.toContain("prev_placement = null");
   });
 
-  it("permutes only among scrubbed users, leaving testers' history alone", () => {
-    const sql = buildScrubSql([]).join("\n");
+  it("permutes only among scrubbed users, leaving staff history alone", () => {
+    const sql = buildScrubSql().join("\n");
     const statement = sql.slice(sql.indexOf("with numbered as"));
 
     expect(statement).toContain(
@@ -141,7 +157,7 @@ describe("buildScrubSql", () => {
   });
 
   it("preserves null-ness of the optional free-text columns", () => {
-    const sql = buildScrubSql([]).join("\n");
+    const sql = buildScrubSql().join("\n");
 
     expect(sql).toContain("when r.prev_name is null then null");
     expect(sql).toContain("when r.greatest_achievements is null then null");
@@ -149,7 +165,7 @@ describe("buildScrubSql", () => {
   });
 
   it("drops its temporary table so a rerun in the same session is clean", () => {
-    const sql = buildScrubSql([]);
+    const sql = buildScrubSql();
 
     expect(sql[0]).toContain("create temporary table _scrub_identities");
     expect(sql[sql.length - 1]).toBe("drop table _scrub_identities;");

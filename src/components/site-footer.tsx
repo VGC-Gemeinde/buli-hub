@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FeedbackFooterLink } from "@/features/feedback/components/feedback-footer-link";
+import { RegelwerkFooterLink } from "@/features/regelwerk/components/footer-link";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 
@@ -7,6 +8,9 @@ import { roleAtLeast } from "@/features/roles/roles";
 // links reachable from every page, plus the feedback entry point for signed-in
 // users — the header's user menu is the other one, and neither exists for
 // visitors, who cannot file a report.
+//
+// The Regelwerk sits here rather than in HeaderNav: the nav is signed-in only,
+// and the rules have to be readable *before* registering.
 export async function SiteFooter() {
   const current = await currentUser();
 
@@ -21,6 +25,7 @@ export async function SiteFooter() {
         <Link href="/datenschutz" className="hover:text-foreground">
           Datenschutz
         </Link>
+        <RegelwerkFooterLink />
         {current ? (
           <FeedbackFooterLink
             canSubmitIdea={roleAtLeast(current.role, "staff")}

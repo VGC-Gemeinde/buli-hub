@@ -14,6 +14,18 @@
 /** Discord's public default avatars — real, always-available image URLs. */
 const AVATAR_BASE = "https://cdn.discordapp.com/embed/avatars/";
 
+/**
+ * The roles exempt from the scrub: everyone at `staff` or above keeps their
+ * real identity, so a staff tester signing into staging lands on their own
+ * copied row instead of a stranger's.
+ *
+ * Spelled out rather than imported because this module must stay runnable
+ * under `node scripts/clone-prod.ts` with no module resolution beyond plain
+ * relative paths; `scrub.test.ts` pins the list against the role enum and
+ * `roleAtLeast` so it cannot drift.
+ */
+export const KEPT_ROLES: readonly string[] = ["dev", "admin", "staff"];
+
 export const SYNTHETIC_NAMES: readonly string[] = [
   "Jörg Müller",
   "Käthe Übelacker",
@@ -81,24 +93,22 @@ function pgTextArray(values: readonly string[]): string {
  * Statements that replace personal data with synthetic equivalents. Run in a
  * single session — they share a temporary table.
  *
- * `keepDiscordIds` is the tester allow-list: users whose Discord snowflake is
- * listed keep their identity, so a tester signing into staging lands on their
- * own copied row (§8.1). Everyone else is anonymised.
+ * Everyone below `staff` is anonymised; staff, admins and devs keep their
+ * identity (§8.1). They are the people who have access to staging in the
+ * first place, so exempting them widens nothing, and it needs no list to
+ * maintain: promoting someone in Discord is enough for the next refresh to
+ * keep them.
  */
-export function buildScrubSql(keepDiscordIds: readonly string[]): string[] {
-  for (const id of keepDiscordIds) {
-    if (!/^\d{1,20}$/.test(id)) {
-      throw new Error(
-        `Invalid Discord id in the scrub allow-list: ${JSON.stringify(id)} — expected a numeric snowflake`,
-      );
-    }
-  }
-
+export function buildScrubSql(): string[] {
   const names = pgTextArray(SYNTHETIC_NAMES);
   const handles = pgTextArray(SYNTHETIC_NAMES.map(handleSlug));
   const count = SYNTHETIC_NAMES.length;
-  const keep = pgTextArray(keepDiscordIds);
+  const kept = pgTextArray(KEPT_ROLES);
 
+  // The role lives on the profile, which is created lazily — a user without
+  // one has never signed in, and is a player by definition, so the missing
+  // row correctly means "scrub".
+  //
   // Ordering by id makes the row number — and therefore every synthetic
   // identity — stable across re-clones of the same snapshot.
   const buildMapping = `
@@ -107,10 +117,9 @@ with ranked as (
   select u.id as user_id, (row_number() over (order by u.id))::int as n
   from auth.users u
   where not exists (
-    select 1 from auth.identities i
-    where i.user_id = u.id
-      and i.provider = 'discord'
-      and i.identity_data->>'provider_id' = any(${keep})
+    select 1 from "public"."profiles" p
+    where p.user_id = u.id
+      and p.role::text = any(${kept})
   )
 )
 select

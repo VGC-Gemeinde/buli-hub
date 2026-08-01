@@ -420,6 +420,25 @@ export const disputes = pgTable("disputes", {
     .defaultNow(),
 });
 
+// One player's acceptance of one season's Regelwerk. A row, not a boolean on
+// the profile, because acceptance is per season: Saison 10 needs a fresh one,
+// and last season's must not unlock this one. Anchored to the registration
+// window like every other per-season table. The unique constraint makes
+// accepting idempotent — a second confirmation is a no-op and leaves the
+// original timestamp alone. FK + RLS in a custom migration.
+export const regelwerkAcceptances = pgTable(
+  "regelwerk_acceptances",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    windowId: uuid("window_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.windowId, table.userId)],
+);
+
 // What a feedback report is about: a broken thing, or a wish.
 export const feedbackKindEnum = pgEnum("feedback_kind", ["bug", "idea"]);
 

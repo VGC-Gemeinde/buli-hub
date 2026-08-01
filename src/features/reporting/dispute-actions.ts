@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { regelwerkBlock } from "@/features/regelwerk/guard";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import {
@@ -29,6 +30,12 @@ export async function openDispute(input: {
   if (!current) {
     return { ok: false, error: "Nicht angemeldet" };
   }
+
+  const blocked = await regelwerkBlock(current.userId);
+  if (blocked) {
+    return blocked;
+  }
+
   const match = await getMatchForReport(input.matchId);
   if (!match || !match.playerB) {
     return { ok: false, error: "Match nicht gefunden" };

@@ -5,6 +5,7 @@ import { DropBanner } from "@/features/drops/components/drop-banner";
 import { droppedIdsForSubDivision } from "@/features/drops/queries";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
 import { motwByMatchId } from "@/features/motw/queries";
+import { RegelwerkPrompt } from "@/features/regelwerk/components/prompt";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { PublicMatchView } from "@/features/reporting/components/public-match-view";
 import { ReportForm } from "@/features/reporting/components/report-form";
@@ -140,6 +141,7 @@ export default async function MatchReportPage({
 
   return (
     <div className="flex flex-1 flex-col">
+      <RegelwerkPrompt />
       <SiteHeader
         breadcrumb={breadcrumb}
         breadcrumbRoot={

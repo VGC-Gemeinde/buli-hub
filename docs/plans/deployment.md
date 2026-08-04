@@ -72,7 +72,7 @@ other environment; no staging, no preview deploys.
 | `SUPABASE_SECRET_KEY` | Cloud Run | yes |
 | `DISCORD_BOT_TOKEN` | Cloud Run | yes |
 | `NEXT_PUBLIC_SUPABASE_URL` / `..._PUBLISHABLE_KEY` | image build args | no |
-| `DISCORD_GUILD_ID`, `DISCORD_ROLE_ID_{DEV,ADMIN,STAFF}` | Cloud Run env | no |
+| `DISCORD_GUILD_ID`, `DISCORD_ROLE_ID_{DEV,ADMIN,STAFF}`, `DISCORD_ROLE_ID_MOTW` (optional) | Cloud Run env | no |
 | `DISCORD_RESULTS_CHANNEL_ID` | Cloud Run env | no |
 | `APP_BASE_URL` | Cloud Run env | no |
 

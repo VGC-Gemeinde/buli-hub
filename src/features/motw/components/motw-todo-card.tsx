@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { emphasisSurface } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
 import type { MotwTodo } from "../motw";
 
@@ -11,10 +12,8 @@ export function MotwTodoCard({ todo }: { todo: NonNullable<MotwTodo> }) {
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg border px-5 py-4",
-        urgent
-          ? "border-destructive/45 bg-destructive/5"
-          : "border-brand-orange/40 bg-brand-orange/5",
+        "flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg px-5 py-4",
+        emphasisSurface(urgent ? "destructive" : "orange"),
       )}
     >
       <div className="flex flex-col gap-0.5">

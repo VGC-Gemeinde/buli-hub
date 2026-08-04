@@ -5,7 +5,9 @@ export type Role = (typeof roleEnum.enumValues)[number];
 export type RoleIdMapping = {
   dev: string;
   admin: string;
-  staff: string;
+  // Any of these Discord roles grants `staff` — the league staff role plus
+  // other trusted teams (e.g. the MOTW-Team) that get the same access.
+  staff: readonly string[];
 };
 
 // How long a stored role is trusted before it is re-synced from Discord.
@@ -31,7 +33,7 @@ export function deriveRole(
   if (ids.has(mapping.admin)) {
     return "admin";
   }
-  if (ids.has(mapping.staff)) {
+  if (mapping.staff.some((id) => ids.has(id))) {
     return "staff";
   }
   return "player";

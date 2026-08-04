@@ -54,6 +54,63 @@ import { db } from "@/lib/db";
 const SEED_EMAIL_PREFIX = "seed-";
 const SEED_EMAIL_DOMAIN = "@example.test";
 
+// Inserts fake users as *complete* GoTrue accounts, not bare (id, email) rows.
+// The impersonation tool (/dev/login-as) signs a browser in by asking GoTrue
+// for a magic link, and GoTrue 500s on a user that is missing the operational
+// columns (`aud`, `role`, `instance_id`, a confirmed email) or has no matching
+// `auth.identities` row — the same shape `admin.createUser` produces for the
+// personas. Without this, seeded players are listed in the picker but cannot be
+// impersonated. `auth.identities` cascades on user delete, so clearSeedData
+// needs no extra cleanup.
+const GOTRUE_INSTANCE = "00000000-0000-0000-0000-000000000000";
+
+async function insertSeedAuthUsers(
+  users: { id: string; email: string }[],
+): Promise<void> {
+  const appMeta = JSON.stringify({ provider: "email", providers: ["email"] });
+  const userMeta = JSON.stringify({ email_verified: true });
+  const userRows = users.map(
+    ({ id, email }) =>
+      // The token columns must be '' and not NULL: GoTrue scans them into
+      // non-nullable Go strings on every read, and a NULL makes it 500 (its
+      // error body is empty — the „{}" the impersonation route used to show).
+      // `admin.createUser` sets them to '', which is what a persona login does;
+      // a direct insert defaults them to NULL, so they are set explicitly here.
+      sql`(${id}, ${email}, 'authenticated', 'authenticated', ${GOTRUE_INSTANCE},
+        now(), now(), now(),
+        ${appMeta}::jsonb, ${userMeta}::jsonb,
+        false, false,
+        '', '', '', '')`,
+  );
+  await db.execute(
+    sql`insert into auth.users
+      (id, email, aud, role, instance_id,
+       email_confirmed_at, created_at, updated_at,
+       raw_app_meta_data, raw_user_meta_data,
+       is_sso_user, is_anonymous,
+       confirmation_token, recovery_token, email_change_token_new, email_change)
+     values ${sql.join(userRows, sql`, `)}`,
+  );
+
+  // One email-provider identity per user — provider_id and the `sub` claim are
+  // the user id, mirroring a real email signup.
+  const identityRows = users.map(
+    ({ id, email }) =>
+      // Cast the jsonb_build_object arguments — inside it the params are
+      // otherwise untyped and Postgres cannot infer them ($n type error).
+      // `auth.identities.email` is a generated column (derived from
+      // identity_data->>'email'), so it is deliberately not in the column list.
+      sql`(${id}, ${id}, jsonb_build_object('sub', ${id}::text, 'email', ${email}::text, 'email_verified', true),
+        'email', now(), now(), now())`,
+  );
+  await db.execute(
+    sql`insert into auth.identities
+      (provider_id, user_id, identity_data, provider,
+       last_sign_in_at, created_at, updated_at)
+     values ${sql.join(identityRows, sql`, `)}`,
+  );
+}
+
 const NAME_POOL = [
   "Kuro",
   "Falinks",
@@ -552,12 +609,11 @@ export async function generateSeedData(
   const ids: string[] = specs.map(() => randomUUID());
 
   // Fake auth users (one multi-row insert), then their profiles.
-  const userValues = specs.map(
-    (_, i) =>
-      sql`(${ids[i]}, ${`${SEED_EMAIL_PREFIX}${i}${SEED_EMAIL_DOMAIN}`})`,
-  );
-  await db.execute(
-    sql`insert into auth.users (id, email) values ${sql.join(userValues, sql`, `)}`,
+  await insertSeedAuthUsers(
+    specs.map((_, i) => ({
+      id: ids[i],
+      email: `${SEED_EMAIL_PREFIX}${i}${SEED_EMAIL_DOMAIN}`,
+    })),
   );
   await db.insert(profiles).values(
     specs.map((spec, i) => ({
@@ -570,9 +626,9 @@ export async function generateSeedData(
   // A staff member: opens the window and is the „besprochen mit" contact on
   // player-reported free wins. Not registered — staff don't play the season.
   const staffId = randomUUID();
-  await db.execute(
-    sql`insert into auth.users (id, email) values (${staffId}, ${`${SEED_EMAIL_PREFIX}staff${SEED_EMAIL_DOMAIN}`})`,
-  );
+  await insertSeedAuthUsers([
+    { id: staffId, email: `${SEED_EMAIL_PREFIX}staff${SEED_EMAIL_DOMAIN}` },
+  ]);
   await db.insert(profiles).values({
     userId: staffId,
     displayName: "Orga Team",

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import { emphasisSurface } from "@/lib/emphasis";
 import {
   formatGermanDateTime,
   formatGermanDay,
@@ -81,17 +82,20 @@ function MatchRow({
   match,
   chip,
   dimmed,
+  alert,
   action,
 }: {
   match: StaffMatchRow;
   chip?: Chip;
   dimmed?: boolean;
+  alert?: boolean;
   action?: React.ReactNode;
 }) {
   return (
     <div
       className={cn(
         "flex flex-col gap-2 rounded-lg border px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3.5 sm:py-2",
+        alert && emphasisSurface("destructive"),
         dimmed && "opacity-60",
       )}
     >
@@ -179,6 +183,7 @@ export function SaisonDashboard({
               <MatchRow
                 key={m.matchId}
                 match={m}
+                alert
                 chip={{
                   label: `seit ${daysSince(m.endsOn, today)} Tagen`,
                   tone: "overdue",

@@ -7,7 +7,9 @@ import {
   roleLabel,
 } from "./roles";
 
-const mapping = { dev: "111", admin: "222", staff: "333" };
+// staff carries two Discord roles — the league staff role and the MOTW-Team
+// role ("444") — both of which grant `staff`.
+const mapping = { dev: "111", admin: "222", staff: ["333", "444"] };
 
 describe("deriveRole", () => {
   it("maps each configured role", () => {
@@ -16,8 +18,14 @@ describe("deriveRole", () => {
     expect(deriveRole(["333"], mapping)).toBe("staff");
   });
 
+  it("grants staff from any staff-mapped Discord role", () => {
+    expect(deriveRole(["444"], mapping)).toBe("staff");
+    expect(deriveRole(["333", "444"], mapping)).toBe("staff");
+  });
+
   it("lets the highest role win when a member has several", () => {
     expect(deriveRole(["333", "222"], mapping)).toBe("admin");
+    expect(deriveRole(["444", "222"], mapping)).toBe("admin");
     expect(deriveRole(["333", "222", "111"], mapping)).toBe("dev");
     expect(deriveRole(["111", "333"], mapping)).toBe("dev");
   });

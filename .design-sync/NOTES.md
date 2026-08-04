@@ -52,6 +52,33 @@ The render check and the grading capture both need chromium. Two gotchas, both s
   looks like a crash but is really a missing-library error — check the
   `[pid=…][err]` line in the browser logs.
 
+## Environment: playwright/chromium on a Nix machine (NOT the WSL2 one above)
+
+A later re-sync ran on a **Nix-based machine** (`/nix/store/...`, `/etc/profiles/per-user`),
+where the WSL2 fix above does **not** apply:
+
+- The playwright-cached `chromium-1228` binary is FHS-linked and misses ~24
+  shared libs on Nix (`libglib-2.0`, `libnss3`, `libcairo`, `libX11`, …) — the
+  4-lib `pw-deps` trick is not enough, and there is no root. Launch fails with
+  `Target page, context or browser has been closed`.
+- Fix: use the **system Nix chromium** via the scripts' `DS_CHROMIUM_PATH`
+  override (honoured by `package-validate.mjs`, `package-capture.mjs`, and the
+  storybook probes):
+
+  ```sh
+  export DS_CHROMIUM_PATH="$(readlink -f "$(which chromium)")"   # Chromium 150 on nix
+  ```
+
+  Still install `playwright@1.61.0` in `.ds-sync` (with
+  `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`) for the client library; only the browser
+  binary is swapped.
+- **Render churn is expected across machines.** The render browser here
+  (Chromium 150) differs from whatever produced the uploaded anchor (playwright
+  pins ~1228), so `renderHashes` shift for many untouched components and the
+  driver reports `trigger: "render_churn"`. That is benign pixel noise — grade
+  the sheets (they render clean, 0 bad) and move on. A sync run from a different
+  chromium will always re-churn; it is not a real change.
+
 ## Scope: 49 of 65 candidates
 
 Scoped in: all 15 `src/components/ui` primitives, the brand/shared components

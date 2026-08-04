@@ -13,6 +13,28 @@ export type DevLoginResult = { ok: true } | { ok: false; error: string };
 
 type AdminClient = ReturnType<typeof createSupabaseAdmin>;
 
+// GoTrue answers some failures with an empty body, which supabase-js surfaces
+// as an AuthError whose message is „{}" (or blank). Returned raw, that is what
+// the /dev/login routes render — an opaque `{}`. This turns such a response
+// into a message that names the most likely cause and keeps any real detail.
+function describeAuthError(
+  error: { message?: string; status?: number; name?: string },
+  action: string,
+): string {
+  const raw = (error.message ?? "").trim();
+  const opaque = raw === "" || raw === "{}" || raw === "[object Object]";
+  const status = error.status ? ` (HTTP ${error.status})` : "";
+  if (opaque) {
+    return (
+      `${action} ist fehlgeschlagen${status}: GoTrue hat den Nutzer ` +
+      "abgelehnt. Wahrscheinlich ist die auth.users-Zeile kein vollständiges " +
+      "Konto (fehlende Bestätigung/Identität) — nur echte oder über die " +
+      "Testdaten erzeugte Nutzer lassen sich anmelden."
+    );
+  }
+  return `${action} ist fehlgeschlagen${status}: ${raw}`;
+}
+
 function adminClient():
   | { ok: true; client: AdminClient }
   | { ok: false; error: string } {
@@ -51,7 +73,7 @@ export async function establishSession(email: string): Promise<DevLoginResult> {
     },
   );
   if (linkError) {
-    return { ok: false, error: linkError.message };
+    return { ok: false, error: describeAuthError(linkError, "Magic-Link") };
   }
 
   const supabase = await createClient();
@@ -60,7 +82,10 @@ export async function establishSession(email: string): Promise<DevLoginResult> {
     token_hash: data.properties.hashed_token,
   });
   if (verifyError) {
-    return { ok: false, error: verifyError.message };
+    return {
+      ok: false,
+      error: describeAuthError(verifyError, "Session-Aufbau"),
+    };
   }
 
   return { ok: true };

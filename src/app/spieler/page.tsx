@@ -3,12 +3,15 @@ import type { RegisteredPlayer } from "@/components/player-grid";
 import { SiteHeader } from "@/components/site-header";
 import { markDropped } from "@/features/drops/drops";
 import { droppedIdsForWindow } from "@/features/drops/queries";
+import { getProfile } from "@/features/profile/queries";
 import { RegelwerkPrompt } from "@/features/regelwerk/components/prompt";
+import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import {
   getRegistration,
   listRegistrations,
 } from "@/features/registration/queries";
+import { shouldShowProfileHint } from "@/features/registration/registration";
 import {
   divisionGroups,
   subDivisionResults,
@@ -75,7 +78,13 @@ export default async function SpielerPage() {
     redirect("/");
   }
 
-  const window = await latestWindow();
+  const [window, profile] = await Promise.all([
+    latestWindow(),
+    getProfile(current.userId),
+  ]);
+  // Same nudge and the same gating as on the registration: shown until the
+  // player edits their profile once or dismisses it (persisted server-side).
+  const showProfileHint = shouldShowProfileHint(profile);
   const state = window ? registrationState(window, new Date()) : "not_started";
   const seeding =
     window && state === "closed" ? await getSeeding(window.id) : null;
@@ -211,6 +220,11 @@ export default async function SpielerPage() {
         <RegelwerkPrompt />
         <SiteHeader />
         <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 pt-11 pb-18">
+          {showProfileHint ? (
+            <div className="mb-8">
+              <ProfileHint />
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-baseline justify-between gap-4">
             <h1 className="text-[28px] text-brand-blue leading-[1.1] sm:text-[34px] dark:text-white">
               Deine Saison
@@ -285,6 +299,11 @@ export default async function SpielerPage() {
   return (
     <Shell>
       <RegelwerkPrompt />
+      {showProfileHint ? (
+        <div className="mb-8">
+          <ProfileHint />
+        </div>
+      ) : null}
       {panel}
       {window && showsRoster(phase) ? (
         <ParticipantList players={roster} seasonName={seasonLabel} />

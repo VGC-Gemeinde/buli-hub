@@ -1148,7 +1148,7 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Registrierung: Profil-Hinweis</h2>
+        <h2 className="text-2xl">Profil-Hinweis (Anmeldung + Dashboard)</h2>
         <Specimen label="Hinweis">
           <ProfileHint />
         </Specimen>

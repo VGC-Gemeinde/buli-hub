@@ -114,7 +114,9 @@ export async function dismissRegistrationHint(): Promise<RegisterResult> {
     return { ok: false, error: "Nicht angemeldet" };
   }
   await dismissProfileHint(user.id);
+  // The hint appears on both surfaces; drop the cached HTML for each.
   revalidatePath("/anmeldung");
+  revalidatePath("/spieler");
   return { ok: true };
 }
 

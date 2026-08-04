@@ -3,13 +3,22 @@
 import { X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import { emphasisSurface } from "@/lib/emphasis";
+import { cn } from "@/lib/utils";
 import { dismissRegistrationHint } from "../actions";
 
 // Nudges players who have not filled in their profile that they can add
-// optional info there for their registration. Shown only when the profile has
-// neither been edited nor the hint dismissed (decided server-side); dismissing
-// hides it immediately and persists so it stays hidden.
+// optional info there. Shown on the registration and on the player dashboard
+// whenever the profile has neither been edited nor the hint dismissed (decided
+// server-side via shouldShowProfileHint); dismissing hides it immediately and
+// persists so it stays hidden across both pages.
+//
+// Styled with the loud emphasisSurface treatment — the same box weight the
+// Regelwerk uses for the one rule players kept skimming past. Players ignored
+// the muted version, so this deliberately borrows the treatment reserved for
+// „this one is not optional", popping equally in light and dark.
 export function ProfileHint() {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) {
@@ -22,11 +31,22 @@ export function ProfileHint() {
   }
 
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-3">
-      <div className="flex-1">
-        <p className="text-sm">
-          In deinem Profil kannst du optionale Angaben für deine Anmeldung
-          machen (z. B. Social-Media-Handles und Herkunft).
+    <div
+      className={cn(
+        "flex items-start gap-3 rounded-lg p-5",
+        emphasisSurface("orange"),
+      )}
+    >
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex items-center gap-2.5">
+          <Tick size="m" color="orange" />
+          <span className="font-semibold text-[13px] text-brand-orange uppercase tracking-[0.16em]">
+            Profil vervollständigen
+          </span>
+        </div>
+        <p className="text-[16px] text-foreground leading-[1.5]">
+          In deinem Profil kannst du optionale Angaben machen, z. B. deine
+          Social-Media-Handles und deine Herkunft.
         </p>
         <Link
           href="/profil"

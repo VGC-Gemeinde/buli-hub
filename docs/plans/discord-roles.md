@@ -14,6 +14,11 @@ member has several). Guild members without any configured role — and users
 who are not guild members at all — are `player`. German UI labels: Dev,
 Admin, Staff, Spieler.
 
+`staff` may be granted by more than one Discord role: the league staff role
+plus other trusted teams that get the same access — currently the MOTW-Team,
+via its own Discord role. They all resolve to the same `staff` app role with
+full staff access; the app has no finer per-section scoping.
+
 ## Scope
 
 - In:
@@ -59,8 +64,11 @@ Admin, Staff, Spieler.
 | `DISCORD_ROLE_ID_DEV`  | Discord role id mapped to `dev`           |
 | `DISCORD_ROLE_ID_ADMIN`| Discord role id mapped to `admin`         |
 | `DISCORD_ROLE_ID_STAFF`| Discord role id mapped to `staff`         |
+| `DISCORD_ROLE_ID_MOTW` | MOTW-Team role id, also mapped to `staff` (optional) |
 
-The bot must be a member of the guild; the single-member REST lookup
+`DISCORD_ROLE_ID_MOTW` is the only optional one — absent, `staff` is granted
+by the league staff role alone. The bot must be a member of the guild; the
+single-member REST lookup
 (`GET /guilds/{guild}/members/{user}`) needs no privileged gateway intent.
 
 ## Schema

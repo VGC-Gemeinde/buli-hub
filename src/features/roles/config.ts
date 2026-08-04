@@ -15,5 +15,11 @@ export function roleConfig(): RoleConfig | null {
   if (!guildId || !dev || !admin || !staff) {
     return null;
   }
-  return { guildId, roleIds: { dev, admin, staff } };
+  // The MOTW-Team is a separate Discord role that gets the same staff access.
+  // Optional: absent → staff is granted by the league staff role alone.
+  const motw = process.env.DISCORD_ROLE_ID_MOTW;
+  return {
+    guildId,
+    roleIds: { dev, admin, staff: motw ? [staff, motw] : [staff] },
+  };
 }

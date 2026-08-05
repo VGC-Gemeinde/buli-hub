@@ -146,7 +146,7 @@ describe("motwVodMessage", () => {
     ).toBe(
       `__**VGC Bundesliga · Match of the Week · Spieltag 3**__
 
-**Alice** vs. **Bob** — das VOD ist da!
+**Alice** vs. **Bob**: das VOD ist da!
 https://youtu.be/xyz
 
 Zum Match: <https://hub.example/match/m1>`,

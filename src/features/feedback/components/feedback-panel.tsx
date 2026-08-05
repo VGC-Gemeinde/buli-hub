@@ -261,7 +261,7 @@ export function FeedbackPanel({
           placeholder={
             kind === "bug"
               ? "Was hast du gemacht, was ist passiert, was hättest du erwartet?"
-              : "Was soll der Hub können — und was wird dadurch einfacher?"
+              : "Was soll der Hub können, und was wird dadurch einfacher?"
           }
         />
       </div>

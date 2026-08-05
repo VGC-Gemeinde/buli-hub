@@ -1518,7 +1518,7 @@ export function Gallery() {
               ready: true,
               readOnly: false,
               gateShort: null,
-              gateHint: "Endgültig — kann nicht rückgängig gemacht werden.",
+              gateHint: "Endgültig, kann nicht rückgängig gemacht werden.",
               onOpen: () => {},
             }}
           />
@@ -1547,7 +1547,7 @@ export function Gallery() {
               ready: true,
               readOnly: true,
               gateShort: null,
-              gateHint: "Endgültig — kann nicht rückgängig gemacht werden.",
+              gateHint: "Endgültig, kann nicht rückgängig gemacht werden.",
               onOpen: () => {},
             }}
           />
@@ -1666,7 +1666,7 @@ export function Gallery() {
             <ProfileStaffPanel
               player={{ userId: "c", name: "Pawmi", groupName: "Division 1a" }}
               dropped
-              dropReason="Inaktivität — mehrfach nicht erreichbar."
+              dropReason="Inaktivität, mehrfach nicht erreichbar."
             />
           </div>
         </Specimen>
@@ -1696,7 +1696,7 @@ export function Gallery() {
               {
                 identity: { userId: "c", name: "Pawmi", avatarUrl: null },
                 groupName: "Division 1a",
-                reason: "Inaktivität — mehrfach nicht erreichbar.",
+                reason: "Inaktivität, mehrfach nicht erreichbar.",
                 droppedAt: new Date("2026-07-06T10:00:00Z"),
               },
             ]}

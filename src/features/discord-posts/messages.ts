@@ -87,7 +87,7 @@ export function motwVodMessage(input: {
     `__**VGC Bundesliga · Match of the Week · Spieltag ${input.round}**__`,
     // The YouTube URL stays unwrapped on purpose: its embed preview is the
     // announcement. The result is never part of this message.
-    `**${input.playerAName}** vs. **${input.playerBName}** — das VOD ist da!\n${input.youtubeUrl}`,
+    `**${input.playerAName}** vs. **${input.playerBName}**: das VOD ist da!\n${input.youtubeUrl}`,
   ];
   if (input.matchUrl) {
     blocks.push(`Zum Match: <${input.matchUrl}>`);

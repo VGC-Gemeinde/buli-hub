@@ -145,5 +145,5 @@ export function attachmentOutcome(
   const noun = count === 1 ? "Screenshot" : "Screenshots";
   return posted
     ? `${count} ${noun} angehängt.`
-    : `${count} ${noun} konnten nicht angehängt werden — bitte halte sie bereit, falls jemand nachfragt.`;
+    : `${count} ${noun} konnten nicht angehängt werden. Bitte halte sie bereit, falls jemand nachfragt.`;
 }

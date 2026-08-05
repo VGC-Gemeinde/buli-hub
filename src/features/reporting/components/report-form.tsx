@@ -286,7 +286,7 @@ export function ReportForm({
   if (discussedWithId === "") fwMissing.push("Staff-Mitglied");
   const fwReadback = `Freewin für ${
     fwWinnerId === reporter.userId ? "dich" : opponent.name
-  } melden — wartet danach auf Staff-Bestätigung.`;
+  } melden. Wartet danach auf Staff-Bestätigung.`;
 
   async function submit() {
     setPending(true);
@@ -465,8 +465,8 @@ export function ReportForm({
                 value: "cartridge",
                 title: "Cartridge",
                 note: proofRequired
-                  ? "Auf der Konsole gespielt — Video-Link erforderlich."
-                  : "Auf der Konsole gespielt — Video-Link optional.",
+                  ? "Auf der Konsole gespielt, Video-Link erforderlich."
+                  : "Auf der Konsole gespielt, Video-Link optional.",
               },
             ].map((option) => (
               // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control
@@ -491,7 +491,7 @@ export function ReportForm({
         <section className="flex flex-col gap-3">
           <SectionHead
             title="Wer hat gewonnen?"
-            meta="Best of 3 — wer zuerst 2 Spiele gewinnt"
+            meta="Best of 3, wer zuerst 2 Spiele gewinnt"
           />
           <div className="flex flex-col gap-2.5">
             {[0, 1, 2].map((i) => (
@@ -646,7 +646,7 @@ function GameRow({
         </span>
         <span className="flex h-10 items-center text-[13px] text-muted-foreground">
           {swept
-            ? "Entfällt — die Serie ist mit 2:0 entschieden."
+            ? "Entfällt, die Serie ist mit 2:0 entschieden."
             : "Wird nur bei 1:1 nach zwei Spielen gespielt."}
         </span>
       </div>

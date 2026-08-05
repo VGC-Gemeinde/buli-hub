@@ -36,7 +36,7 @@ export function ProfileStaffPanel({
               <p className="font-semibold text-sm">Gedroppt</p>
               <p className="truncate text-[13px] text-muted-foreground">
                 {dropReason
-                  ? `„${dropReason}" — Aufheben stellt alle Ergebnisse wieder her.`
+                  ? `„${dropReason}" · Aufheben stellt alle Ergebnisse wieder her.`
                   : "Aufheben stellt alle Ergebnisse wieder her."}
               </p>
             </div>

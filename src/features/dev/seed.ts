@@ -630,7 +630,7 @@ async function seedDevResults(
       .set({
         droppedAt: new Date(),
         droppedById: staffId,
-        dropReason: "Inaktivität — mehrfach nicht erreichbar.",
+        dropReason: "Inaktivität, mehrfach nicht erreichbar.",
       })
       .where(
         and(

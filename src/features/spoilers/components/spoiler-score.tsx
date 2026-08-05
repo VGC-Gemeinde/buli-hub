@@ -62,7 +62,7 @@ export function SpoilerScore({
     return (
       <button
         type="button"
-        title="Match of the Week — Ergebnis bleibt verdeckt, antippen zum Aufdecken"
+        title="Match of the Week: Ergebnis bleibt verdeckt, antippen zum Aufdecken"
         aria-label="Ergebnis aufdecken"
         onClick={(event) => {
           event.preventDefault();
@@ -77,7 +77,7 @@ export function SpoilerScore({
   }
   return (
     <SpoilerPill
-      title="Ergebnis verdeckt — antippen zum Aufdecken"
+      title="Ergebnis verdeckt, antippen zum Aufdecken"
       onReveal={onReveal}
       className="h-3 w-10"
     />

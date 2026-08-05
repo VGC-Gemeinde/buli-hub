@@ -156,7 +156,7 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
     const lower = rows.find((r) => r.tier === issue.lowerTier);
     const d = upper ? effectiveMovement(forValidation(upper)).demotions : 0;
     const p = lower ? effectiveMovement(forValidation(lower)).promotions : 0;
-    return `Division ${issue.upperTier} & ${issue.lowerTier}: ${d} Abstiege stehen ${p} Aufstiegen gegenüber — die Zahlen müssen sich decken.`;
+    return `Division ${issue.upperTier} & ${issue.lowerTier}: ${d} Abstiege stehen ${p} Aufstiegen gegenüber. Die Zahlen müssen sich decken.`;
   }
   switch (issue.kind) {
     case "capacity":
@@ -166,9 +166,9 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
     case "division_mode_invalid":
       return `Division ${issue.tier}: die Gesamttabelle braucht mindestens zwei gleich große Gruppen.`;
     case "missing_promotion_path":
-      return `Division ${issue.tier}: kein Aufstiegsweg — mindestens ein Platz oder Playoff-Slot nötig.`;
+      return `Division ${issue.tier}: kein Aufstiegsweg. Mindestens ein Platz oder Playoff-Slot nötig.`;
     case "missing_demotion_path":
-      return `Division ${issue.tier}: kein Abstiegsweg — mindestens ein Platz oder Playoff-Slot nötig.`;
+      return `Division ${issue.tier}: kein Abstiegsweg. Mindestens ein Platz oder Playoff-Slot nötig.`;
     case "championship_not_top":
       return `Division ${issue.tier}: Playoffs gibt es nur in Division 1.`;
   }
@@ -287,7 +287,7 @@ export function PostSeasonPanel({
               <span className="flex size-[18px] items-center justify-center rounded-full bg-zone-promote text-[11px] text-white">
                 ✓
               </span>
-              Regeln gültig — nach dem Speichern kann die Einteilung finalisiert
+              Regeln gültig. Nach dem Speichern kann die Einteilung finalisiert
               werden.
             </p>
           ) : (
@@ -296,8 +296,8 @@ export function PostSeasonPanel({
                 !
               </span>
               {issues.length === 1
-                ? "1 Punkt zu klären — Details in der Liste unten."
-                : `${issues.length} Punkte zu klären — Details in der Liste unten.`}
+                ? "1 Punkt zu klären. Details in der Liste unten."
+                : `${issues.length} Punkte zu klären. Details in der Liste unten.`}
             </p>
           )}
           {saveError ? (
@@ -338,7 +338,7 @@ export function PostSeasonPanel({
             Lege pro Division fest, wie viele Spieler fest auf- und absteigen,
             wie viele Playoff-Plätze es gibt und über welche Tabelle entschieden
             wird. Abstiege und Aufstiege benachbarter Divisionen müssen sich
-            decken — erst dann kann gespeichert und finalisiert werden.
+            decken. Erst dann kann gespeichert und finalisiert werden.
           </p>
 
           {/* The season's second rule. Its own card, decidable independently
@@ -369,9 +369,9 @@ export function PostSeasonPanel({
               />
               <span className="text-[12.5px] text-muted-foreground">
                 {replayTiers === ""
-                  ? "Noch nicht festgelegt — ohne Entscheidung kann nicht finalisiert werden."
+                  ? "Noch nicht festgelegt. Ohne Entscheidung kann nicht finalisiert werden."
                   : replayTiers === "0"
-                    ? "In keiner Division Pflicht — Beweise sind überall optional."
+                    ? "In keiner Division Pflicht, Beweise sind überall optional."
                     : `Pflicht in Division 1–${replayTiers}, darunter optional.`}
               </span>
               {replayError ? (
@@ -384,13 +384,13 @@ export function PostSeasonPanel({
 
           {rows.length === 0 ? (
             <p className="rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-2.5 text-sm">
-              Noch keine Divisionen — sobald die Einteilung Divisionen hat,
+              Noch keine Divisionen. Sobald die Einteilung Divisionen hat,
               lassen sich hier die Regeln festlegen.
             </p>
           ) : null}
           {noGroups ? (
             <p className="rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-4 py-2.5 text-sm">
-              Bitte zuerst die Gruppen generieren — ohne Gruppen lassen sich
+              Bitte zuerst die Gruppen generieren. Ohne Gruppen lassen sich
               keine gültigen Regeln festlegen.{" "}
               {onBackToSheet ? (
                 <button
@@ -550,7 +550,7 @@ function DivisionCard({
               </span>
             ) : (
               <span className="font-bold text-[12px] text-zone-demote">
-                Überbelegt um {-leftover} — Zahlen verringern
+                Überbelegt um {-leftover} · Zahlen verringern
               </span>
             )}
           </div>
@@ -561,7 +561,7 @@ function DivisionCard({
             disabled={readOnly || isLowest}
             note={note(
               row.demotionPlayoffSlots,
-              isLowest ? "Unterste Division — kein Abstieg" : null,
+              isLowest ? "Unterste Division, kein Abstieg" : null,
             )}
             onChange={(demotionPlayoffSlots) =>
               onPatch({ demotionPlayoffSlots })
@@ -574,7 +574,7 @@ function DivisionCard({
             disabled={readOnly || isLowest}
             note={note(
               row.guaranteedDemotions,
-              isLowest ? "Unterste Division — kein Abstieg" : null,
+              isLowest ? "Unterste Division, kein Abstieg" : null,
             )}
             onChange={(guaranteedDemotions) => onPatch({ guaranteedDemotions })}
           />
@@ -608,7 +608,7 @@ function ZonePreview({ preview }: { preview: PreviewCell[] }) {
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed-order place squares
           key={i}
-          title={`Platz ${i + 1} — ${cell === "overbooked" ? "Überbelegt" : ZONE_NAME[cell]}`}
+          title={`Platz ${i + 1} · ${cell === "overbooked" ? "Überbelegt" : ZONE_NAME[cell]}`}
           style={
             cell === "overbooked"
               ? { width, backgroundImage: OVERBOOKED_STRIPES }

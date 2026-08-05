@@ -68,7 +68,7 @@ export function OpenRegistrationForm() {
         </Button>
       </div>
       <p className="text-[12.5px] text-muted-foreground">
-        Die Nummer wird einmalig gesetzt — künftige Saisons zählen automatisch
+        Die Nummer wird einmalig gesetzt. Künftige Saisons zählen automatisch
         hoch.
       </p>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}

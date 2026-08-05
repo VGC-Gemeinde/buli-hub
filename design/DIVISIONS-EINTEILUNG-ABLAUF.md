@@ -118,7 +118,7 @@ No segment styling — it must read as an action, not navigation. Three states:
    Add this as `finalizeGateShort(progress)` next to `finalizeGateHint` in
    `steps.ts` (same inputs, same story); the long hint stays as `title`.
 3. **Finalized**: the existing chip — skewed orange tick +
-   **Finalisiert — endgültig** in `rounded-[10px] border border-brand-orange/40
+   **Finalisiert · endgültig** in `rounded-[10px] border border-brand-orange/40
    bg-brand-orange/5 px-3 py-2 text-[13px] font-semibold`.
 
 Right edge of the strip, after a spacer: flow hint `text-[12px]
@@ -135,8 +135,8 @@ finalized (nothing left to control).
 | state | pill | dot | text | action |
 |---|---|---|---|---|
 | self | `border-brand-orange/40 bg-brand-orange/5` | `bg-brand-orange` | Du steuerst die Einteilung | `Button variant="outline" size="sm"` **Freigeben** |
-| held-by-other | `border-amber-500/40 bg-amber-500/5` | amber | **{Name}** steuert — du beobachtest | primary sm **Übernehmen** → `ConfirmTakeover` |
-| free / stale | `border bg-muted/40` | `bg-muted-foreground/40` | Niemand steuert — du beobachtest | primary sm **Steuerung übernehmen** → `ConfirmAcquire` |
+| held-by-other | `border-amber-500/40 bg-amber-500/5` | amber | **{Name}** steuert, du beobachtest | primary sm **Übernehmen** → `ConfirmTakeover` |
+| free / stale | `border bg-muted/40` | `bg-muted-foreground/40` | Niemand steuert, du beobachtest | primary sm **Steuerung übernehmen** → `ConfirmAcquire` |
 
 Holder name `font-semibold text-foreground`, rest muted-toned. Both confirm
 dialogs are **unchanged** (titles, copy, button labels). The lucide

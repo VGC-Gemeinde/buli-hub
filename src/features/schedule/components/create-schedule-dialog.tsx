@@ -170,7 +170,7 @@ export function CreateScheduleDialog({
           <div className="flex items-center gap-2">
             <div className="h-[7px] w-3.5 shrink-0 -skew-x-[18deg] bg-brand-orange" />
             <p className="text-[12.5px] text-muted-foreground">
-              Eine spätere Deadline verschiebt alle folgenden Spieltage mit — so
+              Eine spätere Deadline verschiebt alle folgenden Spieltage mit. So
               planst du Feiertage und Pausen ein.
             </p>
           </div>

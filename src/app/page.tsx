@@ -73,7 +73,7 @@ export default async function Home({
         {user ? (
           <>
             <p className="-mt-3 mb-7 max-w-[440px] text-[17px] text-muted-foreground leading-[1.55]">
-              Deine Gruppe, dein Spielplan und deine nächste Paarung — alles im
+              Deine Gruppe, dein Spielplan und deine nächste Paarung: alles im
               Spieler-Dashboard.
             </p>
             <Button asChild size="lg">

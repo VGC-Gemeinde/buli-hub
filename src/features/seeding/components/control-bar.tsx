@@ -62,7 +62,7 @@ export function ControlPill({
           <span className="font-semibold text-foreground">
             {holderName ?? "Jemand anderes"}
           </span>{" "}
-          steuert — du beobachtest
+          steuert, du beobachtest
         </span>
         <ConfirmTakeover
           holderName={holderName}
@@ -77,7 +77,7 @@ export function ControlPill({
   return (
     <Pill tone="bg-muted/40" dot="bg-muted-foreground/40">
       <span className="text-muted-foreground">
-        Niemand steuert — du beobachtest
+        Niemand steuert, du beobachtest
       </span>
       <ConfirmAcquire pending={pending} onConfirm={() => onAcquire(false)} />
     </Pill>

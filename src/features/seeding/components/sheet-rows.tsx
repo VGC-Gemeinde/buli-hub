@@ -214,7 +214,7 @@ export function UngroupedSeparator({ count }: { count: number }) {
         Ohne Gruppe
       </span>
       <span className="text-muted-foreground text-xs">
-        {count} Spieler — per Gruppen-Spalte zuordnen
+        {count} Spieler · per Gruppen-Spalte zuordnen
       </span>
     </div>
   );
@@ -223,7 +223,7 @@ export function UngroupedSeparator({ count }: { count: number }) {
 export function EmptyDivisionHint() {
   return (
     <div className="flex h-9 items-center border-b pl-13 text-[13px] text-muted-foreground/70">
-      Keine Spieler — über die Division-Spalte zuordnen.
+      Keine Spieler · über die Division-Spalte zuordnen
     </div>
   );
 }

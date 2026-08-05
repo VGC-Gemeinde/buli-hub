@@ -185,7 +185,7 @@ Suggested order (public visibility first): 4.5 → 4.4 → 4.1 → 4.2/4.3 →
   Speichern… (orange dot) / Gespeichert (green `oklch(0.55 0.13 155)`) /
   Fehler beim Speichern (destructive, text also destructive) / idle renders
   nothing.
-- Intro line under the head: „Alle Angaben hier sind freiwillig — sie helfen
+- Intro line under the head: „Alle Angaben hier sind freiwillig. Sie helfen
   uns bei Social-Media-Posts und Liga-Content."
 - **Fields**: Twitter + Bluesky side by side (`grid grid-cols-2 gap-3.5`,
   helper line spans both columns), Herkunft full width, all inputs **38px**
@@ -348,7 +348,7 @@ correct and this file is its polished spec:
 - Header gains the **Auf- & Abstieg** entry point: outline button with
   status dot (8px; orange = konfiguriert, grey = offen) → dialog §4.9.
 - Terminology aligned to production: **Finalisieren / Einteilung
-  finalisieren? / Finalisiert — endgültig** (was „Veröffentlichen").
+  finalisieren? / Finalisiert · endgültig** (was „Veröffentlichen").
   Type-to-confirm phrase: **„Saison {n}"**.
 - Gate state (registration still open) uses the §2.8 card instead of a bare
   sentence.

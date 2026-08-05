@@ -117,7 +117,7 @@ justify-between gap-6 flex-wrap`. Left column (`gap-4.5`):
 
 Same card. Label **Spieltag {n}**, heading `font-heading text-[32px]`
 **Spielfrei**, subline `text-sm text-muted-foreground` „Diese Woche hast du
-kein Match — Zeit zum Vorbereiten." Right block: **Danach** label + „Spieltag
+kein Match. Zeit zum Vorbereiten." Right block: **Danach** label + „Spieltag
 {r} · vs. {name}" + `Deadline {date}`. No button.
 
 ## 5. Dein Spielplan (left column)

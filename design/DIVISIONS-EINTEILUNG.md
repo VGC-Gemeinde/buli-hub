@@ -173,12 +173,12 @@ text-brand-blue dark:text-white`) + meta `text-xs text-muted-foreground`:
 **4 — *Ohne Gruppe* separator** (only when a division has generated groups AND
 ungrouped players — e.g. someone moved in afterwards): like a Gruppen
 separator, warning-toned — `bg-brand-orange/5`, title in amber
-(`text-[oklch(0.55_0.13_50)]`), meta `{n} Spieler — per Gruppen-Spalte oder
+(`text-[oklch(0.55_0.13_50)]`), meta `{n} Spieler · per Gruppen-Spalte oder
 Ziehen zuordnen`.
 
 **5 — Empty-division hint row** (0 players): `flex h-9 items-center border-b
-pl-13 text-[13px] text-muted-foreground/70` — *Keine Spieler — Zeilen hierher
-ziehen oder die Division-Spalte nutzen.*
+pl-13 text-[13px] text-muted-foreground/70` — *Keine Spieler · Zeilen hierher
+ziehen oder die Division-Spalte nutzen*
 
 **6 — Player row**:
 

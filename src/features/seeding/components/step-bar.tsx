@@ -249,7 +249,7 @@ function FinalizeStep({
     return (
       <span className="flex items-center gap-2 rounded-[10px] border border-brand-orange/40 bg-brand-orange/5 px-3 py-2 font-semibold text-[13px]">
         <Tick size="s" />
-        Finalisiert — endgültig
+        Finalisiert · endgültig
       </span>
     );
   }

@@ -77,27 +77,27 @@ export default async function DevPage() {
             </span>
           </a>
           <a
-            href="/dev/seed-registrations?count=100&finalize=1"
+            href="/dev/seed-registrations?finalize=1"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >
             <span className="font-medium text-sm">
-              100 Anmeldungen + finalisierte Einteilung
+              Ligastruktur + finalisierte Einteilung
             </span>
             <span className="text-[13px] text-muted-foreground">
-              Baut und finalisiert die Einteilung → bereit für „Spielplan
-              erstellen"
+              7 Divisionen à 2 Gruppen, Division 4 mit 5 Gruppen und
+              Gesamttabelle (136 Spieler) → bereit für „Spielplan erstellen"
             </span>
           </a>
           <a
-            href="/dev/seed-registrations?count=100&schedule=1"
+            href="/dev/seed-registrations?schedule=1"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >
             <span className="font-medium text-sm">
-              100 Anmeldungen + laufende Saison
+              Ligastruktur + laufende Saison
             </span>
             <span className="text-[13px] text-muted-foreground">
-              Baut Einteilung + Spielplan und meldet die aktuelle Persona an →
-              zum Spieler-Dashboard
+              Dieselbe Struktur mit Spielplan + Ergebnissen, Persona angemeldet
+              → zum Spieler-Dashboard
             </span>
           </a>
           <a

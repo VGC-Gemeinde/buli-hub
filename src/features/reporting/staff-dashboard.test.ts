@@ -5,6 +5,7 @@ import { bucketMatches } from "./staff-dashboard";
 const base: StaffMatchRow = {
   matchId: "m",
   round: 1,
+  tier: 1,
   groupName: "Division 1a",
   endsOn: "2026-07-07",
   playerA: { userId: "a", name: "A", avatarUrl: null },

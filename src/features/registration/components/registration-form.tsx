@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { FieldError } from "@/components/field-error";
 import { InlineLink } from "@/components/links";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
@@ -12,17 +13,87 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { playerName } from "@/lib/player-name";
+import { cn } from "@/lib/utils";
 import { register } from "../actions";
-import { PLATFORM_LABELS, type Platform } from "../registration";
+import {
+  EMPTY_VETERAN_DRAFT,
+  firstErrorField,
+  PLATFORM_LABELS,
+  type Platform,
+  type RegistrationDraft,
+  type RegistrationField,
+  type RegistrationFieldErrors,
+  type VeteranDraft,
+  validateRegistration,
+} from "../registration";
 
+// `numeric` fields are text inputs with a numeric keypad rather than
+// `type="number"`: the browser blanks a number input's value for anything it
+// cannot parse, so „3b" would reach the validator as an empty field and could
+// never be reported as „keine Ziffern". inputMode keeps the mobile keypad.
 const VETERAN_FIELDS = [
-  { key: "prevSeason", label: "Letzte Saison", type: "text" },
-  { key: "prevName", label: "Damaliger Name", type: "text" },
-  { key: "prevDivision", label: "Division", type: "number" },
-  { key: "prevPlacement", label: "Platzierung", type: "number" },
+  {
+    key: "prevSeason",
+    label: "Letzte Saison",
+    placeholder: "z. B. Saison 4",
+    numeric: false,
+  },
+  { key: "prevName", label: "Damaliger Name", placeholder: "", numeric: false },
+  {
+    key: "prevDivision",
+    label: "Division",
+    placeholder: "z. B. 3",
+    numeric: true,
+  },
+  {
+    key: "prevPlacement",
+    label: "Platzierung",
+    placeholder: "z. B. 5",
+    numeric: true,
+  },
 ] as const;
 
-type VeteranKey = (typeof VETERAN_FIELDS)[number]["key"];
+const PLATFORM_VALUES = Object.keys(PLATFORM_LABELS) as Platform[];
+
+// Where „jump to the first problem" sends focus. Radio groups and the slider
+// point at their container; `focusTarget` walks in to the real control.
+const FIELD_ANCHORS: Record<RegistrationField, string> = {
+  platform: `platform-${PLATFORM_VALUES[0]}`,
+  participatedBefore: "participated-ja",
+  prevSeason: "prevSeason",
+  prevName: "prevName",
+  prevDivision: "prevDivision",
+  prevPlacement: "prevPlacement",
+  skillSelfRating: "skill",
+  greatestAchievements: "achievements",
+  acceptedRules: "regelwerk-akzeptiert",
+};
+
+// Keys that move a slider. Pressing one is an answer even when the value does
+// not change, which is the only way a player can deliberately choose 0.
+const SLIDER_KEYS = new Set([
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown",
+]);
+
+function focusTarget(id: string): HTMLElement | null {
+  const anchor = document.getElementById(id);
+  if (!anchor) {
+    return null;
+  }
+  if (anchor.tabIndex >= 0) {
+    return anchor;
+  }
+  return anchor.querySelector<HTMLElement>(
+    '[tabindex]:not([tabindex="-1"]), input, button',
+  );
+}
 
 export function RegistrationForm({
   displayName,
@@ -34,56 +105,82 @@ export function RegistrationForm({
   detectedReturning: boolean;
 }) {
   const router = useRouter();
-  const [platform, setPlatform] = useState<Platform | "">("");
-  const [participatedBefore, setParticipatedBefore] = useState<boolean | null>(
-    null,
-  );
-  const [veteran, setVeteran] = useState<Record<VeteranKey, string>>({
-    prevSeason: "",
-    prevName: "",
-    prevDivision: "",
-    prevPlacement: "",
+  const [draft, setDraft] = useState<RegistrationDraft>({
+    platform: "",
+    participatedBefore: null,
+    veteran: EMPTY_VETERAN_DRAFT,
+    skillSelfRating: null,
+    greatestAchievements: "",
+    acceptedRules: false,
   });
-  const [skillSelfRating, setSkillSelfRating] = useState(0);
-  const [greatestAchievements, setGreatestAchievements] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  // Messages stay hidden until the first submit, so the form does not scold
+  // anyone for a field they have not reached yet. After that they update live,
+  // which is what makes a message disappear the moment it is fixed.
+  const [reportErrors, setReportErrors] = useState(false);
+  const [serverErrors, setServerErrors] = useState<RegistrationFieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  // The rules require participants to understand and accept them (Regelwerk
-  // §1). Registration is the only place that becomes verifiable, so this gates
-  // the submit rather than being an optional tick.
-  const [acceptedRules, setAcceptedRules] = useState(false);
 
   // A detected veteran answers nothing beyond the base fields; an undetected
   // player must first say whether they have taken part before.
-  const isVeteran = detectedReturning || participatedBefore === true;
-  const isNew = !detectedReturning && participatedBefore === false;
-  const veteranComplete = VETERAN_FIELDS.every(
-    (field) => veteran[field.key].trim() !== "",
-  );
+  const isVeteran = detectedReturning || draft.participatedBefore === true;
+  const isNew = !detectedReturning && draft.participatedBefore === false;
 
-  const canSubmit =
-    platform !== "" &&
-    acceptedRules &&
-    !pending &&
-    (detectedReturning ||
-      (participatedBefore !== null &&
-        (participatedBefore ? veteranComplete : true)));
+  const clientErrors = useMemo(
+    () => validateRegistration({ ...draft, detectedReturning }),
+    [draft, detectedReturning],
+  );
+  const errors: RegistrationFieldErrors = {
+    ...(reportErrors ? clientErrors : {}),
+    ...serverErrors,
+  };
+
+  // Any edit invalidates what the server told us about the old draft.
+  function update(patch: Partial<RegistrationDraft>) {
+    setDraft((previous) => ({ ...previous, ...patch }));
+    setServerErrors({});
+    setFormError(null);
+  }
+
+  function updateVeteran(key: keyof VeteranDraft, value: string) {
+    setDraft((previous) => ({
+      ...previous,
+      veteran: { ...previous.veteran, [key]: value },
+    }));
+    setServerErrors({});
+    setFormError(null);
+  }
+
+  function reveal(field: RegistrationField) {
+    const target = focusTarget(FIELD_ANCHORS[field]);
+    target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    target?.focus({ preventScroll: true });
+  }
 
   async function submit() {
-    if (platform === "") {
+    setReportErrors(true);
+    setServerErrors({});
+    setFormError(null);
+
+    const invalid = firstErrorField(clientErrors);
+    if (invalid) {
+      setFormError("Bitte prüfe die markierten Felder.");
+      reveal(invalid);
       return;
     }
+
     setPending(true);
-    setError(null);
-    const result = await register({
-      platform,
-      participatedBefore: detectedReturning ? null : participatedBefore,
-      veteran: isVeteran && !detectedReturning ? veteran : undefined,
-      newPlayer: isNew ? { skillSelfRating, greatestAchievements } : undefined,
-    });
+    const result = await register(draft);
     if (!result.ok) {
       setPending(false);
-      setError(result.error);
+      setFormError(result.error);
+      if (result.fieldErrors) {
+        setServerErrors(result.fieldErrors);
+        const rejected = firstErrorField(result.fieldErrors);
+        if (rejected) {
+          reveal(rejected);
+        }
+      }
       return;
     }
     // Re-render the route so the form gives way to the confirmation view.
@@ -94,7 +191,7 @@ export function RegistrationForm({
     <div className="flex flex-col gap-8">
       {detectedReturning ? (
         <p className="text-muted-foreground text-sm">
-          Willkommen zurück! Wir haben deine bisherige Teilnahme erkannt — mehr
+          Willkommen zurück! Wir haben deine bisherige Teilnahme erkannt. Mehr
           als deine präferierte Plattform brauchen wir nicht von dir.
         </p>
       ) : null}
@@ -116,22 +213,31 @@ export function RegistrationForm({
         <Label>Präferierte Plattform</Label>
         <RadioGroup
           className="grid grid-cols-2 gap-2"
-          value={platform}
-          onValueChange={(value) => setPlatform(value as Platform)}
+          value={draft.platform}
+          onValueChange={(value) => update({ platform: value })}
+          aria-describedby={errors.platform ? "platform-error" : undefined}
         >
-          {(Object.keys(PLATFORM_LABELS) as Platform[]).map((value) => (
+          {PLATFORM_VALUES.map((value) => (
             // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control
             <label
               key={value}
-              className="flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 px-3.5 has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/5"
+              className={cn(
+                "flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 px-3.5 has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/5",
+                errors.platform && "border-destructive/60",
+              )}
             >
-              <RadioGroupItem value={value} id={`platform-${value}`} />
+              <RadioGroupItem
+                value={value}
+                id={`platform-${value}`}
+                aria-invalid={Boolean(errors.platform)}
+              />
               <span className="font-medium text-sm">
                 {PLATFORM_LABELS[value]}
               </span>
             </label>
           ))}
         </RadioGroup>
+        <FieldError id="platform-error" message={errors.platform} />
         <p className="text-[13px] text-muted-foreground leading-snug">
           Beim Seeding versuchen wir, dich mit Spielern derselben Präferenz in
           eine Division einzuteilen. In kleineren Divisionen behalten wir uns
@@ -146,13 +252,18 @@ export function RegistrationForm({
           <RadioGroup
             className="grid grid-cols-2 gap-2"
             value={
-              participatedBefore === null
+              draft.participatedBefore === null
                 ? ""
-                : participatedBefore
+                : draft.participatedBefore
                   ? "ja"
                   : "nein"
             }
-            onValueChange={(value) => setParticipatedBefore(value === "ja")}
+            onValueChange={(value) =>
+              update({ participatedBefore: value === "ja" })
+            }
+            aria-describedby={
+              errors.participatedBefore ? "participated-error" : undefined
+            }
           >
             {[
               { value: "ja", label: "Ja" },
@@ -161,16 +272,24 @@ export function RegistrationForm({
               // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control
               <label
                 key={option.value}
-                className="flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 px-3.5 has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/5"
+                className={cn(
+                  "flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 px-3.5 has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/5",
+                  errors.participatedBefore && "border-destructive/60",
+                )}
               >
                 <RadioGroupItem
                   value={option.value}
                   id={`participated-${option.value}`}
+                  aria-invalid={Boolean(errors.participatedBefore)}
                 />
                 <span className="font-medium text-sm">{option.label}</span>
               </label>
             ))}
           </RadioGroup>
+          <FieldError
+            id="participated-error"
+            message={errors.participatedBefore}
+          />
         </div>
       )}
 
@@ -182,22 +301,30 @@ export function RegistrationForm({
               Deine bisherige Teilnahme
             </span>
           </div>
+          {/* self-start keeps both inputs of a row on one line when only one of
+              them grows a message underneath. */}
           <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-4">
             {VETERAN_FIELDS.map((field) => (
-              <div key={field.key} className="grid gap-2">
+              <div key={field.key} className="grid gap-2 self-start">
                 <Label htmlFor={field.key}>{field.label}</Label>
                 <Input
                   id={field.key}
-                  type={field.type}
-                  min={field.type === "number" ? 1 : undefined}
-                  value={veteran[field.key]}
+                  type="text"
+                  inputMode={field.numeric ? "numeric" : undefined}
+                  placeholder={field.placeholder || undefined}
+                  value={draft.veteran[field.key]}
                   onChange={(event) =>
-                    setVeteran((prev) => ({
-                      ...prev,
-                      [field.key]: event.target.value,
-                    }))
+                    updateVeteran(field.key, event.target.value)
+                  }
+                  aria-invalid={Boolean(errors[field.key])}
+                  aria-describedby={
+                    errors[field.key] ? `${field.key}-error` : undefined
                   }
                   autoComplete="off"
+                />
+                <FieldError
+                  id={`${field.key}-error`}
+                  message={errors[field.key]}
                 />
               </div>
             ))}
@@ -208,10 +335,19 @@ export function RegistrationForm({
       {isNew ? (
         <>
           <div className="grid gap-2">
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline justify-between gap-3">
               <Label htmlFor="skill">Wie schätzt du dein VGC-Niveau ein?</Label>
-              <span className="font-semibold text-brand-blue text-sm dark:text-white">
-                {skillSelfRating}/10
+              <span
+                className={cn(
+                  "shrink-0 font-semibold text-sm",
+                  draft.skillSelfRating === null
+                    ? "text-muted-foreground"
+                    : "text-brand-blue dark:text-white",
+                )}
+              >
+                {draft.skillSelfRating === null
+                  ? "noch keine Angabe"
+                  : `${draft.skillSelfRating}/10`}
               </span>
             </div>
             <Slider
@@ -219,9 +355,26 @@ export function RegistrationForm({
               min={0}
               max={10}
               step={1}
-              value={[skillSelfRating]}
-              onValueChange={([value]) => setSkillSelfRating(value ?? 0)}
+              value={[draft.skillSelfRating ?? 0]}
+              onValueChange={([value]) =>
+                update({ skillSelfRating: value ?? 0 })
+              }
+              // 0 is a real answer, so „touched" cannot be inferred from the
+              // value changing: a player who wants 0 never moves the thumb.
+              onPointerDown={() =>
+                update({ skillSelfRating: draft.skillSelfRating ?? 0 })
+              }
+              onKeyDown={(event) => {
+                if (SLIDER_KEYS.has(event.key)) {
+                  update({ skillSelfRating: draft.skillSelfRating ?? 0 });
+                }
+              }}
+              aria-invalid={Boolean(errors.skillSelfRating)}
+              aria-describedby={
+                errors.skillSelfRating ? "skill-error" : undefined
+              }
             />
+            <FieldError id="skill-error" message={errors.skillSelfRating} />
             <p className="text-[13px] text-muted-foreground leading-snug">
               0 = blutiger Anfänger · 5 = konstanter 4-4-Spieler auf Regionals ·
               10 = VGC-Weltmeister
@@ -234,9 +387,19 @@ export function RegistrationForm({
             </Label>
             <Textarea
               id="achievements"
-              value={greatestAchievements}
-              onChange={(event) => setGreatestAchievements(event.target.value)}
+              value={draft.greatestAchievements}
+              onChange={(event) =>
+                update({ greatestAchievements: event.target.value })
+              }
               placeholder="Turniere, Platzierungen, Momente, auf die du stolz bist …"
+              aria-invalid={Boolean(errors.greatestAchievements)}
+              aria-describedby={
+                errors.greatestAchievements ? "achievements-error" : undefined
+              }
+            />
+            <FieldError
+              id="achievements-error"
+              message={errors.greatestAchievements}
             />
           </div>
         </>
@@ -244,34 +407,48 @@ export function RegistrationForm({
 
       {/* target="_blank": the form is long, and losing a half-filled one to
           read the rules is how people abandon a registration. */}
-      <label
-        htmlFor="regelwerk-akzeptiert"
-        className="flex min-h-11 cursor-pointer items-start gap-3 text-[13px] leading-[1.55]"
-      >
-        <Checkbox
-          id="regelwerk-akzeptiert"
-          checked={acceptedRules}
-          onCheckedChange={(value) => setAcceptedRules(value === true)}
-          className="mt-0.5"
-        />
-        <span>
-          Ich habe das{" "}
-          <InlineLink href="/regelwerk" target="_blank" rel="noreferrer">
-            Regelwerk der VGC Bundesliga
-          </InlineLink>{" "}
-          gelesen und akzeptiere es.
-        </span>
-      </label>
-
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      <div className="grid gap-2">
+        <label
+          htmlFor="regelwerk-akzeptiert"
+          className="flex min-h-11 cursor-pointer items-start gap-3 text-[13px] leading-[1.55]"
+        >
+          <Checkbox
+            id="regelwerk-akzeptiert"
+            checked={draft.acceptedRules}
+            onCheckedChange={(value) =>
+              update({ acceptedRules: value === true })
+            }
+            className="mt-0.5"
+            aria-invalid={Boolean(errors.acceptedRules)}
+            aria-describedby={
+              errors.acceptedRules ? "regelwerk-error" : undefined
+            }
+          />
+          <span>
+            Ich habe das{" "}
+            <InlineLink href="/regelwerk" target="_blank" rel="noreferrer">
+              Regelwerk der VGC Bundesliga
+            </InlineLink>{" "}
+            gelesen und akzeptiere es.
+          </span>
+        </label>
+        <FieldError id="regelwerk-error" message={errors.acceptedRules} />
+      </div>
 
       <div className="flex flex-col gap-2">
+        {/* The summary answers the click even when the offending field is
+            scrolled out of view. */}
+        {formError ? (
+          <p role="alert" className="text-destructive text-sm">
+            {formError}
+          </p>
+        ) : null}
         <div>
           <Button
             type="button"
             size="lg"
             className="h-11 px-6"
-            disabled={!canSubmit}
+            disabled={pending}
             onClick={submit}
           >
             {pending ? "Wird gesendet…" : "Anmeldung absenden"}

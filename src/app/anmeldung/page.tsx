@@ -134,7 +134,7 @@ export default async function AnmeldungPage() {
       <Shell state={state} closesAt={closesAt} season={seasonLabel}>
         <EmptyStateCard title="Noch nicht geöffnet">
           Die Anmeldung für die nächste Saison startet in Kürze. Der Termin wird
-          im Discord der VGC Gemeinde angekündigt — schau dort vorbei, damit du
+          im Discord der VGC Gemeinde angekündigt. Schau dort vorbei, damit du
           nichts verpasst.
         </EmptyStateCard>
       </Shell>
@@ -148,8 +148,8 @@ export default async function AnmeldungPage() {
         <EmptyStateCard title="Anmeldung geschlossen" informational>
           <p>
             Für {seasonLabel} sind keine Anmeldungen mehr möglich. Die nächste
-            Chance kommt mit der neuen Saison — angekündigt wird sie wie immer
-            im Discord.
+            Chance kommt mit der neuen Saison. Angekündigt wird sie wie immer im
+            Discord.
           </p>
           <p className="mt-2 text-[13px]">
             Geschlossen seit {formatLongTimestamp(window.closesAt)}
@@ -179,8 +179,8 @@ export default async function AnmeldungPage() {
         <EmptyStateCard title="Anmeldung geschlossen" informational>
           <p>
             Für {seasonLabel} sind keine Anmeldungen mehr möglich. Die nächste
-            Chance kommt mit der neuen Saison — angekündigt wird sie wie immer
-            im Discord.
+            Chance kommt mit der neuen Saison. Angekündigt wird sie wie immer im
+            Discord.
           </p>
           <p className="mt-2 text-[13px]">
             Geschlossen seit {formatLongTimestamp(window.closesAt)}

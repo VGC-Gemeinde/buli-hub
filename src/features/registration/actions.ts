@@ -16,22 +16,24 @@ import {
   priorRegistrationCount,
 } from "./queries";
 import {
+  firstErrorField,
   newPlayerSchema,
   platformSchema,
+  type RegistrationDraft,
+  type RegistrationFieldErrors,
+  registrationDraftSchema,
   resolvePlayerStatus,
+  validateRegistration,
   veteranHistorySchema,
 } from "./registration";
 
-export type RegisterResult = { ok: true } | { ok: false; error: string };
+export type RegisterResult =
+  | { ok: true }
+  | { ok: false; error: string; fieldErrors?: RegistrationFieldErrors };
 
-export type RegisterInput = {
-  platform: unknown;
-  participatedBefore: boolean | null;
-  veteran?: unknown;
-  newPlayer?: unknown;
-};
+export type RegisterInput = RegistrationDraft;
 
-export async function register(input: RegisterInput): Promise<RegisterResult> {
+export async function register(input: unknown): Promise<RegisterResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,33 +51,54 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
     return { ok: false, error: "Du bist bereits angemeldet" };
   }
 
-  const platform = platformSchema.safeParse(input.platform);
-  if (!platform.success) {
-    return { ok: false, error: "Bitte eine Plattform wählen" };
+  const draft = registrationDraftSchema.safeParse(input);
+  if (!draft.success) {
+    return { ok: false, error: "Die Anmeldung konnte nicht gelesen werden" };
   }
 
   // Detection is server-side — never trust the client on returning status.
   const detectedReturning =
     (await priorRegistrationCount(window.id, user.id)) > 0;
-  const resolved = resolvePlayerStatus({
+
+  // The same validator the form runs, so a stale client gets field-precise
+  // messages instead of one generic sentence, and the two cannot drift.
+  const fieldErrors = validateRegistration({
+    ...draft.data,
     detectedReturning,
-    participatedBefore: input.participatedBefore,
   });
-  if (!resolved) {
-    return { ok: false, error: "Bitte die Frage zur Teilnahme beantworten" };
+  if (firstErrorField(fieldErrors)) {
+    return {
+      ok: false,
+      error: "Bitte prüfe die markierten Felder.",
+      fieldErrors,
+    };
   }
 
+  const platform = platformSchema.safeParse(draft.data.platform);
+  const resolved = resolvePlayerStatus({
+    detectedReturning,
+    participatedBefore: draft.data.participatedBefore,
+  });
+  if (!platform.success || !resolved) {
+    return { ok: false, error: "Die Anmeldung konnte nicht gelesen werden" };
+  }
+
+  // Re-parsed rather than assumed: validation above only produced messages,
+  // these calls produce the typed values the columns need.
   let veteran = null;
   let newPlayer = null;
 
   if (resolved.needsVeteranHistory) {
-    const parsed = veteranHistorySchema.safeParse(input.veteran);
+    const parsed = veteranHistorySchema.safeParse(draft.data.veteran);
     if (!parsed.success) {
       return { ok: false, error: "Bitte alle Felder zur Historie ausfüllen" };
     }
     veteran = parsed.data;
   } else if (resolved.status === "new") {
-    const parsed = newPlayerSchema.safeParse(input.newPlayer);
+    const parsed = newPlayerSchema.safeParse({
+      skillSelfRating: draft.data.skillSelfRating,
+      greatestAchievements: draft.data.greatestAchievements,
+    });
     if (!parsed.success) {
       return { ok: false, error: "Bitte deine Einschätzung abgeben" };
     }
@@ -88,15 +111,17 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
     platform: platform.data,
     status: resolved.status,
     // Store the self-report only when it drove the decision.
-    participatedBefore: detectedReturning ? null : input.participatedBefore,
+    participatedBefore: detectedReturning
+      ? null
+      : draft.data.participatedBefore,
     veteran,
     newPlayer,
   });
 
-  // Registering means accepting: the form gates its own submit on the
-  // Regelwerk checkbox, so anyone who gets here has agreed. Recording it now
-  // is what makes „since when" answerable for the whole field, rather than
-  // only for the players who later opened a prompt.
+  // Registering means accepting: `validateRegistration` rejects a draft whose
+  // Regelwerk tick is missing, so anyone who gets here has agreed. Recording
+  // it now is what makes „since when" answerable for the whole field, rather
+  // than only for the players who later opened a prompt.
   await recordAcceptance(window.id, user.id);
 
   revalidatePath("/anmeldung");

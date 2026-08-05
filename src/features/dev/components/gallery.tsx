@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { DateTimePicker } from "@/components/date-picker";
 import { EmptyStateCard } from "@/components/empty-state-card";
+import { FieldError } from "@/components/field-error";
 import { ActionLink, InlineLink } from "@/components/links";
 import { PlayerGrid, type RegisteredPlayer } from "@/components/player-grid";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
@@ -68,6 +71,7 @@ import {
 import { SAISON_9 } from "@/features/regelwerk/content/saison-9";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
+import { RegistrationForm } from "@/features/registration/components/registration-form";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { DisputeResolveDialog } from "@/features/reporting/components/dispute-resolve-dialog";
 import { PublicMatchView } from "@/features/reporting/components/public-match-view";
@@ -1098,7 +1102,7 @@ export function Gallery() {
               title="Noch nicht geöffnet"
               action={<Button>Mit Discord anmelden</Button>}
             >
-              Die Anmeldung startet in Kürze — sie wird im Discord angekündigt.
+              Die Anmeldung startet in Kürze. Sie wird im Discord angekündigt.
             </EmptyStateCard>
             <EmptyStateCard title="Noch kein Ergebnis" informational>
               Sobald das Ergebnis gemeldet ist, erscheinen hier Spiele, Replays
@@ -1248,6 +1252,56 @@ export function Gallery() {
         <h2 className="text-2xl">Profil-Hinweis (Anmeldung + Dashboard)</h2>
         <Specimen label="Hinweis">
           <ProfileHint />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Formularfehler</h2>
+        <Specimen label="FieldError (Pflichtfeld · Format · Bereich)">
+          <div className="flex max-w-sm flex-col gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="gallery-division">Division</Label>
+              <Input
+                id="gallery-division"
+                defaultValue="3b"
+                aria-invalid
+                aria-describedby="gallery-division-error"
+              />
+              <FieldError
+                id="gallery-division-error"
+                message="Bitte nur Ziffern eingeben, zum Beispiel 3"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="gallery-season">Letzte Saison</Label>
+              <Input
+                id="gallery-season"
+                defaultValue=""
+                aria-invalid
+                aria-describedby="gallery-season-error"
+              />
+              <FieldError id="gallery-season-error" message="Pflichtfeld" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="gallery-placement">Platzierung</Label>
+              <Input
+                id="gallery-placement"
+                defaultValue="0"
+                aria-invalid
+                aria-describedby="gallery-placement-error"
+              />
+              <FieldError id="gallery-placement-error" message="Mindestens 1" />
+            </div>
+          </div>
+        </Specimen>
+        <Specimen label="Anmeldeformular: leer absenden zeigt alle Fehlerzustände">
+          <div className="max-w-xl">
+            <RegistrationForm
+              displayName="TestSpieler"
+              username="testspieler"
+              detectedReturning={false}
+            />
+          </div>
         </Specimen>
       </section>
 

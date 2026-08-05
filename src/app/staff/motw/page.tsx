@@ -122,7 +122,7 @@ export default async function StaffMotwPage({
         <p className="mt-2 mb-9 max-w-[680px] text-muted-foreground text-sm">
           Ein Match pro Spieltag, ligaweit über alle Divisionen. Der aktuelle
           und jeder kommende Spieltag lassen sich frei wählen. Ein vergangener
-          Spieltag lässt sich nachtragen, solange er noch kein Match hat — ist
+          Spieltag lässt sich nachtragen, solange er noch kein Match hat. Ist
           eins gewählt, bleibt nur der VOD-Link änderbar.
         </p>
         <MotwManager

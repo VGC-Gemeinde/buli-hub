@@ -86,7 +86,7 @@ export function MotwBlock({ motw }: { motw: MotwBlockData }) {
                   Ergebnis aufdecken
                 </button>
                 <span className="text-center text-[11.5px] text-white/55">
-                  Spoiler-Schutz — erst das VOD ansehen
+                  Spoiler-Schutz: erst das VOD ansehen
                 </span>
               </>
             )}

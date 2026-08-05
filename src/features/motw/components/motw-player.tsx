@@ -43,7 +43,7 @@ export function CaptureCardMark({
     },
     unknown: {
       Icon: CircleHelp,
-      label: "Profil nie ausgefüllt — Capture Card unbekannt",
+      label: "Profil nie ausgefüllt, Capture Card unbekannt",
       tone: "text-[#9a4b00] dark:text-brand-orange",
     },
   }[state];

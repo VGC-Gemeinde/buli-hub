@@ -63,8 +63,8 @@ export function MotwManager({
   if (!week) {
     return (
       <EmptyStateCard title="Kein Spielplan" informational>
-        Für diese Saison sind noch keine Spieltage angelegt — ohne Spielplan
-        gibt es nichts zu wählen.
+        Für diese Saison sind noch keine Spieltage angelegt. Ohne Spielplan gibt
+        es nichts zu wählen.
       </EmptyStateCard>
     );
   }
@@ -169,7 +169,7 @@ function WeekPanel({ week }: { week: MotwWeek }) {
           {week.state === "current"
             ? "Der aktuelle Spieltag läuft noch ohne Match of the Week."
             : week.state === "past"
-              ? "Dieser Spieltag ist vorbei und blieb ohne Match of the Week — es lässt sich noch nachtragen."
+              ? "Dieser Spieltag ist vorbei und blieb ohne Match of the Week. Nachtragen ist noch möglich."
               : "Für diesen Spieltag ist noch kein Match of the Week gewählt."}
         </p>
       )}
@@ -275,8 +275,8 @@ function PickPanel({
         </div>
       ) : (
         <p className="text-[12.5px] text-muted-foreground">
-          Vergangene Spieltage lassen sich nicht mehr umwählen — nur der
-          VOD-Link bleibt änderbar.
+          Vergangene Spieltage lassen sich nicht mehr umwählen. Nur der VOD-Link
+          bleibt änderbar.
         </p>
       )}
     </div>

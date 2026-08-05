@@ -91,7 +91,7 @@ export async function selectMotw(input: {
     return {
       ok: false,
       error:
-        "Vergangene Spieltage lassen sich nicht mehr umwählen — nur der VOD-Link bleibt änderbar",
+        "Vergangene Spieltage lassen sich nicht mehr umwählen. Nur der VOD-Link bleibt änderbar.",
     };
   }
   const previous = selections.find((s) => s.round === context.round) ?? null;

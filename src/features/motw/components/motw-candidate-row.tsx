@@ -119,7 +119,7 @@ function rowMarker(
     return {
       label: "nicht aufnehmbar",
       title:
-        "Keiner der beiden Spieler hat eine Capture Card — dieses Match lässt sich nicht aufnehmen",
+        "Keiner der beiden Spieler hat eine Capture Card. Dieses Match lässt sich nicht aufnehmen.",
       tone: "bad",
     };
   }
@@ -127,7 +127,7 @@ function rowMarker(
     return {
       label: "Capture Card unklar",
       title:
-        "Mindestens einer der beiden hat sein Profil nie ausgefüllt — vor der Wahl nachfragen, ob eine Capture Card vorhanden ist",
+        "Mindestens einer der beiden hat sein Profil nie ausgefüllt. Vor der Wahl nachfragen, ob eine Capture Card vorhanden ist.",
       tone: "warn",
     };
   }

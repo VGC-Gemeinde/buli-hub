@@ -188,7 +188,7 @@ function WeekChip({
       type="button"
       role="tab"
       aria-selected={active}
-      title={`Spieltag ${week.round} — ${MARK_LABEL[state]}${
+      title={`Spieltag ${week.round}: ${MARK_LABEL[state]}${
         isCurrent ? " · aktueller Spieltag" : ""
       }`}
       onClick={onSelect}

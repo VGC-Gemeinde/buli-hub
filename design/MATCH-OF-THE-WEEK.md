@@ -83,7 +83,7 @@ Content column `gap-6 px-8 py-6` (26/32/24 in the reference), three rows:
      bg-white/8 border border-brand-orange/65 px-5 py-[11px] text-sm
      font-semibold text-white` with a leading eye icon (16px, orange stroke),
      label **Ergebnis aufdecken**; hover `bg-brand-orange/18`. Caption:
-     **Spoiler-Schutz — erst das VOD ansehen**.
+     **Spoiler-Schutz: erst das VOD ansehen**.
   3. **Revealed** (client-side `useState`, as shipped): score
      `font-heading 46px tabular-nums` **2 : 1** + caption
      **Best of 3 · gemeldet**.

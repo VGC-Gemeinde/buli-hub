@@ -83,7 +83,7 @@ Content column `gap-6 px-8 py-6` (26/32/24 in the reference), three rows:
      bg-white/8 border border-brand-orange/65 px-5 py-[11px] text-sm
      font-semibold text-white` with a leading eye icon (16px, orange stroke),
      label **Ergebnis aufdecken**; hover `bg-brand-orange/18`. Caption:
-     **Spoiler-Schutz — erst das VOD ansehen**.
+     **Spoiler-Schutz: erst das VOD ansehen**.
   3. **Revealed** (client-side `useState`, as shipped): score
      `font-heading 46px tabular-nums` **2 : 1** + caption
      **Best of 3 · gemeldet**.
@@ -150,67 +150,160 @@ addition: a **Wieder verdecken** text link (12.5px muted, underlined),
 right-aligned on the kicker row (`ml-auto`), which flips the spoiler state
 back. Reveal state stays client-only — a courtesy tag, not security.
 
-## 5. Staff — `/staff/motw` manager (`motw-manager.tsx`)
+## 5. Staff — `/staff/motw` workspace (`motw-manager.tsx`)
 
+One Spieltag at a time across the full page (container **1040px**, the
+sanctioned wide width, `DESIGN.md` §8.5), paged through the whole season. Which
+weeks are editable is a domain rule, not a view decision — see §5.6.
 Header: standard `SiteHeader` breadcrumb **Staff-Bereich / Match of the
 Week**. Page head: back link **← Staff-Bereich**, orange tick + `h1`
 **Match of the Week** (30px), intro line 14px muted: „Ein Match pro Spieltag,
-ligaweit über alle Divisionen. Die Auswahl gilt für den aktuellen und den
-nächsten Spieltag."
+ligaweit über alle Divisionen. Der aktuelle und jeder kommende Spieltag lassen
+sich wählen; bei vergangenen bleibt der VOD-Link änderbar."
 
-### 5.1 Week cards — `grid gap-5 lg:grid-cols-2 items-start`
+The workspace opens on the round that needs work (`initialMotwRound`);
+`?spieltag=n` overrides it, which is how the dashboard todo deep-links.
 
-Card `rounded-xl border px-5 py-5 flex flex-col gap-4`:
+### 5.1 Season pager (`motw-week-pager.tsx`)
 
-- **Head**: `h2` **Spieltag {n}** (21px) + status chip — current week
-  `bg-brand-orange/12 border-brand-orange/50 text-[#9a4b00]`
-  **Aktuelle Woche**, next week neutral (`bg-muted border text-muted-
-  foreground`) **Nächste Woche** — 11px bold uppercase pill; dates
-  right-aligned, 13px muted tabular.
-- **Selected pick box** (when a selection exists): `rounded-[10px] border
-  border-brand-orange/40 bg-brand-orange/5 px-4 py-3.5` — badge-style pill
-  reading **Gewählt** (§1.1 anatomy), pairing 15px semibold with muted
-  „vs." and `· Div {group}`, then actions: outline **Anderes Match wählen**
-  (toggles the picker; label flips to **Auswahl schließen**) and outline
-  **Entfernen** in destructive text.
-- **No pick**: one muted line „Für diesen Spieltag ist noch kein Match of the
-  Week gewählt." — the picker list is open by default.
+`w-fit max-w-full` so the chevrons stay next to the strip in a short season and
+a long one fills the width and scrolls. Outline icon buttons **‹ ›** flank a
+horizontally scrolling chip row; the open week is scrolled into view.
 
-### 5.2 Picker list (open while picking or unpicked)
+Chip `w-[42px] flex-col items-center gap-1.5 rounded-lg border py-1.5`: round
+number (13px semibold tabular) over a state mark. The marks are **shapes**, not
+colors, and a legend line below the strip (11.5px muted) spells them out:
 
-**New vs shipped: a division filter row** above the list — chips `rounded-full
-px-3 py-1 text-[12.5px]` (**Alle · Div. 1 · Div. 2a · …**), active chip
-`bg-brand-blue text-white`. With 14 groups the flat list is unusable without
-it; derive the chip set from the round's matches.
+| State | Mark |
+|---|---|
+| Gewählt · VOD da | filled `size-[7px]` orange dot |
+| Gewählt · VOD fehlt | `border-[1.5px]` orange ring |
+| Offen | `h-[2px] w-2.5` dash at 30% |
 
-Rows `flex items-center gap-3 rounded-lg border px-3 py-2 max-h-[300px]
-overflow-y-auto` (list scrolls, card doesn't grow): group label (11px
-semibold uppercase muted, fixed width), pairing (13.5px, muted „vs."),
-trailing **Wählen** button (outline sm). The currently selected row's button
-becomes **✓ Gewählt** — `border-brand-orange/55 bg-brand-orange/12
-text-[#9a4b00]`, non-interactive.
+Open week: `border-brand-blue bg-brand-blue text-white`. Current Spieltag:
+`border-brand-orange/70`, or `ring-2 ring-brand-orange ring-offset-2` when it is
+also the open one. Each chip carries a `title` naming its state.
 
-### 5.3 VOD field (selected weeks + past picks)
+This strip replaced the former „Frühere Spieltage" list — the VOD-fehlt ring is
+what surfaced that open task, without a second list to work through.
 
-Label **YouTube-VOD** (13px), input + primary **Speichern** (orange, white
-text). Hint line 12px muted: with link „Link gesetzt — Feld leeren und
-speichern entfernt ihn.", without „Noch kein VOD verlinkt." — never promise
-upload timing (VODs usually land during the Spieltag, but not guaranteed).
+### 5.2 Week head
 
-### 5.4 Frühere Spieltage
+Hand-rolled to `SectionHeader` anatomy (tick M + 24px condensed `h2` +
+`border-b pb-3`) so the state chip can sit beside the title: **Spieltag {n}** +
+11px bold uppercase pill — **Aktuelle Woche** loud
+(`border-brand-orange/50 bg-brand-orange/12 text-[#9a4b00]`), **Kommende
+Woche** / **Vergangen** neutral. Dates right-aligned, 13px muted tabular. A past
+week's tick is `neutral`, not orange.
 
-Section header **Frühere Spieltage** + meta „VOD-Links nachträglich
-anhängen". One row per past pick (`rounded-[10px] border px-4 py-3`):
-round label · pairing · then either
+### 5.3 Pick panel
 
-- **link chip** — `rounded-full border bg-muted px-3 py-1 text-[12.5px]` with
-  a small orange play icon and the shortened URL (`youtu.be/xK92dQ…`) +
-  outline **Ändern** button (swaps to the inline input), or
-- **inline input + Speichern** when no link yet; that row is flagged
-  `border-brand-orange/45 bg-brand-orange/[0.04]` — the open task is visible
-  at a glance.
+`rounded-xl border border-brand-orange/40 bg-brand-orange/5 px-6 py-5`, the
+billboard's broadcast anatomy at reading scale so the staff view and the public
+block read as the same object:
 
-Past picks themselves stay immutable (VOD only), as in the domain rules.
+- Meta row: **Gewählt** badge (§1.1) · `DIV 2C` · `gemeldet` chip when reported
+  · `nicht aufnehmbar` chip when neither player has a capture card ·
+  **Zum Match →** at `ml-auto`.
+- Matchup `grid-cols-[1fr_auto_1fr]`, `mx-auto max-w-[640px]` — at full panel
+  width the avatars strand themselves at the edges and it stops reading as one
+  unit. Names `font-heading` 22px uppercase, `PlayerLink`ed.
+- VOD field above a `border-brand-orange/25` divider (§5.5).
+- Actions (editable weeks only): outline **Anderes Match wählen** (label flips
+  to **Auswahl schließen**) and outline **Entfernen** in destructive text. A
+  settled past week shows the sentence „Vergangene Spieltage lassen sich nicht
+  mehr umwählen — nur der VOD-Link bleibt änderbar." instead.
+
+**No pick**: one line above an open picker —
+`emphasisSurface("destructive")` when the running Spieltag is the unpicked one
+(matching the urgent todo card), quiet `border bg-muted/40` otherwise. A past
+week that was missed says so and offers the picker anyway („…es lässt sich noch
+nachtragen."), because a finished week without a pick is still editable (§5.6).
+
+### 5.4 Picker (`motw-candidate-row.tsx`, `motw-player.tsx`)
+
+Toolbar, left: the **division** filter — **Alle** · a 1px `bg-border` divider ·
+**Division 1 … Division n**. The division chips **combine** (they are not
+one-at-a-time), the top two divisions come preselected, and **Alle** is a
+select-all/clear-all toggle that reads active only when every division is
+selected. Filtering by division rather than sub-division keeps the row to one
+line in a seven-division league.
+
+Right: a `fieldset` segmented control carrying a **Sortierung** micro-label
+(11px semibold uppercase `tracking-[0.12em]` muted, `aria-hidden` — the
+`sr-only` legend already names the group) plus **Division / Platzierung** (best
+combined placement first), and separately a **Nur aufnehmbar** toggle, shown
+only when the round actually has unrecordable pairings. The label sits *inside*
+the pill: without it the two sort options and the filter chip read as three
+chips of the same kind.
+
+Every active chip and sort segment is **solid `bg-brand-orange` with white
+`font-semibold` text** — orange is the „active" surface (§8.1/§8.2), and 12.5px
+on solid orange needs the weight. Inactive chips stay outlined and muted. The
+pager's open-week chip is the deliberate exception and stays navy: there orange
+already means „aktueller Spieltag".
+
+Below the toolbar a count line „{n} von {m} Matches". The list scrolls with the
+page — a nested scroll area fights the filters that make the list short in the
+first place. With nothing selected the list reads „Keine Division ausgewählt."
+
+Row = one `<button>` (picking means scanning; hunting a small trailing button
+per candidate is the slow way), `grid-cols-[60px_1fr_auto_1fr_236px]`. The
+trailing column is **fixed, not `auto`** — markers appear on some rows only and
+an `auto` width would shift the avatar columns row to row.
+
+- Group label (11px semibold uppercase muted).
+- Both players mirrored around a centered **vs.**: avatars outside, names
+  meeting in the middle, so the two placement chips of a matchup sit next to
+  each other and scan straight down the list. Name 16px semibold; below it
+  `#{rank}` in a `rounded-md bg-muted` bold tabular chip and the `4–1` record
+  (both 15px, 16px in the pick panel), then the capture-card mark. No game
+  differential — table detail that does not change which matchup is worth
+  featuring, and it crowded the line.
+- **Capture card**, three states as three *shapes*, never color alone, each
+  with an `aria-label`/`title`: `Video` brand-orange = has one, `VideoOff`
+  muted = answered no, **`CircleHelp` orange = profile never filled in**, so
+  the stored `false` is a default rather than an answer. This is the per-player
+  answer to „who do I have to ask?".
+- **One marker per row**, most important first — recordability decides the
+  pick, „already played" is context, and two chips of different weights side by
+  side read as clutter. All three share one outlined pill so the row never
+  looks assembled from spare parts: **nicht aufnehmbar**
+  (`border-destructive/45 text-destructive`), **Capture Card unklar**
+  (`border-brand-orange/55`, at least one profile untouched), **gemeldet**
+  (`border-border` muted).
+- Trailing affordance: bordered **Wählen**, filling
+  `group-hover:bg-brand-orange group-hover:text-white` with the row. The picked
+  row is non-interactive **✓ Gewählt** (`border-brand-orange/55
+  bg-brand-orange/12`) and the row itself takes the orange tint.
+
+Below `sm` the row stacks (group label + markers, then the two player lines,
+then the affordance) and all mirroring drops away.
+
+### 5.5 VOD field (`motw-vod-field.tsx`)
+
+Available on every round, past included — uploads lag the Spieltag. With a link
+set it collapses to the orange **Auf YouTube ansehen** button (play icon, white
+text) + outline **VOD-Link ändern**. Editing shows label **YouTube-VOD** (13px),
+input + primary **Speichern** (+ **Abbrechen** when a link already exists), hint
+12px muted: „Feld leeren und speichern entfernt den Link." / „Noch kein VOD
+verlinkt." — never promise upload timing.
+
+### 5.6 Which weeks are editable (`canSelectRound`)
+
+The view never decides this; it renders `week.editable`, which mirrors the
+domain rule enforced in `actions.ts`:
+
+| Week | Pick / replace / remove | VOD link |
+|---|---|---|
+| Running or later | yes | yes |
+| Past, no pick yet | **yes** — a missed week can be backfilled | yes |
+| Past, already picked | no | yes |
+
+A settled past week is left alone because re-picking it would flip spoiler
+protection back onto an already-public result and make Discord delete and
+repost that week's messages. Backfilling a week that never had a pick has no
+such history to disturb.
 
 ## 6. Staff dashboard — todo + entry point (`motw-todo-card.tsx`, `staff/page.tsx`)
 
@@ -239,14 +332,15 @@ Placement as shipped: `SeasonStrip` → todo card → `SaisonDashboard`, gap-4.5
    winner bolding there (§3)
 4. `motw-match-banner.tsx` / `motw-spoiler.tsx`: banner + cover styling,
    **Wieder verdecken** link on the revealed summary (§4)
-5. `motw-manager.tsx`: week-card head chips, selected pick box, division
-   filter chips, scrolling picker, ✓ Gewählt state, VOD hints, past-pick
-   link chips + missing-VOD row tint (§5)
+5. `motw-manager.tsx` + `motw-week-pager.tsx` + `motw-candidate-row.tsx` +
+   `motw-player.tsx` + `motw-vod-field.tsx`: season pager with shape marks,
+   week head chips, pick panel, picker rows with placement/record/capture
+   card, sort + filters, ✓ Gewählt state, VOD field (§5)
 6. `motw-todo-card.tsx`: variants per §6; orange buttons white text
    throughout (§1.2)
 7. `/dev/ui` gallery: billboard (unplayed / covered / revealed ×
-   with/without VOD), MotW match row, banner, spoiler cover, manager week
-   card (picked / unpicked), past row (with/without link), todo both
+   with/without VOD), MotW match row, banner, spoiler cover, workspace in
+   three weeks (current picked / future unpicked / past), todo both
    urgencies
 8. Verify both modes, `npx biome check --write .`, `npx tsc --noEmit`,
    `npm test -- --run`

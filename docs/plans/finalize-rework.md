@@ -52,7 +52,7 @@ matching the codebase's existing split.
   integration test names.
 - **UI (German „finalisieren"):** button „Einteilung finalisieren", dialog title
   „Einteilung finalisieren?", body „…wird finalisiert und kann danach nicht mehr
-  geändert werden.", pending „Wird finalisiert…", badge „Finalisiert —
+  geändert werden.", pending „Wird finalisiert…", badge „Finalisiert ·
   endgültig", notice „Die Einteilung wurde am … finalisiert und ist endgültig."
 - **Docs:** reword `division-seeding.md` and `seeding-auto-init.md` (which say
   „publish"/„not published") to match — docs describe the present.

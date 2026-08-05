@@ -135,7 +135,7 @@ export default async function PlayerProfilePage({
               </span>
               {season.dropped ? (
                 <span
-                  title="Spieler wurde gedroppt — alle Matches zählen als Freewin für die Gegner"
+                  title="Spieler wurde gedroppt, alle Matches zählen als Freewin für die Gegner"
                   className="rounded-full border border-destructive/40 bg-destructive/8 px-[7px] py-[2px] font-bold text-[10.5px] text-destructive uppercase tracking-[0.06em]"
                 >
                   Drop
@@ -150,7 +150,7 @@ export default async function PlayerProfilePage({
         ) : (
           <div className="mt-10">
             <EmptyStateCard title="Nicht in der laufenden Saison" informational>
-              Für diese Saison liegt keine Einteilung vor — sobald{" "}
+              Für diese Saison liegt keine Einteilung vor. Sobald{" "}
               {identity.name} in einer Division spielt, erscheinen hier Gruppe,
               Platzierung und Spielplan.
             </EmptyStateCard>

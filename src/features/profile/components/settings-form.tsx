@@ -106,7 +106,7 @@ export function SettingsForm({ initial }: SettingsFormProps) {
           Für die Orga
         </SectionHeader>
         <p className="text-muted-foreground text-sm leading-normal">
-          Alle Angaben hier sind freiwillig — sie helfen uns bei
+          Alle Angaben hier sind freiwillig. Sie helfen uns bei
           Social-Media-Posts und Liga-Content.
         </p>
       </div>

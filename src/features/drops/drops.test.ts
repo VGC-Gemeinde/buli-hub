@@ -124,10 +124,10 @@ describe("dropBannerText", () => {
   const names = { playerAName: "Alice", playerBName: "Bob" };
   it("names the free-win beneficiary", () => {
     expect(dropBannerText({ ...names, aDropped: true, bDropped: false })).toBe(
-      "Alice wurde gedroppt — das Match zählt als Freewin (2:0) für Bob.",
+      "Alice wurde gedroppt. Das Match zählt als Freewin (2:0) für Bob.",
     );
     expect(dropBannerText({ ...names, aDropped: false, bDropped: true })).toBe(
-      "Bob wurde gedroppt — das Match zählt als Freewin (2:0) für Alice.",
+      "Bob wurde gedroppt. Das Match zählt als Freewin (2:0) für Alice.",
     );
   });
   it("handles the double drop", () => {

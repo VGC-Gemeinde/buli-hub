@@ -407,6 +407,9 @@ export async function isParticipant(
 export type StaffMatchRow = {
   matchId: string;
   round: number;
+  // The division tier the match belongs to, alongside the already-formatted
+  // sub-division name — filtering by division needs the number, not the label.
+  tier: number;
   groupName: string;
   endsOn: string | null;
   playerA: Identity;
@@ -507,6 +510,7 @@ export async function windowMatchOverview(
     return {
       matchId: row.matchId,
       round: row.round,
+      tier: row.tier,
       groupName: subDivisionName(row.tier, row.position),
       endsOn: row.endsOn,
       playerA: toIdentity({

@@ -83,9 +83,9 @@ export function dropBannerText(input: {
   bDropped: boolean;
 }): string {
   if (input.aDropped && input.bDropped) {
-    return `${input.playerAName} und ${input.playerBName} wurden gedroppt — das Match zählt als Doppelniederlage.`;
+    return `${input.playerAName} und ${input.playerBName} wurden gedroppt. Das Match zählt als Doppelniederlage.`;
   }
   const dropped = input.aDropped ? input.playerAName : input.playerBName;
   const opponent = input.aDropped ? input.playerBName : input.playerAName;
-  return `${dropped} wurde gedroppt — das Match zählt als Freewin (2:0) für ${opponent}.`;
+  return `${dropped} wurde gedroppt. Das Match zählt als Freewin (2:0) für ${opponent}.`;
 }

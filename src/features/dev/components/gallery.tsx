@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { DateTimePicker } from "@/components/date-picker";
 import { EmptyStateCard } from "@/components/empty-state-card";
+import { FieldError } from "@/components/field-error";
 import { ActionLink, InlineLink } from "@/components/links";
 import { PlayerGrid, type RegisteredPlayer } from "@/components/player-grid";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
@@ -22,14 +25,15 @@ import {
 } from "@/features/feedback/components/feedback-panel";
 import { canSend, type FeedbackKind } from "@/features/feedback/feedback";
 import { MotwBlock } from "@/features/motw/components/motw-block";
-import {
-  MotwManager,
-  type MotwPastPick,
-  type MotwWeek,
-} from "@/features/motw/components/motw-manager";
+import { MotwManager } from "@/features/motw/components/motw-manager";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
 import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
-import type { MotwBlockData } from "@/features/motw/motw";
+import type {
+  MotwBlockData,
+  MotwCandidate,
+  MotwPlayer,
+  MotwWeek,
+} from "@/features/motw/motw";
 import { ProfileSpielplan } from "@/features/player-profile/components/profile-schedule";
 import type { ProfileScheduleRow } from "@/features/player-profile/profile";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
@@ -67,6 +71,7 @@ import {
 import { SAISON_9 } from "@/features/regelwerk/content/saison-9";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
+import { RegistrationForm } from "@/features/registration/components/registration-form";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { DisputeResolveDialog } from "@/features/reporting/components/dispute-resolve-dialog";
 import { PublicMatchView } from "@/features/reporting/components/public-match-view";
@@ -263,6 +268,7 @@ const staffRow = (
 ): StaffMatchRow => ({
   matchId,
   round,
+  tier: Number(groupName.replace("Division ", "").charAt(0)) || 1,
   groupName,
   endsOn: "2026-07-07",
   playerA: { userId: `${matchId}a`, name: a, avatarUrl: null },
@@ -653,53 +659,148 @@ const MOTW_OPEN: MotwBlockData = {
   rankB: 4,
 };
 
-// Staff manager fixtures: a picked current week, an unpicked next week (open
-// picker with division filter), and past picks with and without a VOD link.
-const MOTW_WEEK_MATCHES: MotwWeek["matches"] = [
-  ["Division 1a", "Wooloo", "Falinks"],
-  ["Division 1a", "Pawmi", "Tinkatink"],
-  ["Division 1b", "Mika", "Nico"],
-  ["Division 2a", "Luca", "Finn"],
-].map(([groupName, playerAName, playerBName], i) => ({
-  matchId: `wm${i}`,
-  groupName,
-  playerAName,
-  playerBName,
-}));
+// Staff workspace fixtures. The player rows carry every variation the picker
+// has to survive: missing placement, dropped player, both capture-card states,
+// and a pairing nobody can record.
+function motwPlayer(
+  name: string,
+  rank: number | null,
+  wins: number,
+  losses: number,
+  hasCaptureCard: boolean,
+  dropped = false,
+  profileEdited = true,
+): MotwPlayer {
+  return {
+    userId: `motw-${name}`,
+    name,
+    avatarUrl: null,
+    rank,
+    wins,
+    losses,
+    hasCaptureCard,
+    profileEdited,
+    dropped,
+  };
+}
+
+function motwCandidate(
+  round: number,
+  index: number,
+  groupName: string,
+  playerA: MotwPlayer,
+  playerB: MotwPlayer,
+  reported = false,
+): MotwCandidate {
+  return {
+    matchId: `wm${round}-${index}`,
+    round,
+    tier: Number(groupName.replace("Division ", "").charAt(0)),
+    groupName,
+    playerA,
+    playerB,
+    reported,
+  };
+}
+
+function motwCandidates(round: number): MotwCandidate[] {
+  return [
+    motwCandidate(
+      round,
+      0,
+      "Division 1a",
+      motwPlayer("Wooloo", 1, 4, 0, true),
+      motwPlayer("Falinks", 2, 3, 1, true),
+      true,
+    ),
+    motwCandidate(
+      round,
+      1,
+      "Division 1a",
+      motwPlayer("Pawmi", 3, 2, 2, true),
+      motwPlayer("Tinkatink", 8, 0, 4, false),
+    ),
+    motwCandidate(
+      round,
+      2,
+      "Division 1b",
+      // Neither has a card on record and Nico never saved a profile, so this
+      // pairing is „Capture Card unklar" rather than „nicht aufnehmbar".
+      motwPlayer("Blaubeerkuchenbäckermeisterin Annegret", 4, 2, 2, false),
+      motwPlayer("Nico", 5, 2, 2, false, false, false),
+    ),
+    motwCandidate(
+      round,
+      3,
+      "Division 2a",
+      motwPlayer("Luca", null, 0, 0, true),
+      motwPlayer("Finn", 6, 1, 3, true, true),
+    ),
+    // Division 3 sits outside the default filter (top two divisions), so the
+    // gallery shows the „Alle"-toggle actually having something to add.
+    motwCandidate(
+      round,
+      4,
+      "Division 3a",
+      motwPlayer("Maushold", 1, 3, 1, true),
+      motwPlayer("Kilowattrel", 2, 3, 1, true),
+    ),
+  ];
+}
+
+// Every week state the workspace has: a past one that was missed (still
+// backfillable), a past one that is settled, the running week, and two open
+// future weeks.
 const MOTW_WEEKS: MotwWeek[] = [
   {
+    round: 1,
+    state: "past",
+    startsOn: "2026-01-05",
+    endsOn: "2026-01-11",
+    candidates: motwCandidates(1),
+    selection: null,
+    selectedMatch: null,
+    editable: true,
+  },
+  {
     round: 2,
-    current: true,
+    state: "past",
     startsOn: "2026-01-12",
     endsOn: "2026-01-18",
-    matches: MOTW_WEEK_MATCHES,
-    selection: { matchId: "wm0", youtubeUrl: null },
+    candidates: motwCandidates(2),
+    selection: { matchId: "wm2-1", youtubeUrl: "https://youtu.be/xK92dQvgc" },
+    selectedMatch: motwCandidates(2)[1],
+    editable: false,
   },
   {
     round: 3,
-    current: false,
+    state: "current",
     startsOn: "2026-01-19",
     endsOn: "2026-01-25",
-    matches: MOTW_WEEK_MATCHES,
+    candidates: motwCandidates(3),
+    selection: { matchId: "wm3-0", youtubeUrl: null },
+    selectedMatch: motwCandidates(3)[0],
+    editable: true,
+  },
+  {
+    round: 4,
+    state: "future",
+    startsOn: "2026-01-26",
+    endsOn: "2026-02-01",
+    candidates: motwCandidates(4),
     selection: null,
-  },
-];
-const MOTW_PAST: MotwPastPick[] = [
-  {
-    round: 1,
-    matchId: "wm1",
-    youtubeUrl: "https://youtu.be/xK92dQvgc",
-    groupName: "Division 1a",
-    playerAName: "Pawmi",
-    playerBName: "Tinkatink",
+    selectedMatch: null,
+    editable: true,
   },
   {
-    round: 0,
-    matchId: "wm2",
-    youtubeUrl: null,
-    groupName: "Division 1b",
-    playerAName: "Mika",
-    playerBName: "Nico",
+    round: 5,
+    state: "future",
+    startsOn: "2026-02-02",
+    endsOn: "2026-02-08",
+    candidates: motwCandidates(5),
+    selection: null,
+    selectedMatch: null,
+    editable: true,
   },
 ];
 
@@ -1001,7 +1102,7 @@ export function Gallery() {
               title="Noch nicht geöffnet"
               action={<Button>Mit Discord anmelden</Button>}
             >
-              Die Anmeldung startet in Kürze — sie wird im Discord angekündigt.
+              Die Anmeldung startet in Kürze. Sie wird im Discord angekündigt.
             </EmptyStateCard>
             <EmptyStateCard title="Noch kein Ergebnis" informational>
               Sobald das Ergebnis gemeldet ist, erscheinen hier Spiele, Replays
@@ -1151,6 +1252,56 @@ export function Gallery() {
         <h2 className="text-2xl">Profil-Hinweis (Anmeldung + Dashboard)</h2>
         <Specimen label="Hinweis">
           <ProfileHint />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Formularfehler</h2>
+        <Specimen label="FieldError (Pflichtfeld · Format · Bereich)">
+          <div className="flex max-w-sm flex-col gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="gallery-division">Division</Label>
+              <Input
+                id="gallery-division"
+                defaultValue="3b"
+                aria-invalid
+                aria-describedby="gallery-division-error"
+              />
+              <FieldError
+                id="gallery-division-error"
+                message="Bitte nur Ziffern eingeben, zum Beispiel 3"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="gallery-season">Letzte Saison</Label>
+              <Input
+                id="gallery-season"
+                defaultValue=""
+                aria-invalid
+                aria-describedby="gallery-season-error"
+              />
+              <FieldError id="gallery-season-error" message="Pflichtfeld" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="gallery-placement">Platzierung</Label>
+              <Input
+                id="gallery-placement"
+                defaultValue="0"
+                aria-invalid
+                aria-describedby="gallery-placement-error"
+              />
+              <FieldError id="gallery-placement-error" message="Mindestens 1" />
+            </div>
+          </div>
+        </Specimen>
+        <Specimen label="Anmeldeformular: leer absenden zeigt alle Fehlerzustände">
+          <div className="max-w-xl">
+            <RegistrationForm
+              displayName="TestSpieler"
+              username="testspieler"
+              detectedReturning={false}
+            />
+          </div>
         </Specimen>
       </section>
 
@@ -1421,7 +1572,7 @@ export function Gallery() {
               ready: true,
               readOnly: false,
               gateShort: null,
-              gateHint: "Endgültig — kann nicht rückgängig gemacht werden.",
+              gateHint: "Endgültig, kann nicht rückgängig gemacht werden.",
               onOpen: () => {},
             }}
           />
@@ -1450,7 +1601,7 @@ export function Gallery() {
               ready: true,
               readOnly: true,
               gateShort: null,
-              gateHint: "Endgültig — kann nicht rückgängig gemacht werden.",
+              gateHint: "Endgültig, kann nicht rückgängig gemacht werden.",
               onOpen: () => {},
             }}
           />
@@ -1569,7 +1720,7 @@ export function Gallery() {
             <ProfileStaffPanel
               player={{ userId: "c", name: "Pawmi", groupName: "Division 1a" }}
               dropped
-              dropReason="Inaktivität — mehrfach nicht erreichbar."
+              dropReason="Inaktivität, mehrfach nicht erreichbar."
             />
           </div>
         </Specimen>
@@ -1599,7 +1750,7 @@ export function Gallery() {
               {
                 identity: { userId: "c", name: "Pawmi", avatarUrl: null },
                 groupName: "Division 1a",
-                reason: "Inaktivität — mehrfach nicht erreichbar.",
+                reason: "Inaktivität, mehrfach nicht erreichbar.",
                 droppedAt: new Date("2026-07-06T10:00:00Z"),
               },
             ]}
@@ -1622,8 +1773,17 @@ export function Gallery() {
         <Specimen label="Billboard — gemeldet, verdeckt, mit VOD-Button">
           <MotwBlock motw={MOTW_WITH_VOD} />
         </Specimen>
-        <Specimen label="Staff-Manager — Wochenkarten (gewählt / offen mit Filter) + frühere Spieltage (mit/ohne Link; Aktionen ohne Staff-Login wirkungslos)">
-          <MotwManager weeks={MOTW_WEEKS} past={MOTW_PAST} />
+        <Specimen label="Staff-Workspace — aktuelle Woche gewählt, VOD fehlt (Aktionen ohne Staff-Login wirkungslos)">
+          <MotwManager weeks={MOTW_WEEKS} currentRound={3} initialRound={3} />
+        </Specimen>
+        <Specimen label="Staff-Workspace — kommende Woche ohne Wahl (Picker offen: Divisionsfilter, Sortierung, Capture-Card-Filter, nicht aufnehmbare Paarung)">
+          <MotwManager weeks={MOTW_WEEKS} currentRound={3} initialRound={4} />
+        </Specimen>
+        <Specimen label="Staff-Workspace — vergangener Spieltag mit Wahl (nur VOD-Link änderbar)">
+          <MotwManager weeks={MOTW_WEEKS} currentRound={3} initialRound={2} />
+        </Specimen>
+        <Specimen label="Staff-Workspace — vergangener Spieltag ohne Wahl (nachträglich wählbar)">
+          <MotwManager weeks={MOTW_WEEKS} currentRound={3} initialRound={1} />
         </Specimen>
         <Specimen label="Match-Seite: Banner (ohne / mit VOD)">
           <div className="flex flex-col">

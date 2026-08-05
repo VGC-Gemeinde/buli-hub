@@ -39,12 +39,21 @@ async function staffGate() {
   return { ok: true as const, staffId: current.userId };
 }
 
-// The rounds currently open for picking in a window (current + next Spieltag).
-async function openRounds(windowId: string): Promise<Set<number>> {
+// The rounds currently open for setting a pick: the running Spieltag and every
+// later one, plus any past Spieltag that was never picked (a missed week can
+// still be backfilled). A past round that already has a pick is settled.
+async function openRounds(
+  windowId: string,
+  selections: readonly { round: number }[],
+): Promise<Set<number>> {
   const matchdays = await matchdaysForWindow(windowId);
   const today = germanToday();
   const current = currentMatchday(matchdays, today)?.round ?? null;
-  return selectableRounds(current, matchdays.length);
+  return selectableRounds(
+    current,
+    matchdays.length,
+    new Set(selections.map((s) => s.round)),
+  );
 }
 
 // Picks (or replaces) the Match of the Week of the match's own Spieltag.
@@ -76,18 +85,16 @@ export async function selectMotw(input: {
         "Ein Match mit einem gedroppten Spieler kann nicht Match of the Week sein",
     };
   }
-  const rounds = await openRounds(context.windowId);
+  const selections = await motwForWindow(context.windowId);
+  const rounds = await openRounds(context.windowId, selections);
   if (!rounds.has(context.round)) {
     return {
       ok: false,
       error:
-        "Nur Matches des aktuellen oder nächsten Spieltags können gewählt werden",
+        "Vergangene Spieltage lassen sich nicht mehr umwählen. Nur der VOD-Link bleibt änderbar.",
     };
   }
-  const previous =
-    (await motwForWindow(context.windowId)).find(
-      (s) => s.round === context.round,
-    ) ?? null;
+  const previous = selections.find((s) => s.round === context.round) ?? null;
   await upsertMotw({
     windowId: context.windowId,
     round: context.round,
@@ -118,11 +125,11 @@ export async function removeMotw(input: {
   if (!window) {
     return { ok: false, error: "Keine laufende Saison" };
   }
-  const rounds = await openRounds(window.id);
+  const rounds = await openRounds(window.id, await motwForWindow(window.id));
   if (!rounds.has(input.round)) {
     return {
       ok: false,
-      error: "Nur der aktuelle oder nächste Spieltag kann geändert werden",
+      error: "Vergangene Spieltage lassen sich nicht mehr ändern",
     };
   }
   const matchId = await deleteMotw(window.id, input.round);

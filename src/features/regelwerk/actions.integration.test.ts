@@ -14,6 +14,7 @@ import {
   registrations,
   registrationWindows,
 } from "@/db/schema";
+import { EMPTY_VETERAN_DRAFT } from "@/features/registration/registration";
 import { db } from "@/lib/db";
 
 // The properties that matter: acceptance is per season, it is idempotent, and
@@ -165,7 +166,10 @@ describe("register / withdraw", () => {
     return register({
       platform: "showdown",
       participatedBefore: false,
-      newPlayer: { skillSelfRating: 5, greatestAchievements: "" },
+      veteran: EMPTY_VETERAN_DRAFT,
+      skillSelfRating: 5,
+      greatestAchievements: "",
+      acceptedRules: true,
     });
   }
 

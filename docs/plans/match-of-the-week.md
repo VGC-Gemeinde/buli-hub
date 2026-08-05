@@ -24,7 +24,10 @@ Rudimentary-but-intentional design; hand-off + design pass come later.
 **In:**
 - **Selection** (staff+): pick one match per Spieltag — one MotW per
   `(window, round)`, league-wide across all divisions. Selectable rounds are
-  the **current and the next** Spieltag; a pick can be replaced or removed.
+  the **current Spieltag and every later one** (a pick can be replaced or
+  removed), **plus any past Spieltag that was never picked**, so a missed week
+  can still be backfilled. A past round that already has a pick is settled —
+  only its VOD link stays editable.
 - **Staff todo**: on the staff season dashboard, a todo item when the *next*
   round has no MotW yet (warning character); if the *current* round has none,
   it is replaced by a more urgent item for this week. Purely informational —
@@ -78,8 +81,12 @@ and round.
   `null | { round, urgency: "warning" | "urgent" }` — urgent when the current
   round is unselected, else warning when a next round exists and is
   unselected. `null` outside the regular season / after the last round.
-- `selectableRounds(currentRound, totalRounds)` — the rounds open for picking
-  (current + next); shared by the actions' round gate and the staff page.
+- `canSelectRound` / `selectableRounds` — the rounds open for picking (current
+  … last, plus unpicked past ones); shared by the actions' round gate and the
+  staff page.
+- `weekState` / `initialMotwRound` / `sortCandidates` / `recordability` /
+  `buildMotwWeeks` — the staff workspace's week model
+  (`docs/plans/motw-week-workspace.md`).
 - `findMotw(divisions, selection)` — locate the featured `PublicMatch` plus
   its group name inside the already-built overview divisions (no extra
   identity queries) for the prominent block.
@@ -116,10 +123,8 @@ and round.
   summary wrapped in `<MotwSpoiler>` (pairing header + cover card,
   click-to-reveal). Participants and staff see the result as usual.
 - **Staff** — new page `/staff/motw` (staff+ gate, redirects to `/staff`
-  without a schedule): `<MotwManager>` shows the current and next Spieltag
-  side by side — each with the pick (or none), a picker listing that round's
-  matches, replace/remove, and the YouTube URL field. Past rounds with a MotW
-  are listed below with editable YouTube URLs.
+  without a schedule): `<MotwManager>` is a one-week-at-a-time workspace with a
+  season pager. Full spec: `docs/plans/motw-week-workspace.md`.
 - **Staff season dashboard**: `<MotwTodoCard>` from `motwTodo` — warning
   variant ("Match of the Week für Spieltag N wählen") or urgent variant for
   the current round — linking to `/staff/motw`; the season strip carries a
@@ -137,7 +142,8 @@ and round.
 
 - Unit: `motwTodo` (unselected current → urgent; unselected next → warning;
   both unselected → urgent only; all selected / last round / off-season →
-  null), `selectableRounds` (the actions' round gate), `youtubeUrlSchema`
+  null), `selectableRounds` (the actions' round gate — covered from both sides
+  in `actions.integration.test.ts`), `youtubeUrlSchema`
   (https-only, domain allowlist, suffix-trick host), `findMotw` (found /
   unknown / bye).
 - Integration: unique `(window_id, round)` constraint; `upsertMotw` insert +

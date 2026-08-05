@@ -30,7 +30,7 @@ knows what the terminal dialog will do *before* opening it:
     <CreateScheduleDialog … />
   </div>
   <p className="text-[13px] text-muted-foreground">
-    {k} Gruppen · {n} Spieltage · {m} Spiele — die Saison startet mit der
+    {k} Gruppen · {n} Spieltage · {m} Spiele. Die Saison startet mit der
     Erstellung des Spielplans.
   </p>
 </div>
@@ -85,7 +85,7 @@ Hint row directly above the list (replaces the prose in the description):
 <div className="flex items-center gap-2">
   <div className="h-[7px] w-3.5 shrink-0 -skew-x-[18deg] bg-brand-orange" />
   <p className="text-[12.5px] text-muted-foreground">
-    Eine spätere Deadline verschiebt alle folgenden Spieltage mit — so planst
+    Eine spätere Deadline verschiebt alle folgenden Spieltage mit. So planst
     du Feiertage und Pausen ein.
   </p>
 </div>

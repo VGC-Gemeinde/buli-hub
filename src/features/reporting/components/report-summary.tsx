@@ -157,9 +157,9 @@ export function ReportSummary({
       <span>
         {covered
           ? spoilerMode === "motw"
-            ? "Match of the Week — Ergebnis verdeckt, erst das VOD ansehen."
-            : "Spoiler-Schutz aktiv — Sieger und Endstand sind verdeckt."
-          : "Ergebnis aufgedeckt — nur für dich, hier auf dieser Seite."}
+            ? "Match of the Week: Ergebnis verdeckt, erst das VOD ansehen."
+            : "Spoiler-Schutz aktiv. Sieger und Endstand sind verdeckt."
+          : "Ergebnis aufgedeckt, nur für dich auf dieser Seite."}
       </span>
       <button
         type="button"
@@ -206,7 +206,7 @@ export function ReportSummary({
             </p>
             <p className="text-muted-foreground text-sm">
               Ein Staff-Mitglied prüft die Meldung. Erst nach der Bestätigung
-              zählt der Freewin für die Tabelle — bis dahin bleibt das Match
+              zählt der Freewin für die Tabelle. Bis dahin bleibt das Match
               offen.
             </p>
           </div>
@@ -352,7 +352,7 @@ export function ReportSummary({
                       Spiel {game.gameNumber}
                     </span>
                     <span className="flex min-h-[31px] flex-1 items-center text-[13px] text-muted-foreground">
-                      Nicht gespielt — die Serie war nach zwei Spielen
+                      Nicht gespielt, die Serie war nach zwei Spielen
                       entschieden.
                     </span>
                   </div>
@@ -380,7 +380,7 @@ export function ReportSummary({
                       // Each game reveals independently — watch replay 1,
                       // peek game 1, stay unspoiled for the series.
                       <SpoilerPill
-                        title="Sieger verdeckt — antippen zum Aufdecken"
+                        title="Sieger verdeckt, antippen zum Aufdecken"
                         onReveal={() => revealGame(game.gameNumber)}
                         className="h-[13px] w-[88px]"
                       />
@@ -553,7 +553,7 @@ function ScoreBoard({
           {covered ? (
             <button
               type="button"
-              title="Ergebnis verdeckt — antippen zum Aufdecken"
+              title="Ergebnis verdeckt, antippen zum Aufdecken"
               aria-label="Ergebnis aufdecken"
               onClick={onReveal}
               className="cursor-pointer font-bold font-heading text-[56px] text-[oklch(0.82_0.015_263)] leading-none transition-colors hover:text-[oklch(0.65_0.03_263)] dark:text-white/25 dark:hover:text-white/45"
@@ -639,7 +639,7 @@ function PlayerRow({
       {covered ? (
         <button
           type="button"
-          title="Ergebnis verdeckt — antippen zum Aufdecken"
+          title="Ergebnis verdeckt, antippen zum Aufdecken"
           aria-label="Ergebnis aufdecken"
           onClick={onReveal}
           className="cursor-pointer font-bold font-heading text-[32px] text-[oklch(0.82_0.015_263)] leading-none transition-colors hover:text-[oklch(0.65_0.03_263)] dark:text-white/25 dark:hover:text-white/45"

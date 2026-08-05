@@ -78,11 +78,11 @@ export default function DatenschutzPage() {
 
       <h2>5. Öffentliche Anzeige</h2>
       <p>
-        Während einer laufenden Saison werden Tabellen, Paarungen und Ergebnisse
-        — einschließlich deines Anzeigenamens und Profilbilds — öffentlich auf
-        der Startseite der Plattform angezeigt. Dies ist für den Ligabetrieb und
-        die Transparenz gegenüber der Gemeinschaft erforderlich; Rechtsgrundlage
-        ist Art. 6 Abs. 1 lit. f DSGVO.
+        Während einer laufenden Saison werden Tabellen, Paarungen und
+        Ergebnisse, einschließlich deines Anzeigenamens und Profilbilds,
+        öffentlich auf der Startseite der Plattform angezeigt. Dies ist für den
+        Ligabetrieb und die Transparenz gegenüber der Gemeinschaft erforderlich;
+        Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.
       </p>
 
       <h2>6. Cookies</h2>

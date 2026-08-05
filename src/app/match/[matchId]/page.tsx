@@ -170,10 +170,10 @@ export default async function MatchReportPage({
           // the open case for participants + staff (§4.4).
           <div className="mt-8 flex flex-col gap-1.5 rounded-xl border border-destructive/35 bg-destructive/[0.06] px-6 py-5">
             <p className="font-semibold text-destructive text-sm">
-              Angefochten — in Prüfung
+              Angefochten · in Prüfung
             </p>
             <p className="text-muted-foreground text-sm">
-              „{dispute.reason}" — {dispute.openedByName ?? "—"}
+              „{dispute.reason}" · {dispute.openedByName ?? "—"}
             </p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               Das gemeldete Ergebnis zählt vorerst weiter, bis der Staff
@@ -183,7 +183,7 @@ export default async function MatchReportPage({
         ) : result && isParticipant ? (
           <div className="mt-10 border-t pt-5">
             <p className="mb-3 text-[13.5px] text-muted-foreground">
-              Stimmt etwas nicht? Ergebnisse sind final — eine Anfechtung wird
+              Stimmt etwas nicht? Ergebnisse sind final. Eine Anfechtung wird
               vom Staff geprüft.
             </p>
             <DisputeDialog matchId={match.matchId} />

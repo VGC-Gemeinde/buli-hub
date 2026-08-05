@@ -178,7 +178,7 @@ describe("finalizeGateHint", () => {
       finalizeGateHint(
         progress({ placed: 20, grouped: 20, postSeasonConfigured: true }),
       ),
-    ).toBe("Endgültig — kann nicht rückgängig gemacht werden.");
+    ).toBe("Endgültig, kann nicht rückgängig gemacht werden.");
   });
 });
 

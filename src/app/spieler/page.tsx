@@ -280,12 +280,12 @@ export default async function SpielerPage() {
         seasonName={seasonLabel}
         canWithdraw={false}
         closesAt={closesAt}
-        note="Die Anmeldung ist geschlossen. Du kannst deine Angaben nicht mehr ändern — warte auf deine Paarungen."
+        note="Die Anmeldung ist geschlossen. Du kannst deine Angaben nicht mehr ändern. Warte auf deine Paarungen."
       />
     ) : view === "not_registered_closed" ? (
       <SeasonMessagePanel
         title="Du bist in dieser Saison nicht dabei"
-        body="Die Anmeldung ist bereits geschlossen. Die nächste Chance kommt — schau im Discord vorbei."
+        body="Die Anmeldung ist bereits geschlossen. Die nächste Chance kommt. Schau im Discord vorbei."
       />
     ) : view === "not_placed" ? (
       <SeasonMessagePanel

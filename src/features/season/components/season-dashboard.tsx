@@ -101,7 +101,7 @@ function Hero({
     return (
       <section className="rounded-lg border px-[30px] py-[26px]">
         <p className="text-muted-foreground">
-          Deine Spiele sind gemeldet — die reguläre Saison ist für dich
+          Deine Spiele sind gemeldet. Die reguläre Saison ist für dich
           abgeschlossen.
         </p>
       </section>
@@ -125,7 +125,7 @@ function Hero({
           Spielfrei
         </p>
         <p className="mt-2 text-muted-foreground text-sm">
-          Diese Woche hast du kein Match — Zeit zum Vorbereiten.
+          Diese Woche hast du kein Match. Zeit zum Vorbereiten.
         </p>
       </section>
     );
@@ -192,7 +192,7 @@ function Hero({
           className="group flex flex-col items-start gap-2 sm:min-h-[74px] sm:items-end sm:justify-center"
         >
           <span className="rounded-full bg-brand-orange/12 px-4 py-2 font-semibold text-brand-blue text-sm dark:text-white">
-            Freewin — wartet auf Bestätigung
+            Freewin · wartet auf Bestätigung
           </span>
           <span className="inline-flex items-center gap-1 font-semibold text-brand-blue text-sm group-hover:underline dark:text-white">
             Ansehen{" "}

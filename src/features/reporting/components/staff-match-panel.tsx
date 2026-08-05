@@ -178,7 +178,7 @@ export function StaffMatchPanel({
           ) : null}
           <ActionRow
             title="Ergebnis zurücksetzen"
-            consequence="Löscht das Ergebnis — das Match kann neu gemeldet werden."
+            consequence="Löscht das Ergebnis. Das Match kann neu gemeldet werden."
           >
             <ConfirmDialog
               trigger="Zurücksetzen"
@@ -197,7 +197,7 @@ export function StaffMatchPanel({
           </ActionRow>
           <ActionRow
             title="Doppelniederlage vergeben"
-            consequence="Überschreibt das gemeldete Ergebnis — beide verlieren."
+            consequence="Überschreibt das gemeldete Ergebnis. Beide verlieren."
           >
             {doubleLoss}
           </ActionRow>
@@ -208,7 +208,7 @@ export function StaffMatchPanel({
         <>
           <ActionRow
             title="Freewin vergeben"
-            consequence="Ein Spieler erhält den Sieg. Begründung erforderlich — sofort gewertet."
+            consequence="Ein Spieler erhält den Sieg. Begründung erforderlich, sofort gewertet."
           >
             {award("Vergeben")}
           </ActionRow>

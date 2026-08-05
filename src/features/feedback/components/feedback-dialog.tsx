@@ -103,7 +103,7 @@ export function FeedbackDialog({
 
     if (files.length > room) {
       setError(
-        `Nur ${MAX_ATTACHMENTS} Bilder pro Meldung — der Rest wurde nicht übernommen.`,
+        `Nur ${MAX_ATTACHMENTS} Bilder pro Meldung. Der Rest wurde nicht übernommen.`,
       );
     }
   }
@@ -163,7 +163,7 @@ export function FeedbackDialog({
             <DialogDescription className="text-[13.5px] leading-relaxed">
               {canSubmitIdea
                 ? "Melde einen Fehler oder schlage eine Idee vor. Beides landet direkt bei den Organisatoren."
-                : "Etwas funktioniert nicht? Beschreibe kurz, was passiert ist — die Meldung landet direkt bei den Organisatoren."}
+                : "Etwas funktioniert nicht? Beschreibe kurz, was passiert ist. Die Meldung landet direkt bei den Organisatoren."}
             </DialogDescription>
           )}
         </DialogHeader>

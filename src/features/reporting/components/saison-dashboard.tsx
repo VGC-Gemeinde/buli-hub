@@ -229,7 +229,7 @@ export function SaisonDashboard({
                     </Link>
                     {m.dispute ? (
                       <p className="truncate text-[13px] text-muted-foreground">
-                        „{m.dispute.reason}" — {m.dispute.openedByName ?? "—"}
+                        „{m.dispute.reason}" · {m.dispute.openedByName ?? "—"}
                       </p>
                     ) : null}
                   </div>
@@ -277,7 +277,7 @@ export function SaisonDashboard({
                     </Link>
                     {m.freeWinReason ? (
                       <p className="truncate text-[13px] text-muted-foreground">
-                        „{m.freeWinReason}" — gemeldet von{" "}
+                        „{m.freeWinReason}" · gemeldet von{" "}
                         {m.reporterName ?? "—"}
                         {m.reportedAt
                           ? `, ${reportedAtLabel(m.reportedAt)}`
@@ -393,7 +393,7 @@ export function SaisonDashboard({
                         {d.playerB.name}
                       </Link>
                       <p className="truncate text-[13px] text-muted-foreground">
-                        „{d.reason}" — {d.openedByName ?? "—"}
+                        „{d.reason}" · {d.openedByName ?? "—"}
                       </p>
                     </div>
                   </div>

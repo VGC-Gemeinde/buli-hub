@@ -87,7 +87,7 @@ export function finalizeGateHint(progress: SeedingProgress): string {
   if (!replayConfigured) {
     return "Erst festlegen, bis zu welcher Division Replays Pflicht sind.";
   }
-  return "Endgültig — kann nicht rückgängig gemacht werden.";
+  return "Endgültig, kann nicht rückgängig gemacht werden.";
 }
 
 // The one-line blocker under the finalize step — the gate hint's short form,

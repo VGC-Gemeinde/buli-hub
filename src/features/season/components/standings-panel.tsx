@@ -143,7 +143,7 @@ export function StandingsTable({
                       ) : null}
                       {row.dropped ? (
                         <span
-                          title="Spieler wurde gedroppt — alle Matches zählen als Freewin für die Gegner"
+                          title="Spieler wurde gedroppt, alle Matches zählen als Freewin für die Gegner"
                           className="shrink-0 rounded-full border border-destructive/40 bg-destructive/8 px-[7px] py-[2px] font-bold text-[10.5px] text-destructive uppercase tracking-[0.06em]"
                         >
                           Drop
@@ -251,10 +251,10 @@ export function StandingsPanel({
   const showDivision = divisionMode && scope === "division";
 
   const context = !divisionMode
-    ? "Auf- und Abstieg wird innerhalb deiner Gruppe entschieden — die markierten Plätze gelten."
+    ? "Auf- und Abstieg wird innerhalb deiner Gruppe entschieden. Die markierten Plätze gelten."
     : showDivision
-      ? "Auf- und Abstieg wird über die Gesamttabelle der Division entschieden — die markierten Plätze gelten."
-      : `Nur zur Orientierung — Auf- und Abstieg wird über die Gesamttabelle (${divisionName}) entschieden.`;
+      ? "Auf- und Abstieg wird über die Gesamttabelle der Division entschieden. Die markierten Plätze gelten."
+      : `Nur zur Orientierung. Auf- und Abstieg wird über die Gesamttabelle (${divisionName}) entschieden.`;
 
   return (
     <div className="flex flex-col gap-3">

@@ -195,7 +195,7 @@ export function DropPlayerDialog({
           <DialogDescription>
             {fixed ? `${fixed.name} (${fixed.groupName}): alle` : "Alle"}{" "}
             Matches des Spielers zählen ab sofort als Freewin (2:0) für die
-            Gegner — auch bereits gespielte. Gespeicherte Ergebnisse und Replays
+            Gegner, auch bereits gespielte. Gespeicherte Ergebnisse und Replays
             bleiben als Historie erhalten; der Drop lässt sich aufheben.
           </DialogDescription>
         </DialogHeader>
@@ -216,7 +216,7 @@ export function DropPlayerDialog({
                 <SelectContent>
                   {candidates.map((candidate) => (
                     <SelectItem key={candidate.userId} value={candidate.userId}>
-                      {candidate.name} — {candidate.groupName}
+                      {candidate.name} · {candidate.groupName}
                     </SelectItem>
                   ))}
                 </SelectContent>

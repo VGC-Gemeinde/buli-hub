@@ -289,7 +289,7 @@ export default async function StaffPage() {
                   <p className="text-[13px] text-muted-foreground">
                     {scheduleSetup.groups} Gruppen ·{" "}
                     {scheduleSetup.deadlines.length} Spieltage ·{" "}
-                    {scheduleSetup.matches} Spiele — die Saison startet mit der
+                    {scheduleSetup.matches} Spiele. Die Saison startet mit der
                     Erstellung des Spielplans.
                   </p>
                 ) : null}

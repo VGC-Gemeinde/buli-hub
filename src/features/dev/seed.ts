@@ -211,32 +211,96 @@ export async function clearSeedData() {
   );
 }
 
-// Builds the seeding up to the grouping step: picks a division count,
-// distributes players round-robin across divisions and generates
-// sub-divisions. Post-season rules and finalize are deliberately left out —
-// this is the state right before the „Auf- & Abstieg" step.
+// The shape a seeded league is built to. `groupsPerDivision` (in tier order)
+// switches the player distribution from round-robin to exact slices, which is
+// the only way to give divisions different group counts; `divisionTableTier`
+// marks the one division decided by its Gesamttabelle.
+export type DevSeedingShape = {
+  divisionCount: number;
+  size: number;
+  groupsPerDivision?: readonly number[];
+  divisionTableTier?: number;
+};
+
+// The default shape of a seeded running season: seven divisions of two groups,
+// except Division 4 with five — and Division 4 alone is decided by its
+// Gesamttabelle, everything else by group tables.
+//
+// Both oddities are deliberate. A uniform two-division season never exercised
+// the division-mode ranking path or an irregular group count, so bugs in either
+// only showed up against production data. This shape keeps a league-sized
+// division list (the MotW picker's filter, the Liga-Übersicht switcher) and both
+// table modes present in every local season.
+export const DEV_DIVISION_GROUPS = [2, 2, 2, 5, 2, 2, 2] as const;
+export const DEV_GROUP_SIZE = 8;
+export const DEV_DIVISION_TABLE_TIER = 4;
+
+export function devShapePlayerCount(
+  groupsPerDivision: readonly number[],
+  size: number,
+): number {
+  return groupsPerDivision.reduce((sum, groups) => sum + groups, 0) * size;
+}
+
+export const DEV_SEASON_SHAPE: DevSeedingShape = {
+  divisionCount: DEV_DIVISION_GROUPS.length,
+  size: DEV_GROUP_SIZE,
+  groupsPerDivision: DEV_DIVISION_GROUPS,
+  divisionTableTier: DEV_DIVISION_TABLE_TIER,
+};
+
+// Builds the seeding up to the grouping step: creates the divisions,
+// distributes players across them and generates sub-divisions. Post-season
+// rules and finalize are deliberately left out — this is the state right before
+// the „Auf- & Abstieg" step.
 async function groupDevSeeding(
   windowId: string,
-  divisionCount: number,
-  size: number,
+  shape: DevSeedingShape,
 ): Promise<void> {
-  await saveSeedingConfig(windowId, size, divisionCount);
+  await saveSeedingConfig(windowId, shape.size, shape.divisionCount);
   const players = await listSeedingPlayers(windowId);
-  const divisions = await listDivisions(windowId);
+  const divisions = (await listDivisions(windowId)).sort(
+    (a, b) => a.tier - b.tier,
+  );
   if (divisions.length === 0) {
     return;
   }
 
   const byDivision = new Map<string, string[]>();
-  players.forEach((player, i) => {
-    const division = divisions[i % divisions.length];
-    const list = byDivision.get(division.id);
-    if (list) {
-      list.push(player.userId);
-    } else {
-      byDivision.set(division.id, [player.userId]);
+  const { groupsPerDivision } = shape;
+  if (groupsPerDivision) {
+    // Exact slices: `generateSubDivisions` derives the group count from a
+    // division's player count, so `groups × size` players is what makes a
+    // division come out at the requested number of equal groups.
+    let index = 0;
+    divisions.forEach((division, i) => {
+      const take = (groupsPerDivision[i] ?? 1) * shape.size;
+      byDivision.set(
+        division.id,
+        players.slice(index, index + take).map((player) => player.userId),
+      );
+      index += take;
+    });
+    // A miscounted registration total would otherwise silently drop players;
+    // park the remainder in the last division instead.
+    if (index < players.length) {
+      const last = divisions[divisions.length - 1];
+      byDivision
+        .get(last.id)
+        ?.push(...players.slice(index).map((player) => player.userId));
     }
-  });
+  } else {
+    players.forEach((player, i) => {
+      const division = divisions[i % divisions.length];
+      const list = byDivision.get(division.id);
+      if (list) {
+        list.push(player.userId);
+      } else {
+        byDivision.set(division.id, [player.userId]);
+      }
+    });
+  }
+
   for (const [divisionId, userIds] of byDivision) {
     await assignPlayersToDivision(windowId, userIds, divisionId);
   }
@@ -251,11 +315,10 @@ async function groupDevSeeding(
 // hand-running the seeding tool.
 async function finalizeDevSeeding(
   windowId: string,
-  divisionCount: number,
-  size: number,
+  shape: DevSeedingShape,
 ): Promise<void> {
-  await groupDevSeeding(windowId, divisionCount, size);
-  await applyDevPostSeason(windowId);
+  await groupDevSeeding(windowId, shape);
+  await applyDevPostSeason(windowId, shape.divisionTableTier);
   // Mirrors the league's real rule: proof mandatory in divisions 1 + 2.
   await saveReplayRequirement(windowId, 2);
   await finalizeSeeding(windowId);
@@ -267,7 +330,10 @@ async function finalizeDevSeeding(
 // exactly two divisions with equal-size groups, use a richer demo: the top
 // division demotes one per group and the bottom promotes the same total via its
 // global division table — so the Gesamttabelle + guaranteed zones are exercised.
-async function applyDevPostSeason(windowId: string): Promise<void> {
+async function applyDevPostSeason(
+  windowId: string,
+  divisionTableTier?: number,
+): Promise<void> {
   const divs = (await divisionsWithGroupSizes(windowId)).sort(
     (a, b) => a.tier - b.tier,
   );
@@ -308,6 +374,15 @@ async function applyDevPostSeason(windowId: string): Promise<void> {
       demotionPlayoffSlots: 0,
       championshipPlayoffSlots: 0,
     };
+  }
+
+  // One division decided by its Gesamttabelle rather than the group tables, so
+  // every consumer of „the table that decides a division" meets both modes.
+  if (divisionTableTier != null) {
+    const index = divs.findIndex((d) => d.tier === divisionTableTier);
+    if (index >= 0 && divisionModeAvailable(divs[index].groupSizes)) {
+      configs[index].relevantTable = "division";
+    }
   }
 
   const valid =
@@ -555,7 +630,7 @@ async function seedDevResults(
       .set({
         droppedAt: new Date(),
         droppedById: staffId,
-        dropReason: "Inaktivität — mehrfach nicht erreichbar.",
+        dropReason: "Inaktivität, mehrfach nicht erreichbar.",
       })
       .where(
         and(
@@ -599,13 +674,26 @@ export async function generateSeedData(
     includeUserId?: string;
     size?: number;
     divisionCount?: number;
+    // Exact league shape. When set it dictates the registration count too —
+    // the slices only come out even at `sum(groups) × size` players, so `count`
+    // is ignored rather than silently reshaping the divisions.
+    shape?: DevSeedingShape;
   } = {},
 ): Promise<{ windowId: string; staffId: string }> {
   // A schedule needs a finalized seeding to build from.
   const finalize = opts.finalize || opts.schedule;
   await clearSeedData();
 
-  const specs = buildSeedRegistrations(count);
+  const shape: DevSeedingShape = opts.shape ?? {
+    divisionCount: opts.divisionCount ?? 2,
+    size: opts.size ?? 8,
+  };
+  const shapeCount = shape.groupsPerDivision
+    ? devShapePlayerCount(shape.groupsPerDivision, shape.size) -
+      (opts.includeUserId ? 1 : 0)
+    : count;
+
+  const specs = buildSeedRegistrations(shapeCount);
   const ids: string[] = specs.map(() => randomUUID());
 
   // Fake auth users (one multi-row insert), then their profiles.
@@ -615,12 +703,24 @@ export async function generateSeedData(
       email: `${SEED_EMAIL_PREFIX}${i}${SEED_EMAIL_DOMAIN}`,
     })),
   );
+  // Profile mix. `has_capture_card` can only be true because the owner saved
+  // their settings, so the seed keeps that invariant: a player who never
+  // touched their profile is always `false`, and that `false` means „unknown",
+  // not „owns none". All three states the MotW picker distinguishes therefore
+  // occur — roughly a quarter never filled anything in, and of the rest two
+  // thirds own a capture card.
+  const editedAt = new Date();
   await db.insert(profiles).values(
-    specs.map((spec, i) => ({
-      userId: ids[i],
-      displayName: spec.displayName,
-      username: spec.username,
-    })),
+    specs.map((spec, i) => {
+      const untouched = i % 4 === 3;
+      return {
+        userId: ids[i],
+        displayName: spec.displayName,
+        username: spec.username,
+        hasCaptureCard: !untouched && i % 3 !== 2,
+        settingsEditedAt: untouched ? null : editedAt,
+      };
+    }),
   );
 
   // A staff member: opens the window and is the „besprochen mit" contact on
@@ -677,13 +777,9 @@ export async function generateSeedData(
   }
 
   if (finalize) {
-    await finalizeDevSeeding(
-      window.id,
-      opts.divisionCount ?? 2,
-      opts.size ?? 8,
-    );
+    await finalizeDevSeeding(window.id, shape);
   } else if (opts.grouped) {
-    await groupDevSeeding(window.id, opts.divisionCount ?? 2, opts.size ?? 8);
+    await groupDevSeeding(window.id, shape);
   }
   if (opts.schedule) {
     await generateDevSchedule(window.id);

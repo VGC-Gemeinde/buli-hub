@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { devToolsEnabled } from "@/features/dev/enabled";
 import {
+  DEV_SEASON_SHAPE,
   generateEvenRunningSeason,
   generateLadderSeason,
   generateSeedData,
@@ -15,6 +16,8 @@ import { currentUser } from "@/features/roles/guard";
 //   erstellen".
 // - &schedule=1 goes all the way to a running season (schedule + matches) and
 //   registers the signed-in persona so their Spieler-Dashboard is populated.
+//   finalize/schedule build the fixed league shape (`DEV_SEASON_SHAPE`) and
+//   ignore `count`.
 // - &even=1 is a running season with equal-size sub-divisions, so the division
 //   table appears on the Spieler-Dashboard (ignores count).
 // - &ladder=division|sub_division is a 3-division running season with the persona
@@ -43,11 +46,15 @@ export async function GET(request: Request) {
   const grouped = params.get("grouped") === "1";
   const finalize = params.get("finalize") === "1";
   const schedule = params.get("schedule") === "1";
+  // A finalized league is built to the fixed shape (7 divisions, Division 4 on
+  // its Gesamttabelle), which fixes the player count — `count` only steers the
+  // pre-seeding states, where an arbitrary field size is the point.
   await generateSeedData(count, {
     grouped,
     finalize,
     schedule,
     includeUserId: current?.userId,
+    shape: finalize || schedule ? DEV_SEASON_SHAPE : undefined,
   });
   redirect(schedule ? "/spieler" : finalize ? "/staff" : "/staff/seeding");
 }

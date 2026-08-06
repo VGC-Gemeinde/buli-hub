@@ -395,6 +395,11 @@ export function SaisonDashboard({
                       <p className="truncate text-[13px] text-muted-foreground">
                         „{d.reason}" · {d.openedByName ?? "—"}
                       </p>
+                      {d.note ? (
+                        <p className="truncate text-[13px] text-muted-foreground">
+                          Entscheidung: „{d.note}"
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:contents">

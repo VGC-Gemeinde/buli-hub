@@ -21,8 +21,14 @@ import { groupRoster } from "@/features/season/queries";
 import { subDivisionName } from "@/features/seeding/seeding";
 import { db } from "@/lib/db";
 import { PLAYER_NAME_FALLBACK, playerName } from "@/lib/player-name";
+import type { DisputeChange } from "./dispute";
 import type { GameRow, MatchOutcome, ResultRow } from "./report";
 import type { ResultForStandings } from "./standings";
+
+// The transaction handle drizzle hands to a `db.transaction` callback — named
+// so write helpers can be shared between a standalone call and a larger
+// transaction.
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 function toIdentity(row: {
   userId: string;
@@ -635,24 +641,58 @@ export async function openDispute(input: {
   });
 }
 
-export async function resolveDispute(input: {
+// Staff decide an open dispute. The result change the decision implies and the
+// resolution itself are written in one transaction — a half-applied decision
+// would be exactly the inconsistency the flow exists to prevent.
+export async function resolveDisputeWithChange(input: {
   matchId: string;
   resolution: "upheld" | "corrected";
-  note: string | null;
+  note: string;
   resolvedById: string;
+  change: DisputeChange;
 }): Promise<void> {
-  await db
-    .update(disputes)
-    .set({
-      status: "resolved",
-      resolution: input.resolution,
-      note: input.note,
-      resolvedById: input.resolvedById,
-      resolvedAt: new Date(),
-    })
-    .where(
-      and(eq(disputes.matchId, input.matchId), eq(disputes.status, "open")),
-    );
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    const change = input.change;
+    if (change.kind === "confirm") {
+      await tx
+        .update(matchResults)
+        .set({
+          confirmedById: input.resolvedById,
+          confirmedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(matchResults.matchId, input.matchId),
+            eq(matchResults.outcome, "free_win"),
+          ),
+        );
+    } else if (change.kind === "replace") {
+      await writeReplacedResult(tx, {
+        matchId: input.matchId,
+        result: change.result,
+        games: change.games,
+        staffId: input.resolvedById,
+      });
+    } else if (change.kind === "delete") {
+      await tx
+        .delete(matchResults)
+        .where(eq(matchResults.matchId, input.matchId));
+    }
+    await tx
+      .update(disputes)
+      .set({
+        status: "resolved",
+        resolution: input.resolution,
+        note: input.note,
+        resolvedById: input.resolvedById,
+        resolvedAt: now,
+      })
+      .where(
+        and(eq(disputes.matchId, input.matchId), eq(disputes.status, "open")),
+      );
+  });
 }
 
 // The open dispute on a match (for the match page), or null.
@@ -682,6 +722,48 @@ export async function matchOpenDispute(matchId: string): Promise<{
     : null;
 }
 
+// The decision on a match's most recent dispute (for the match page), or null
+// when the match was never disputed or is disputed right now.
+export async function matchResolvedDispute(matchId: string): Promise<{
+  reason: string;
+  openedByName: string | null;
+  resolution: "upheld" | "corrected" | null;
+  note: string | null;
+  resolvedByName: string | null;
+  resolvedAt: Date | null;
+} | null> {
+  const op = alias(profiles, "op");
+  const rp = alias(profiles, "rp");
+  const rows = await db
+    .select({
+      reason: disputes.reason,
+      resolution: disputes.resolution,
+      note: disputes.note,
+      resolvedAt: disputes.resolvedAt,
+      opName: op.displayName,
+      opUser: op.username,
+      rpName: rp.displayName,
+      rpUser: rp.username,
+    })
+    .from(disputes)
+    .leftJoin(op, eq(op.userId, disputes.openedById))
+    .leftJoin(rp, eq(rp.userId, disputes.resolvedById))
+    .where(and(eq(disputes.matchId, matchId), eq(disputes.status, "resolved")))
+    .orderBy(desc(disputes.resolvedAt))
+    .limit(1);
+  const row = rows[0];
+  return row
+    ? {
+        reason: row.reason,
+        openedByName: row.opName ?? row.opUser,
+        resolution: row.resolution,
+        note: row.note,
+        resolvedByName: row.rpName ?? row.rpUser,
+        resolvedAt: row.resolvedAt,
+      }
+    : null;
+}
+
 export type DisputeRow = {
   matchId: string;
   round: number;
@@ -693,6 +775,8 @@ export type DisputeRow = {
   openedAt: Date;
   resolution: "upheld" | "corrected" | null;
   resolvedAt: Date | null;
+  // The staff explanation of the decision (mandatory since the decision flow).
+  note: string | null;
 };
 
 // Resolved disputes of a window, newest first — the „resolved" history filter.
@@ -722,6 +806,7 @@ export async function windowResolvedDisputes(
       dpUser: dp.username,
       resolution: disputes.resolution,
       resolvedAt: disputes.resolvedAt,
+      note: disputes.note,
     })
     .from(disputes)
     .innerJoin(matches, eq(matches.id, disputes.matchId))
@@ -756,6 +841,7 @@ export async function windowResolvedDisputes(
     openedAt: row.openedAt,
     resolution: row.resolution,
     resolvedAt: row.resolvedAt,
+    note: row.note,
   }));
 }
 
@@ -767,36 +853,46 @@ export async function replaceResult(input: {
   games: GameRow[];
   staffId: string;
 }): Promise<void> {
+  await db.transaction((tx) => writeReplacedResult(tx, input));
+}
+
+// The write half of `replaceResult`, so a dispute decision can run it inside
+// its own transaction (result change + resolution land together or not at all).
+async function writeReplacedResult(
+  tx: Tx,
+  input: {
+    matchId: string;
+    result: ResultRow;
+    games: GameRow[];
+    staffId: string;
+  },
+): Promise<void> {
   const now = new Date();
   const confirmed = input.result.outcome === "free_win";
-  await db.transaction(async (tx) => {
-    await tx.delete(matchGames).where(eq(matchGames.matchId, input.matchId));
-    await tx
-      .insert(matchResults)
-      .values({
-        matchId: input.matchId,
+  await tx.delete(matchGames).where(eq(matchGames.matchId, input.matchId));
+  await tx
+    .insert(matchResults)
+    .values({
+      matchId: input.matchId,
+      ...input.result,
+      reportedById: input.staffId,
+      confirmedById: confirmed ? input.staffId : null,
+      confirmedAt: confirmed ? now : null,
+    })
+    .onConflictDoUpdate({
+      target: matchResults.matchId,
+      set: {
         ...input.result,
-        reportedById: input.staffId,
         confirmedById: confirmed ? input.staffId : null,
         confirmedAt: confirmed ? now : null,
-      })
-      .onConflictDoUpdate({
-        target: matchResults.matchId,
-        set: {
-          ...input.result,
-          confirmedById: confirmed ? input.staffId : null,
-          confirmedAt: confirmed ? now : null,
-          correctedById: input.staffId,
-          correctedAt: now,
-          updatedAt: now,
-        },
-      });
-    if (input.games.length > 0) {
-      await tx
-        .insert(matchGames)
-        .values(
-          input.games.map((game) => ({ matchId: input.matchId, ...game })),
-        );
-    }
-  });
+        correctedById: input.staffId,
+        correctedAt: now,
+        updatedAt: now,
+      },
+    });
+  if (input.games.length > 0) {
+    await tx
+      .insert(matchGames)
+      .values(input.games.map((game) => ({ matchId: input.matchId, ...game })));
+  }
 }

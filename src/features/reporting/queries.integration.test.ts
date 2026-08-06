@@ -21,8 +21,9 @@ import {
   groupResults,
   listStaffAndAdmins,
   matchOpenDispute,
+  matchResolvedDispute,
   openDispute,
-  resolveDispute,
+  resolveDisputeWithChange,
   saveResult,
   subDivisionResults,
   upsertStaffResult,
@@ -354,15 +355,157 @@ describe("disputes", () => {
       openDispute({ matchId: m.id, openedById: alice, reason: "again" }),
     ).rejects.toThrow();
 
-    await resolveDispute({
+    await resolveDisputeWithChange({
       matchId: m.id,
       resolution: "upheld",
       note: "Ergebnis bestätigt",
       resolvedById: staff,
+      change: { kind: "keep" },
     });
     expect(await matchOpenDispute(m.id)).toBeNull();
     const resolved = await windowResolvedDisputes(windowId);
     expect(resolved.find((d) => d.matchId === m.id)?.resolution).toBe("upheld");
+    const decided = await matchResolvedDispute(m.id);
+    expect(decided?.note).toBe("Ergebnis bestätigt");
+    // The result is untouched by an upheld decision.
+    expect((await getMatchResult(m.id))?.winnerId).toBe(alice);
+
+    await db.execute(sql`delete from matches where id = ${m.id}`);
+  });
+
+  // The decision's two halves land together: whatever it does to the result and
+  // the resolution itself are one transaction.
+  it("replace: result rewritten and dispute closed as corrected", async () => {
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+    await saveResult(
+      m.id,
+      {
+        outcome: "normal",
+        winnerId: alice,
+        platform: "showdown",
+        playerATeamUrl: "https://pokepast.es/a",
+        playerBTeamUrl: "https://pokepast.es/b",
+        videoUrl: null,
+        freeWinReason: null,
+        discussedWithId: null,
+      },
+      [
+        { gameNumber: 1, winnerId: alice, replayUrl: "https://replay/1" },
+        { gameNumber: 2, winnerId: alice, replayUrl: "https://replay/2" },
+      ],
+      alice,
+    );
+    await openDispute({ matchId: m.id, openedById: bob, reason: "falsch" });
+
+    await resolveDisputeWithChange({
+      matchId: m.id,
+      resolution: "corrected",
+      note: "Replays zeigen Bob",
+      resolvedById: staff,
+      change: {
+        kind: "replace",
+        result: {
+          outcome: "normal",
+          winnerId: bob,
+          platform: "showdown",
+          playerATeamUrl: "https://pokepast.es/a",
+          playerBTeamUrl: "https://pokepast.es/b",
+          videoUrl: null,
+          freeWinReason: null,
+          discussedWithId: null,
+        },
+        games: [
+          { gameNumber: 1, winnerId: bob, replayUrl: "https://replay/1" },
+          { gameNumber: 2, winnerId: bob, replayUrl: "https://replay/2" },
+        ],
+      },
+    });
+
+    const result = await getMatchResult(m.id);
+    expect(result?.winnerId).toBe(bob);
+    expect(result?.games.map((g) => g.winnerId)).toEqual([bob, bob]);
+    expect(await matchOpenDispute(m.id)).toBeNull();
+    expect((await matchResolvedDispute(m.id))?.resolution).toBe("corrected");
+
+    await db.execute(sql`delete from matches where id = ${m.id}`);
+  });
+
+  it("confirm: upholding a pending free win confirms it", async () => {
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+    await saveResult(
+      m.id,
+      {
+        outcome: "free_win",
+        winnerId: alice,
+        platform: null,
+        playerATeamUrl: null,
+        playerBTeamUrl: null,
+        videoUrl: null,
+        freeWinReason: "no show",
+        discussedWithId: staff,
+      },
+      [],
+      alice,
+    );
+    await openDispute({ matchId: m.id, openedById: bob, reason: "war da" });
+
+    await resolveDisputeWithChange({
+      matchId: m.id,
+      resolution: "upheld",
+      note: "Kein Termin nachgewiesen",
+      resolvedById: staff,
+      change: { kind: "confirm" },
+    });
+
+    expect((await getMatchResult(m.id))?.confirmedAt).not.toBeNull();
+    expect(await matchOpenDispute(m.id)).toBeNull();
+
+    await db.execute(sql`delete from matches where id = ${m.id}`);
+  });
+
+  it("delete: resetting the result closes the dispute too", async () => {
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+    await saveResult(
+      m.id,
+      {
+        outcome: "double_loss",
+        winnerId: null,
+        platform: null,
+        playerATeamUrl: null,
+        playerBTeamUrl: null,
+        videoUrl: null,
+        freeWinReason: null,
+        discussedWithId: null,
+      },
+      [],
+      alice,
+    );
+    await openDispute({
+      matchId: m.id,
+      openedById: bob,
+      reason: "nie gespielt",
+    });
+
+    await resolveDisputeWithChange({
+      matchId: m.id,
+      resolution: "corrected",
+      note: "Bitte neu melden",
+      resolvedById: staff,
+      change: { kind: "delete" },
+    });
+
+    expect(await getMatchResult(m.id)).toBeNull();
+    expect(await matchOpenDispute(m.id)).toBeNull();
+    expect((await matchResolvedDispute(m.id))?.note).toBe("Bitte neu melden");
 
     await db.execute(sql`delete from matches where id = ${m.id}`);
   });

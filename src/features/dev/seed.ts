@@ -660,6 +660,7 @@ async function seedDevResults(
       resolution: "upheld",
       resolvedById: m.a,
       resolvedAt: new Date(),
+      note: "Beide Replays geprüft, das gemeldete Ergebnis stimmt.",
     });
   }
 }

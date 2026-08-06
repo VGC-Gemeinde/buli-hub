@@ -323,6 +323,7 @@ const STAFF_RESOLVED: DisputeRow[] = [
     openedAt: new Date("2026-07-02T18:00:00Z"),
     resolution: "corrected",
     resolvedAt: new Date("2026-07-03T09:00:00Z"),
+    note: "Replay von Spiel 3 zeigt Ben als Sieger. Ergebnis korrigiert.",
   },
   {
     matchId: "r2",
@@ -335,6 +336,7 @@ const STAFF_RESOLVED: DisputeRow[] = [
     openedAt: new Date("2026-07-01T18:00:00Z"),
     resolution: "upheld",
     resolvedAt: new Date("2026-07-02T11:00:00Z"),
+    note: "Der Link führt auf das richtige Replay. Ergebnis bleibt.",
   },
 ];
 const EDITOR_INITIAL = {
@@ -2035,11 +2037,29 @@ export function Gallery() {
         <Specimen label="Spieler: Ergebnis anfechten">
           <DisputeDialog matchId="demo" />
         </Specimen>
-        <Specimen label="Staff: Anfechtung entscheiden">
+        <Specimen label="Staff: Anfechtung entscheiden (gemeldetes Ergebnis)">
           <DisputeResolveDialog
             matchId="demo"
+            playerA={EDITOR_A}
+            playerB={EDITOR_B}
             reason="Spiel 2 ging an mich, nicht an Sora."
             openedByName="Kai"
+            outcome="normal"
+            winnerName={EDITOR_A.name}
+            editorInitial={EDITOR_INITIAL}
+          />
+        </Specimen>
+        <Specimen label="Staff: Anfechtung entscheiden (unbestätigter Freewin)">
+          <DisputeResolveDialog
+            matchId="demo"
+            playerA={EDITOR_A}
+            playerB={EDITOR_B}
+            reason="Wir hatten einen Termin, ich war da."
+            openedByName="Kai"
+            outcome="free_win"
+            winnerName={EDITOR_A.name}
+            pendingFreeWin
+            editorInitial={null}
           />
         </Specimen>
         <Specimen label="Staff: Ergebnis bearbeiten">

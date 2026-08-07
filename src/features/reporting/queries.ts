@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   disputes,
@@ -10,6 +10,7 @@ import {
   profiles,
   seedings,
   subDivisions,
+  teamSheets,
 } from "@/db/schema";
 import { decidedByDrop, effectiveResult } from "@/features/drops/drops";
 import {
@@ -19,10 +20,11 @@ import {
 import type { Identity } from "@/features/season/dashboard";
 import { groupRoster } from "@/features/season/queries";
 import { subDivisionName } from "@/features/seeding/seeding";
+import type { TeamsheetSource } from "@/features/teamsheets/sources";
 import { db } from "@/lib/db";
 import { PLAYER_NAME_FALLBACK, playerName } from "@/lib/player-name";
 import type { DisputeChange } from "./dispute";
-import type { GameRow, MatchOutcome, ResultRow } from "./report";
+import type { GameRow, MatchOutcome, ResultRow, SheetRow } from "./report";
 import type { ResultForStandings } from "./standings";
 
 // The transaction handle drizzle hands to a `db.transaction` callback — named
@@ -125,10 +127,19 @@ export async function getMatchForReport(matchId: string): Promise<{
 }
 
 export type StoredResult = ResultRow & {
+  // The team sheets stored for this match, one per participant. `id` is the
+  // paste slug under `/pastes/<id>`; `ots` is the canonical sheet, which the
+  // staff editor opens for editing. Empty for free wins and double losses.
+  sheets: {
+    playerId: string;
+    id: string;
+    source: TeamsheetSource;
+    ots: string;
+  }[];
   reportedById: string;
   reportedAt: Date;
   confirmedAt: Date | null;
-  // Set when staff corrected the result in place (drives the „(korrigiert)"
+  // Set when staff corrected the result in place (drives the "(korrigiert)"
   // marker on the Discord post).
   correctedAt: Date | null;
   // Display name of the staff member a free win was discussed with, resolved
@@ -157,6 +168,16 @@ export async function getMatchResult(
     .where(eq(matchGames.matchId, matchId))
     .orderBy(asc(matchGames.gameNumber));
 
+  const sheets = await db
+    .select({
+      playerId: teamSheets.playerId,
+      id: teamSheets.id,
+      source: teamSheets.source,
+      ots: teamSheets.ots,
+    })
+    .from(teamSheets)
+    .where(eq(teamSheets.matchId, matchId));
+
   let discussedWithName: string | null = null;
   if (result.discussedWithId) {
     const [staff] = await db
@@ -174,8 +195,7 @@ export async function getMatchResult(
     outcome: result.outcome,
     winnerId: result.winnerId,
     platform: result.platform,
-    playerATeamUrl: result.playerATeamUrl,
-    playerBTeamUrl: result.playerBTeamUrl,
+    sheets,
     videoUrl: result.videoUrl,
     freeWinReason: result.freeWinReason,
     discussedWithId: result.discussedWithId,
@@ -194,6 +214,7 @@ export async function saveResult(
   matchId: string,
   result: ResultRow,
   games: GameRow[],
+  sheets: SheetRow[],
   reportedById: string,
 ): Promise<void> {
   await db.transaction(async (tx) => {
@@ -203,7 +224,36 @@ export async function saveResult(
         .insert(matchGames)
         .values(games.map((game) => ({ matchId, ...game })));
     }
+    await writeSheets(tx, matchId, sheets);
   });
+}
+
+// Upserts the team sheets of a match on (match_id, player_id), so a correction
+// rewrites the existing paste instead of minting a second one — the URL in an
+// already-posted Discord message, a screenshot or a bookmark keeps resolving,
+// and keeps resolving to the *current* team.
+async function writeSheets(
+  tx: Tx,
+  matchId: string,
+  sheets: SheetRow[],
+): Promise<void> {
+  if (sheets.length === 0) {
+    // A result without sheets (free win, double loss) must not keep the sheets
+    // of whatever it replaced.
+    await tx.delete(teamSheets).where(eq(teamSheets.matchId, matchId));
+    return;
+  }
+  await tx
+    .insert(teamSheets)
+    .values(sheets.map((sheet) => ({ matchId, ...sheet })))
+    .onConflictDoUpdate({
+      target: [teamSheets.matchId, teamSheets.playerId],
+      set: {
+        source: sql`excluded.source`,
+        ots: sql`excluded.ots`,
+        updatedAt: new Date(),
+      },
+    });
 }
 
 // Every match of a sub-division with its result state — the input for
@@ -378,7 +428,7 @@ export async function subDivisionResults(
   return result;
 }
 
-// All staff + admin users (never dev) as identities — the „discussed with"
+// All staff + admin users (never dev) as identities — the "discussed with"
 // dropdown for a free-win report.
 export async function listStaffAndAdmins(): Promise<Identity[]> {
   const rows = await db
@@ -584,6 +634,10 @@ export async function upsertStaffResult(input: {
   const confirmed = input.outcome === "free_win";
   await db.transaction(async (tx) => {
     await tx.delete(matchGames).where(eq(matchGames.matchId, input.matchId));
+    // A free win or double loss has no games and no team sheets. Converting a
+    // played result into one must take the pastes with it, or they would
+    // outlive the result that justified them.
+    await tx.delete(teamSheets).where(eq(teamSheets.matchId, input.matchId));
     await tx
       .insert(matchResults)
       .values({
@@ -591,8 +645,6 @@ export async function upsertStaffResult(input: {
         outcome: input.outcome,
         winnerId: input.winnerId,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: input.freeWinReason,
         discussedWithId: null,
@@ -606,8 +658,6 @@ export async function upsertStaffResult(input: {
           outcome: input.outcome,
           winnerId: input.winnerId,
           platform: null,
-          playerATeamUrl: null,
-          playerBTeamUrl: null,
           videoUrl: null,
           freeWinReason: input.freeWinReason,
           discussedWithId: null,
@@ -673,6 +723,7 @@ export async function resolveDisputeWithChange(input: {
         matchId: input.matchId,
         result: change.result,
         games: change.games,
+        sheets: change.sheets,
         staffId: input.resolvedById,
       });
     } else if (change.kind === "delete") {
@@ -779,7 +830,7 @@ export type DisputeRow = {
   note: string | null;
 };
 
-// Resolved disputes of a window, newest first — the „resolved" history filter.
+// Resolved disputes of a window, newest first — the "resolved" history filter.
 export async function windowResolvedDisputes(
   windowId: string,
 ): Promise<DisputeRow[]> {
@@ -851,6 +902,7 @@ export async function replaceResult(input: {
   matchId: string;
   result: ResultRow;
   games: GameRow[];
+  sheets: SheetRow[];
   staffId: string;
 }): Promise<void> {
   await db.transaction((tx) => writeReplacedResult(tx, input));
@@ -864,6 +916,7 @@ async function writeReplacedResult(
     matchId: string;
     result: ResultRow;
     games: GameRow[];
+    sheets: SheetRow[];
     staffId: string;
   },
 ): Promise<void> {
@@ -895,4 +948,5 @@ async function writeReplacedResult(
       .insert(matchGames)
       .values(input.games.map((game) => ({ matchId: input.matchId, ...game })));
   }
+  await writeSheets(tx, input.matchId, input.sheets);
 }

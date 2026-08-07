@@ -1,0 +1,274 @@
+{
+  "id": "uQ8gaGGC",
+  "is_public": true,
+  "is_encrypted": false,
+  "title": "VR",
+  "format": "VGC Regulation Set M-B",
+  "teams": [
+    {
+      "name": "Staraptor",
+      "species": "Staraptor",
+      "item": "Staraptite",
+      "ability": "Intimidate",
+      "moves": ["Protect", "Roost", "Close Combat", "Brave Bird"],
+      "nature": "Jolly",
+      "type1": "Normal",
+      "type2": "Flying",
+      "image": "staraptor",
+      "baseStats": {
+        "hp": 85,
+        "atk": 120,
+        "def": 70,
+        "spa": 50,
+        "spd": 60,
+        "spe": 100
+      },
+      "movesWithTypes": [
+        { "name": "Protect", "type": "Normal", "translation": "Protect" },
+        { "name": "Roost", "type": "Flying", "translation": "Roost" },
+        {
+          "name": "Close Combat",
+          "type": "Fighting",
+          "translation": "Close Combat"
+        },
+        { "name": "Brave Bird", "type": "Flying", "translation": "Brave Bird" }
+      ],
+      "nameTranslation": "Staraptor",
+      "speciesTranslation": "Staraptor",
+      "itemTranslation": "Staraptite",
+      "abilityTranslation": "Intimidate",
+      "natureTranslation": "Jolly",
+      "type1Translation": "Normal",
+      "type2Translation": "Flying",
+      "megaEvolution": {
+        "megaSpecies": "Staraptor-Mega",
+        "megaSpeciesTranslation": "Staraptor [Mega Staraptor]",
+        "megaImage": "staraptor-mega",
+        "megaBaseStats": {
+          "hp": 85,
+          "atk": 140,
+          "def": 100,
+          "spa": 60,
+          "spd": 90,
+          "spe": 110
+        },
+        "megaAbility": "Contrary",
+        "megaAbilityTranslation": "Contrary",
+        "megaType1": "Fighting",
+        "megaType2": "Flying",
+        "megaType1Translation": "Fighting",
+        "megaType2Translation": "Flying"
+      }
+    },
+    {
+      "name": "Garchomp",
+      "species": "Garchomp",
+      "item": "Life Orb",
+      "ability": "Rough Skin",
+      "moves": ["Protect", "Rock Slide", "Earthquake", "Dragon Claw"],
+      "nature": "Jolly",
+      "type1": "Dragon",
+      "type2": "Ground",
+      "image": "garchomp",
+      "baseStats": {
+        "hp": 108,
+        "atk": 130,
+        "def": 95,
+        "spa": 80,
+        "spd": 85,
+        "spe": 102
+      },
+      "movesWithTypes": [
+        { "name": "Protect", "type": "Normal", "translation": "Protect" },
+        { "name": "Rock Slide", "type": "Rock", "translation": "Rock Slide" },
+        { "name": "Earthquake", "type": "Ground", "translation": "Earthquake" },
+        {
+          "name": "Dragon Claw",
+          "type": "Dragon",
+          "translation": "Dragon Claw"
+        }
+      ],
+      "nameTranslation": "Garchomp",
+      "speciesTranslation": "Garchomp",
+      "itemTranslation": "Life Orb",
+      "abilityTranslation": "Rough Skin",
+      "natureTranslation": "Jolly",
+      "type1Translation": "Dragon",
+      "type2Translation": "Ground"
+    },
+    {
+      "name": "Whimsicott",
+      "species": "Whimsicott",
+      "item": "Occa Berry",
+      "ability": "Prankster",
+      "moves": ["Moonblast", "Tailwind", "Charm", "Light Screen"],
+      "nature": "Timid",
+      "type1": "Grass",
+      "type2": "Fairy",
+      "image": "whimsicott",
+      "baseStats": {
+        "hp": 60,
+        "atk": 67,
+        "def": 85,
+        "spa": 77,
+        "spd": 75,
+        "spe": 116
+      },
+      "movesWithTypes": [
+        { "name": "Moonblast", "type": "Fairy", "translation": "Moonblast" },
+        { "name": "Tailwind", "type": "Flying", "translation": "Tailwind" },
+        { "name": "Charm", "type": "Fairy", "translation": "Charm" },
+        {
+          "name": "Light Screen",
+          "type": "Psychic",
+          "translation": "Light Screen"
+        }
+      ],
+      "nameTranslation": "Whimsicott",
+      "speciesTranslation": "Whimsicott",
+      "itemTranslation": "Occa Berry",
+      "abilityTranslation": "Prankster",
+      "natureTranslation": "Timid",
+      "type1Translation": "Grass",
+      "type2Translation": "Fairy"
+    },
+    {
+      "name": "Delphox",
+      "species": "Delphox",
+      "item": "Delphoxite",
+      "ability": "Magician",
+      "moves": ["Protect", "Psychic", "Heat Wave", "Substitute"],
+      "nature": "Modest",
+      "type1": "Fire",
+      "type2": "Psychic",
+      "image": "delphox",
+      "baseStats": {
+        "hp": 75,
+        "atk": 69,
+        "def": 72,
+        "spa": 114,
+        "spd": 100,
+        "spe": 104
+      },
+      "movesWithTypes": [
+        { "name": "Protect", "type": "Normal", "translation": "Protect" },
+        { "name": "Psychic", "type": "Psychic", "translation": "Psychic" },
+        { "name": "Heat Wave", "type": "Fire", "translation": "Heat Wave" },
+        { "name": "Substitute", "type": "Normal", "translation": "Substitute" }
+      ],
+      "nameTranslation": "Delphox",
+      "speciesTranslation": "Delphox",
+      "itemTranslation": "Delphoxite",
+      "abilityTranslation": "Magician",
+      "natureTranslation": "Modest",
+      "type1Translation": "Fire",
+      "type2Translation": "Psychic",
+      "megaEvolution": {
+        "megaSpecies": "Delphox-Mega",
+        "megaSpeciesTranslation": "Delphox [Mega Delphox]",
+        "megaImage": "delphox-mega",
+        "megaBaseStats": {
+          "hp": 75,
+          "atk": 69,
+          "def": 72,
+          "spa": 159,
+          "spd": 125,
+          "spe": 134
+        },
+        "megaAbility": "Levitate",
+        "megaAbilityTranslation": "Levitate",
+        "megaType1": "Fire",
+        "megaType2": "Psychic",
+        "megaType1Translation": "Fire",
+        "megaType2Translation": "Psychic"
+      }
+    },
+    {
+      "name": "Glimmora",
+      "species": "Glimmora",
+      "item": "Focus Sash",
+      "ability": "Toxic Debris",
+      "moves": ["Spiky Shield", "Earth Power", "Power Gem", "Sludge Bomb"],
+      "nature": "Timid",
+      "type1": "Rock",
+      "type2": "Poison",
+      "image": "glimmora",
+      "baseStats": {
+        "hp": 83,
+        "atk": 55,
+        "def": 90,
+        "spa": 130,
+        "spd": 81,
+        "spe": 86
+      },
+      "movesWithTypes": [
+        {
+          "name": "Spiky Shield",
+          "type": "Grass",
+          "translation": "Spiky Shield"
+        },
+        {
+          "name": "Earth Power",
+          "type": "Ground",
+          "translation": "Earth Power"
+        },
+        { "name": "Power Gem", "type": "Rock", "translation": "Power Gem" },
+        {
+          "name": "Sludge Bomb",
+          "type": "Poison",
+          "translation": "Sludge Bomb"
+        }
+      ],
+      "nameTranslation": "Glimmora",
+      "speciesTranslation": "Glimmora",
+      "itemTranslation": "Focus Sash",
+      "abilityTranslation": "Toxic Debris",
+      "natureTranslation": "Timid",
+      "type1Translation": "Rock",
+      "type2Translation": "Poison"
+    },
+    {
+      "name": "Kingambit",
+      "species": "Kingambit",
+      "item": "Chople Berry",
+      "ability": "Defiant",
+      "moves": ["Kowtow Cleave", "Iron Head", "Sucker Punch", "Low Kick"],
+      "nature": "Adamant",
+      "shiny": true,
+      "type1": "Dark",
+      "type2": "Steel",
+      "image": "kingambit",
+      "baseStats": {
+        "hp": 100,
+        "atk": 135,
+        "def": 120,
+        "spa": 60,
+        "spd": 85,
+        "spe": 50
+      },
+      "movesWithTypes": [
+        {
+          "name": "Kowtow Cleave",
+          "type": "Dark",
+          "translation": "Kowtow Cleave"
+        },
+        { "name": "Iron Head", "type": "Steel", "translation": "Iron Head" },
+        {
+          "name": "Sucker Punch",
+          "type": "Dark",
+          "translation": "Sucker Punch"
+        },
+        { "name": "Low Kick", "type": "Fighting", "translation": "Low Kick" }
+      ],
+      "nameTranslation": "Kingambit",
+      "speciesTranslation": "Kingambit",
+      "itemTranslation": "Chople Berry",
+      "abilityTranslation": "Defiant",
+      "natureTranslation": "Adamant",
+      "type1Translation": "Dark",
+      "type2Translation": "Steel"
+    }
+  ],
+  "hasPassword": false,
+  "createdAt": 1784999198
+}

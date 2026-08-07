@@ -23,6 +23,7 @@ import {
   matchOpenDispute,
   matchResolvedDispute,
   openDispute,
+  replaceResult,
   resolveDisputeWithChange,
   saveResult,
   subDivisionResults,
@@ -31,6 +32,12 @@ import {
   windowResolvedDisputes,
 } from "./queries";
 import { computeStandings, divisionStandings } from "./standings";
+
+// The two sheets a normal result always carries, keyed to its participants.
+const sheetsFor = (a: string, b: string) => [
+  { playerId: a, source: "pokepaste" as const, ots: "Garchomp @ Life Orb" },
+  { playerId: b, source: "import" as const, ots: "Whimsicott @ Occa Berry" },
+];
 
 const alice = randomUUID();
 const bob = randomUUID();
@@ -140,8 +147,6 @@ describe("saveResult + getMatchResult", () => {
         outcome: "normal",
         winnerId: alice,
         platform: "showdown",
-        playerATeamUrl: "https://pokepast.es/a",
-        playerBTeamUrl: "https://pokepast.es/b",
         videoUrl: null,
         freeWinReason: null,
         discussedWithId: null,
@@ -151,6 +156,7 @@ describe("saveResult + getMatchResult", () => {
         { gameNumber: 2, winnerId: bob, replayUrl: "https://replay/2" },
         { gameNumber: 3, winnerId: alice, replayUrl: "https://replay/3" },
       ],
+      sheetsFor(alice, bob),
       alice,
     );
     const stored = await getMatchResult(matchAB);
@@ -158,6 +164,104 @@ describe("saveResult + getMatchResult", () => {
     expect(stored?.winnerId).toBe(alice);
     expect(stored?.games.map((g) => g.winnerId)).toEqual([alice, bob, alice]);
     expect(stored?.confirmedAt).toBeNull();
+    expect(
+      stored?.sheets.map((sheet) => [sheet.playerId, sheet.source]),
+    ).toEqual([
+      [alice, "pokepaste"],
+      [bob, "import"],
+    ]);
+  });
+
+  it("keeps the paste id when a sheet is corrected", async () => {
+    // The whole point of upserting on (match_id, player_id): a link already in
+    // a Discord message or a screenshot has to survive a correction. Runs on
+    // its own match so it cannot disturb the shared fixture.
+    const throwaway = randomUUID();
+    await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+    const normal = {
+      outcome: "normal" as const,
+      winnerId: alice,
+      platform: "showdown" as const,
+      videoUrl: null,
+      freeWinReason: null,
+      discussedWithId: null,
+    };
+    const games = [
+      { gameNumber: 1, winnerId: alice, replayUrl: null },
+      { gameNumber: 2, winnerId: alice, replayUrl: null },
+    ];
+    await saveResult(m.id, normal, games, sheetsFor(alice, bob), alice);
+
+    const idBefore = (await getMatchResult(m.id))?.sheets.find(
+      (sheet) => sheet.playerId === alice,
+    )?.id;
+    expect(idBefore).toBeTruthy();
+
+    await replaceResult({
+      matchId: m.id,
+      result: normal,
+      games,
+      sheets: [
+        { playerId: alice, source: "import", ots: "Kingambit @ Chople Berry" },
+        { playerId: bob, source: "import", ots: "Whimsicott @ Occa Berry" },
+      ],
+      staffId: staff,
+    });
+
+    const sheetAfter = (await getMatchResult(m.id))?.sheets.find(
+      (sheet) => sheet.playerId === alice,
+    );
+    expect(sheetAfter?.id).toBe(idBefore);
+    expect(sheetAfter?.ots).toBe("Kingambit @ Chople Berry");
+    expect(sheetAfter?.source).toBe("import");
+
+    await db.execute(sql`delete from matches where id = ${m.id}`);
+    await db.execute(sql`delete from auth.users where id = ${throwaway}`);
+  });
+
+  it("drops the sheets when a result becomes a free win", async () => {
+    // A free win has no games and no teams. Leaving the pastes behind would
+    // publish sheets for a match the standings treat as unplayed.
+    const throwaway = randomUUID();
+    await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
+    const [m] = await db
+      .insert(matches)
+      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .returning({ id: matches.id });
+    await saveResult(
+      m.id,
+      {
+        outcome: "normal",
+        winnerId: alice,
+        platform: "showdown",
+        videoUrl: null,
+        freeWinReason: null,
+        discussedWithId: null,
+      },
+      [
+        { gameNumber: 1, winnerId: alice, replayUrl: null },
+        { gameNumber: 2, winnerId: alice, replayUrl: null },
+      ],
+      sheetsFor(alice, bob),
+      alice,
+    );
+    expect((await getMatchResult(m.id))?.sheets).toHaveLength(2);
+
+    await upsertStaffResult({
+      matchId: m.id,
+      outcome: "free_win",
+      winnerId: alice,
+      freeWinReason: "Gegner nicht erschienen",
+      staffId: staff,
+    });
+    expect((await getMatchResult(m.id))?.sheets).toEqual([]);
+
+    await db.execute(sql`delete from matches where id = ${m.id}`);
+    await db.execute(sql`delete from auth.users where id = ${throwaway}`);
   });
 
   it("feeds computeStandings via groupResults (bye + reported)", async () => {
@@ -185,7 +289,7 @@ describe("saveResult + getMatchResult", () => {
     expect(byMatch.get(matchAB)?.games).toHaveLength(3);
   });
 
-  it("cascades: deleting the match removes result + games", async () => {
+  it("cascades: deleting the match removes result + games + sheets", async () => {
     const throwaway = randomUUID();
     await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
     const [m] = await db
@@ -198,12 +302,11 @@ describe("saveResult + getMatchResult", () => {
         outcome: "free_win",
         winnerId: alice,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: "no show",
         discussedWithId: staff,
       },
+      [],
       [],
       alice,
     );
@@ -266,13 +369,12 @@ describe("staff dashboard queries", () => {
         outcome: "normal",
         winnerId: alice,
         platform: "showdown",
-        playerATeamUrl: "https://pokepast.es/a",
-        playerBTeamUrl: "https://pokepast.es/b",
         videoUrl: null,
         freeWinReason: null,
         discussedWithId: null,
       },
       [{ gameNumber: 1, winnerId: alice, replayUrl: "https://replay/1" }],
+      sheetsFor(alice, bob),
       alice,
     );
 
@@ -301,12 +403,11 @@ describe("staff dashboard queries", () => {
         outcome: "free_win",
         winnerId: alice,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: "no show",
         discussedWithId: staff,
       },
+      [],
       [],
       alice,
     );
@@ -329,13 +430,12 @@ describe("disputes", () => {
         outcome: "normal",
         winnerId: alice,
         platform: "showdown",
-        playerATeamUrl: "https://pokepast.es/a",
-        playerBTeamUrl: "https://pokepast.es/b",
         videoUrl: null,
         freeWinReason: null,
         discussedWithId: null,
       },
       [{ gameNumber: 1, winnerId: alice, replayUrl: "https://replay/1" }],
+      sheetsFor(alice, bob),
       alice,
     );
 
@@ -386,8 +486,6 @@ describe("disputes", () => {
         outcome: "normal",
         winnerId: alice,
         platform: "showdown",
-        playerATeamUrl: "https://pokepast.es/a",
-        playerBTeamUrl: "https://pokepast.es/b",
         videoUrl: null,
         freeWinReason: null,
         discussedWithId: null,
@@ -396,6 +494,7 @@ describe("disputes", () => {
         { gameNumber: 1, winnerId: alice, replayUrl: "https://replay/1" },
         { gameNumber: 2, winnerId: alice, replayUrl: "https://replay/2" },
       ],
+      sheetsFor(alice, bob),
       alice,
     );
     await openDispute({ matchId: m.id, openedById: bob, reason: "falsch" });
@@ -411,8 +510,6 @@ describe("disputes", () => {
           outcome: "normal",
           winnerId: bob,
           platform: "showdown",
-          playerATeamUrl: "https://pokepast.es/a",
-          playerBTeamUrl: "https://pokepast.es/b",
           videoUrl: null,
           freeWinReason: null,
           discussedWithId: null,
@@ -421,6 +518,7 @@ describe("disputes", () => {
           { gameNumber: 1, winnerId: bob, replayUrl: "https://replay/1" },
           { gameNumber: 2, winnerId: bob, replayUrl: "https://replay/2" },
         ],
+        sheets: sheetsFor(alice, bob),
       },
     });
 
@@ -444,12 +542,11 @@ describe("disputes", () => {
         outcome: "free_win",
         winnerId: alice,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: "no show",
         discussedWithId: staff,
       },
+      [],
       [],
       alice,
     );
@@ -480,12 +577,11 @@ describe("disputes", () => {
         outcome: "double_loss",
         winnerId: null,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: null,
         discussedWithId: null,
       },
+      [],
       [],
       alice,
     );
@@ -562,8 +658,6 @@ describe("divisionGroups", () => {
           outcome: "normal",
           winnerId: winner,
           platform: "showdown",
-          playerATeamUrl: "https://pokepast.es/a",
-          playerBTeamUrl: "https://pokepast.es/b",
           videoUrl: null,
           freeWinReason: null,
           discussedWithId: null,
@@ -572,6 +666,7 @@ describe("divisionGroups", () => {
           { gameNumber: 1, winnerId: winner, replayUrl: null },
           { gameNumber: 2, winnerId: winner, replayUrl: null },
         ],
+        sheetsFor(winner, loser),
         winner,
       ).then(() => loser);
     await decided(matchX.id, x1, x2);

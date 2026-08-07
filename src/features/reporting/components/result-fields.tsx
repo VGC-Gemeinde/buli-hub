@@ -1,16 +1,23 @@
 "use client";
 
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PLATFORM_LABELS } from "@/features/registration/registration";
 import type { Identity } from "@/features/season/dashboard";
+import { ImportDialog } from "@/features/teamsheets/components/import-dialog";
+import {
+  type TeamsheetValue,
+  withAccepted,
+} from "@/features/teamsheets/field-state";
 import { cn } from "@/lib/utils";
 import type { Platform } from "../report";
 import { gameIndexes, type ResultDraft, setWinner } from "../result-draft";
 
 // The fields of a normal result in a neutral perspective (player A vs player
-// B), controlled from the outside. Shared by the standalone „Ergebnis
+// B), controlled from the outside. Shared by the standalone "Ergebnis
 // bearbeiten" editor and the correction branch of the dispute decision, so a
 // correction looks and validates the same wherever staff start it.
 export function ResultFields({
@@ -103,24 +110,81 @@ export function ResultFields({
         </div>
       ) : null}
 
+      {/* Staff never get a link field. Correcting a sheet means editing the
+          text we stored, whichever route the player originally used. */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid gap-1.5">
-          <Label>Team {playerA.name}</Label>
-          <Input
-            value={draft.teamA}
-            onChange={(e) => onChange({ ...draft, teamA: e.target.value })}
-            placeholder="https://pokepast.es/…"
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Team {playerB.name}</Label>
-          <Input
-            value={draft.teamB}
-            onChange={(e) => onChange({ ...draft, teamB: e.target.value })}
-            placeholder="https://pokepast.es/…"
-          />
-        </div>
+        <StaffSheetField
+          label={`Team ${playerA.name}`}
+          value={draft.teamA}
+          onChange={(teamA) => onChange({ ...draft, teamA })}
+        />
+        <StaffSheetField
+          label={`Team ${playerB.name}`}
+          value={draft.teamB}
+          onChange={(teamB) => onChange({ ...draft, teamB })}
+        />
       </div>
+    </div>
+  );
+}
+
+// A stored team sheet in the staff editor: a button that opens the import
+// dialog with the current sheet prefilled. There is no link field, because a
+// correction is always an edit of text — the route the player used is history.
+function StaffSheetField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: TeamsheetValue;
+  onChange: (next: TeamsheetValue) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const accepted = value.accepted;
+
+  return (
+    <div className="grid gap-1.5">
+      <Label>{label}</Label>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="justify-between font-normal"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          {accepted ? (
+            <span className="flex shrink-0 items-center gap-0.5">
+              {accepted.icons.slice(0, 6).map((icon, index) => (
+                // biome-ignore lint/performance/noImgElement: box icons are external bucket assets, not app images
+                <img
+                  key={`${icon.species}-${index}`}
+                  src={icon.iconUrl}
+                  alt=""
+                  loading="lazy"
+                  className="h-[22px] w-[30px] object-contain"
+                  style={{
+                    imageRendering: icon.pixelated ? "pixelated" : "auto",
+                  }}
+                />
+              ))}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Kein Teamsheet</span>
+          )}
+        </span>
+        <span className="shrink-0 font-semibold text-[13px]">
+          {accepted ? "Bearbeiten" : "Hinzufügen"}
+        </span>
+      </Button>
+
+      <ImportDialog
+        open={open}
+        onOpenChange={setOpen}
+        label={label}
+        initialText={accepted?.ots}
+        onAccept={(next) => onChange(withAccepted(value, next, true))}
+      />
     </div>
   );
 }

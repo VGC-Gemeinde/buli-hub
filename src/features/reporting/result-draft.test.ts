@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  emptyTeamsheet,
+  storedTeamsheet,
+} from "@/features/teamsheets/field-state";
+import {
   draftToReport,
   emptyDraft,
   gameIndexes,
@@ -11,6 +15,15 @@ import {
 const alice = "alice";
 const bob = "bob";
 
+const OTS_A = "Garchomp @ Life Orb";
+const OTS_B = "Whimsicott @ Occa Berry";
+const SHEET_A = { source: "pokepaste" as const, ots: OTS_A, icons: [] };
+const SHEET_B = { source: "import" as const, ots: OTS_B, icons: [] };
+// The draft holds a sheet the same way the editor opened it: as text, with no
+// link, because we never store the link.
+const teamA = storedTeamsheet("pokepaste", OTS_A, []);
+const teamB = storedTeamsheet("import", OTS_B, []);
+
 const initial = {
   platform: "showdown" as const,
   games: [
@@ -18,8 +31,8 @@ const initial = {
     { winnerId: bob, replayUrl: "https://replay/2" },
     { winnerId: alice, replayUrl: "https://replay/3" },
   ],
-  playerATeamUrl: "https://pokepast.es/a",
-  playerBTeamUrl: "https://pokepast.es/b",
+  playerASheet: SHEET_A,
+  playerBSheet: SHEET_B,
   videoUrl: null,
 };
 
@@ -28,8 +41,8 @@ const cartridge: ResultDraft = {
   platform: "cartridge",
   winners: [alice, alice, ""],
   replays: ["", "", ""],
-  teamA: "https://pokepast.es/a",
-  teamB: "https://pokepast.es/b",
+  teamA,
+  teamB,
   video: "",
 };
 
@@ -39,8 +52,8 @@ describe("emptyDraft", () => {
       platform: "",
       winners: ["", "", ""],
       replays: ["", "", ""],
-      teamA: "",
-      teamB: "",
+      teamA: emptyTeamsheet(),
+      teamB: emptyTeamsheet(),
       video: "",
     });
     expect(emptyDraft(null)).toEqual(emptyDraft());
@@ -54,8 +67,8 @@ describe("emptyDraft", () => {
       platform: "showdown",
       winners: [alice, bob, ""],
       replays: ["https://replay/1", "https://replay/2", ""],
-      teamA: "https://pokepast.es/a",
-      teamB: "https://pokepast.es/b",
+      teamA,
+      teamB,
       video: "",
     });
   });
@@ -99,8 +112,12 @@ describe("isDraftComplete", () => {
   it("needs a platform, the games it asks for and both team sheets", () => {
     expect(isDraftComplete(cartridge)).toBe(true);
     expect(isDraftComplete({ ...cartridge, platform: "" })).toBe(false);
-    expect(isDraftComplete({ ...cartridge, teamA: "" })).toBe(false);
-    expect(isDraftComplete({ ...cartridge, teamB: "  " })).toBe(false);
+    expect(isDraftComplete({ ...cartridge, teamA: emptyTeamsheet() })).toBe(
+      false,
+    );
+    expect(isDraftComplete({ ...cartridge, teamB: emptyTeamsheet() })).toBe(
+      false,
+    );
     expect(isDraftComplete({ ...cartridge, winners: [alice, "", ""] })).toBe(
       false,
     );
@@ -143,8 +160,8 @@ describe("draftToReport", () => {
         { winnerId: bob, replayUrl: "https://r/2" },
         { winnerId: alice, replayUrl: "https://r/3" },
       ],
-      playerATeamUrl: "https://pokepast.es/a",
-      playerBTeamUrl: "https://pokepast.es/b",
+      playerASheet: { source: "pokepaste", ots: OTS_A },
+      playerBSheet: { source: "import", ots: OTS_B },
     });
   });
 
@@ -158,8 +175,8 @@ describe("draftToReport", () => {
       outcome: "normal",
       platform: "cartridge",
       games: [{ winnerId: alice }, { winnerId: alice }],
-      playerATeamUrl: "https://pokepast.es/a",
-      playerBTeamUrl: "https://pokepast.es/b",
+      playerASheet: { source: "pokepaste", ots: OTS_A },
+      playerBSheet: { source: "import", ots: OTS_B },
     });
   });
 

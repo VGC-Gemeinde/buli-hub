@@ -3,14 +3,15 @@ import type {
   GameRow,
   MatchOutcome,
   ResultRow,
+  SheetRow,
   StaffResultInput,
 } from "./report";
 import { toResultRows } from "./report";
 
 // What a staff decision on an open dispute does. The point of this module is
 // that the two halves of a decision — what happens to the result and what the
-// dispute is recorded as — are derived together from one input, so „korrigiert"
-// always means the result actually changed and „bestätigt" always means it did
+// dispute is recorded as — are derived together from one input, so "korrigiert"
+// always means the result actually changed and "bestätigt" always means it did
 // not.
 
 export const NOTE_MAX = 2000;
@@ -49,7 +50,7 @@ export type DisputeDecision =
 export type DisputeChange =
   | { kind: "keep" }
   | { kind: "confirm" }
-  | { kind: "replace"; result: ResultRow; games: GameRow[] }
+  | { kind: "replace"; result: ResultRow; games: GameRow[]; sheets: SheetRow[] }
   | { kind: "delete" };
 
 export type DisputedResult = {
@@ -62,6 +63,7 @@ export function disputeChange(
   decision: DisputeDecision,
   current: DisputedResult,
   note: string,
+  participants: { playerAId: string; playerBId: string },
 ): { resolution: "upheld" | "corrected"; change: DisputeChange } {
   switch (decision.kind) {
     case "uphold":
@@ -78,7 +80,10 @@ export function disputeChange(
     case "edit":
       return {
         resolution: "corrected",
-        change: { kind: "replace", ...toResultRows(decision.report) },
+        change: {
+          kind: "replace",
+          ...toResultRows(decision.report, participants),
+        },
       };
     case "free_win":
       return {
@@ -89,16 +94,17 @@ export function disputeChange(
             outcome: "free_win",
             winnerId: decision.winnerId,
             platform: null,
-            playerATeamUrl: null,
-            playerBTeamUrl: null,
             videoUrl: null,
             // The players see one explanation, not two: the decision note is
             // the free win's reason.
             freeWinReason: note,
-            // Staff awards carry no „discussed with" — that is a player field.
+            // Staff awards carry no "discussed with" — that is a player field.
             discussedWithId: null,
           },
           games: [],
+          // An awarded free win replaces a played result: its sheets document
+          // a match that, as far as the standings are concerned, was not played.
+          sheets: [],
         },
       };
     case "double_loss":

@@ -64,6 +64,20 @@
       "when": 1785511466569,
       "tag": "20260731152426_regelwerk_acceptances_fk_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786135602966,
+      "tag": "20260807204642_oval_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786135612499,
+      "tag": "20260807204652_team_sheets_fk_rls",
+      "breakpoints": true
     }
   ]
 }

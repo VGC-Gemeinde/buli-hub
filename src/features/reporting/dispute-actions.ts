@@ -22,6 +22,7 @@ import {
   openDispute as persistOpenDispute,
 } from "./queries";
 import { staffResultSchema } from "./report";
+import { canonicalSheets } from "./sheets";
 
 export type DisputeResult = { ok: true } | { ok: false; error: string };
 
@@ -78,7 +79,7 @@ export async function openDispute(input: {
 // Staff decide an open dispute. One call does the whole decision: it applies
 // whatever the chosen outcome does to the result (nothing, a confirmation, a
 // new result, or a reset) and resolves the dispute in the same transaction, so
-// „bestätigt"/„korrigiert" can never disagree with what the result actually is.
+// "bestätigt"/"korrigiert" can never disagree with what the result actually is.
 export async function decideDispute(input: {
   matchId: string;
   decision: DisputeDecisionInput;
@@ -123,7 +124,23 @@ export async function decideDispute(input: {
     validated.decision,
     { outcome: result.outcome, confirmed: result.confirmedAt !== null },
     note.data,
+    {
+      playerAId: match.playerA.userId,
+      playerBId: match.playerB.userId,
+    },
   );
+  if (change.kind === "replace") {
+    // Same rule as every other write path: what gets stored is the parser's
+    // output, never the payload as posted.
+    const canonical = canonicalSheets(change.sheets);
+    if (!canonical.ok) {
+      return {
+        ok: false,
+        error: [canonical.error, ...canonical.details].join(" "),
+      };
+    }
+    change.sheets = canonical.sheets;
+  }
   await persistDecision({
     matchId: input.matchId,
     resolution,

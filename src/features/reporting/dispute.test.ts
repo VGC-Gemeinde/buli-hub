@@ -21,9 +21,11 @@ const editReport: StaffResultInput = {
     { winnerId: bob, replayUrl: "https://replay/1" },
     { winnerId: bob, replayUrl: "https://replay/2" },
   ],
-  playerATeamUrl: "https://pokepast.es/a",
-  playerBTeamUrl: "https://pokepast.es/b",
+  playerASheet: { source: "pokepaste" as const, ots: "Garchomp @ Life Orb" },
+  playerBSheet: { source: "import" as const, ots: "Whimsicott @ Occa Berry" },
 };
+
+const PARTICIPANTS = { playerAId: alice, playerBId: bob };
 
 describe("disputeNoteSchema", () => {
   it("rejects an empty or whitespace-only explanation", () => {
@@ -75,21 +77,27 @@ describe("disputeDecisionSchema", () => {
 
 describe("disputeChange", () => {
   it("upholding a normal result changes nothing", () => {
-    expect(disputeChange({ kind: "uphold" }, reported, NOTE)).toEqual({
+    expect(
+      disputeChange({ kind: "uphold" }, reported, NOTE, PARTICIPANTS),
+    ).toEqual({
       resolution: "upheld",
       change: { kind: "keep" },
     });
   });
 
   it("upholding a pending free win confirms it", () => {
-    expect(disputeChange({ kind: "uphold" }, pendingFreeWin, NOTE)).toEqual({
+    expect(
+      disputeChange({ kind: "uphold" }, pendingFreeWin, NOTE, PARTICIPANTS),
+    ).toEqual({
       resolution: "upheld",
       change: { kind: "confirm" },
     });
   });
 
   it("upholding an already confirmed free win changes nothing", () => {
-    expect(disputeChange({ kind: "uphold" }, confirmedFreeWin, NOTE)).toEqual({
+    expect(
+      disputeChange({ kind: "uphold" }, confirmedFreeWin, NOTE, PARTICIPANTS),
+    ).toEqual({
       resolution: "upheld",
       change: { kind: "keep" },
     });
@@ -101,6 +109,7 @@ describe("disputeChange", () => {
         { kind: "uphold" },
         { outcome: "double_loss", confirmed: false },
         NOTE,
+        PARTICIPANTS,
       ),
     ).toEqual({ resolution: "upheld", change: { kind: "keep" } });
   });
@@ -110,6 +119,7 @@ describe("disputeChange", () => {
       { kind: "edit", report: editReport },
       reported,
       NOTE,
+      PARTICIPANTS,
     );
     expect(resolution).toBe("corrected");
     expect(change.kind).toBe("replace");
@@ -127,6 +137,7 @@ describe("disputeChange", () => {
       { kind: "free_win", winnerId: alice },
       reported,
       NOTE,
+      PARTICIPANTS,
     );
     expect(resolution).toBe("corrected");
     expect(change).toEqual({
@@ -135,13 +146,13 @@ describe("disputeChange", () => {
         outcome: "free_win",
         winnerId: alice,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: NOTE,
         discussedWithId: null,
       },
       games: [],
+      // An awarded free win drops the sheets of the result it replaces.
+      sheets: [],
     });
   });
 
@@ -150,6 +161,7 @@ describe("disputeChange", () => {
       { kind: "double_loss" },
       reported,
       NOTE,
+      PARTICIPANTS,
     );
     expect(resolution).toBe("corrected");
     expect(change.kind === "replace" && change.result.outcome).toBe(
@@ -160,7 +172,9 @@ describe("disputeChange", () => {
   });
 
   it("a reset is corrected and deletes the result", () => {
-    expect(disputeChange({ kind: "reset" }, reported, NOTE)).toEqual({
+    expect(
+      disputeChange({ kind: "reset" }, reported, NOTE, PARTICIPANTS),
+    ).toEqual({
       resolution: "corrected",
       change: { kind: "delete" },
     });
@@ -174,7 +188,12 @@ describe("disputeChange", () => {
       { kind: "reset" },
     ] as const;
     for (const decision of decisions) {
-      const { resolution, change } = disputeChange(decision, reported, NOTE);
+      const { resolution, change } = disputeChange(
+        decision,
+        reported,
+        NOTE,
+        PARTICIPANTS,
+      );
       expect(resolution).toBe("corrected");
       expect(change.kind === "keep" || change.kind === "confirm").toBe(false);
     }

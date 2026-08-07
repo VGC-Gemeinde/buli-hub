@@ -16,6 +16,13 @@ import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
 import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
+import {
+  GALLERY_CARDS,
+  GALLERY_ICONS_A,
+  GALLERY_ICONS_B,
+  SEED_SHEET_A,
+  SEED_SHEET_B,
+} from "@/features/dev/teamsheets";
 import { DropBanner } from "@/features/drops/components/drop-banner";
 import { DropsSection } from "@/features/drops/components/drops-section";
 import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
@@ -112,6 +119,12 @@ import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
 import { SeasonCard } from "@/features/staff/components/registration-status";
 import type { RegistrationState } from "@/features/staff/registration-window";
+import { TeamSheetCards } from "@/features/teamsheets/components/team-sheet-cards";
+import { TeamsheetField } from "@/features/teamsheets/components/teamsheet-field";
+import {
+  emptyTeamsheet,
+  storedTeamsheet,
+} from "@/features/teamsheets/field-state";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
 
@@ -174,8 +187,20 @@ const SUMMARY_RESULT: StoredResult = {
   outcome: "normal",
   winnerId: "me",
   platform: "showdown",
-  playerATeamUrl: "https://pokepast.es/aaaa",
-  playerBTeamUrl: "https://pokepast.es/bbbb",
+  sheets: [
+    {
+      playerId: "me",
+      id: "sheet-a",
+      source: "import" as const,
+      ots: SEED_SHEET_A,
+    },
+    {
+      playerId: "opp",
+      id: "sheet-b",
+      source: "pokepaste" as const,
+      ots: SEED_SHEET_B,
+    },
+  ],
   videoUrl: null,
   freeWinReason: null,
   discussedWithId: null,
@@ -203,13 +228,25 @@ const SUMMARY_RESULT: StoredResult = {
   ],
 };
 // A 2:0 sweep (two games): under an active spoiler mode the page renders a
-// phantom third row that turns into the „Nicht gespielt" ghost on reveal.
+// phantom third row that turns into the "Nicht gespielt" ghost on reveal.
 const SWEEP_RESULT: StoredResult = {
   outcome: "normal",
   winnerId: "me",
   platform: "showdown",
-  playerATeamUrl: "https://pokepast.es/aaaa",
-  playerBTeamUrl: "https://pokepast.es/bbbb",
+  sheets: [
+    {
+      playerId: "me",
+      id: "sheet-a",
+      source: "import" as const,
+      ots: SEED_SHEET_A,
+    },
+    {
+      playerId: "opp",
+      id: "sheet-b",
+      source: "pokepaste" as const,
+      ots: SEED_SHEET_B,
+    },
+  ],
   videoUrl: null,
   freeWinReason: null,
   discussedWithId: null,
@@ -246,8 +283,7 @@ const FREEWIN_RESULT: StoredResult = {
   outcome: "free_win",
   winnerId: "me",
   platform: null,
-  playerATeamUrl: null,
-  playerBTeamUrl: null,
+  sheets: [],
   videoUrl: null,
   freeWinReason: "Gegner war trotz mehrerer Terminvorschläge nicht erreichbar.",
   discussedWithId: "staff",
@@ -346,9 +382,47 @@ const EDITOR_INITIAL = {
     { winnerId: "eb", replayUrl: "https://replay.pokemonshowdown.com/gen9-2" },
     { winnerId: "ea", replayUrl: "https://replay.pokemonshowdown.com/gen9-3" },
   ],
-  playerATeamUrl: "https://pokepast.es/aaaaaaaaaaaaaaaa",
-  playerBTeamUrl: "https://pokepast.es/bbbbbbbbbbbbbbbb",
+  playerASheet: {
+    source: "import" as const,
+    ots: SEED_SHEET_A,
+    icons: GALLERY_ICONS_A,
+  },
+  playerBSheet: {
+    source: "pokepaste" as const,
+    ots: SEED_SHEET_B,
+    icons: GALLERY_ICONS_B,
+  },
   videoUrl: null,
+};
+const GALLERY_SHEET_EMPTY = emptyTeamsheet();
+const GALLERY_SHEET_LINKED = {
+  ...emptyTeamsheet(),
+  link: "https://pokepast.es/b89ff7cbd139fbcb",
+  accepted: {
+    source: "pokepaste" as const,
+    ots: SEED_SHEET_A,
+    icons: GALLERY_ICONS_A,
+  },
+};
+const GALLERY_SHEET_IMPORTED = storedTeamsheet(
+  "import",
+  SEED_SHEET_B,
+  GALLERY_ICONS_B,
+);
+const GALLERY_SHEET_ERROR = {
+  ...emptyTeamsheet(),
+  link: "https://pokepast.es/kaputt",
+  error: "Das Teamsheet ist nicht vollständig.",
+  details: [
+    "Das Team braucht genau 6 Pokémon. Gefunden: 5.",
+    "Delphox: Wesen fehlt.",
+  ],
+};
+const GALLERY_SHEET_VRPASTE_DOWN = {
+  ...emptyTeamsheet(),
+  link: "https://www.vrpastes.com/uQ8gaGGC",
+  error:
+    "VRPaste ist gerade nicht erreichbar. Bitte einen Pokepaste-Link angeben oder das Team direkt aus Showdown importieren.",
 };
 const EDITOR_A = { userId: "ea", name: "Sora", avatarUrl: null };
 const EDITOR_B = { userId: "eb", name: "Kai", avatarUrl: null };
@@ -727,7 +801,7 @@ function motwCandidates(round: number): MotwCandidate[] {
       2,
       "Division 1b",
       // Neither has a card on record and Nico never saved a profile, so this
-      // pairing is „Capture Card unklar" rather than „nicht aufnehmbar".
+      // pairing is "Capture Card unklar" rather than "nicht aufnehmbar".
       motwPlayer("Blaubeerkuchenbäckermeisterin Annegret", 4, 2, 2, false),
       motwPlayer("Nico", 5, 2, 2, false, false, false),
     ),
@@ -739,7 +813,7 @@ function motwCandidates(round: number): MotwCandidate[] {
       motwPlayer("Finn", 6, 1, 3, true, true),
     ),
     // Division 3 sits outside the default filter (top two divisions), so the
-    // gallery shows the „Alle"-toggle actually having something to add.
+    // gallery shows the "Alle"-toggle actually having something to add.
     motwCandidate(
       round,
       4,
@@ -1961,6 +2035,58 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Teamsheets</h2>
+        <Specimen label="Paste-Karten (Mega, Standard, ohne Item / drei Attacken)">
+          <TeamSheetCards cards={GALLERY_CARDS} ots={SEED_SHEET_A} />
+        </Specimen>
+        <Specimen label="Feld: leer (Link oder Import)">
+          <div className="max-w-[420px]">
+            <TeamsheetField
+              label="Dein Team"
+              value={GALLERY_SHEET_EMPTY}
+              onChange={() => {}}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Feld: Link akzeptiert">
+          <div className="max-w-[420px]">
+            <TeamsheetField
+              label="Dein Team"
+              value={GALLERY_SHEET_LINKED}
+              onChange={() => {}}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Feld: über Showdown-Export importiert">
+          <div className="max-w-[420px]">
+            <TeamsheetField
+              label="Dein Team"
+              value={GALLERY_SHEET_IMPORTED}
+              onChange={() => {}}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Feld: Fehler (unvollständiges Teamsheet)">
+          <div className="max-w-[420px]">
+            <TeamsheetField
+              label="Team von Kai"
+              value={GALLERY_SHEET_ERROR}
+              onChange={() => {}}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Feld: Fehler (VRPaste nicht erreichbar)">
+          <div className="max-w-[420px]">
+            <TeamsheetField
+              label="Team von Kai"
+              value={GALLERY_SHEET_VRPASTE_DOWN}
+              onChange={() => {}}
+            />
+          </div>
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Match-Meldung: Ergebnis</h2>
         <Specimen label="Ergebnis (Teilnehmer-Sicht: Sieg, Showdown, 2:1)">
           <ReportSummary
@@ -2086,7 +2212,7 @@ export function Gallery() {
             error="Du hast gerade sehr viele Meldungen abgeschickt. Bitte versuche es in einer Stunde erneut."
           />
         </Specimen>
-        <Specimen label="Screenshots — Anhänge voll (3/3, kein „Bild“-Button mehr)">
+        <Specimen label='Screenshots — Anhänge voll (3/3, kein "Bild"-Button mehr)'>
           <FeedbackSpecimen
             canSubmitIdea={false}
             attachments={[
@@ -2197,7 +2323,7 @@ export function Gallery() {
             </Callout>
           </div>
         </Specimen>
-        <Specimen label="Strafen-Karte — mit und ohne „Champions“-Qualifier">
+        <Specimen label='Strafen-Karte — mit und ohne "Champions"-Qualifier'>
           <div className="flex flex-col gap-4">
             <PenaltyCard title="Teamsheet-Fehler" qualifier="Champions">
               <Bullets className="text-[13px]">
@@ -2281,7 +2407,7 @@ export function Gallery() {
 
 // Deliberately includes the shapes a cloned season produces: umlauts, an
 // overlong name, a dropped player, a user with no profile identity at all, and
-// enough rows to trip the „weitere Treffer" cap.
+// enough rows to trip the "weitere Treffer" cap.
 const IMPERSONATION_USERS: ImpersonatableUser[] = [
   {
     userId: "11111111-1111-4111-8111-111111111111",

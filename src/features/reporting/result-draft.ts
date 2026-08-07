@@ -1,18 +1,34 @@
+import {
+  emptyTeamsheet,
+  isAccepted,
+  storedTeamsheet,
+  type TeamsheetValue,
+} from "@/features/teamsheets/field-state";
+import type { TeamsheetSource } from "@/features/teamsheets/sources";
+import type { MonIcon } from "@/features/teamsheets/view";
 import type { Platform } from "./report";
 
 // The editable form state behind a staff result edit, plus the pure rules that
 // govern it. Lives outside the components because two surfaces edit a result
-// the same way: the standalone „Ergebnis bearbeiten" editor and the correction
+// the same way: the standalone "Ergebnis bearbeiten" editor and the correction
 // branch of the dispute decision.
 
+// A stored sheet as the editor opens it. There is no link because we never
+// stored one: for editing, a sheet is always text.
+export type EditorSheet = {
+  source: TeamsheetSource;
+  ots: string;
+  icons: MonIcon[];
+};
+
 // Prefill for the editor, built from a stored normal result. Null fields mean
-// „nothing to prefill" — a free win being converted into a normal result starts
+// "nothing to prefill" — a free win being converted into a normal result starts
 // from an empty draft.
 export type NormalEditorInitial = {
   platform: Platform | null;
   games: { winnerId: string; replayUrl: string | null }[];
-  playerATeamUrl: string | null;
-  playerBTeamUrl: string | null;
+  playerASheet: EditorSheet | null;
+  playerBSheet: EditorSheet | null;
   videoUrl: string | null;
 };
 
@@ -21,18 +37,24 @@ export type ResultDraft = {
   // Always three slots; the third stays empty unless the series is split.
   winners: string[];
   replays: string[];
-  teamA: string;
-  teamB: string;
+  teamA: TeamsheetValue;
+  teamB: TeamsheetValue;
   video: string;
 };
+
+function initialSheet(sheet: EditorSheet | null | undefined): TeamsheetValue {
+  return sheet
+    ? storedTeamsheet(sheet.source, sheet.ots, sheet.icons)
+    : emptyTeamsheet();
+}
 
 export function emptyDraft(initial?: NormalEditorInitial | null): ResultDraft {
   return {
     platform: initial?.platform ?? "",
     winners: [0, 1, 2].map((i) => initial?.games[i]?.winnerId ?? ""),
     replays: [0, 1, 2].map((i) => initial?.games[i]?.replayUrl ?? ""),
-    teamA: initial?.playerATeamUrl ?? "",
-    teamB: initial?.playerBTeamUrl ?? "",
+    teamA: initialSheet(initial?.playerASheet),
+    teamB: initialSheet(initial?.playerBSheet),
     video: initial?.videoUrl ?? "",
   };
 }
@@ -70,8 +92,8 @@ export function isDraftComplete(draft: ResultDraft): boolean {
   return (
     draft.platform !== "" &&
     indexes.every((i) => draft.winners[i] !== "") &&
-    draft.teamA.trim() !== "" &&
-    draft.teamB.trim() !== "" &&
+    isAccepted(draft.teamA) &&
+    isAccepted(draft.teamB) &&
     (draft.platform !== "showdown" ||
       indexes.every((i) => draft.replays[i].trim() !== ""))
   );
@@ -88,8 +110,14 @@ export function draftToReport(draft: ResultDraft): unknown {
       winnerId: draft.winners[i],
       ...(draft.platform === "showdown" ? { replayUrl: draft.replays[i] } : {}),
     })),
-    playerATeamUrl: draft.teamA,
-    playerBTeamUrl: draft.teamB,
+    playerASheet: {
+      source: draft.teamA.accepted?.source ?? "import",
+      ots: draft.teamA.accepted?.ots ?? "",
+    },
+    playerBSheet: {
+      source: draft.teamB.accepted?.source ?? "import",
+      ots: draft.teamB.accepted?.ots ?? "",
+    },
     ...(draft.platform === "cartridge" && draft.video.trim() !== ""
       ? { videoUrl: draft.video }
       : {}),

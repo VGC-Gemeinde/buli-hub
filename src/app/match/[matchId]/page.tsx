@@ -11,6 +11,7 @@ import { PublicMatchView } from "@/features/reporting/components/public-match-vi
 import { ReportForm } from "@/features/reporting/components/report-form";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
 import { StaffMatchPanel } from "@/features/reporting/components/staff-match-panel";
+import type { StoredResult } from "@/features/reporting/queries";
 import {
   getMatchForReport,
   getMatchResult,
@@ -18,6 +19,7 @@ import {
   matchOpenDispute,
   matchResolvedDispute,
 } from "@/features/reporting/queries";
+import type { EditorSheet } from "@/features/reporting/result-draft";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import {
@@ -26,7 +28,28 @@ import {
 } from "@/features/spoilers/spoilers";
 import { latestWindow } from "@/features/staff/queries";
 import { seasonName } from "@/features/staff/registration-window";
+import { parseTeamsheet } from "@/features/teamsheets/parse";
+import { monIcons } from "@/features/teamsheets/view";
 import { formatGermanDateTime } from "@/lib/german-time";
+
+// A stored sheet, prepared for the staff editor's import dialog. The icons are
+// resolved here because this is a Server Component and @pkmn stays server-side.
+function editorSheet(
+  result: StoredResult,
+  playerId: string,
+): EditorSheet | null {
+  const sheet = result.sheets.find((row) => row.playerId === playerId);
+  if (!sheet) {
+    return null;
+  }
+  const parsed = parseTeamsheet(sheet.ots);
+  return {
+    source: sheet.source,
+    ots: sheet.ots,
+    // A stored sheet always parses; an empty icon row is the harmless fallback.
+    icons: parsed.ok ? monIcons(parsed.mons) : [],
+  };
+}
 
 // Public, read-only for neutral observers; participants get the report form +
 // dispute option and staff get the staff panel. Disputes are never shown to
@@ -104,8 +127,8 @@ export default async function MatchReportPage({
             winnerId: game.winnerId,
             replayUrl: game.replayUrl,
           })),
-          playerATeamUrl: result.playerATeamUrl,
-          playerBTeamUrl: result.playerBTeamUrl,
+          playerASheet: editorSheet(result, match.playerA.userId),
+          playerBSheet: editorSheet(result, match.playerB.userId),
           videoUrl: result.videoUrl,
         }
       : null;
@@ -188,7 +211,7 @@ export default async function MatchReportPage({
             </p>
             {decided.note ? (
               <p className="mt-0.5 text-muted-foreground text-sm">
-                „{decided.note}"
+                "{decided.note}"
                 {decided.resolvedByName ? ` · ${decided.resolvedByName}` : ""}
                 {decided.resolvedAt
                   ? `, ${formatGermanDateTime(decided.resolvedAt, {
@@ -199,7 +222,7 @@ export default async function MatchReportPage({
               </p>
             ) : null}
             <p className="mt-1 text-[13px] text-muted-foreground">
-              Angefochten von {decided.openedByName ?? "—"}: „{decided.reason}"
+              Angefochten von {decided.openedByName ?? "—"}: "{decided.reason}"
             </p>
           </div>
         ) : null}
@@ -212,7 +235,7 @@ export default async function MatchReportPage({
               Angefochten · in Prüfung
             </p>
             <p className="text-muted-foreground text-sm">
-              „{dispute.reason}" · {dispute.openedByName ?? "—"}
+              "{dispute.reason}" · {dispute.openedByName ?? "—"}
             </p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               Das gemeldete Ergebnis zählt vorerst weiter, bis der Staff

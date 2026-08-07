@@ -140,7 +140,7 @@ export type PlayerForm = {
 //
 // The table a rank comes from is the one that decides the player's division:
 // the merged Gesamttabelle in division mode, the sub-division table otherwise.
-// That is the same choice `findMotw` makes for the public billboard, so „Platz
+// That is the same choice `findMotw` makes for the public billboard, so "Platz
 // 3" means the same thing in the picker and on the billboard.
 export async function windowPlayerForm(
   windowId: string,
@@ -183,7 +183,7 @@ export type ProfileFlags = {
   hasCaptureCard: boolean;
   // The owner has actually saved their settings at least once. Without this,
   // `hasCaptureCard: false` is a default and not an answer — the picker must
-  // not read it as „owns no capture card".
+  // not read it as "owns no capture card".
   edited: boolean;
 };
 

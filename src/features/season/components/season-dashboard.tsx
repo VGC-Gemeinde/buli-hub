@@ -262,7 +262,7 @@ function ReportedBadge({
   );
 }
 
-// One row of „Dein Spielplan".
+// One row of "Dein Spielplan".
 function ScheduleRow({
   match,
   result,

@@ -10,7 +10,7 @@ page.
 
 Two gaps in the login token (JWT). First, it carries a user's *global*
 Discord identity, but we want their *server* identity: a person can be
-„AlexK" globally yet „Alex | Team Rocket" on the server. Second, the JWT only
+"AlexK" globally yet "Alex | Team Rocket" on the server. Second, the JWT only
 describes the signed-in user — so any view that shows a *different* user's
 name or avatar has no source for it. Both the server nickname/avatar and the
 persistence needed for other users come from the guild-member object already

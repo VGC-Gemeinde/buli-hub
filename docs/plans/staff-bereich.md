@@ -24,7 +24,7 @@ Derived purely from data — no scheduled job:
 ## Opening the registration (guarded destructive action)
 
 - Staff sets the end date/time (must be in the future; Zod-validated on the
-  server) and clicks „Anmeldung öffnen".
+  server) and clicks "Anmeldung öffnen".
 - Confirmation dialog (shadcn `dialog`): explains the consequence and
   requires typing the exact phrase **`Anmeldung öffnen`** — the confirm
   button stays disabled until it matches. GitHub-style typed confirmation.
@@ -35,12 +35,12 @@ Derived purely from data — no scheduled job:
 ## Registration link
 
 `{origin}/anmeldung` — the future player-registration page (404 until that
-feature lands). Copy button uses the clipboard API with „Kopiert"-feedback.
+feature lands). Copy button uses the clipboard API with "Kopiert"-feedback.
 
 ## Access
 
 - `/staff` page: `getRole` → below staff → `redirect("/")`.
-- Header user menu gets a „Staff-Bereich" item, rendered only for staff+
+- Header user menu gets a "Staff-Bereich" item, rendered only for staff+
   (SiteHeader already loads the user; it additionally resolves the role).
 - Role comparison via a pure `roleAtLeast(role, minimum)` helper in
   `features/roles` (dev > admin > staff > player), unit-tested.
@@ -75,7 +75,7 @@ the PostgREST path can neither read nor write staff data; only server code
 - `src/features/roles/roles.ts` — `roleAtLeast` + tests
 - `src/app/staff/page.tsx` — thin wrapper: role gate, load window, render
 - `src/features/auth/components/user-menu.tsx` + `site-header.tsx` —
-  conditional „Staff-Bereich" menu item
+  conditional "Staff-Bereich" menu item
 - Dev tooling (definition of done): gallery renders the three state views
   and the copy button; personas already cover the access matrix (staff/
   admin/dev personas see `/staff`, player and signed-out do not).

@@ -119,7 +119,7 @@ beforeAll(async () => {
       settingsEditedAt: edited,
     },
     // Never saved her settings. Her `false` is the column default, which is
-    // why `edited` has to be reported alongside it: Bob answered „no", Carol
+    // why `edited` has to be reported alongside it: Bob answered "no", Carol
     // never answered at all.
     { userId: carol, displayName: "Carol", hasCaptureCard: false },
   ]);
@@ -136,7 +136,7 @@ beforeAll(async () => {
     { matchId: matchR1, gameNumber: 2, winnerId: alice },
   ]);
 
-  // A second division in „division" mode with two equal groups — the case
+  // A second division in "division" mode with two equal groups — the case
   // where the merged Gesamttabelle, not the group table, decides a placement.
   const [division2] = await db
     .insert(divisions)
@@ -361,7 +361,7 @@ describe("profileFlags", () => {
     const flags = await profileFlags();
     expect(flags.get(alice)).toEqual({ hasCaptureCard: true, edited: true });
     // Bob and Carol both read `hasCaptureCard: false`; only `edited` separates
-    // „answered no" from „never answered".
+    // "answered no" from "never answered".
     expect(flags.get(bob)).toEqual({ hasCaptureCard: false, edited: true });
     expect(flags.get(carol)).toEqual({ hasCaptureCard: false, edited: false });
   });

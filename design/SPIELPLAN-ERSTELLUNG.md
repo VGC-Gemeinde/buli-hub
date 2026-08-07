@@ -2,7 +2,7 @@
 
 Companion to `DESIGN.md` (tokens, fonts, signature elements — all still valid),
 `STAFF-BEREICH.md` and `DIVISIONS-EINTEILUNG.md`. This doc is the design pass
-over the schedule feature against current `main` (7e3c2b4): the „Einteilung &
+over the schedule feature against current `main` (7e3c2b4): the "Einteilung &
 Spielplan" entry point and the `CreateScheduleDialog`. Domain logic
 (`round-robin.ts`, `spieltage.ts`, `queries.ts`, `actions.ts`) is correct
 as-is; **only views change**. Reference design: project file
@@ -20,7 +20,7 @@ phrase commits to the action).
 
 ## 1. Entry point (`staff/page.tsx`, seeded phase)
 
-The button row of „Einteilung & Spielplan" gains a consequence line so staff
+The button row of "Einteilung & Spielplan" gains a consequence line so staff
 knows what the terminal dialog will do *before* opening it:
 
 ```tsx
@@ -130,7 +130,7 @@ Cell specs:
 ### Shift feedback
 
 `change(index, date)` keeps calling `shiftDeadlineFrom`. When the delta ≠ 0,
-every row **after** the edited one flashes once so the „shifts everything
+every row **after** the edited one flashes once so the "shifts everything
 after" rule is visible, not prose-only:
 
 - Component state `flashFrom: number | null` + `flashTick: number`
@@ -150,7 +150,7 @@ Rows are pure derivation (start/end/days from `seasonStart` + `deadlines` via
 
 ## 5. Post-creation (regular_season phase)
 
-The „Einteilung & Spielplan" section keeps its place in the flow; the dialog
+The "Einteilung & Spielplan" section keeps its place in the flow; the dialog
 trigger gives way to a confirmation chip (same pattern as the seeding's
 finalized chip):
 
@@ -161,8 +161,8 @@ finalized chip):
 </div>
 ```
 
-The consequence line (§1) is dropped; the „Reguläre Saison" section and the
-season card's „Reguläre Saison läuft" status render as already implemented.
+The consequence line (§1) is dropped; the "Reguläre Saison" section and the
+season card's "Reguläre Saison läuft" status render as already implemented.
 
 ## 6. Dark mode
 

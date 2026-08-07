@@ -5,7 +5,7 @@ lands as its own feature; a placeholder ships here.
 
 Once a season's seeding is **finalized**, each sub-division is a fixed
 round-robin group. This feature turns those groups into a concrete match
-calendar: staff open a dialog, adjust the weekly „Spieltag" dates around
+calendar: staff open a dialog, adjust the weekly "Spieltag" dates around
 holidays and offline events, and confirm — which generates a single
 round-robin per group and moves the season into its **regular-season** phase.
 It is the spine the later reporting and standings features hang off.
@@ -23,7 +23,7 @@ season is running and generation is closed for good.
 ## Workflow (target end state)
 
 1. Precondition: the seeding is finalized.
-2. Staff click **„Spielplan erstellen"** → a dialog opens.
+2. Staff click **"Spielplan erstellen"** → a dialog opens.
 3. The dialog lists the Spielwochen with **one editable end-date (deadline) per
    week**. Spielwoche 1 **starts on creation**; its deadline defaults to the
    next Sunday at least 7 days away, and each following week defaults to the
@@ -35,13 +35,13 @@ season is running and generation is closed for good.
    **Pushing a week's deadline later shifts every later week by the same delta**
    (a one-week break cleanly pushes the rest of the season back). Deadlines must
    stay in ascending order.
-5. Staff **confirm** — a type-to-confirm gate: they type **„Spielplan
+5. Staff **confirm** — a type-to-confirm gate: they type **"Spielplan
    erstellen"** (the action, via the shared `TypeToConfirm` field from the
    finalize rework), acknowledging it starts the regular season and cannot be
    undone. On confirm the single round-robin is generated per sub-division and
    the Spieltag calendar is stored. Confirming *is* the commit — **terminal and
    irreversible**: the season advances, no regeneration, no going back.
-6. The season enters its **regular-season** phase („reguläre Saison läuft").
+6. The season enters its **regular-season** phase ("reguläre Saison läuft").
    The running-season dashboard is the **next feature**; this slice ends at a
    placeholder for it.
 
@@ -51,7 +51,7 @@ season is running and generation is closed for good.
 2. **Natural per-group length, shared calendar.** Groups run only as many
    Spieltage as their size needs (even group → `n − 1`, odd → `n`, the extra
    round carrying byes). All groups share one season-wide Spieltag calendar, so
-   „Spieltag N" is the same week everywhere; smaller groups idle in the final
+   "Spieltag N" is the same week everywhere; smaller groups idle in the final
    week(s).
 3. **Spielwochen are date ranges with editable deadlines.** Spielwoche 1 starts
    on creation; each week's editable end-date is its deadline (defaults to
@@ -104,7 +104,7 @@ schedule has no publish state; its existence is the regular-season signal.
     player byes **exactly once** for odd `n`, **never** for even; correct round
     count; determinism.
 - `spieltage.ts` — the calendar maths, all pure:
-  - `matchdayName(round)` → „Spieltag {round}".
+  - `matchdayName(round)` → "Spieltag {round}".
   - `spieltagCount(groupSizes: number[])` → `max(roundCount(size))` (the number
     of Spielwochen; `0` if no groups).
   - `nextSundayAtLeast(from, minDays = 7)` → the first Sunday at least `minDays`
@@ -151,13 +151,13 @@ uses it to choose which action buttons to render. No status column.
 ## Views
 
 - **Staff hub (`/staff`)** — the seeding-finalized section (from the finalize
-  rework) gains **„Spielplan erstellen"**. The button opens the client dialog;
+  rework) gains **"Spielplan erstellen"**. The button opens the client dialog;
   its Spieltag count + default deadlines are computed server-side from the
-  finalized seeding and passed in. Once a schedule exists the „Spielplan
-  erstellen" button is gone and the Saison card reads „reguläre Saison läuft".
+  finalized seeding and passed in. Once a schedule exists the "Spielplan
+  erstellen" button is gone and the Saison card reads "reguläre Saison läuft".
 - **Regular-season variant of `/staff`** — no separate route. Once a schedule
-  exists, the staff hub itself grows a „Reguläre Saison" section: a placeholder
-  („Dashboard mit Spielplan, Ergebnissen und Tabellen folgt") for the next
+  exists, the staff hub itself grows a "Reguläre Saison" section: a placeholder
+  ("Dashboard mit Spielplan, Ergebnissen und Tabellen folgt") for the next
   feature (the running-season dashboard).
 
 Components stay dumb; all logic is in the pure modules and actions.
@@ -167,7 +167,7 @@ Components stay dumb; all logic is in the pure modules and actions.
 - Staff-gated throughout; server actions re-check role + precondition.
 - Dev tooling: extend `src/features/dev/seed.ts` with a helper that fully seeds
   **and finalizes** a seeding (place every player into groups, set
-  `finalized_at`) so the „Spielplan erstellen" flow has valid input. The gallery
+  `finalized_at`) so the "Spielplan erstellen" flow has valid input. The gallery
   (`src/features/dev/components/gallery.tsx`) gets the Spieltag-dates dialog as a
   state. No new persona shapes needed.
 
@@ -185,7 +185,7 @@ Components stay dumb; all logic is in the pure modules and actions.
 
 ## Scope
 
-**In:** the „Spielplan erstellen" dialog (editable weekly Spieltag dates with
+**In:** the "Spielplan erstellen" dialog (editable weekly Spieltag dates with
 cascade-shift); single round-robin generation per sub-division; persistence of
 the calendar + matches; the derived regular-season phase; the `/staff/season`
 placeholder; dev tooling; the pure algorithms + their tests.

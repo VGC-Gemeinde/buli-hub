@@ -12,7 +12,7 @@ export type AcceptResult =
 /**
  * Records that the signed-in user accepts the running season's Regelwerk.
  *
- * Deliberately takes no input: what is being accepted is „the current season's
+ * Deliberately takes no input: what is being accepted is "the current season's
  * ruleset", which the server already knows. A client-supplied season or
  * document id would be a way to accept something other than what was on
  * screen.

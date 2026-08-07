@@ -4,7 +4,7 @@ import { divisionName } from "../seeding";
 import type { DivisionRef } from "../sheet";
 
 // Floating bar shown while ≥1 player is selected: move the selection to a
-// division (or „—" to unplace), or clear the selection.
+// division (or "—" to unplace), or clear the selection.
 export function BulkBar({
   count,
   divisions,

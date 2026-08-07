@@ -3,7 +3,7 @@
 **Status: done** (2026-08-05)
 
 Players reported that they could not submit their registration and could not
-tell why. Reproduction: type `3b` into „Division" in the veteran-history block.
+tell why. Reproduction: type `3b` into "Division" in the veteran-history block.
 The submit button stays disabled and the form says nothing.
 
 ## Why it happens
@@ -20,13 +20,13 @@ Three separate defects stack up:
    button is the only signal, and it names neither the field nor the reason.
 3. **The Zod messages exist but never reach the player.** `veteranHistorySchema`
    has proper German messages; they are only used server-side, where every
-   failure collapses into one generic „Bitte alle Felder zur Historie
+   failure collapses into one generic "Bitte alle Felder zur Historie
    ausfüllen". The client never runs them at all.
 
 There is also a latent fourth problem that would make a naive fix produce bad
 copy: `z.coerce.number()` turns `""` into `0`, so an empty field reports
-„Mindestens 1" rather than „Pflichtfeld", and `"1e2"` becomes `100` and reports
-„Höchstens 30".
+"Mindestens 1" rather than "Pflichtfeld", and `"1e2"` becomes `100` and reports
+"Höchstens 30".
 
 ## Scope
 
@@ -100,7 +100,7 @@ Validate on submit, then live per field:
 3. After a field has been reported, it re-validates as the player edits, so the
    message disappears the moment it is fixed. Fields that were never reported
    stay quiet while typing.
-4. A short line above the button („Bitte prüfe die markierten Felder.") makes
+4. A short line above the button ("Bitte prüfe die markierten Felder.") makes
    the click feel answered even when the offending field is off-screen.
 
 ### Visual treatment
@@ -137,14 +137,14 @@ sweep commit touched these files. Four user-facing strings still carry `—`
 (`registration-form.tsx:97`, `anmeldung/page.tsx:137,151,182`) plus one in the
 gallery demo copy. Fixed here since the change already edits these files.
 
-### Slider: „not answered" is not 0
+### Slider: "not answered" is not 0
 
-`skillSelfRating` becomes `number | null`, because 0 („blutiger Anfänger") is a
+`skillSelfRating` becomes `number | null`, because 0 ("blutiger Anfänger") is a
 real answer that a player who skipped the question must not be given by
-default. The readout says „noch keine Angabe" until the slider is used, and
+default. The readout says "noch keine Angabe" until the slider is used, and
 submitting without it is an error.
 
-„Used" cannot be inferred from the value changing: a player who wants 0 never
+"Used" cannot be inferred from the value changing: a player who wants 0 never
 moves the thumb off it. So the answer is also recorded on `onPointerDown` and
 on the keys that drive a slider, which is the only way choosing 0 deliberately
 is expressible.
@@ -159,7 +159,7 @@ rather than mixed into this feature.
 
 ## Open question
 
-**`prevSeason` is free text**, so „Saison 4", „4", „S4" and „2024" all pass and
+**`prevSeason` is free text**, so "Saison 4", "4", "S4" and "2024" all pass and
 land in the same `text` column. Only affects staff reading the roster by hand
-today. A placeholder („z. B. Saison 4") is added as a nudge; constraining the
+today. A placeholder ("z. B. Saison 4") is added as a nudge; constraining the
 format is a domain decision, not this change.

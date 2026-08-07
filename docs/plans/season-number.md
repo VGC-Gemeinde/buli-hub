@@ -1,9 +1,9 @@
 # Season number
 
 **Status: implemented** (2026-07-04) — full suite green (340 tests), `/dev/ui`
-verified (Saisonnummer input, „Nächste Saison" / „Saison 9" display).
+verified (Saisonnummer input, "Nächste Saison" / "Saison 9" display).
 
-The league already ran 8 seasons before this system, so „Saison 1" is wrong. Each
+The league already ran 8 seasons before this system, so "Saison 1" is wrong. Each
 season needs its number, decided **once** for the first season on the system and
 auto-incremented thereafter.
 
@@ -15,8 +15,8 @@ auto-incremented thereafter.
   (e.g. 9). This is the only time it is chosen.
 - Every later window: number = `latestWindow.seasonNumber + 1`, computed
   server-side, shown read-only, never editable.
-- Displayed everywhere as `seasonName(n)` = „Saison {n}", replacing the hardcoded
-  `SEASON_NAME` constant and the „Saison 1" literal.
+- Displayed everywhere as `seasonName(n)` = "Saison {n}", replacing the hardcoded
+  `SEASON_NAME` constant and the "Saison 1" literal.
 
 ## Affected code
 

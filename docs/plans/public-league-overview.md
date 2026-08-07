@@ -23,8 +23,8 @@ Views + read queries only — reuses `computeStandings`, `divisionStandings`,
   when that division is in `division` mode — with the post-season zones tinted
   (promotion / demotion / playoff / champion), same rules as the player view.
 - Per sub-division: the **current matchday** — that round's pairings with their
-  result (score / walkover) or „offen" + deadline; byes shown as „spielfrei".
-- Logged-in visitor: row highlight + „Zum Spieler-Dashboard" link.
+  result (score / walkover) or "offen" + deadline; byes shown as "spielfrei".
+- Logged-in visitor: row highlight + "Zum Spieler-Dashboard" link.
 
 **Out:**
 

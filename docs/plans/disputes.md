@@ -42,7 +42,7 @@ no policies (server-only).
 ## Staff full result edit
 
 Adds full editing on top of the reset-only limitation. On any undisputed match
-with a **normal** result, staff open an **„Ergebnis bearbeiten"** editor
+with a **normal** result, staff open an **"Ergebnis bearbeiten"** editor
 pre-filled from the current result and change everything a normal result
 carries: per-game winners + replays, platform, both team sheets, video.
 Switching a result to a **free win** or **double loss** stays with the existing
@@ -56,8 +56,8 @@ inside the decision dialog instead.
 - **Reuse:** the editor validates through the shared `staffResultSchema`
   (`reportSchema` plus a staff-only `double_loss` variant) and `toResultRows`.
   Its fields live in `result-fields.tsx` (shared with the dispute decision) in a
-  **neutral perspective** (player A vs player B, „Team {A}" / „Team {B}"), not
-  the player's „Du" framing — separate from the design-passed `report-form` to
+  **neutral perspective** (player A vs player B, "Team {A}" / "Team {B}"), not
+  the player's "Du" framing — separate from the design-passed `report-form` to
   keep risk low.
 - **Action:** `editResult(input)` (staff+, result must exist) →
   `replaceResult` upserts `match_results` + games, setting `corrected_by`.
@@ -65,13 +65,13 @@ inside the decision dialog instead.
 ## Player-side
 
 - **Match page:** when a result exists and the viewer is a participant with no
-  open dispute → an **„Ergebnis anfechten"** action (dialog: reason). While a
-  dispute is open → „Angefochten · in Prüfung" with the reason; once resolved →
+  open dispute → an **"Ergebnis anfechten"** action (dialog: reason). While a
+  dispute is open → "Angefochten · in Prüfung" with the reason; once resolved →
   the decision (bestätigt / korrigiert) plus the staff explanation is shown.
 - **Dashboard hero:** the reported and pending-free-win hero states link to
   `/match/[matchId]` (view + dispute). The result is already shown there; this
   adds the missing quick access.
-- **Schedule + standings:** a disputed match shows an „Angefochten" marker
+- **Schedule + standings:** a disputed match shows an "Angefochten" marker
   alongside its result chip.
 
 ## Staff dashboard
@@ -108,7 +108,7 @@ state (+ reason/opener for the section).
 
 - Seed: leave one match with an **open dispute** (and one resolved) so the staff
   dashboard's Disputes section is populated.
-- Gallery: the dispute dialog, the „Angefochten" chip, the staff editor, and the
+- Gallery: the dispute dialog, the "Angefochten" chip, the staff editor, and the
   dashboard Disputes section.
 - Unit: dispute state derivation, extended report schema (double-loss).
   Integration: openDispute/resolveDispute/editResult round-trips + the

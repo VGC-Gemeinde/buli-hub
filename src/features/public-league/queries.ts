@@ -39,7 +39,7 @@ export type PublicMatch = {
   matchId: string;
   round: number;
   playerA: Identity;
-  playerB: Identity | null; // null = bye („spielfrei")
+  playerB: Identity | null; // null = bye ("spielfrei")
   reported: boolean;
   pending: boolean; // free win awaiting staff confirmation
   scoreA: number | null;
@@ -53,8 +53,8 @@ export type PublicMatch = {
 
 export type PublicGroup = {
   subDivisionId: string;
-  name: string; // „Division 1a"
-  shortName: string; // „1a"
+  name: string; // "Division 1a"
+  shortName: string; // "1a"
   standings: StandingsRow[];
   zones: ZoneByUser | null; // set only in sub_division mode
   matches: PublicMatch[]; // every round's matches; the view filters by round
@@ -62,7 +62,7 @@ export type PublicGroup = {
 
 export type PublicDivision = {
   tier: number;
-  name: string; // „Division 1"
+  name: string; // "Division 1"
   mode: "sub_division" | "division";
   // The merged Gesamttabelle — set only in division mode, where it is the table
   // that decides promotion/relegation. In sub_division mode it is null (no toggle).

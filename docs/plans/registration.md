@@ -14,14 +14,14 @@ play). The view follows the window state (`registrationState`, reused):
 
 | situation                          | view                                            |
 |------------------------------------|-------------------------------------------------|
-| signed out                         | explanation + „Mit Discord anmelden"            |
-| signed in, `not_started`           | „Die Anmeldung ist noch nicht geöffnet."        |
+| signed out                         | explanation + "Mit Discord anmelden"            |
+| signed in, `not_started`           | "Die Anmeldung ist noch nicht geöffnet."        |
 | signed in, `open`, not registered  | the registration form                           |
-| signed in, `open`, registered      | confirmation + submitted data + „Abmelden"      |
+| signed in, `open`, registered      | confirmation + submitted data + "Abmelden"      |
 | signed in, `closed`, registered    | confirmation (read-only) — the season is set    |
-| signed in, `closed`, not registered| „Die Anmeldung ist geschlossen."                |
+| signed in, `closed`, not registered| "Die Anmeldung ist geschlossen."                |
 
-Withdrawal („Abmelden") is possible only while the window is `open`.
+Withdrawal ("Abmelden") is possible only while the window is `open`.
 
 ## Returning vs. new player
 
@@ -35,14 +35,14 @@ Three form variants:
 1. **System-detected returning** — a registration of theirs exists in an
    *earlier* window → **base fields only**, no self-report, no extra
    questions (we already have their history).
-2. **Not detected** — the form first asks „Hast du schon einmal
+2. **Not detected** — the form first asks "Hast du schon einmal
    teilgenommen?" (ja/nein):
    - **ja** → self-reported veteran → base + veteran-history questions (so
      staff can match them to pre-system records)
    - **nein** → new player → base + new-player questions
 
-Resolved status is *returning* (detected **or** self-report „ja") or *new*
-(self-report „nein"). A detected veteran never sees the self-report question.
+Resolved status is *returning* (detected **or** self-report "ja") or *new*
+(self-report "nein"). A detected veteran never sees the self-report question.
 Because this is the first season, no one is detected — everyone answers the
 self-report and branches from there.
 
@@ -63,14 +63,14 @@ Base fields (all players):
 | field              | required | notes                                                        |
 |--------------------|----------|--------------------------------------------------------------|
 | Anzeigename        | —        | **read-only**, greyed out; the guild display name (from the stored identity), with a note that it comes from the Discord server nickname and is changed there. Not stored on the registration. |
-| Plattform          | yes      | choice: „Pokémon Showdown" or „Cartridge (Pokémon Champions)"; seeds the division setup |
+| Plattform          | yes      | choice: "Pokémon Showdown" or "Cartridge (Pokémon Champions)"; seeds the division setup |
 
 Capture-card ownership is *not* a registration field — it is live profile
 state (see `docs/decisions/registration-vs-profile-data.md`). This feature
 also adds it to the profile: a `has_capture_card` boolean shown as a toggle in
-the „Für die Orga" settings, autosaved like the other settings.
+the "Für die Orga" settings, autosaved like the other settings.
 
-Veteran-history set (self-report „ja" only — detected returning players skip
+Veteran-history set (self-report "ja" only — detected returning players skip
 this):
 
 | field           | required | notes                                        |
@@ -80,7 +80,7 @@ this):
 | Division        | yes      | which division they were in                  |
 | Platzierung     | yes      | the place they finished at                   |
 
-New question set (self-report „nein"):
+New question set (self-report "nein"):
 
 | field              | required | notes                                          |
 |--------------------|----------|------------------------------------------------|
@@ -113,7 +113,7 @@ hides it permanently. `shouldShowProfileHint(profile)` is the pure decision.
 | created_at       | timestamptz | not null, default now()                   |
 | status           | text/enum   | not null: `returning` \| `new` (resolved)  |
 | participated_before | boolean  | nullable: the self-report answer, null when detection settled it |
-| prev_season      | text        | nullable; veteran-history (self-report „ja") |
+| prev_season      | text        | nullable; veteran-history (self-report "ja") |
 | prev_name        | text        | nullable; veteran-history                     |
 | prev_division    | text        | nullable; veteran-history                     |
 | prev_placement   | text        | nullable; veteran-history                     |
@@ -182,6 +182,6 @@ Both `revalidatePath("/anmeldung")` and `revalidatePath("/staff")`.
 ## Open questions
 
 1. Self-rating scale: 0–10 (assumed, since 0 = brand-new is anchored) vs. the
-   literal „1–10" — confirm.
-2. „Platzierung" as free text vs. a number — free text handles „Halbfinale",
-   „2. Platz", etc.; confirm free text is fine.
+   literal "1–10" — confirm.
+2. "Platzierung" as free text vs. a number — free text handles "Halbfinale",
+   "2. Platz", etc.; confirm free text is fine.

@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
  * When this user accepted the given season's Regelwerk, or null if they have
  * not. The timestamp rather than a boolean: it costs nothing, it is what the
  * rules page shows back so a player can see they are done, and every caller
- * that only needs „has accepted" gets it from the same read.
+ * that only needs "has accepted" gets it from the same read.
  */
 export async function acceptedAt(
   windowId: string,

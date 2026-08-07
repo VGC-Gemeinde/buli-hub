@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 //   S 14×7  — micro labels 12–13px uppercase (status lines, kickers, nav)
 //   M 18×9  — section headers (h2), panel titles
 //   L 22×11 — page titles (h1), landing credit
-// Color: orange (default, „active"), neutral (bg-border, informational),
+// Color: orange (default, "active"), neutral (bg-border, informational),
 // navy (staff / officiating).
 type TickSize = "s" | "m" | "l";
 type TickColor = "orange" | "neutral" | "navy";

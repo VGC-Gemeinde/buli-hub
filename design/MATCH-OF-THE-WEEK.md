@@ -139,7 +139,7 @@ match the banner family: `rounded-xl border border-brand-orange/40
 bg-brand-orange/5 px-6 py-5`, `flex flex-col items-start gap-3`:
 
 - **Ergebnis versteckt** — 14px semibold.
-- Copy, 14px muted: „Dieses Match ist das Match of the Week — das Ergebnis
+- Copy, 14px muted: "Dieses Match ist das Match of the Week — das Ergebnis
   bleibt verdeckt, damit dir das Video nicht gespoilert wird."
 - Outline button `border-brand-orange/50` **Ergebnis anzeigen**.
 
@@ -157,7 +157,7 @@ sanctioned wide width, `DESIGN.md` §8.5), paged through the whole season. Which
 weeks are editable is a domain rule, not a view decision — see §5.6.
 Header: standard `SiteHeader` breadcrumb **Staff-Bereich / Match of the
 Week**. Page head: back link **← Staff-Bereich**, orange tick + `h1`
-**Match of the Week** (30px), intro line 14px muted: „Ein Match pro Spieltag,
+**Match of the Week** (30px), intro line 14px muted: "Ein Match pro Spieltag,
 ligaweit über alle Divisionen. Der aktuelle und jeder kommende Spieltag lassen
 sich wählen; bei vergangenen bleibt der VOD-Link änderbar."
 
@@ -184,7 +184,7 @@ Open week: `border-brand-blue bg-brand-blue text-white`. Current Spieltag:
 `border-brand-orange/70`, or `ring-2 ring-brand-orange ring-offset-2` when it is
 also the open one. Each chip carries a `title` naming its state.
 
-This strip replaced the former „Frühere Spieltage" list — the VOD-fehlt ring is
+This strip replaced the former "Frühere Spieltage" list — the VOD-fehlt ring is
 what surfaced that open task, without a second list to work through.
 
 ### 5.2 Week head
@@ -211,13 +211,13 @@ block read as the same object:
 - VOD field above a `border-brand-orange/25` divider (§5.5).
 - Actions (editable weeks only): outline **Anderes Match wählen** (label flips
   to **Auswahl schließen**) and outline **Entfernen** in destructive text. A
-  settled past week shows the sentence „Vergangene Spieltage lassen sich nicht
+  settled past week shows the sentence "Vergangene Spieltage lassen sich nicht
   mehr umwählen — nur der VOD-Link bleibt änderbar." instead.
 
 **No pick**: one line above an open picker —
 `emphasisSurface("destructive")` when the running Spieltag is the unpicked one
 (matching the urgent todo card), quiet `border bg-muted/40` otherwise. A past
-week that was missed says so and offers the picker anyway („…es lässt sich noch
+week that was missed says so and offers the picker anyway ("…es lässt sich noch
 nachtragen."), because a finished week without a pick is still editable (§5.6).
 
 ### 5.4 Picker (`motw-candidate-row.tsx`, `motw-player.tsx`)
@@ -238,14 +238,14 @@ the pill: without it the two sort options and the filter chip read as three
 chips of the same kind.
 
 Every active chip and sort segment is **solid `bg-brand-orange` with white
-`font-semibold` text** — orange is the „active" surface (§8.1/§8.2), and 12.5px
+`font-semibold` text** — orange is the "active" surface (§8.1/§8.2), and 12.5px
 on solid orange needs the weight. Inactive chips stay outlined and muted. The
 pager's open-week chip is the deliberate exception and stays navy: there orange
-already means „aktueller Spieltag".
+already means "aktueller Spieltag".
 
-Below the toolbar a count line „{n} von {m} Matches". The list scrolls with the
+Below the toolbar a count line "{n} von {m} Matches". The list scrolls with the
 page — a nested scroll area fights the filters that make the list short in the
-first place. With nothing selected the list reads „Keine Division ausgewählt."
+first place. With nothing selected the list reads "Keine Division ausgewählt."
 
 Row = one `<button>` (picking means scanning; hunting a small trailing button
 per candidate is the slow way), `grid-cols-[60px_1fr_auto_1fr_236px]`. The
@@ -264,9 +264,9 @@ an `auto` width would shift the avatar columns row to row.
   with an `aria-label`/`title`: `Video` brand-orange = has one, `VideoOff`
   muted = answered no, **`CircleHelp` orange = profile never filled in**, so
   the stored `false` is a default rather than an answer. This is the per-player
-  answer to „who do I have to ask?".
+  answer to "who do I have to ask?".
 - **One marker per row**, most important first — recordability decides the
-  pick, „already played" is context, and two chips of different weights side by
+  pick, "already played" is context, and two chips of different weights side by
   side read as clutter. All three share one outlined pill so the row never
   looks assembled from spare parts: **nicht aufnehmbar**
   (`border-destructive/45 text-destructive`), **Capture Card unklar**
@@ -286,7 +286,7 @@ Available on every round, past included — uploads lag the Spieltag. With a lin
 set it collapses to the orange **Auf YouTube ansehen** button (play icon, white
 text) + outline **VOD-Link ändern**. Editing shows label **YouTube-VOD** (13px),
 input + primary **Speichern** (+ **Abbrechen** when a link already exists), hint
-12px muted: „Feld leeren und speichern entfernt den Link." / „Noch kein VOD
+12px muted: "Feld leeren und speichern entfernt den Link." / "Noch kein VOD
 verlinkt." — never promise upload timing.
 
 ### 5.6 Which weeks are editable (`canSelectRound`)
@@ -313,12 +313,12 @@ Placement as shipped: `SeasonStrip` → todo card → `SaisonDashboard`, gap-4.5
   (entry point once the todo is gone) — no visual change.
 - **Warning** (next round unpicked): `rounded-lg border border-brand-
   orange/40 bg-brand-orange/5 px-5 py-4`, title 14.5px semibold **Match of
-  the Week für Spieltag {n} wählen**, sub 13px muted „Der nächste Spieltag
+  the Week für Spieltag {n} wählen**, sub 13px muted "Der nächste Spieltag
   hat noch kein Match of the Week.", trailing outline button
   `border-brand-orange/50` **Jetzt wählen** → `/staff/motw`.
 - **Urgent** (current round unpicked, replaces the warning):
   `border-destructive/45 bg-destructive/5`, title in `text-destructive`,
-  sub „Der aktuelle Spieltag läuft noch ohne Match of the Week.", button
+  sub "Der aktuelle Spieltag läuft noch ohne Match of the Week.", button
   primary (orange, **white text**) **Jetzt wählen**.
 - Purely informational — never blocks pairings or anything else (unchanged).
 

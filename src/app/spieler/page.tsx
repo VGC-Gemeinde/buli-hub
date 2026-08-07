@@ -196,7 +196,7 @@ export default async function SpielerPage() {
       groupZones = new Map(standings.map((r, i) => [r.userId, zones[i]]));
     }
     const defaultScope: "group" | "division" = division ? "division" : "group";
-    // Sub-division chip labels for the merged division table (e.g. „2a").
+    // Sub-division chip labels for the merged division table (e.g. "2a").
     const divisionGroupLabels = division
       ? new Map(
           groups.flatMap((group) =>

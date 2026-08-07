@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { Tick } from "@/components/tick";
 import { cn } from "@/lib/utils";
 
-// The signed-in header navigation (DESIGN.md §3). Top-level entries — „Liga"
-// (only while a season runs), „Spieler-Dashboard", and „Staff-Bereich" (staff
+// The signed-in header navigation (DESIGN.md §3). Top-level entries — "Liga"
+// (only while a season runs), "Spieler-Dashboard", and "Staff-Bereich" (staff
 // only) — each with a tick that is orange when active, neutral otherwise. On a
-// sub-page a `breadcrumb` collapses the nav into a trail „{root} / {current}".
+// sub-page a `breadcrumb` collapses the nav into a trail "{root} / {current}".
 export function HeaderNav({
   isStaff,
   seasonRunning,

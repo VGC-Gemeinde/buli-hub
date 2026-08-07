@@ -228,7 +228,7 @@ Single exception: the landing credit keeps `tracking-[0.16em]`.
 
 Two styles only. **Inline** (prose): brand-blue, `underline
 underline-offset-[3px]`. **Action** (standalone): `font-semibold
-text-brand-blue dark:text-white` + trailing „→", hover underline. Bare text
+text-brand-blue dark:text-white` + trailing "→", hover underline. Bare text
 links that behave like buttons become outline buttons instead.
 
 ### 8.8 Empty / edge state — `<EmptyStateCard>` (`src/components/empty-state-card.tsx`)
@@ -240,7 +240,7 @@ special case.
 
 ### 8.9 Zone palette (standings) — tokens in `globals.css`
 
-Decoupled from brand orange so orange keeps meaning „active / you":
+Decoupled from brand orange so orange keeps meaning "active / you":
 
 | Zone | Token | Value |
 |---|---|---|
@@ -256,4 +256,4 @@ text + rail position carry it too.
 ### 8.10 Name fallback — `playerName()` (`src/lib/player-name.ts`)
 
 Every player-name render uses the chain `displayName → username →
-„Discord-Nutzer"`; never an empty cell or ad-hoc „Unbekannt".
+"Discord-Nutzer"`; never an empty cell or ad-hoc "Unbekannt".

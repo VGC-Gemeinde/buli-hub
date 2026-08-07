@@ -35,7 +35,7 @@ export const SAISON_9: RegelwerkDocument = {
     { label: "Dauer", value: "10-12 Wochen", kind: "large" },
     // Bo3 / OTS rather than spelled out: three items only fit the tile
     // abbreviated, and both are the forms players use anyway. The line break is
-    // deliberate — left to wrap on its own, the tile orphans „· OTS" onto the
+    // deliberate — left to wrap on its own, the tile orphans "· OTS" onto the
     // second line with the separator leading it.
     {
       label: "Format",
@@ -43,7 +43,7 @@ export const SAISON_9: RegelwerkDocument = {
       kind: "text",
     },
     { label: "Spielplan", value: "Single Round Robin", kind: "text" },
-    // The cap is on the group, not the division: „Gruppengröße" is also what
+    // The cap is on the group, not the division: "Gruppengröße" is also what
     // the seeding tool calls it, so the two agree.
     { label: "Gruppengröße", value: "max. 10 Spieler", kind: "text" },
   ],

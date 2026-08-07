@@ -27,7 +27,7 @@ export type ProfileSettings = z.output<typeof profileSettingsSchema>;
 export type ProfileSettingsInput = z.input<typeof profileSettingsSchema>;
 
 // Form state for the origin field: a fixed region in the select, or the
-// „Andere" free-text branch, or nothing chosen yet.
+// "Andere" free-text branch, or nothing chosen yet.
 export type OriginFormState =
   | { kind: "none" }
   | { kind: "region"; region: Region }

@@ -28,7 +28,7 @@ import {
 } from "../spieltage";
 
 // Weekday-prefixed German dates make the Sunday rhythm (and any deviation)
-// visible: „So. 30.08.2026", short „Mo. 03.07.".
+// visible: "So. 30.08.2026", short "Mo. 03.07.".
 function fmtDay(iso: string): string {
   return format(parseISO(iso), "EEEEEE. dd.MM.yyyy", { locale: de });
 }
@@ -61,7 +61,7 @@ function Fact({
   );
 }
 
-// „Spielplan erstellen": staff fix the whole season calendar in one terminal
+// "Spielplan erstellen": staff fix the whole season calendar in one terminal
 // action. The facts strip and per-week durations keep the season-level
 // consequences (Saisonende, pause weeks) readable while editing; extending one
 // deadline shifts — and flashes — every later week. Type-to-confirm commits.

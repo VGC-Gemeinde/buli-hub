@@ -10,7 +10,7 @@ import { saveMotwYoutubeUrl } from "../actions";
 
 // The VOD link editor for one pick — available for every round, including past
 // ones, because uploads lag the Spieltag. Saving an empty field removes the
-// link. A set link collapses to a chip; „Ändern" opens the input again.
+// link. A set link collapses to a chip; "Ändern" opens the input again.
 export function MotwVodField({
   round,
   youtubeUrl,

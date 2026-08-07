@@ -1,7 +1,7 @@
 import type { Fact } from "@/features/regelwerk/content/types";
 import { cn } from "@/lib/utils";
 
-// „Auf einen Blick" (design §2.4): the six facts players look up without
+// "Auf einen Blick" (design §2.4): the six facts players look up without
 // wanting to read the document. Exactly one tile is emphasised — the season
 // start, which every other date hangs off.
 export function FactsGrid({

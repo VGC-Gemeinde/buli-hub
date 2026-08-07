@@ -11,8 +11,8 @@ import { currentUser } from "@/features/roles/guard";
 // Dev-only: generates a closed window with fake registrations for testing the
 // seeding tool. /dev/seed-registrations?count=100
 // - &grouped=1 places everyone and generates all groups but leaves the
-//   post-season rules unset → the „Auf- & Abstieg" step is what's missing.
-// - &finalize=1 also builds + finalizes a seeding → ready for „Spielplan
+//   post-season rules unset → the "Auf- & Abstieg" step is what's missing.
+// - &finalize=1 also builds + finalizes a seeding → ready for "Spielplan
 //   erstellen".
 // - &schedule=1 goes all the way to a running season (schedule + matches) and
 //   registers the signed-in persona so their Spieler-Dashboard is populated.

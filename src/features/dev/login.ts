@@ -14,7 +14,7 @@ export type DevLoginResult = { ok: true } | { ok: false; error: string };
 type AdminClient = ReturnType<typeof createSupabaseAdmin>;
 
 // GoTrue answers some failures with an empty body, which supabase-js surfaces
-// as an AuthError whose message is „{}" (or blank). Returned raw, that is what
+// as an AuthError whose message is "{}" (or blank). Returned raw, that is what
 // the /dev/login routes render — an opaque `{}`. This turns such a response
 // into a message that names the most likely cause and keeps any real detail.
 function describeAuthError(

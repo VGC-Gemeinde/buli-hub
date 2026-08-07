@@ -25,7 +25,7 @@ import { formatGermanDateTime } from "@/lib/german-time";
 // build time (the image build has no database).
 export const dynamic = "force-dynamic";
 
-// Short deadline, e.g. „15.08.26, 20:00" — used in the status line and inline
+// Short deadline, e.g. "15.08.26, 20:00" — used in the status line and inline
 // next to the sign-in CTA.
 function formatDeadline(closesAt: Date): string {
   return formatGermanDateTime(closesAt, {
@@ -37,7 +37,7 @@ function formatDeadline(closesAt: Date): string {
   });
 }
 
-// Long, spelled-out timestamp, e.g. „15. August 2026, 20:00" — used on the
+// Long, spelled-out timestamp, e.g. "15. August 2026, 20:00" — used on the
 // closed card.
 function formatLongTimestamp(date: Date): string {
   return formatGermanDateTime(date, {

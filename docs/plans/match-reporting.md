@@ -9,7 +9,7 @@ The regular season runs and players can see their schedule (`/spieler`), but the
 no way to record a result — `matches` has no result columns. This feature adds
 **player-side match reporting** and, since the reporting result cells live on the
 Spieler-Dashboard, applies the pending designer hand-off `design/SPIELER-DASHBOARD.md`
-in the same feature (the „Ergebnis melden" button, result chips and live standings only
+in the same feature (the "Ergebnis melden" button, result chips and live standings only
 function once reporting exists — combining avoids a reserved-but-empty dashboard).
 
 Scope is the **player** flow. All staff powers — accessing/correcting any report,
@@ -83,9 +83,9 @@ yet — designer hand-off + design pass come later).
 ## Dashboard — apply `design/SPIELER-DASHBOARD.md` + wire reporting
 
 Thread `matchId` through `buildPlayerMatches` → `PlayerMatch` → components (link to
-`/match/[matchId]`). Apply the hand-off: §1 nav tick, §2 shell widen + „Deine Saison" title,
-§3 progress strip, §4 hero (matchup + meta + „Ergebnis melden" → report; post-report: final
-score / „warten auf Bestätigung"), §5 schedule result chips + Überfällig, §6 live standings +
+`/match/[matchId]`). Apply the hand-off: §1 nav tick, §2 shell widen + "Deine Saison" title,
+§3 progress strip, §4 hero (matchup + meta + "Ergebnis melden" → report; post-report: final
+score / "warten auf Bestätigung"), §5 schedule result chips + Überfällig, §6 live standings +
 sort, §7 not-placed panel. Files: `site-header.tsx`, `spieler/page.tsx`,
 `season/components/season-dashboard.tsx`. Load group results in `spieler/page.tsx`.
 
@@ -94,7 +94,7 @@ sort, §7 not-placed panel. Files: `site-header.tsx`, `spieler/page.tsx`,
 - Gallery: report form (normal + free-win), dashboard with results (reported/overdue/pending
   rows, populated standings).
 - Extend the running-season seed (`features/dev/seed.ts`) to record some results.
-- The CLAUDE.md „Design happens in two passes" addition rides in this feature's commit.
+- The CLAUDE.md "Design happens in two passes" addition rides in this feature's commit.
 
 ## Deferred (out of scope)
 
@@ -118,5 +118,5 @@ design pass + wiring → dev tooling → checks.
 ## Resolved decisions / assumptions
 
 - Best-of-3 (first to 2). Pokepaste host = `pokepast.es`. `double_loss` reporter-view label =
-  „Niederlage" for both. Route `/match/[matchId]` (participant-gated now; staff access later).
+  "Niederlage" for both. Route `/match/[matchId]` (participant-gated now; staff access later).
   This feature carries the dashboard's first design pass in full.

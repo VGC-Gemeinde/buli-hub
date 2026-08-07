@@ -4,11 +4,11 @@
 
 ## Problem
 
-„Entscheiden" promised a decision but only wrote the dispute row. Correcting a
-result meant leaving the dialog, using „Ergebnis bearbeiten", reopening the
-dialog and remembering to pick „Als korrigiert markieren" — and nothing tied the
+"Entscheiden" promised a decision but only wrote the dispute row. Correcting a
+result meant leaving the dialog, using "Ergebnis bearbeiten", reopening the
+dialog and remembering to pick "Als korrigiert markieren" — and nothing tied the
 two together. The reachable nonsense states were real: edit the result and then
-resolve as „bestätigt", or resolve as „korrigiert" without touching anything.
+resolve as "bestätigt", or resolve as "korrigiert" without touching anything.
 The note that was supposed to record the reasoning was optional and never
 displayed anywhere.
 
@@ -32,20 +32,20 @@ Consequences that make the guarantee hold:
   reset, award and free-win-confirm rows are hidden — they are all reachable
   *inside* the decision, so there is no second path that could desynchronize
   result and dispute.
-- **Upholding a pending free win confirms it.** „Das Ergebnis bleibt bestehen"
+- **Upholding a pending free win confirms it.** "Das Ergebnis bleibt bestehen"
   has to mean it counts, otherwise staff would have to step out again.
-- **The explanation is mandatory** („Erkläre deine Entscheidung"), and it is
+- **The explanation is mandatory** ("Erkläre deine Entscheidung"), and it is
   shown to both players on the match page, so it is worth writing.
 
 ## Flow (two steps, one modal)
 
 1. **Entscheidung** — the contested result and the quoted dispute for context,
-   then the five options as cards. „Weiter".
-2. **Details + Begründung** — the chosen decision with a „Ändern" affordance,
+   then the five options as cards. "Weiter".
+2. **Details + Begründung** — the chosen decision with a "Ändern" affordance,
    the fields that decision needs (result editor / winner picker / nothing), and
    the mandatory explanation. Submit label names the consequence.
 
-Nothing is written before the last button; „Zurück" keeps every entry.
+Nothing is written before the last button; "Zurück" keeps every entry.
 
 ## Code
 

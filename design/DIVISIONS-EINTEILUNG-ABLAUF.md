@@ -58,7 +58,7 @@ Each step = numbered circle + two-line text block, `flex items-center gap-2.5`:
 - **Label**: `font-heading text-[14.5px] uppercase tracking-[0.05em]
   leading-none` — `text-foreground` when done/active, `text-muted-foreground`
   when pending. Step 2 is relabelled **Gruppen bilden** (verb, matches
-  „Platzieren“; was „In Gruppen“).
+  "Platzieren"; was "In Gruppen").
 - **Sublabel** under the label, `text-[11.5px] text-muted-foreground`. Steps
   1 + 2 render progress instead of plain text: a 52×3px `rounded-full
   bg-muted` track with fill (`bg-brand-orange` for Platzieren,
@@ -69,12 +69,12 @@ Each step = numbered circle + two-line text block, `flex items-center gap-2.5`:
 
 Steps 1+2 share one `<button>` (they live in the sheet view), step 3 has its
 own (rules view). Segment: `flex items-center gap-3 rounded-[10px] border
-px-3.5 py-1.5`, `aria-pressed`, `title` „Ansicht: Spieler platzieren und
-Gruppen bilden“ / „Ansicht: Auf- und Abstiegsregeln festlegen“.
+px-3.5 py-1.5`, `aria-pressed`, `title` "Ansicht: Spieler platzieren und
+Gruppen bilden" / "Ansicht: Auf- und Abstiegsregeln festlegen".
 
 - **Active view**: `border-brand-orange/40 bg-brand-orange/5` **plus** an
   inset bottom rule `shadow-[inset_0_-2px_0_var(--brand-orange)]` — the
-  „you are here“ marker, deliberately distinct from the circles (which mean
+  "you are here" marker, deliberately distinct from the circles (which mean
   progress, not location). Both steps inside the sheet segment highlight
   together.
 - Inactive: `border-transparent hover:border-border hover:bg-muted`.
@@ -104,10 +104,10 @@ note).
 
 No segment styling — it must read as an action, not navigation. Three states:
 
-1. **Ready + controlling**: active circle „4“ + primary `Button`
+1. **Ready + controlling**: active circle "4" + primary `Button`
    **Finalisieren…** (`size` default, h-34px), opens the existing
-   `FinalizeDialog`. `title`: „Endgültig — kann nicht rückgängig gemacht
-   werden.“
+   `FinalizeDialog`. `title`: "Endgültig — kann nicht rückgängig gemacht
+   werden."
 2. **Not ready, or observing** (not finalized): plain step — circle + label
    **Finalisieren** + sublabel with the **short gate reason**, so the blocker
    is readable without hovering:
@@ -152,18 +152,18 @@ costing a full chrome row. The takeover CTA stays one click away.
 Exactly one contextual row under the step bar; its content follows the view:
 
 - **Sheet view** (not finalized): the config/search row as shipped —
-  Divisionen / Gruppengröße inputs, Spieltage hint, „Alle Gruppen
-  generieren“, search, filter pills. Observer mode: config inputs +
+  Divisionen / Gruppengröße inputs, Spieltage hint, "Alle Gruppen
+  generieren", search, filter pills. Observer mode: config inputs +
   generate-all `disabled` at `opacity-55`; **search + filter stay usable**
   (behavior unchanged, now visually consistent with the rest).
 - **Rules view** (not finalized): the `PostSeasonPanel` action strip as
   shipped (verdict disc + text, Ungespeicherte Änderungen, Speichern /
   Gespeichert ✓). Copy nit: invalid verdict reads
-  „{n} Punkt(e) zu klären — Details in der Liste unten.“
+  "{n} Punkt(e) zu klären — Details in der Liste unten."
 - **Finalized** (either view): both rows replaced by the notice strip in the
   same slot — `border-b border-brand-orange/40 bg-brand-orange/5 px-7 py-2
-  text-[13.5px]`: „Die Einteilung wurde am {Datum} finalisiert und ist
-  endgültig.“ (was rendered below the toolbar; moving it up keeps the header
+  text-[13.5px]`: "Die Einteilung wurde am {Datum} finalisiert und ist
+  endgültig." (was rendered below the toolbar; moving it up keeps the header
   a fixed three-row stack).
 
 ## 5. Sheet read-only states (`sheet-rows.tsx`)
@@ -185,12 +185,12 @@ Two distinct read-only flavors, now fully specified:
 The ladder itself already matches `AUF-ABSTIEG.md` §2 — cards, zone preview,
 steppers, seams all stay. Deltas:
 
-- Intro sentence ends „… müssen sich decken — erst dann kann **gespeichert
-  und finalisiert** werden.“ (the save is the step, not the dialog anymore).
-- The no-groups notice gets an inline escape hatch: „Bitte zuerst die Gruppen
-  generieren — … festlegen. **Zurück zum Sheet**“ (link, switches the view).
-- Seam rows name the divisions explicitly — „↓ 8 **steigen aus Division 2
-  ab**“ / „↑ 8 **steigen in Division 2 auf**“ — since the seam is now part of
+- Intro sentence ends "… müssen sich decken — erst dann kann **gespeichert
+  und finalisiert** werden." (the save is the step, not the dialog anymore).
+- The no-groups notice gets an inline escape hatch: "Bitte zuerst die Gruppen
+  generieren — … festlegen. **Zurück zum Sheet**" (link, switches the view).
+- Seam rows name the divisions explicitly — "↓ 8 **steigen aus Division 2
+  ab**" / "↑ 8 **steigen in Division 2 auf**" — since the seam is now part of
   a longer scrolling ladder (up to 7 cards) instead of a two-division dialog.
   Balance chip labels: **Ausgeglichen** / **Nicht gedeckt**.
 - **Implementation note**: step 3's sublabel (§2.3) needs the panel's
@@ -205,13 +205,13 @@ steppers, seams all stay. Deltas:
 - *Anfang*: step 1 active, rules view shows the no-groups notice, finalize
   sublabel counts unplaced players.
 - *Alles eingeteilt*: steps 1+2 done ✓, step 3 active with issue count, seams
-  show „Nicht gedeckt“, finalize blocked on rules.
+  show "Nicht gedeckt", finalize blocked on rules.
 - *Bereit zum Finalisieren*: steps 1–3 done, step 4 renders the primary
   button; complete the type-to-confirm dialog → chip + notice strip + static
   sheet.
 - *Steuerung*: all three pill tones; observer sees disabled config, hidden
   checkboxes/generate buttons, working search/filter; ready-but-observing
-  shows the „Übernimm die Steuerung…“ sublabel.
+  shows the "Übernimm die Steuerung…" sublabel.
 
 ## 8. Checklist
 
@@ -221,7 +221,7 @@ steppers, seams all stay. Deltas:
    active/hover treatment with inset bottom rule, chevron separators, flow
    hint (§2.1–§2.2)
 3. `steps.ts`: `finalizeGateShort` beside `finalizeGateHint`; relabel
-   „Gruppen bilden“ (§2.3–§2.4)
+   "Gruppen bilden" (§2.3–§2.4)
 4. `control-bar.tsx` → pill component; dialogs unchanged; drop the strip (§3)
 5. `sheet-rows.tsx`: observer vs finalized read-only rendering (§5)
 6. `post-season-panel.tsx`: copy deltas, seam naming, view-switch link;

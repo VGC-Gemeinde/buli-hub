@@ -11,11 +11,11 @@ export type ChapterLink = {
   title: string;
 };
 
-/** Where a chapter heading counts as „reached" — just below the site header. */
+/** Where a chapter heading counts as "reached" — just below the site header. */
 const ACTIVE_OFFSET = 160;
 
 // The active chapter is the last one whose heading has passed the offset. A
-// scroll listener rather than IntersectionObserver: „last heading above a line"
+// scroll listener rather than IntersectionObserver: "last heading above a line"
 // is a single reduction over positions, where the observer would need its
 // entries reconciled into the same answer. Passive, and it never touches the
 // URL — writing the hash on scroll floods the history.

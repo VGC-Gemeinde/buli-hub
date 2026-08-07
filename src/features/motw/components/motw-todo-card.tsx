@@ -37,7 +37,7 @@ export function MotwTodoCard({ todo }: { todo: NonNullable<MotwTodo> }) {
         variant={urgent ? "default" : "outline"}
         className={cn(!urgent && "border-brand-orange/50")}
       >
-        {/* Deep-link the workspace at the round the todo is about, so „Jetzt
+        {/* Deep-link the workspace at the round the todo is about, so "Jetzt
             wählen" opens on the week that needs the pick. */}
         <Link href={`/staff/motw?spieltag=${todo.round}`}>Jetzt wählen</Link>
       </Button>

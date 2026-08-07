@@ -14,7 +14,7 @@ time, and step through the Spieltage to see each round's pairings and results.
 In:
 - Keep the division switcher (existing).
 - Add a **sub-division switcher** (pills): the single driver for both the table
-  and the schedule shown. In division mode it gains a leading **„Gesamt"** entry
+  and the schedule shown. In division mode it gains a leading **"Gesamt"** entry
   that shows the merged Gesamttabelle *and* the whole division's schedule (every
   group's pairings for the selected round); Gesamt is the default there. In
   sub_division mode there is no Gesamt entry — only the groups. Zones decorate
@@ -40,14 +40,14 @@ Out:
   filter); the component filters by the selected round.
 - `PublicDivision.divisionStandings` (+ `divisionZones`, `divisionGroupLabels`)
   is set only in `division` mode, where the merged table is the relevant one and
-  carries the zones; it drives the „Gesamt" entry.
+  carries the zones; it drives the "Gesamt" entry.
 - `PublicOverview` gains `matchdays: MatchdayLite[]` so the timeline can show the
   selected round's date range.
 
 ## View (`src/features/public-league/components/public-league.tsx`)
 
 - `DivisionView` (keyed by tier so state resets on division switch): holds the
-  selected entry (a sub-division id or „gesamt") and the selected round.
+  selected entry (a sub-division id or "gesamt") and the selected round.
 - Sub-division switcher → two columns: standings (left) | Spielplan (right). The
   Spielplan column stacks the Spieltag timeline above the selected round's
   matches, so on mobile the order is Tabelle → Timeline → Spielplan.

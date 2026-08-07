@@ -11,7 +11,7 @@ function shortGroup(groupName: string): string {
 
 // One pickable matchup. The whole row is the button — picking a MotW means
 // scanning a long list, and hunting a small trailing button for every candidate
-// is the slow way to do that. The trailing „Wählen" stays as the visible
+// is the slow way to do that. The trailing "Wählen" stays as the visible
 // affordance and lights up with the row.
 export function MotwCandidateRow({
   candidate,

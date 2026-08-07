@@ -19,7 +19,7 @@ import type { Identity } from "@/features/season/dashboard";
 import { cn } from "@/lib/utils";
 import { awardFreeWin } from "../staff-actions";
 
-// Shared staff „award a free win" dialog — opened from the match page and from
+// Shared staff "award a free win" dialog — opened from the match page and from
 // overdue rows on the dashboard. Picks a winner (player cards), takes a reason
 // (shown to both players), and awards immediately.
 export function AwardFreewinDialog({

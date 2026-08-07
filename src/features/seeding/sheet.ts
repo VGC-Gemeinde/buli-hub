@@ -18,7 +18,7 @@ export type SubDivisionRef = {
   position: number;
 };
 
-// The collapse key of the „Nicht platziert" section (it has no entity id).
+// The collapse key of the "Nicht platziert" section (it has no entity id).
 // Cannot collide with the division/sub-division UUIDs.
 export const UNPLACED_SECTION = "unplaced";
 
@@ -69,9 +69,9 @@ function byName(a: SeedingPlayer, b: SeedingPlayer): number {
 }
 
 /**
- * Assembles the flat, ordered row list for the seeding sheet: a „Nicht
+ * Assembles the flat, ordered row list for the seeding sheet: a "Nicht
  * platziert" section, then each division with either its generated groups
- * (plus an „Ohne Gruppe" section for stragglers) or its ungrouped players (or
+ * (plus an "Ohne Gruppe" section for stragglers) or its ungrouped players (or
  * an empty hint). Separator counts always reflect the full data; the filter
  * only removes player rows.
  *

@@ -13,7 +13,7 @@ tweakable).
 The core idea: the page answers one question first — **wen spiele ich diese
 Woche, und bis wann?** — as a hero card, with the season context (progress,
 full personal schedule, standings) readable below without competing. The hero
-carries the single primary action slot where „Ergebnis melden" attaches.
+carries the single primary action slot where "Ergebnis melden" attaches.
 
 Two phases share the layout. **v1 (pre-reporting)** ships without results:
 schedule rows show week dates, the table is all-zero. The result cells, the
@@ -57,7 +57,7 @@ only the active link carries it (inactive: `text-muted-foreground`, no tick).
 </div>
 ```
 
-„Deine Saison" (not „Spieler-Dashboard") — the nav already says where you
+"Deine Saison" (not "Spieler-Dashboard") — the nav already says where you
 are; the page says what it is. The non-placed / pre-season states keep the
 plain **Spieler-Dashboard** h1.
 
@@ -116,8 +116,8 @@ justify-between gap-6 flex-wrap`. Left column (`gap-4.5`):
 ### Bye variant
 
 Same card. Label **Spieltag {n}**, heading `font-heading text-[32px]`
-**Spielfrei**, subline `text-sm text-muted-foreground` „Diese Woche hast du
-kein Match. Zeit zum Vorbereiten." Right block: **Danach** label + „Spieltag
+**Spielfrei**, subline `text-sm text-muted-foreground` "Diese Woche hast du
+kein Match. Zeit zum Vorbereiten." Right block: **Danach** label + "Spieltag
 {r} · vs. {name}" + `Deadline {date}`. No button.
 
 ## 5. Dein Spielplan (left column)
@@ -182,7 +182,7 @@ Player rows, same grid, `px-4 py-2.25 border-b last:border-b-0`:
 Keeps the plain h1 (§2). Panel `rounded-lg border px-8 py-7 flex flex-col
 gap-2.5 items-start`: tick + `font-heading text-[22px] font-bold uppercase
 text-brand-blue dark:text-white` **Du bist in der laufenden Saison nicht
-dabei** over `text-[15px] text-muted-foreground` „Für diese Saison liegt
+dabei** over `text-[15px] text-muted-foreground` "Für diese Saison liegt
 keine Einteilung für dich vor. Die nächste Anmeldung wird im Discord
 angekündigt." All other pre-season states stay as implemented.
 
@@ -197,12 +197,12 @@ angekündigt." All other pre-season states stay as implemented.
 ## 9. Checklist
 
 1. `site-header.tsx`: Spieler-Dashboard nav link with tick (§1)
-2. `spieler/page.tsx`: widen shell; in-season title row „Deine Saison" +
+2. `spieler/page.tsx`: widen shell; in-season title row "Deine Saison" +
    group badge (§2)
 3. `season-dashboard.tsx`: progress strip (§3), hero card with meta block +
    reserved action slot (§4), schedule rows (§5), table (§6)
 4. Not-placed panel (§7)
 5. Reporting follow-up wiring: result cells, Überfällig, live standings +
-   sort, „Ergebnis melden" button (§4–6, *mit Reporting*)
+   sort, "Ergebnis melden" button (§4–6, *mit Reporting*)
 6. Both modes verified (§8), `npx biome check --write .`,
    `npx tsc --noEmit`, `npm test -- --run`

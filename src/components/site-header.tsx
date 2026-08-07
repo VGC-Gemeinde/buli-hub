@@ -23,7 +23,7 @@ export async function SiteHeader({
 }) {
   const current = await currentUser();
   const isStaff = current !== null && roleAtLeast(current.role, "staff");
-  // The „Liga" entry only appears while the public overview is live.
+  // The "Liga" entry only appears while the public overview is live.
   const seasonRunning = current !== null ? await seasonIsRunning() : false;
 
   return (

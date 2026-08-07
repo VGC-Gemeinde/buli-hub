@@ -53,7 +53,7 @@ export function StaffMatchPanel({
   winnerName?: string | null;
   isPendingFreeWin: boolean;
   pendingWinnerName?: string | null;
-  // Prefill for the „bearbeiten" editor — only for a reported normal result.
+  // Prefill for the "bearbeiten" editor — only for a reported normal result.
   editorInitial?: NormalEditorInitial | null;
   disputeOpen?: boolean;
   disputeReason?: string | null;

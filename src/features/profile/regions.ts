@@ -1,6 +1,6 @@
 // Selectable origins, shown grouped in the UI: the 16 German Bundesländer
 // and the German-speaking neighbor countries of the VGC Gemeinde community.
-// Anything else goes through the free-text „Andere" option and is stored
+// Anything else goes through the free-text "Andere" option and is stored
 // as-is.
 export const GERMAN_STATES = [
   "Baden-Württemberg",

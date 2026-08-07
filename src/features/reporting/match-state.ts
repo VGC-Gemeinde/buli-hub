@@ -2,7 +2,7 @@ import type { Identity } from "@/features/season/dashboard";
 import type { MatchOutcome } from "./report";
 
 // How a match renders on the schedule. A recorded result wins over any
-// date-derived state; a past matchday with no result is „überfällig" — except a
+// date-derived state; a past matchday with no result is "überfällig" — except a
 // bye, which is never overdue. Dates are ISO day strings (YYYY-MM-DD).
 export type MatchDisplayState =
   | "current"
@@ -28,7 +28,7 @@ export function matchDisplayState(input: {
   const { startsOn, endsOn, opponent } = input.match;
   if (input.today > endsOn) {
     // A bye has nothing to report, so it never becomes overdue; callers render
-    // it as „Spielfrei" (past byes just fade).
+    // it as "Spielfrei" (past byes just fade).
     return opponent === null ? "upcoming" : "overdue";
   }
   if (startsOn <= input.today && input.today <= endsOn) {

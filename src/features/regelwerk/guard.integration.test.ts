@@ -13,7 +13,7 @@ import { regelwerkAcceptances, registrationWindows } from "@/db/schema";
 import { LOCKED_ERROR } from "@/features/regelwerk/acceptance";
 import { db } from "@/lib/db";
 
-// The lock is the whole point of slice 2: „a disabled button is not
+// The lock is the whole point of slice 2: "a disabled button is not
 // authorization" (design §5.2). These tests exercise it against a real
 // database, with the season phase mocked because building a finalized seeding
 // plus a schedule per case would test the seeding feature, not this one.

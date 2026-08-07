@@ -10,12 +10,12 @@ export type ImpersonatableUser = {
   displayName: string | null;
   username: string | null;
   role: Role;
-  /** „Division 1a" for the latest season, or null when unplaced. */
+  /** "Division 1a" for the latest season, or null when unplaced. */
   division: string | null;
   dropped: boolean;
 };
 
-/** „Division 1" before groups exist, „Division 1a" once they do. */
+/** "Division 1" before groups exist, "Division 1a" once they do. */
 export function divisionLabel(
   tier: number | null,
   position: number | null,
@@ -30,7 +30,7 @@ export function divisionLabel(
 
 /**
  * Substring search across the fields the picker shows. Case- and
- * diacritic-insensitive, so „Jorg" finds „Jörg" — with cloned data you are
+ * diacritic-insensitive, so "Jorg" finds "Jörg" — with cloned data you are
  * usually typing a name you half-remember from Discord.
  */
 export function filterUsers(

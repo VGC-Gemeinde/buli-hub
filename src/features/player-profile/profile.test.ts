@@ -42,7 +42,7 @@ describe("profileScheduleRows", () => {
     });
   });
 
-  it('keeps unreported and pending free-win matches „offen"', () => {
+  it('keeps unreported and pending free-win matches "offen"', () => {
     const pending: MatchResultLite = {
       ...normalResult("m2"),
       outcome: "free_win",

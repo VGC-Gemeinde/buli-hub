@@ -46,7 +46,7 @@ cursor-pointer  (button, no border, no padding — size set per context)
   centered next to the "Sieger:" label.
 - Dark mode: `bg-white/12 hover:bg-white/20`.
 - Always `title="Ergebnis verdeckt — antippen zum Aufdecken"` (game rows:
-  „Sieger verdeckt — …") and `aria-label="Ergebnis aufdecken"`.
+  "Sieger verdeckt — …") and `aria-label="Ergebnis aufdecken"`.
 - Click is shielded as shipped (`preventDefault` + `stopPropagation`) — the
   surrounding row can stay a link.
 
@@ -78,7 +78,7 @@ covered element is added later, reserve its revealed footprint the same way.
 
 ### 2.1 Global switch
 
-Placement: **title row, right-aligned**, after the „Spieltag {n} / 7" label
+Placement: **title row, right-aligned**, after the "Spieltag {n} / 7" label
 (`flex items-center gap-6`). Standard shadcn Switch, checked = protection
 **on** (default), track `bg-brand-blue` when on. Label right of the track:
 **Spoiler-Schutz**, 13.5px `font-semibold text-brand-blue`;
@@ -92,10 +92,10 @@ unchanged (`spoilers_off=1` ⇄ absence).
 ### 2.2 Match rows
 
 Row anatomy unchanged. The center score slot becomes a **fixed-width box**
-(`w-12 flex items-center justify-center`) so pill ⇄ score ⇄ „offen" swap
+(`w-12 flex items-center justify-center`) so pill ⇄ score ⇄ "offen" swap
 without any horizontal shift. Three states:
 
-1. **Unplayed**: „offen", 13px semibold muted (unchanged).
+1. **Unplayed**: "offen", 13px semibold muted (unchanged).
 2. **Covered** (`scoreHidden` true): placeholder pill §1.1 (`w-10 h-3`).
    Tap reveals **only this row**, client-side.
 3. **Visible** (own match, revealed, or switch off): score 13px semibold
@@ -146,16 +146,16 @@ Spiele → Teamsheets.
 
 ### 3.1 Eyebrow + status chip
 
-Unchanged: „Ergebnis · Spieltag {n} · {group} · {season}" + **Final** chip.
+Unchanged: "Ergebnis · Spieltag {n} · {group} · {season}" + **Final** chip.
 Both are safe — they say *that* a result exists, never *what* it is.
 
 ### 3.2 Headline — swaps in place
 
-- **Covered**: the pairing — **{A} vs. {B}**, the „vs." in
+- **Covered**: the pairing — **{A} vs. {B}**, the "vs." in
   `oklch(0.68 0.025 263)`; same `h1` metrics as the result headline
   (`font-heading 38px leading-[1.1]`), so the swap costs zero height.
 - **Revealed**: **Sieg für {B}** / **Doppelniederlage** as shipped.
-- Free win: covered shows the same pairing headline (never „Freewin für X");
+- Free win: covered shows the same pairing headline (never "Freewin für X");
   revealed shows the shipped free-win view.
 
 ### 3.3 Notice line (replaces the cover card)
@@ -163,11 +163,11 @@ Both are safe — they say *that* a result exists, never *what* it is.
 One quiet line between `h1` and scoreboard — `flex items-baseline gap-2.5
 text-[13px] text-muted-foreground min-h-5` — copy + reveal link (§1.3):
 
-- Covered, default: „Spoiler-Schutz aktiv — Sieger und Endstand sind
+- Covered, default: "Spoiler-Schutz aktiv — Sieger und Endstand sind
   verdeckt." + **Ergebnis aufdecken**
-- Covered, MotW: „Match of the Week — Ergebnis verdeckt, erst das VOD
+- Covered, MotW: "Match of the Week — Ergebnis verdeckt, erst das VOD
   ansehen." + **Ergebnis aufdecken**
-- Revealed (both): „Ergebnis aufgedeckt — nur für dich, hier auf dieser
+- Revealed (both): "Ergebnis aufgedeckt — nur für dich, hier auf dieser
   Seite." + **Wieder verdecken**
 
 All three are one line at 760px content width — keep them short so the line
@@ -184,9 +184,9 @@ Desktop `ScoreBoard` anatomy unchanged, three additions:
   score; the **loser's numeral** in muted (`text-muted-foreground`), winner's
   in `text-brand-blue` — matches the shipped mobile treatment.
 - **Reserve the winner-marker row on both sides**: a `h-[15px]` sub-row under
-  each name, empty while covered, holding the orange „Sieger" marker after
+  each name, empty while covered, holding the orange "Sieger" marker after
   reveal. Names never move.
-- Winner marker only after reveal; no „Du"/„Gegner" sub-labels for neutral
+- Winner marker only after reveal; no "Du"/"Gegner" sub-labels for neutral
   viewers (as shipped).
 
 Mobile `PlayerRow`s: score numeral masked per §1.2, winner marker suppressed
@@ -198,12 +198,12 @@ Game rows keep their shipped anatomy (label · winner · replay button). The
 middle gets `min-h-[31px]` so all rows are equal height with or without a
 replay button. Per row:
 
-- „Sieger:" label muted while covered, `text-brand-blue` after.
+- "Sieger:" label muted while covered, `text-brand-blue` after.
 - Winner name masked with the pill §1.1 (`w-[88px] h-[13px]`); **each game
   reveals independently** (tap = just that game) — you can watch replay 1,
   peek game 1, and stay unspoiled for the series.
 - **Replay ansehen ↗** buttons always visible and always live.
-- Section header, right-aligned while covered: „Replays spoilerfrei ansehen"
+- Section header, right-aligned while covered: "Replays spoilerfrei ansehen"
   (12.5px muted) — disappears after full reveal (baseline row, no shift).
 
 ### 3.6 Fixed game count — the row count must not leak
@@ -214,7 +214,7 @@ covered, **always render 3 rows**:
 - **Showdown**: the phantom third row is a normal covered row whose replay
   button links a **dummy replay** (reuse game 2's URL). On reveal it becomes
   the **ghost variant**: `border-dashed border-[oklch(0.87_0.015_262)]
-  bg-muted/30`, label muted, copy „Nicht gespielt — die Serie war nach zwei
+  bg-muted/30`, label muted, copy "Nicht gespielt — die Serie war nach zwei
   Spielen entschieden.", no replay button, same `min-h` so nothing shifts.
 - **Cartridge**: same 3-rows + ghost rule, just without replay buttons
   anywhere (per shipped platform rules); the match video in §3.7 is the
@@ -270,7 +270,7 @@ thin wrapper choosing the notice copy, or is folded into the page).
    context, tooltips, dark-mode fills
 2. `spoiler-switch.tsx`: title-row placement, label styling, re-cover clears
    per-row reveals (§2.1)
-3. `public-league.tsx` MatchRow: fixed `w-12` score slot, pill/„offen"/score
+3. `public-league.tsx` MatchRow: fixed `w-12` score slot, pill/"offen"/score
    states, suppressed bolding, orange **MotW** cover pill replaces the row
    badge (§2.2–2.3)
 4. `app/match/[matchId]/page.tsx`: drop `SpoilerCoverShell` usage; always

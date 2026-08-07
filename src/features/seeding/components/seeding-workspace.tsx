@@ -100,7 +100,7 @@ export function SeedingWorkspace({
   // Collapsed divisions/sub-divisions (local to each viewer, not shared).
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   // The rules panel mirrors its live editor state up here so the step bar's
-  // „Auf- & Abstieg" sublabel matches the panel. Initialized from the server
+  // "Auf- & Abstieg" sublabel matches the panel. Initialized from the server
   // data (the panel reports on mount, but the first paint should agree).
   const [panelRules, setPanelRules] = useState<PanelRulesStatus>(() => ({
     dirty: false,

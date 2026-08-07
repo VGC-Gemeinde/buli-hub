@@ -40,7 +40,7 @@ type Option = {
 
 // Every path staff can take on a disputed match. They all live here on purpose:
 // the decision and the result change are one step, so a correction can never
-// end up filed as „bestätigt" and vice versa.
+// end up filed as "bestätigt" and vice versa.
 function options(pendingFreeWin: boolean): Option[] {
   return [
     {
@@ -112,7 +112,7 @@ export function DisputeResolveDialog({
   reason?: string | null;
   openedByName?: string | null;
   // The result that is currently counted, for context and for what
-  // „bestätigen" means here.
+  // "bestätigen" means here.
   outcome: MatchOutcome;
   winnerName?: string | null;
   pendingFreeWin?: boolean;
@@ -210,7 +210,7 @@ export function DisputeResolveDialog({
               </span>
               {reason ? (
                 <p className="text-[13.5px] text-muted-foreground">
-                  „{reason}"
+                  "{reason}"
                 </p>
               ) : null}
             </div>

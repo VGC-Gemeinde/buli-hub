@@ -62,14 +62,14 @@ export function Bullet({ children }: { children: ReactNode }) {
 }
 
 /**
- * The scan layer: dates, thresholds, „freie Teamwahl", division numbers.
+ * The scan layer: dates, thresholds, "freie Teamwahl", division numbers.
  * Nothing else in the prose is emphasised, so this stays meaningful.
  */
 export function Key({ children }: { children: ReactNode }) {
   return <strong className="font-semibold text-foreground">{children}</strong>;
 }
 
-/** The Orga's own asides — the „Es ist okay, wenig Zeit zu haben" voice. */
+/** The Orga's own asides — the "Es ist okay, wenig Zeit zu haben" voice. */
 export function Aside({ children }: { children: ReactNode }) {
   return <em className="italic">{children}</em>;
 }

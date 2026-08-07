@@ -59,7 +59,7 @@ function signedInAs(userId: string) {
 
 /**
  * Opens a season. `openedAt` is explicit and far in the future, because the
- * action resolves „the running season" through `latestWindow()`, which orders
+ * action resolves "the running season" through `latestWindow()`, which orders
  * by it: the fixture has to be newer than anything else in the database, and
  * two windows in one test have to be ordered by more than how fast the machine
  * ran.
@@ -80,7 +80,7 @@ async function openSeason(seasonNumber: number): Promise<string> {
 beforeAll(async () => {
   // Shared table, cleared up front like the other integration suites: a window
   // left behind by another test — or by the /dev seeding tools — would
-  // otherwise decide what „the running season" is.
+  // otherwise decide what "the running season" is.
   await db.delete(registrationWindows);
   for (const id of [player, other]) {
     await db.execute(sql`insert into auth.users (id) values (${id})`);

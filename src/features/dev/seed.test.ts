@@ -25,8 +25,21 @@ describe("buildSeedRegistrations", () => {
         expect(spec.skillSelfRating).toBeNull();
         expect(spec.participatedBefore).toBe(true);
         expect(spec.prevDivision).toBeTruthy();
+        // The veteran branch of the form never asks for achievements.
+        expect(spec.greatestAchievements).toBeNull();
       }
     }
+  });
+
+  // The Erfolge column of the seeding sheet is only worth looking at if the
+  // seed actually fills it — an all-dashes column hid layout problems.
+  it("gives most new players an achievement, but not all", () => {
+    const newPlayers = buildSeedRegistrations(400).filter(
+      (spec) => spec.status === "new",
+    );
+    const filled = newPlayers.filter((spec) => spec.greatestAchievements);
+    expect(filled.length).toBeGreaterThan(newPlayers.length / 2);
+    expect(filled.length).toBeLessThan(newPlayers.length);
   });
 
   it("is deterministic given a fixed rng", () => {

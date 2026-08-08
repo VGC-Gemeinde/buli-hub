@@ -21,10 +21,35 @@ import { divisionName, subDivisionShortName } from "../seeding";
 import type { DivisionRef, SubDivisionRef } from "../sheet";
 
 // Shared column template — header and player rows must line up.
+//
+// Division is sized so the widest option, "Nicht platziert", fits the select
+// without clipping; the 22px it needed came out of Spieler, which had room to
+// spare. Spieler's minimum shrank by the same amount, so the sheet's minimum
+// scroll width is unchanged, and its flex share dropped so the extra width goes
+// to Erfolge rather than back to the name column.
 export const SHEET_GRID =
-  "grid-cols-[36px_minmax(190px,1.3fr)_100px_110px_170px_150px_130px_minmax(170px,1fr)_150px_110px]";
+  "grid-cols-[36px_minmax(168px,1.15fr)_100px_110px_170px_150px_130px_minmax(170px,1fr)_172px_110px]";
 
 const UNPLACED = "__unplaced__";
+
+// The column labels, shared so the header and the no-data marker cannot drift:
+// `Dash` sizes itself to its column's label, and a renamed heading has to move
+// the dash with it.
+const HEADINGS = {
+  player: "Spieler",
+  status: "Status",
+  platform: "Plattform",
+  prevSeason: "Letzte Saison",
+  caveat: "Hinweis",
+  rating: "Einschätzung",
+  achievements: "Erfolge",
+  division: "Division",
+  group: "Gruppe",
+} as const;
+
+// The header's own typography. `Dash` reuses it on an invisible copy of the
+// label so the measured width matches what the header actually renders.
+const HEADING_TYPE = "font-semibold text-[11px] uppercase tracking-[0.08em]";
 
 const PLATFORM_SHORT: Record<Platform, { label: string; dot: string }> = {
   showdown: { label: "Showdown", dot: "bg-chart-3" },
@@ -35,20 +60,21 @@ export function SheetColumnHeader() {
   return (
     <div
       className={cn(
-        "sticky top-0 z-10 grid h-[34px] items-center border-b bg-background pr-7 pl-5 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]",
+        "sticky top-0 z-10 grid h-[34px] items-center border-b bg-background pr-7 pl-5 text-muted-foreground",
+        HEADING_TYPE,
         SHEET_GRID,
       )}
     >
       <span />
-      <span>Spieler</span>
-      <span>Status</span>
-      <span>Plattform</span>
-      <span>Letzte Saison</span>
-      <span>Hinweis</span>
-      <span>Einschätzung</span>
-      <span>Erfolge</span>
-      <span>Division</span>
-      <span>Gruppe</span>
+      <span>{HEADINGS.player}</span>
+      <span>{HEADINGS.status}</span>
+      <span>{HEADINGS.platform}</span>
+      <span>{HEADINGS.prevSeason}</span>
+      <span>{HEADINGS.caveat}</span>
+      <span>{HEADINGS.rating}</span>
+      <span>{HEADINGS.achievements}</span>
+      <span>{HEADINGS.division}</span>
+      <span>{HEADINGS.group}</span>
     </div>
   );
 }
@@ -81,8 +107,10 @@ export function UnplacedSeparator({
         <span className="font-heading font-bold text-brand-blue text-lg uppercase tracking-[0.04em] dark:text-white">
           Nicht platziert
         </span>
-        <span className="text-[12.5px] text-muted-foreground">
-          {count} Spieler · Rückkehrer zuerst, dann nach Selbsteinschätzung
+        <span className="whitespace-nowrap text-[12.5px] text-muted-foreground">
+          {count} Spieler · Die meisten Rückkehrer werden voreingeteilt. Die
+          übrigen landen hier, danach die neuen Spieler sortiert nach
+          Selbsteinschätzung.
         </span>
       </button>
     </div>
@@ -228,10 +256,32 @@ export function EmptyDivisionHint() {
   );
 }
 
-// Centered no-data marker for empty cells.
-function Dash() {
+// No-data marker for empty cells, centered on the column *heading* rather than
+// on the column. The headings are left-aligned, so a dash centered in a 170px
+// column sits far to the right of the word it belongs to, and a column of them
+// reads as misaligned. Centered under the label instead, the marker lands where
+// the eye already is.
+//
+// The width comes from an invisible copy of the heading rendered in the
+// header's own typography — there is no way to measure the header from here,
+// and hardcoded offsets would break the moment a label changes. Both children
+// share one grid cell, so the copy sizes the box and the dash centers in it.
+function Dash({ heading }: { heading: string }) {
   return (
-    <span className="justify-self-center text-muted-foreground/50">—</span>
+    <span className="grid justify-self-start place-items-center">
+      <span
+        aria-hidden
+        className={cn(
+          "invisible col-start-1 row-start-1 whitespace-nowrap",
+          HEADING_TYPE,
+        )}
+      >
+        {heading}
+      </span>
+      <span className="col-start-1 row-start-1 text-muted-foreground/50">
+        —
+      </span>
+    </span>
   );
 }
 
@@ -239,7 +289,7 @@ function CaveatChip({ player }: { player: SeedingPlayer }) {
   const caveats = seedingCaveats(player);
   const caveat = caveats[0];
   if (!caveat) {
-    return <Dash />;
+    return <Dash heading={HEADINGS.caveat} />;
   }
   return (
     <span className="whitespace-nowrap rounded-md border-[1.5px] border-dashed px-1.5 py-px font-semibold text-[11.5px] text-muted-foreground">
@@ -329,7 +379,7 @@ export function PlayerRow({
           Division {player.prevDivision} · {player.prevPlacement ?? "?"}. Platz
         </span>
       ) : (
-        <Dash />
+        <Dash heading={HEADINGS.prevSeason} />
       )}
 
       <CaveatChip player={player} />
@@ -347,7 +397,7 @@ export function PlayerRow({
           </div>
         </div>
       ) : (
-        <Dash />
+        <Dash heading={HEADINGS.rating} />
       )}
 
       {player.greatestAchievements ? (
@@ -358,14 +408,14 @@ export function PlayerRow({
           {player.greatestAchievements}
         </span>
       ) : (
-        <Dash />
+        <Dash heading={HEADINGS.achievements} />
       )}
 
       {finalized ? (
         player.divisionId && divisionTier ? (
           <span className="text-[13px]">{divisionName(divisionTier)}</span>
         ) : (
-          <Dash />
+          <Dash heading={HEADINGS.division} />
         )
       ) : (
         <Select
@@ -377,7 +427,7 @@ export function PlayerRow({
         >
           <SelectTrigger
             size="sm"
-            className={cn("h-7 w-[136px]", readOnly && "opacity-60")}
+            className={cn("h-7 w-[158px]", readOnly && "opacity-60")}
           >
             <SelectValue />
           </SelectTrigger>
@@ -402,7 +452,7 @@ export function PlayerRow({
             )}
           </span>
         ) : (
-          <Dash />
+          <Dash heading={HEADINGS.group} />
         )
       ) : (
         <Select

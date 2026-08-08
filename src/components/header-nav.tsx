@@ -28,15 +28,17 @@ export function HeaderNav({
       label: "Spieler-Dashboard",
     };
     return (
-      <div className="flex items-center gap-2.5">
-        <Link href={root.href} className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Link href={root.href} className="flex min-w-0 items-center gap-2">
           <Tick size="s" color="neutral" />
-          <span className="font-medium text-muted-foreground text-sm hover:text-brand-blue dark:hover:text-white">
+          <span className="truncate font-medium text-muted-foreground text-sm hover:text-brand-blue dark:hover:text-white">
             {root.label}
           </span>
         </Link>
-        <span className="text-[13px] text-border">/</span>
-        <span className="font-semibold text-brand-blue text-sm dark:text-white">
+        <span className="shrink-0 text-[13px] text-border">/</span>
+        {/* The current page wins the space fight: it keeps up to ~45vw
+            before truncating, the root label gives way first. */}
+        <span className="max-w-[45vw] shrink-0 truncate font-semibold text-brand-blue text-sm dark:text-white">
           {breadcrumb}
         </span>
       </div>

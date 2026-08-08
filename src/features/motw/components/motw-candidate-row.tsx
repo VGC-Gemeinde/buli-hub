@@ -62,7 +62,9 @@ export function MotwCandidateRow({
       </span>
       <MotwSide player={candidate.playerB} side="right" />
 
-      <span className="flex items-center justify-end gap-2.5">
+      {/* Wrapped lines align left (DESIGN.md §6): on the stacked mobile grid
+          this cell is its own line, so it right-aligns only from sm up. */}
+      <span className="flex items-center gap-2.5 sm:justify-end">
         <span className="hidden sm:block">
           <RowMarker candidate={candidate} />
         </span>

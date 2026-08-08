@@ -159,6 +159,7 @@ Anchored 26px from the bottom of the viewport, centered: two skewed orange ticks
 - Buttons: default variant = orange primary in both modes. Destructive/outline/ghost as stock shadcn.
 - Charts (future standings/stats): `--chart-1` blue, `--chart-2` orange, then supporting navy tints.
 - Page headings: h1–h3 are automatically uppercase; don't fight it. For UI labels that must not be uppercase, use styled `div`/`p`, not heading tags.
+- **Wrapped lines align left.** A card row may right-align its trailing content (`ml-auto`, `justify-end`, `text-right`) only while everything shares one line. As soon as that content moves to a line of its own — `flex-wrap` kicking in, a `w-full` block below `sm`, a grid collapsing to one column — the new line starts at the left edge like every other line. Right alignment inherited from the one-line layout looks broken on a wrapped line. In practice: gate the alignment behind the breakpoint (`sm:ml-auto`, `sm:justify-end`) and let the stacked mobile layout default to left.
 
 ## 7. Implementation checklist
 

@@ -234,7 +234,7 @@ export function SaisonDashboard({
                     ) : null}
                   </div>
                 </div>
-                <div className="flex justify-end sm:contents">
+                <div className="flex sm:contents">
                   <Button
                     asChild
                     size="sm"

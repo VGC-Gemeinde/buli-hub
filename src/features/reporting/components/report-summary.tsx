@@ -369,12 +369,15 @@ export function ReportSummary({
               return (
                 <div
                   key={game.gameNumber}
-                  className="flex items-center gap-3.5 rounded-lg border px-4 py-3"
+                  className="flex flex-wrap items-center gap-x-3.5 gap-y-2 rounded-lg border px-4 py-3"
                 >
                   <span className="w-[58px] shrink-0 whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.08em]">
                     Spiel {game.gameNumber}
                   </span>
-                  <span className="flex min-h-[31px] flex-1 items-center gap-2 font-semibold text-sm">
+                  {/* The floor keeps the winner name readable; if the replay
+                      button no longer fits next to it, it wraps onto its own
+                      line instead of squeezing the name away. */}
+                  <span className="flex min-h-[31px] min-w-36 flex-1 items-center gap-2 font-semibold text-sm">
                     <span
                       className={
                         gameCovered
@@ -393,7 +396,7 @@ export function ReportSummary({
                         className="h-[13px] w-[88px]"
                       />
                     ) : (
-                      <span className="text-brand-blue dark:text-white">
+                      <span className="truncate text-brand-blue dark:text-white">
                         {game.winnerName}
                       </span>
                     )}
@@ -403,7 +406,7 @@ export function ReportSummary({
                       href={game.replayUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-md border px-3 py-1.5 font-semibold text-[13px] hover:border-brand-orange hover:bg-brand-orange/5"
+                      className="shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 font-semibold text-[13px] hover:border-brand-orange hover:bg-brand-orange/5"
                     >
                       Replay ansehen ↗
                     </a>

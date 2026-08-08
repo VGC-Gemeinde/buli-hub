@@ -216,9 +216,11 @@ function PickPanel({
         ) : null}
         {match ? <RowMarker candidate={match} /> : null}
         {matchId ? (
+          // Wrapped lines align left (DESIGN.md §6): below sm the link takes
+          // its own left-aligned line, flush right only on the sm+ one-liner.
           <Link
             href={`/match/${matchId}`}
-            className="ml-auto font-medium text-[13px] text-muted-foreground transition-colors hover:text-brand-blue dark:hover:text-white"
+            className="w-full font-medium text-[13px] text-muted-foreground transition-colors hover:text-brand-blue sm:ml-auto sm:w-auto dark:hover:text-white"
           >
             Zum Match →
           </Link>

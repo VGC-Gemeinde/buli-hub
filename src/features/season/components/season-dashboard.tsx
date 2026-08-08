@@ -255,7 +255,7 @@ function ReportedBadge({
           {score.label}
         </span>
       ) : null}
-      <span className="font-bold font-heading text-[30px] text-brand-blue leading-none tracking-[0.04em] dark:text-white">
+      <span className="whitespace-nowrap font-bold font-heading text-[30px] text-brand-blue leading-none tracking-[0.04em] dark:text-white">
         {score.self} : {score.opponent}
       </span>
     </div>
@@ -288,9 +288,13 @@ function ScheduleRow({
   const isBye = match.opponent === null;
   const pastBye = isBye && today > match.endsOn;
 
-  const chip = "size-[34px] rounded-lg font-bold font-heading text-[17px]";
+  const chip =
+    "size-[34px] shrink-0 rounded-lg font-bold font-heading text-[17px]";
+  // flex-wrap: when the status side (chips, score, date range) does not fit
+  // next to the opponent name, it drops onto its own line instead of
+  // squeezing the name away — the name keeps a min-width floor.
   const row = cn(
-    "flex h-[54px] items-center gap-3.5 rounded-lg border py-2.5 pr-4 pl-2.5",
+    "flex min-h-[54px] flex-wrap items-center gap-x-3.5 gap-y-1 rounded-lg border py-2.5 pr-4 pl-2.5",
     state === "current" && "border-brand-orange/45 bg-brand-orange/5",
     state === "overdue" && "border-destructive/35 bg-destructive/5",
     pastBye && "opacity-55",
@@ -310,12 +314,12 @@ function ScheduleRow({
         {match.round}
       </div>
       {isBye ? (
-        <div className="flex flex-1 items-center gap-2.5">
-          <div className="size-7 rounded-full border border-dashed" />
+        <div className="flex min-w-36 flex-1 items-center gap-2.5">
+          <div className="size-7 shrink-0 rounded-full border border-dashed" />
           <span className="font-medium text-muted-foreground">Spielfrei</span>
         </div>
       ) : match.opponent ? (
-        <div className="flex flex-1 items-center gap-2.5">
+        <div className="flex min-w-36 flex-1 items-center gap-2.5">
           <PlayerAvatar identity={match.opponent} />
           {/* `relative` lifts the profile link above the stretched match
               link. */}
@@ -357,6 +361,10 @@ function RowRight({
   state: ReturnType<typeof matchDisplayState>;
   meId: string;
 }) {
+  // Below sm every variant takes a full line of its own under the opponent —
+  // chips, score and date range never compete with the name. Wrapped lines
+  // align left (DESIGN.md §6); only the one-line layout from sm up is flush
+  // right via ml-auto.
   const range = (
     <span className="text-[13px] text-muted-foreground">
       {weekRange(match.startsOn, match.endsOn)}
@@ -365,16 +373,16 @@ function RowRight({
   if (state === "reported" && result) {
     const score = scoreFor(meId, result);
     return (
-      <div className="flex items-center gap-3">
+      <div className="ml-auto flex w-full shrink-0 items-center gap-3 sm:w-auto">
         {result.disputed ? (
-          <span className="rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
+          <span className="whitespace-nowrap rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
             Angefochten
           </span>
         ) : null}
         {score.label ? (
           <span
             className={cn(
-              "rounded-full px-2.5 py-[3px] font-semibold text-xs",
+              "whitespace-nowrap rounded-full px-2.5 py-[3px] font-semibold text-xs",
               score.label === "Sieg"
                 ? "bg-brand-orange/12 text-brand-blue dark:text-white"
                 : "bg-muted text-muted-foreground",
@@ -383,7 +391,7 @@ function RowRight({
             {score.label}
           </span>
         ) : null}
-        <span className="min-w-[34px] text-right font-bold font-heading text-[19px] text-brand-blue tracking-[0.04em] dark:text-white">
+        <span className="min-w-[34px] whitespace-nowrap text-right font-bold font-heading text-[19px] text-brand-blue tracking-[0.04em] dark:text-white">
           {score.self} : {score.opponent}
         </span>
       </div>
@@ -391,15 +399,17 @@ function RowRight({
   }
   if (state === "pending_free_win") {
     return (
-      <span className="rounded-full bg-brand-orange/12 px-2.5 py-[3px] font-semibold text-brand-blue text-xs dark:text-white">
-        Freewin · offen
-      </span>
+      <div className="ml-auto flex w-full sm:w-auto">
+        <span className="whitespace-nowrap rounded-full bg-brand-orange/12 px-2.5 py-[3px] font-semibold text-brand-blue text-xs dark:text-white">
+          Freewin · offen
+        </span>
+      </div>
     );
   }
   if (state === "overdue") {
     return (
-      <div className="flex items-center gap-3">
-        <span className="rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
+      <div className="ml-auto flex w-full items-center gap-3 sm:w-auto">
+        <span className="whitespace-nowrap rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
           Überfällig
         </span>
         {range}
@@ -408,15 +418,15 @@ function RowRight({
   }
   if (state === "current") {
     return (
-      <div className="flex items-center gap-3">
-        <span className="font-semibold text-brand-orange text-xs uppercase tracking-[0.1em]">
+      <div className="ml-auto flex w-full items-center gap-3 sm:w-auto">
+        <span className="whitespace-nowrap font-semibold text-brand-orange text-xs uppercase tracking-[0.1em]">
           Diese Woche
         </span>
         {range}
       </div>
     );
   }
-  return range;
+  return <div className="ml-auto flex w-full sm:w-auto">{range}</div>;
 }
 
 // The full in-season dashboard: progress → hero → Spielplan + Tabelle.

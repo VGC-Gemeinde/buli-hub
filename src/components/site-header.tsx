@@ -30,7 +30,7 @@ export async function SiteHeader({
     <div className={className}>
       <div className="h-[3px] bg-brand-orange" />
       <header className="flex items-center justify-between gap-4 border-b px-5 py-2.5">
-        <div className="flex min-w-0 items-center gap-7">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-7">
           <Link href="/" className="flex shrink-0 items-center gap-3">
             <Image
               src="/logo.svg"

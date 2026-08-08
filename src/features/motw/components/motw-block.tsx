@@ -113,9 +113,12 @@ export function MotwBlock({ motw }: { motw: MotwBlockData }) {
               VOD folgt
             </span>
           )}
+          {/* Wrapped lines align left (DESIGN.md §6): below sm the link takes
+              its own left-aligned line, flush right only on the sm+
+              one-liner. */}
           <Link
             href={`/match/${match.matchId}`}
-            className="ml-auto font-medium text-[13.5px] text-white/70 transition-colors hover:text-white"
+            className="w-full font-medium text-[13.5px] text-white/70 transition-colors hover:text-white sm:ml-auto sm:w-auto"
           >
             Zum Match →
           </Link>

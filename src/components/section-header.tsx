@@ -34,7 +34,12 @@ export function SectionHeader({
       )}
     >
       {/* A wrapping title is top-aligned so the tick sits on the first line
-          rather than floating between two of them. */}
+          rather than floating between two of them. The margin then has to
+          re-center it *within* that line: `items-start` alone pins the tick to
+          the top of the 36px line box (24px × 1.5), which is above the cap
+          height of the letters beside it. 14px ≈ (36 − 9) / 2 puts it where
+          `items-center` would, so a wrapping header and a single-line one align
+          the same way. */}
       <div
         className={cn(
           "flex min-w-0 gap-2.5",
@@ -44,7 +49,7 @@ export function SectionHeader({
         <Tick
           size="m"
           color={tickColor}
-          className={wrap ? "mt-2" : undefined}
+          className={wrap ? "mt-3.5" : undefined}
         />
         <h2
           className={cn(

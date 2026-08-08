@@ -343,7 +343,13 @@ export const SAISON_9: RegelwerkDocument = {
                   Bei Matches über Showdown wird die Open-Teamsheet-Funktion von
                   Showdown genutzt. Das Teamsheet ist trotzdem zur Einreichung
                   notwendig und sollte dem Gegner vor Beginn des Matches
-                  zugesendet werden.
+                  zugesendet werden. Wir empfehlen hier die
+                  Open-Team-List-Funktion von{" "}
+                  <InlineLink href="https://www.vrpastes.com" target="_blank">
+                    VRPaste
+                  </InlineLink>
+                  , da dort anders als bei Pokepaste automatisch nur die
+                  korrekten Daten exportiert werden.
                 </Bullet>
               </Bullets>
               <Callout title="Nachrichten sind unveränderlich">
@@ -373,16 +379,34 @@ export const SAISON_9: RegelwerkDocument = {
                   dabei für alle Divisionen außer 1 &amp; 2 optional.
                 </Bullet>
                 <Bullet>
-                  Das <Key>Open Teamsheet muss von allen Spielern</Key> per
-                  Pokepaste-Link eingereicht werden (Beispiel:{" "}
-                  <InlineLink
-                    href="https://pokepast.es/03fb92411d6e2e20"
-                    target="_blank"
-                  >
-                    pokepast.es
-                  </InlineLink>
-                  ). Aus technischen Gründen ist eine Nutzung von{" "}
-                  <Key>VR Pastes hier nicht möglich</Key>.
+                  Das <Key>Open Teamsheet muss von allen Spielern</Key>{" "}
+                  eingereicht werden. Dafür gibt es drei Wege:
+                  <SubBullets>
+                    <Bullet>
+                      Ein <Key>Pokepaste-Link</Key> (Beispiel:{" "}
+                      <InlineLink
+                        href="https://pokepast.es/036a263034e45fa3"
+                        target="_blank"
+                      >
+                        pokepast.es
+                      </InlineLink>
+                      ).
+                    </Bullet>
+                    <Bullet>
+                      Ein <Key>VRPaste-Link</Key> (Beispiel:{" "}
+                      <InlineLink
+                        href="https://www.vrpastes.com/gACFljjD"
+                        target="_blank"
+                      >
+                        vrpastes.com
+                      </InlineLink>
+                      ).
+                    </Bullet>
+                    <Bullet>
+                      Der <Key>Export direkt aus Showdown</Key>, also der Text
+                      aus "Import/Export".
+                    </Bullet>
+                  </SubBullets>
                 </Bullet>
                 <Bullet>
                   Die Orga hat das Recht, Open Teamsheets zu veröffentlichen und

@@ -88,9 +88,9 @@ export function currentMatchday(
   return active ?? sorted.find((m) => m.startsOn > today) ?? null;
 }
 
-// Splits a player's matches into the next one to play and the rest. „next" is
+// Splits a player's matches into the next one to play and the rest. "next" is
 // the earliest match not already past (the current week, or the nearest
-// upcoming); everything after it is „upcoming". Past matches are returned
+// upcoming); everything after it is "upcoming". Past matches are returned
 // separately (not shown in v1, but useful once results land).
 export function splitPlayerMatches(
   matches: readonly PlayerMatch[],

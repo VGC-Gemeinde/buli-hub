@@ -12,6 +12,7 @@ import {
   saveResult,
 } from "./queries";
 import { reportSchema, toResultRows } from "./report";
+import { canonicalSheets } from "./sheets";
 
 export type ReportResult = { ok: true } | { ok: false; error: string };
 
@@ -81,9 +82,29 @@ export async function reportMatch(input: {
     };
   }
 
-  const { result, games } = toResultRows(parsed.data);
+  const participants = {
+    playerAId: match.playerA.userId,
+    playerBId: match.playerB.userId,
+  };
+  const { result, games, sheets } = toResultRows(parsed.data, participants);
 
-  await saveResult(input.matchId, result, games, current.userId);
+  // The sheets are re-parsed here, not trusted: what gets stored is always the
+  // parser's own output, so stats cannot reach the database by any route.
+  const canonical = canonicalSheets(sheets);
+  if (!canonical.ok) {
+    return {
+      ok: false,
+      error: [canonical.error, ...canonical.details].join(" "),
+    };
+  }
+
+  await saveResult(
+    input.matchId,
+    result,
+    games,
+    canonical.sheets,
+    current.userId,
+  );
   revalidatePath("/spieler");
   revalidatePath(`/match/${input.matchId}`);
   // Best-effort Discord mirror (a pending free win converges to "no post").

@@ -172,7 +172,7 @@ describe("threadBody", () => {
     expect(message).toContain("**Browser:** Mozilla/5.0");
   });
 
-  it("falls back to „lokal“ without a build sha", () => {
+  it('falls back to "lokal" without a build sha', () => {
     expect(threadBody({ ...context, buildSha: null })).toContain(
       "**Build:** lokal",
     );

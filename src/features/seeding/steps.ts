@@ -124,7 +124,7 @@ export type RulesEditorStatus = {
   issueCount: number;
 };
 
-// The „Regeln" step's sublabel — mirrors the rules panel so step bar and
+// The "Regeln" step's sublabel — mirrors the rules panel so step bar and
 // panel tell one story. Ladder problems first (they need the most work),
 // then the replay decision, then the all-done states. `warn` marks the
 // validation-issue state.

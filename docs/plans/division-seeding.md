@@ -71,9 +71,9 @@ introducing it properly means re-anchoring the registration and staff features
 - `seedings` — `window_id` PK/FK, `sub_division_size` int, `finalized_at`
   timestamptz null.
 - `divisions` — `id`, `window_id` FK, `tier` int (1 = top; ordering + name
-  „Division {tier}"), unique `(window_id, tier)`.
+  "Division {tier}"), unique `(window_id, tier)`.
 - `sub_divisions` — `id`, `division_id` FK (cascade), `position` int
-  (0-based → letter; name „Division {tier}{a,b,c,…}", e.g. „Division 1a").
+  (0-based → letter; name "Division {tier}{a,b,c,…}", e.g. "Division 1a").
 - `placements` — `id`, `window_id`, `user_id` FK, `division_id` FK null,
   `sub_division_id` FK null, unique `(window_id, user_id)`. A player is first
   placed in a division (sub_division null), then into a sub-division.
@@ -122,6 +122,6 @@ later. Keeps the stack boring and avoids the mobile pitfalls we just hit.
 1. **Season anchor** — window-anchored; a `seasons` table is deferred to its
    own slice (see Schema).
 2. **Interaction** — control-based, no drag-and-drop dependency.
-3. **Naming** — auto for both levels: „Division {tier}" and „Division
+3. **Naming** — auto for both levels: "Division {tier}" and "Division
    {tier}{letter}".
 4. **Finalize** — terminal; no re-seed.

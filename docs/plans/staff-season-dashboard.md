@@ -7,7 +7,7 @@ seeded running season. Disputes remain the next feature.
 ## Context
 
 During the regular season staff need to chase results and adjudicate. `/staff`
-only shows a „Reguläre Saison" placeholder, and player-reported **free wins sit
+only shows a "Reguläre Saison" placeholder, and player-reported **free wins sit
 pending with no way to confirm them** (so they never count). This feature adds
 the staff running-season dashboard — the home for the powers deferred by the
 reporting feature — as its own page under the Staff-Bereich.
@@ -30,7 +30,7 @@ Rudimentary-but-intentional design; a hand-off + design pass come later.
   **not** enter normal game-by-game results — only players report those.
 
 **Out (deferred):**
-- **Disputes** — the „open disputes" section of the original ask needs the
+- **Disputes** — the "open disputes" section of the original ask needs the
   disputes feature; left as its own next feature with a placeholder here.
 - Fine-grained score correction: staff **reopen → player re-reports** instead of
   editing games.
@@ -51,10 +51,10 @@ New window-wide queries in `src/features/reporting/queries.ts`:
 
 `bucketMatches({ matches, currentRound, today })` → `{ overdue, thisWeek,
 pendingFreeWins }` using the existing `matchDisplayState`. `thisWeek` carries
-every current-round match (the „all this week" filter shows them; the default
+every current-round match (the "all this week" filter shows them; the default
 shows only the unreported ones). Counts derive from the buckets.
 
-## Actions — `src/features/reporting/staff-actions.ts` („use server")
+## Actions — `src/features/reporting/staff-actions.ts` ("use server")
 
 Staff+ gate (role re-check) on each:
 - `confirmFreeWin(matchId)`.
@@ -67,9 +67,9 @@ Staff+ gate (role re-check) on each:
 
 - **`/staff/saison`** (`src/app/staff/saison/page.tsx`): staff gate + regular
   season; counts, then the three sections; each match row links to
-  `/match/[matchId]`; pending-free-win rows carry an inline „Bestätigen". A
-  muted „Disputes — folgt" placeholder.
-- **`/staff` link**: the „Reguläre Saison" placeholder becomes a button to the
+  `/match/[matchId]`; pending-free-win rows carry an inline "Bestätigen". A
+  muted "Disputes — folgt" placeholder.
+- **`/staff` link**: the "Reguläre Saison" placeholder becomes a button to the
   dashboard.
 - **`/match/[matchId]`**: allow staff+ to open any match; render a
   `StaffMatchPanel` (client) below the content — state-aware actions (confirm
@@ -85,7 +85,7 @@ Staff+ gate (role re-check) on each:
 ## Tests
 
 - Unit: `bucketMatches` (overdue vs current-unreported vs pending free win vs
-  reported/upcoming; „all this week" set).
+  reported/upcoming; "all this week" set).
 - Integration: `confirmFreeWin` sets the timestamps; `awardFreeWin`/`awardDoubleLoss`
   upsert + set corrected_by on overwrite + clear games; `reopenMatch` deletes;
   `windowMatchOverview` shape.

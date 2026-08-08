@@ -85,7 +85,7 @@ export default async function DevPage() {
             </span>
             <span className="text-[13px] text-muted-foreground">
               7 Divisionen à 2 Gruppen, Division 4 mit 5 Gruppen und
-              Gesamttabelle (136 Spieler) → bereit für „Spielplan erstellen"
+              Gesamttabelle (136 Spieler) → bereit für "Spielplan erstellen"
             </span>
           </a>
           <a

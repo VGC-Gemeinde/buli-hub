@@ -13,9 +13,9 @@ Regel-Editor steckte in einem beengten Modal.
 `src/features/seeding/steps.ts`: `seedingSteps(progress)` leitet die vier
 Schritte **Platzieren → Gruppen bilden → Regeln → Finalisieren** mit
 Zustand (done / active / pending) und Zählern ab; `finalizeGateHint(progress)`
-erzeugt den Gate-Text aus demselben Modell. Schritte werden unabhängig „done"
-(die Regeln können vor dem letzten Gruppieren gespeichert sein); „active" ist
-der erste offene Schritt in Reihenfolge. Der Schritt **„Regeln"** umfasst
+erzeugt den Gate-Text aus demselben Modell. Schritte werden unabhängig "done"
+(die Regeln können vor dem letzten Gruppieren gespeichert sein); "active" ist
+der erste offene Schritt in Reihenfolge. Der Schritt **"Regeln"** umfasst
 beide Saison-Regeln und ist erst done, wenn Auf-/Abstieg gespeichert **und**
 die Replay-Pflicht festgelegt ist (siehe `replay-requirement.md`).
 
@@ -24,15 +24,15 @@ die Replay-Pflicht festgelegt ist (siehe `replay-requirement.md`).
 `components/step-bar.tsx`. Die Seite hat unterhalb der Steuerungszeile zwei
 Ansichten; die Leiste zeigt den Fortschritt und schaltet zwischen ihnen um:
 
-- Segment **„Platzieren · Gruppen bilden"** → Sheet-Ansicht (die Arbeit
+- Segment **"Platzieren · Gruppen bilden"** → Sheet-Ansicht (die Arbeit
   dieser Schritte passiert im Sheet).
-- Segment **„Regeln"** → Regel-Ansicht (Auf-/Abstieg + Replay-Pflicht); das
-  Sublabel nennt den nächsten offenen Teil („Auf- & Abstieg speichern" →
-  „Replay-Pflicht festlegen" → „Regeln gespeichert" / „Änderungen nicht
+- Segment **"Regeln"** → Regel-Ansicht (Auf-/Abstieg + Replay-Pflicht); das
+  Sublabel nennt den nächsten offenen Teil ("Auf- & Abstieg speichern" →
+  "Replay-Pflicht festlegen" → "Regeln gespeichert" / "Änderungen nicht
   gespeichert").
 - Die aktive Ansicht ist unterlegt (Brand-Orange-Tönung); jeder Schritt trägt
   weiterhin sein Status-Icon (✓/●/○) und ggf. Zähler.
-- **„Finalisieren"** ist keine Ansicht, sondern die gegatete Schluss-Aktion:
+- **"Finalisieren"** ist keine Ansicht, sondern die gegatete Schluss-Aktion:
   Primary-Button sobald alles bereit ist, vorher deaktiviert mit
   Tooltip-Begründung (`finalizeGateHint`); für Beobachter und nach Finalize
   reiner Status-Chip. Der Type-to-confirm-Dialog (`finalize-dialog.tsx`) ist
@@ -44,8 +44,8 @@ Ansichten; die Leiste zeigt den Fortschritt und schaltet zwischen ihnen um:
   (Divisionen, Gruppengröße, Alle Gruppen generieren, Suche, Filter) gehört zu
   dieser Ansicht.
 - **Regel-Ansicht** (`post-season-panel.tsx`, ehem. Dialog): eigene
-  Aktionszeile (Validierungsstatus, „Ungespeicherte Änderungen", Speichern)
-  direkt über dem zentrierten Inhalt — zuerst die Karte **„Replay-Pflicht"**,
+  Aktionszeile (Validierungsstatus, "Ungespeicherte Änderungen", Speichern)
+  direkt über dem zentrierten Inhalt — zuerst die Karte **"Replay-Pflicht"**,
   darunter die Divisions-Leiter; Fehlerliste als Callout über den Karten.
   Der Speichern-Zustand hängt am **Server-Stempel** (`postSeasonConfiguredAt`),
   nicht nur an lokalen Änderungen: Gruppen-Regenerierung oder Config-Änderung
@@ -62,11 +62,11 @@ Ansichten; die Leiste zeigt den Fortschritt und schaltet zwischen ihnen um:
   Beobachter, finalisiert), Regel-Panel gültig/fehlerhaft, Finalize-Dialog.
 - `/dev/seed-registrations?grouped=1` (Karte auf `/dev`) baut eine Einteilung,
   in der alle Spieler platziert und gruppiert sind, aber beide Saison-Regeln
-  noch fehlen — der Zustand, in dem „Regeln" der aktive Schritt ist.
+  noch fehlen — der Zustand, in dem "Regeln" der aktive Schritt ist.
 
 ## Nebenbei behoben
 
-Der frühere „deaktivierte" Finalisieren-Button öffnete seinen Dialog trotzdem:
+Der frühere "deaktivierte" Finalisieren-Button öffnete seinen Dialog trotzdem:
 der `DialogTrigger` saß auf einem Tooltip-`div`, und der disabled-Button ließ
 den Klick durchfallen (`pointer-events-none`). Strukturell beseitigt — beide
 Dialog-Trigger-Konstrukte existieren nicht mehr. Server-seitig war Finalize

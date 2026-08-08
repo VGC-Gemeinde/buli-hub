@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   disputes,
@@ -10,6 +10,7 @@ import {
   profiles,
   seedings,
   subDivisions,
+  teamSheets,
 } from "@/db/schema";
 import { decidedByDrop, effectiveResult } from "@/features/drops/drops";
 import {
@@ -19,10 +20,17 @@ import {
 import type { Identity } from "@/features/season/dashboard";
 import { groupRoster } from "@/features/season/queries";
 import { subDivisionName } from "@/features/seeding/seeding";
+import type { TeamsheetSource } from "@/features/teamsheets/sources";
 import { db } from "@/lib/db";
 import { PLAYER_NAME_FALLBACK, playerName } from "@/lib/player-name";
-import type { GameRow, MatchOutcome, ResultRow } from "./report";
+import type { DisputeChange } from "./dispute";
+import type { GameRow, MatchOutcome, ResultRow, SheetRow } from "./report";
 import type { ResultForStandings } from "./standings";
+
+// The transaction handle drizzle hands to a `db.transaction` callback — named
+// so write helpers can be shared between a standalone call and a larger
+// transaction.
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 function toIdentity(row: {
   userId: string;
@@ -119,10 +127,19 @@ export async function getMatchForReport(matchId: string): Promise<{
 }
 
 export type StoredResult = ResultRow & {
+  // The team sheets stored for this match, one per participant. `id` is the
+  // paste slug under `/pastes/<id>`; `ots` is the canonical sheet, which the
+  // staff editor opens for editing. Empty for free wins and double losses.
+  sheets: {
+    playerId: string;
+    id: string;
+    source: TeamsheetSource;
+    ots: string;
+  }[];
   reportedById: string;
   reportedAt: Date;
   confirmedAt: Date | null;
-  // Set when staff corrected the result in place (drives the „(korrigiert)"
+  // Set when staff corrected the result in place (drives the "(korrigiert)"
   // marker on the Discord post).
   correctedAt: Date | null;
   // Display name of the staff member a free win was discussed with, resolved
@@ -151,6 +168,16 @@ export async function getMatchResult(
     .where(eq(matchGames.matchId, matchId))
     .orderBy(asc(matchGames.gameNumber));
 
+  const sheets = await db
+    .select({
+      playerId: teamSheets.playerId,
+      id: teamSheets.id,
+      source: teamSheets.source,
+      ots: teamSheets.ots,
+    })
+    .from(teamSheets)
+    .where(eq(teamSheets.matchId, matchId));
+
   let discussedWithName: string | null = null;
   if (result.discussedWithId) {
     const [staff] = await db
@@ -168,8 +195,7 @@ export async function getMatchResult(
     outcome: result.outcome,
     winnerId: result.winnerId,
     platform: result.platform,
-    playerATeamUrl: result.playerATeamUrl,
-    playerBTeamUrl: result.playerBTeamUrl,
+    sheets,
     videoUrl: result.videoUrl,
     freeWinReason: result.freeWinReason,
     discussedWithId: result.discussedWithId,
@@ -188,6 +214,7 @@ export async function saveResult(
   matchId: string,
   result: ResultRow,
   games: GameRow[],
+  sheets: SheetRow[],
   reportedById: string,
 ): Promise<void> {
   await db.transaction(async (tx) => {
@@ -197,7 +224,36 @@ export async function saveResult(
         .insert(matchGames)
         .values(games.map((game) => ({ matchId, ...game })));
     }
+    await writeSheets(tx, matchId, sheets);
   });
+}
+
+// Upserts the team sheets of a match on (match_id, player_id), so a correction
+// rewrites the existing paste instead of minting a second one — the URL in an
+// already-posted Discord message, a screenshot or a bookmark keeps resolving,
+// and keeps resolving to the *current* team.
+async function writeSheets(
+  tx: Tx,
+  matchId: string,
+  sheets: SheetRow[],
+): Promise<void> {
+  if (sheets.length === 0) {
+    // A result without sheets (free win, double loss) must not keep the sheets
+    // of whatever it replaced.
+    await tx.delete(teamSheets).where(eq(teamSheets.matchId, matchId));
+    return;
+  }
+  await tx
+    .insert(teamSheets)
+    .values(sheets.map((sheet) => ({ matchId, ...sheet })))
+    .onConflictDoUpdate({
+      target: [teamSheets.matchId, teamSheets.playerId],
+      set: {
+        source: sql`excluded.source`,
+        ots: sql`excluded.ots`,
+        updatedAt: new Date(),
+      },
+    });
 }
 
 // Every match of a sub-division with its result state — the input for
@@ -372,7 +428,7 @@ export async function subDivisionResults(
   return result;
 }
 
-// All staff + admin users (never dev) as identities — the „discussed with"
+// All staff + admin users (never dev) as identities — the "discussed with"
 // dropdown for a free-win report.
 export async function listStaffAndAdmins(): Promise<Identity[]> {
   const rows = await db
@@ -578,6 +634,10 @@ export async function upsertStaffResult(input: {
   const confirmed = input.outcome === "free_win";
   await db.transaction(async (tx) => {
     await tx.delete(matchGames).where(eq(matchGames.matchId, input.matchId));
+    // A free win or double loss has no games and no team sheets. Converting a
+    // played result into one must take the pastes with it, or they would
+    // outlive the result that justified them.
+    await tx.delete(teamSheets).where(eq(teamSheets.matchId, input.matchId));
     await tx
       .insert(matchResults)
       .values({
@@ -585,8 +645,6 @@ export async function upsertStaffResult(input: {
         outcome: input.outcome,
         winnerId: input.winnerId,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: input.freeWinReason,
         discussedWithId: null,
@@ -600,8 +658,6 @@ export async function upsertStaffResult(input: {
           outcome: input.outcome,
           winnerId: input.winnerId,
           platform: null,
-          playerATeamUrl: null,
-          playerBTeamUrl: null,
           videoUrl: null,
           freeWinReason: input.freeWinReason,
           discussedWithId: null,
@@ -635,24 +691,59 @@ export async function openDispute(input: {
   });
 }
 
-export async function resolveDispute(input: {
+// Staff decide an open dispute. The result change the decision implies and the
+// resolution itself are written in one transaction — a half-applied decision
+// would be exactly the inconsistency the flow exists to prevent.
+export async function resolveDisputeWithChange(input: {
   matchId: string;
   resolution: "upheld" | "corrected";
-  note: string | null;
+  note: string;
   resolvedById: string;
+  change: DisputeChange;
 }): Promise<void> {
-  await db
-    .update(disputes)
-    .set({
-      status: "resolved",
-      resolution: input.resolution,
-      note: input.note,
-      resolvedById: input.resolvedById,
-      resolvedAt: new Date(),
-    })
-    .where(
-      and(eq(disputes.matchId, input.matchId), eq(disputes.status, "open")),
-    );
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    const change = input.change;
+    if (change.kind === "confirm") {
+      await tx
+        .update(matchResults)
+        .set({
+          confirmedById: input.resolvedById,
+          confirmedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(matchResults.matchId, input.matchId),
+            eq(matchResults.outcome, "free_win"),
+          ),
+        );
+    } else if (change.kind === "replace") {
+      await writeReplacedResult(tx, {
+        matchId: input.matchId,
+        result: change.result,
+        games: change.games,
+        sheets: change.sheets,
+        staffId: input.resolvedById,
+      });
+    } else if (change.kind === "delete") {
+      await tx
+        .delete(matchResults)
+        .where(eq(matchResults.matchId, input.matchId));
+    }
+    await tx
+      .update(disputes)
+      .set({
+        status: "resolved",
+        resolution: input.resolution,
+        note: input.note,
+        resolvedById: input.resolvedById,
+        resolvedAt: now,
+      })
+      .where(
+        and(eq(disputes.matchId, input.matchId), eq(disputes.status, "open")),
+      );
+  });
 }
 
 // The open dispute on a match (for the match page), or null.
@@ -682,6 +773,48 @@ export async function matchOpenDispute(matchId: string): Promise<{
     : null;
 }
 
+// The decision on a match's most recent dispute (for the match page), or null
+// when the match was never disputed or is disputed right now.
+export async function matchResolvedDispute(matchId: string): Promise<{
+  reason: string;
+  openedByName: string | null;
+  resolution: "upheld" | "corrected" | null;
+  note: string | null;
+  resolvedByName: string | null;
+  resolvedAt: Date | null;
+} | null> {
+  const op = alias(profiles, "op");
+  const rp = alias(profiles, "rp");
+  const rows = await db
+    .select({
+      reason: disputes.reason,
+      resolution: disputes.resolution,
+      note: disputes.note,
+      resolvedAt: disputes.resolvedAt,
+      opName: op.displayName,
+      opUser: op.username,
+      rpName: rp.displayName,
+      rpUser: rp.username,
+    })
+    .from(disputes)
+    .leftJoin(op, eq(op.userId, disputes.openedById))
+    .leftJoin(rp, eq(rp.userId, disputes.resolvedById))
+    .where(and(eq(disputes.matchId, matchId), eq(disputes.status, "resolved")))
+    .orderBy(desc(disputes.resolvedAt))
+    .limit(1);
+  const row = rows[0];
+  return row
+    ? {
+        reason: row.reason,
+        openedByName: row.opName ?? row.opUser,
+        resolution: row.resolution,
+        note: row.note,
+        resolvedByName: row.rpName ?? row.rpUser,
+        resolvedAt: row.resolvedAt,
+      }
+    : null;
+}
+
 export type DisputeRow = {
   matchId: string;
   round: number;
@@ -693,9 +826,11 @@ export type DisputeRow = {
   openedAt: Date;
   resolution: "upheld" | "corrected" | null;
   resolvedAt: Date | null;
+  // The staff explanation of the decision (mandatory since the decision flow).
+  note: string | null;
 };
 
-// Resolved disputes of a window, newest first — the „resolved" history filter.
+// Resolved disputes of a window, newest first — the "resolved" history filter.
 export async function windowResolvedDisputes(
   windowId: string,
 ): Promise<DisputeRow[]> {
@@ -722,6 +857,7 @@ export async function windowResolvedDisputes(
       dpUser: dp.username,
       resolution: disputes.resolution,
       resolvedAt: disputes.resolvedAt,
+      note: disputes.note,
     })
     .from(disputes)
     .innerJoin(matches, eq(matches.id, disputes.matchId))
@@ -756,6 +892,7 @@ export async function windowResolvedDisputes(
     openedAt: row.openedAt,
     resolution: row.resolution,
     resolvedAt: row.resolvedAt,
+    note: row.note,
   }));
 }
 
@@ -765,38 +902,51 @@ export async function replaceResult(input: {
   matchId: string;
   result: ResultRow;
   games: GameRow[];
+  sheets: SheetRow[];
   staffId: string;
 }): Promise<void> {
+  await db.transaction((tx) => writeReplacedResult(tx, input));
+}
+
+// The write half of `replaceResult`, so a dispute decision can run it inside
+// its own transaction (result change + resolution land together or not at all).
+async function writeReplacedResult(
+  tx: Tx,
+  input: {
+    matchId: string;
+    result: ResultRow;
+    games: GameRow[];
+    sheets: SheetRow[];
+    staffId: string;
+  },
+): Promise<void> {
   const now = new Date();
   const confirmed = input.result.outcome === "free_win";
-  await db.transaction(async (tx) => {
-    await tx.delete(matchGames).where(eq(matchGames.matchId, input.matchId));
-    await tx
-      .insert(matchResults)
-      .values({
-        matchId: input.matchId,
+  await tx.delete(matchGames).where(eq(matchGames.matchId, input.matchId));
+  await tx
+    .insert(matchResults)
+    .values({
+      matchId: input.matchId,
+      ...input.result,
+      reportedById: input.staffId,
+      confirmedById: confirmed ? input.staffId : null,
+      confirmedAt: confirmed ? now : null,
+    })
+    .onConflictDoUpdate({
+      target: matchResults.matchId,
+      set: {
         ...input.result,
-        reportedById: input.staffId,
         confirmedById: confirmed ? input.staffId : null,
         confirmedAt: confirmed ? now : null,
-      })
-      .onConflictDoUpdate({
-        target: matchResults.matchId,
-        set: {
-          ...input.result,
-          confirmedById: confirmed ? input.staffId : null,
-          confirmedAt: confirmed ? now : null,
-          correctedById: input.staffId,
-          correctedAt: now,
-          updatedAt: now,
-        },
-      });
-    if (input.games.length > 0) {
-      await tx
-        .insert(matchGames)
-        .values(
-          input.games.map((game) => ({ matchId: input.matchId, ...game })),
-        );
-    }
-  });
+        correctedById: input.staffId,
+        correctedAt: now,
+        updatedAt: now,
+      },
+    });
+  if (input.games.length > 0) {
+    await tx
+      .insert(matchGames)
+      .values(input.games.map((game) => ({ matchId: input.matchId, ...game })));
+  }
+  await writeSheets(tx, input.matchId, input.sheets);
 }

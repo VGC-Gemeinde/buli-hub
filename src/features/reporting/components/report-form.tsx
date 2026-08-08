@@ -17,10 +17,16 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Identity } from "@/features/season/dashboard";
+import { TeamsheetField } from "@/features/teamsheets/components/teamsheet-field";
+import {
+  emptyTeamsheet,
+  isAccepted,
+  type TeamsheetValue,
+} from "@/features/teamsheets/field-state";
 import { formatGermanDay } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import { reportMatch } from "../actions";
-import { isPokepasteUrl, type Platform } from "../report";
+import type { Platform } from "../report";
 
 function isReplayUrl(value: string): boolean {
   try {
@@ -79,7 +85,7 @@ function Face({ identity, filled }: { identity: Identity; filled?: boolean }) {
   );
 }
 
-// The scoreboard mirrors the mental model „ich habe 2:1 gewonnen" as games are
+// The scoreboard mirrors the mental model "ich habe 2:1 gewonnen" as games are
 // picked. Feedback only — the game rows are the controls.
 function Scoreboard({
   reporter,
@@ -222,8 +228,8 @@ export function ReportForm({
   const [platform, setPlatform] = useState<Platform | "">("");
   const [games, setGames] = useState<string[]>(["", "", ""]);
   const [replays, setReplays] = useState<string[]>(["", "", ""]);
-  const [teamMine, setTeamMine] = useState("");
-  const [teamOpp, setTeamOpp] = useState("");
+  const [teamMine, setTeamMine] = useState<TeamsheetValue>(emptyTeamsheet);
+  const [teamOpp, setTeamOpp] = useState<TeamsheetValue>(emptyTeamsheet);
   const [video, setVideo] = useState("");
   const [fwWinnerId, setFwWinnerId] = useState("");
   const [reason, setReason] = useState("");
@@ -270,7 +276,7 @@ export function ReportForm({
   ) {
     missing.push("Video-Link");
   }
-  if (!isPokepasteUrl(teamMine) || !isPokepasteUrl(teamOpp)) {
+  if (!isAccepted(teamMine) || !isAccepted(teamOpp)) {
     missing.push("Teamsheets");
   }
   if (missing.length === 0 && !decided) missing.push("Serie unvollständig");
@@ -309,9 +315,15 @@ export function ReportForm({
                 ? { replayUrl: replays[i] }
                 : {}),
             })),
-            // Team sheets are keyed to the match's player A/B.
-            playerATeamUrl: reporterId === playerA.userId ? teamMine : teamOpp,
-            playerBTeamUrl: reporterId === playerA.userId ? teamOpp : teamMine,
+            // Team sheets are keyed to the match's player A/B. Both are
+            // accepted by this point (the submit button gates on it), so the
+            // non-null assertions below cannot fire.
+            playerASheet: sheetPayload(
+              reporterId === playerA.userId ? teamMine : teamOpp,
+            ),
+            playerBSheet: sheetPayload(
+              reporterId === playerA.userId ? teamOpp : teamMine,
+            ),
             ...(platform === "cartridge" && video.trim() !== ""
               ? { videoUrl: video }
               : {}),
@@ -534,20 +546,25 @@ export function ReportForm({
         ) : null}
 
         <section className="flex flex-col gap-3">
-          <SectionHead
-            title="Teamsheets"
-            meta="Beide Teams als Pokepaste-Link"
-          />
+          <SectionHead title="Teamsheets" meta="Beide Teams, offen" />
+          <p className="text-[13.5px] text-muted-foreground leading-relaxed">
+            Ein Link zu Pokepaste oder VRPaste, oder der Export direkt aus
+            Showdown über "Importieren". Wir prüfen jedes Teamsheet auf
+            Vollständigkeit und legen davon eine eigene, offene Version an. Die
+            Werte werden dabei entfernt.
+          </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <TeamInput
+            <TeamsheetField
               label="Dein Team"
               value={teamMine}
               onChange={setTeamMine}
+              disabled={pending}
             />
-            <TeamInput
+            <TeamsheetField
               label={`Team von ${opponent.name}`}
               value={teamOpp}
               onChange={setTeamOpp}
+              disabled={pending}
             />
           </div>
         </section>
@@ -580,36 +597,13 @@ export function ReportForm({
   );
 }
 
-function TeamInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="whitespace-nowrap font-semibold text-[13px] text-brand-blue dark:text-white">
-        {label}
-      </span>
-      <div className="relative">
-        <Input
-          className="h-10.5 pr-9"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="https://pokepast.es/…"
-          autoComplete="off"
-        />
-        {isPokepasteUrl(value) ? (
-          <span className="-translate-y-1/2 absolute top-1/2 right-3 font-bold text-[oklch(0.55_0.15_150)] text-sm">
-            ✓
-          </span>
-        ) : null}
-      </div>
-    </div>
-  );
+// The accepted sheet as the server wants it. Only ever called once both slots
+// are accepted, which the submit gate guarantees.
+function sheetPayload(value: TeamsheetValue) {
+  return {
+    source: value.accepted?.source ?? "import",
+    ots: value.accepted?.ots ?? "",
+  };
 }
 
 function GameRow({

@@ -5,8 +5,8 @@ import { PlayerLink } from "@/features/player-profile/components/player-link";
 import type { Identity } from "@/features/season/dashboard";
 
 // Public, result-less match page for neutral visitors (guests and non-
-// participant players): the pairing with an „Offen" chip and an informational
-// edge-state card. Replaces the bare „Noch kein Ergebnis gemeldet." line
+// participant players): the pairing with an "Offen" chip and an informational
+// edge-state card. Replaces the bare "Noch kein Ergebnis gemeldet." line
 // (GO-LIVE-POLISH §4.4). Once reported, the normal ReportSummary is shown.
 function Face({ identity }: { identity: Identity }) {
   return (

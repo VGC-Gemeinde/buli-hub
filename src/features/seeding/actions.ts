@@ -325,7 +325,7 @@ export async function assignManyToDivision(input: {
 }
 
 // Drag & drop lands players on an exact placement. A drop onto a group sets
-// both fields; onto a division separator or „Nicht platziert" the group is
+// both fields; onto a division separator or "Nicht platziert" the group is
 // null. Validates that a chosen group actually belongs to the chosen division.
 export async function placePlayers(input: {
   userIds: string[];

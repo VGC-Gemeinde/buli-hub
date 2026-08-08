@@ -1,5 +1,5 @@
 // The league runs on German time (docs/decisions/german-time.md): every
-// day-based domain decision (matchday windows, deadlines, the „current
+// day-based domain decision (matchday windows, deadlines, the "current
 // Spieltag") uses the Europe/Berlin calendar day, and every displayed
 // timestamp renders in Europe/Berlin — regardless of the server's timezone
 // (UTC on Cloud Run) or the visitor's. Day strings (YYYY-MM-DD) in the

@@ -37,7 +37,7 @@ so navigation within seeding does not re-nag. Blocks no content.
 
 ### Model
 
-The page opens **read-only for everyone**. One person clicks **„Steuerung
+The page opens **read-only for everyone**. One person clicks **"Steuerung
 übernehmen"** (with confirmation) to become the controller; while their lock is
 fresh, every mutation by anyone else is rejected server-side. This reuses the
 existing `readOnly` prop: `readOnly = finalized || !isController`.
@@ -52,7 +52,7 @@ takeover should be easy but deliberate).
 - **Takeover: any staff+**, gated only by a confirmation dialog.
 - **Auto-init moves behind the lock**: an observer opening an un-set-up seeding
   no longer triggers initialization; only the controller does.
-- Explicit **„Freigeben"** releases immediately; a closed tab falls back to the
+- Explicit **"Freigeben"** releases immediately; a closed tab falls back to the
   TTL. No `beforeunload` release (server actions are not beacon-friendly; the
   TTL is the boring, reliable path).
 
@@ -106,8 +106,8 @@ Client contract: `isController = state === "self"`; force needed iff
 
 `seeding-workspace.tsx` gains `initialControlState`, `initialHolderName`,
 `currentUserId`. A `ControlBar` renders the three states (observer+free →
-„Übernehmen" confirm; observer+held → „{holder} bearbeitet gerade" + force
-confirm; controller → „Du steuerst … Freigeben"). A single interval calls
+"Übernehmen" confirm; observer+held → "{holder} bearbeitet gerade" + force
+confirm; controller → "Du steuerst … Freigeben"). A single interval calls
 `pollControl()` (20s): the controller heartbeats, an observer refreshes the
 banner; losing control flips the UI to read-only. `readOnly` propagates to the
 sheet, toolbar (config + finalize + generate), and bulk bar. `willAutoInit` is

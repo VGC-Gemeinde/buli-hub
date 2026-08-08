@@ -29,7 +29,7 @@ scores and stays untouched; participants and staff keep seeing everything.
 - **Hidden scores by default**: on the public overview, the score of every
   reported match the viewer did not play in is covered. Covered rows never
   bold the winner (the same leak rule as the MotW row). Byes, unreported
-  („offen") and pending matches are unaffected.
+  ("offen") and pending matches are unaffected.
 - **Per-score reveal**: a covered score is tap-to-reveal in place
   (Discord-spoiler style), without triggering the row's link navigation.
   Reveal state is per interaction, not persisted.
@@ -39,7 +39,7 @@ scores and stays untouched; participants and staff keep seeing everything.
   the match page and across visits, and the server can render the correct
   state without a cover flicker.
 - **Match page**: with protection on, neutral viewers get a cover page
-  (back link → kicker → pairing, plus a card with „Ergebnis anzeigen",
+  (back link → kicker → pairing, plus a card with "Ergebnis anzeigen",
   reusing the MotW cover shell) instead of the result summary; revealed
   results can be re-covered. With the switch off, the summary renders
   directly — entering a match from the overview honors the preference.
@@ -71,7 +71,7 @@ scores and stays untouched; participants and staff keep seeing everything.
   link), also renders the plain score when nothing is hidden so the row
   logic stays in one place.
 - `SpoilerSwitch` (client) — the global switch (shadcn Switch + label
-  „Spoiler-Schutz"), writes the cookie and updates page state.
+  "Spoiler-Schutz"), writes the cookie and updates page state.
 - `SpoilerCoverShell` (client) — the match-page cover skeleton (back link,
   kicker, pairing `h1`, cover card with reveal/re-cover), extracted from
   today's `MotwSpoiler`; the MotW variant keeps its badge/copy and ignores

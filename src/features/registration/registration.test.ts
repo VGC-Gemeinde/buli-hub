@@ -201,7 +201,7 @@ describe("wholeNumberField messages (via veteranHistorySchema)", () => {
           ?.message;
   }
 
-  // The reported bug: a player typed „3b" and the form said nothing at all.
+  // The reported bug: a player typed "3b" and the form said nothing at all.
   it("names the real problem for typed gibberish", () => {
     expect(divisionMessage("3b")).toBe(
       "Bitte nur Ziffern eingeben, zum Beispiel 3",
@@ -407,7 +407,7 @@ describe("validateRegistration", () => {
   });
 
   it("accepts 0 as a deliberate rating", () => {
-    // 0 („blutiger Anfänger") is a real answer, distinct from „not answered".
+    // 0 ("blutiger Anfänger") is a real answer, distinct from "not answered".
     expect(
       validateRegistration({
         ...base,

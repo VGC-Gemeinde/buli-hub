@@ -11,12 +11,15 @@ import { PublicMatchView } from "@/features/reporting/components/public-match-vi
 import { ReportForm } from "@/features/reporting/components/report-form";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
 import { StaffMatchPanel } from "@/features/reporting/components/staff-match-panel";
+import type { StoredResult } from "@/features/reporting/queries";
 import {
   getMatchForReport,
   getMatchResult,
   listStaffAndAdmins,
   matchOpenDispute,
+  matchResolvedDispute,
 } from "@/features/reporting/queries";
+import type { EditorSheet } from "@/features/reporting/result-draft";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import {
@@ -25,6 +28,28 @@ import {
 } from "@/features/spoilers/spoilers";
 import { latestWindow } from "@/features/staff/queries";
 import { seasonName } from "@/features/staff/registration-window";
+import { parseTeamsheet } from "@/features/teamsheets/parse";
+import { monIcons } from "@/features/teamsheets/view";
+import { formatGermanDateTime } from "@/lib/german-time";
+
+// A stored sheet, prepared for the staff editor's import dialog. The icons are
+// resolved here because this is a Server Component and @pkmn stays server-side.
+function editorSheet(
+  result: StoredResult,
+  playerId: string,
+): EditorSheet | null {
+  const sheet = result.sheets.find((row) => row.playerId === playerId);
+  if (!sheet) {
+    return null;
+  }
+  const parsed = parseTeamsheet(sheet.ots);
+  return {
+    source: sheet.source,
+    ots: sheet.ots,
+    // A stored sheet always parses; an empty icon row is the harmless fallback.
+    icons: parsed.ok ? monIcons(parsed.mons) : [],
+  };
+}
 
 // Public, read-only for neutral observers; participants get the report form +
 // dispute option and staff get the staff panel. Disputes are never shown to
@@ -73,6 +98,11 @@ export default async function MatchReportPage({
   const shownResult = pendingFreeWinHidden ? null : result;
   // Dispute machinery stays with participants + staff.
   const dispute = result && privileged ? await matchOpenDispute(matchId) : null;
+  // Once decided, the decision and its explanation are what the players get
+  // back for having contested. Only the latest one, and only while no new
+  // dispute is running.
+  const decided =
+    privileged && !dispute ? await matchResolvedDispute(matchId) : null;
   const staffOptions =
     !result && isParticipant ? await listStaffAndAdmins() : [];
   const breadcrumb = shownResult
@@ -97,8 +127,8 @@ export default async function MatchReportPage({
             winnerId: game.winnerId,
             replayUrl: game.replayUrl,
           })),
-          playerATeamUrl: result.playerATeamUrl,
-          playerBTeamUrl: result.playerBTeamUrl,
+          playerASheet: editorSheet(result, match.playerA.userId),
+          playerBSheet: editorSheet(result, match.playerB.userId),
           videoUrl: result.videoUrl,
         }
       : null;
@@ -108,11 +138,13 @@ export default async function MatchReportPage({
   const seasonLabel = window ? seasonName(window.seasonNumber) : "Saison";
   const isPendingFreeWin =
     result?.outcome === "free_win" && result.confirmedAt === null;
-  const pendingWinnerName = isPendingFreeWin
-    ? result.winnerId === match.playerA.userId
+  const resultWinnerName =
+    result?.winnerId === match.playerA.userId
       ? match.playerA.name
-      : match.playerB.name
-    : null;
+      : result?.winnerId === match.playerB.userId
+        ? match.playerB.name
+        : null;
+  const pendingWinnerName = isPendingFreeWin ? resultWinnerName : null;
   // Inline spoiler protection for neutral viewers (design/SPOILER-SCHUTZ.md
   // §3): the summary always renders its normal layout with masked slots. The
   // MotW ignores the global switch; everyone else honors the cookie.
@@ -165,6 +197,36 @@ export default async function MatchReportPage({
 
         {summary}
 
+        {decided ? (
+          // What the contesting player gets back: the decision and, mandatory
+          // since the decision flow, why it was made.
+          <div className="mt-8 flex flex-col gap-1 rounded-xl border border-brand-blue/25 bg-brand-blue/[0.03] px-6 py-5 dark:bg-muted/20">
+            <p className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.1em]">
+              Anfechtung entschieden
+            </p>
+            <p className="font-semibold text-sm">
+              {decided.resolution === "corrected"
+                ? "Ergebnis korrigiert"
+                : "Ergebnis bestätigt"}
+            </p>
+            {decided.note ? (
+              <p className="mt-0.5 text-muted-foreground text-sm">
+                "{decided.note}"
+                {decided.resolvedByName ? ` · ${decided.resolvedByName}` : ""}
+                {decided.resolvedAt
+                  ? `, ${formatGermanDateTime(decided.resolvedAt, {
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}`
+                  : ""}
+              </p>
+            ) : null}
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Angefochten von {decided.openedByName ?? "—"}: "{decided.reason}"
+            </p>
+          </div>
+        ) : null}
+
         {result && dispute ? (
           // Disputed: the result stays final in the tables; this banner records
           // the open case for participants + staff (§4.4).
@@ -173,7 +235,7 @@ export default async function MatchReportPage({
               Angefochten · in Prüfung
             </p>
             <p className="text-muted-foreground text-sm">
-              „{dispute.reason}" · {dispute.openedByName ?? "—"}
+              "{dispute.reason}" · {dispute.openedByName ?? "—"}
             </p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               Das gemeldete Ergebnis zählt vorerst weiter, bis der Staff
@@ -224,6 +286,8 @@ export default async function MatchReportPage({
             playerA={match.playerA}
             playerB={match.playerB}
             hasResult={result !== null}
+            outcome={result?.outcome ?? null}
+            winnerName={resultWinnerName}
             isPendingFreeWin={isPendingFreeWin}
             pendingWinnerName={pendingWinnerName}
             editorInitial={editorInitial}

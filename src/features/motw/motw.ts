@@ -193,7 +193,7 @@ export function findMotw(
 // A player as the picker shows them: identity plus the form staff judge a
 // matchup by. `rank` is the placement in the table that decides their division
 // (the Gesamttabelle in division mode, the group table otherwise) — the same
-// table `findMotw` reads for the billboard's „Platz {n}". Null when the player
+// table `findMotw` reads for the billboard's "Platz {n}". Null when the player
 // has no table yet.
 export type MotwPlayer = Identity & {
   rank: number | null;
@@ -212,7 +212,7 @@ export type MotwCandidate = {
   matchId: string;
   round: number;
   // Division tier for the picker's filter; `groupName` is the sub-division
-  // („Division 1a") the row itself shows.
+  // ("Division 1a") the row itself shows.
   tier: number;
   groupName: string;
   playerA: MotwPlayer;
@@ -242,7 +242,7 @@ export type MotwWeek = {
 // Whether the match can produce a VOD at all — the one hard disqualifier for a
 // feature that exists to produce one.
 //
-// „unknown" is its own answer and not a soft „no": a player who never saved
+// "unknown" is its own answer and not a soft "no": a player who never saved
 // their profile has `hasCaptureCard: false` by default, which says nothing
 // about whether they own one. Staff need to see the difference so they can ask
 // rather than skip the matchup.
@@ -259,7 +259,7 @@ export function recordability(candidate: MotwCandidate): Recordability {
 // --- Division filter ------------------------------------------------------
 
 // The picker filters by division, and the divisions combine rather than
-// replacing each other — the MotW is picked across the league, so „Division 1
+// replacing each other — the MotW is picked across the league, so "Division 1
 // and 2" is the normal view, not an edge case.
 
 // What the picker starts on: the top two divisions that exist. They are where
@@ -271,7 +271,7 @@ export function defaultDivisionFilter(tiers: readonly number[]): Set<number> {
   return new Set(tiers.filter((tier) => tier <= DEFAULT_FILTER_TIERS));
 }
 
-// „Alle" is a toggle, not a filter of its own: it selects every division unless
+// "Alle" is a toggle, not a filter of its own: it selects every division unless
 // every one is already selected, in which case it clears the selection.
 export function toggleAllDivisions(
   selected: ReadonlySet<number>,
@@ -294,7 +294,7 @@ function combinedRank(candidate: MotwCandidate): number {
   return a === null || b === null ? UNRANKED : a + b;
 }
 
-// „division" keeps the incoming tier/position order; „rank" surfaces the
+// "division" keeps the incoming tier/position order; "rank" surfaces the
 // highest-placed pairings first. Ties fall back to the incoming order, so the
 // sort is stable and switching modes back and forth is lossless.
 export function sortCandidates(

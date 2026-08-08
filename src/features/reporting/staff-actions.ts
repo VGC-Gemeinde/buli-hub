@@ -14,6 +14,7 @@ import {
   upsertStaffResult,
 } from "./queries";
 import { staffResultSchema, toResultRows } from "./report";
+import { canonicalSheets } from "./sheets";
 
 export type StaffActionResult = { ok: true } | { ok: false; error: string };
 
@@ -146,11 +147,22 @@ export async function editResult(input: {
       error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe",
     };
   }
-  const { result, games } = toResultRows(parsed.data);
+  const { result, games, sheets } = toResultRows(parsed.data, {
+    playerAId: gate.match.playerA.userId,
+    playerBId: gate.match.playerB.userId,
+  });
+  const canonical = canonicalSheets(sheets);
+  if (!canonical.ok) {
+    return {
+      ok: false,
+      error: [canonical.error, ...canonical.details].join(" "),
+    };
+  }
   await replaceResult({
     matchId: input.matchId,
     result,
     games,
+    sheets: canonical.sheets,
     staffId: gate.staffId,
   });
   await revalidate(input.matchId);

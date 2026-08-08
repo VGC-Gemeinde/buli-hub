@@ -10,7 +10,7 @@ design: project file **"Ergebnis melden.dc.html"** (interactive — fill the for
 and submit to reach the result screen; tweaks jump between the four views,
 prefill a 2:1 and rename the opponent).
 
-The core idea: players think **„ich habe 2:1 gewonnen"**, not „Spiel 1: Sieg,
+The core idea: players think **"ich habe 2:1 gewonnen"**, not "Spiel 1: Sieg,
 Spiel 2: Niederlage". The form is built around a live scoreboard that fills in
 as games are picked, winners are chosen **by tapping a player's name** (no
 reporter-relative Sieg/Niederlage ambiguity), and a sticky submit bar replaces
@@ -41,7 +41,7 @@ escape-hatch link: it is the rare path and must not compete with the normal one.
 1. Eyebrow: tick `h-2 w-4 -skew-x-[18deg] bg-brand-orange` + `text-xs
    font-semibold uppercase tracking-[0.14em] text-muted-foreground
    whitespace-nowrap` — **Spieltag {n} · {groupName} · Deadline {date}**.
-   Everything the player needs to confirm „richtiges Match" without leaving
+   Everything the player needs to confirm "richtiges Match" without leaving
    the page.
 2. `h1 text-[38px] leading-[1.1] text-brand-blue dark:text-white` —
    **Ergebnis melden**, `mb-6.5`.
@@ -93,7 +93,7 @@ meta note `text-[12.5px] font-medium text-muted-foreground whitespace-nowrap`
 </label>
 ```
 
-Second card: **Cartridge** — „Auf der Konsole gespielt — Video-Link optional."
+Second card: **Cartridge** — "Auf der Konsole gespielt — Video-Link optional."
 The description line is the point: the platform choice announces its
 consequences before they appear.
 
@@ -108,7 +108,7 @@ gap-2.5`:
   whitespace-nowrap` **Spiel {n}** + segmented winner pick `grid flex-1
   grid-cols-2 gap-2`.
 - **Segments are the two player names** (`h-10 rounded-md border text-sm
-  font-semibold whitespace-nowrap`): left **Kuro · Du** (the „· Du" suffix
+  font-semibold whitespace-nowrap`): left **Kuro · Du** (the "· Du" suffix
   `font-medium opacity-65`), right **{opponent}**. Selected: reporter side
   `border-brand-orange bg-brand-orange/12 text-brand-blue`, opponent side
   `border-brand-blue bg-brand-blue/6 text-brand-blue` (`dark:text-white`).
@@ -137,7 +137,7 @@ gap-2.5`:
 ## 6. Video (Cartridge) & Teamsheets
 
 - **Video** section only when platform = cartridge, right meta **Optional**:
-  one `Input h-10.5`, placeholder „z. B. YouTube-Link zur Aufnahme".
+  one `Input h-10.5`, placeholder "z. B. YouTube-Link zur Aufnahme".
 - **Teamsheets** — right meta **Beide Teams als Pokepaste-Link**; `grid
   grid-cols-2 gap-3`, per column label `text-[13px] font-semibold
   text-brand-blue dark:text-white whitespace-nowrap` — **Dein Team** / **Team
@@ -155,7 +155,7 @@ items-center justify-between gap-6`).
 
 - **Left, two lines.** Title `text-[13.5px] font-semibold`:
   - incomplete (`text-muted-foreground`): **Noch offen: {items}** — items
-    joined with „ · ", drawn from: `Plattform`, `Spiel {n}` (each unpicked
+    joined with " · ", drawn from: `Plattform`, `Spiel {n}` (each unpicked
     needed game), `Replay-Links` (showdown, any needed game without one),
     `Teamsheets` (either empty), `Serie unvollständig` (fallback when fields
     are filled but no side has 2 wins).
@@ -178,16 +178,16 @@ items-center justify-between gap-6`).
 - **Free-win view** (same route, view state): back link **← Zurück zur
   Ergebnismeldung**, eyebrow **Spieltag {n} · {groupName} · vs. {opponent}**,
   h1 **Freigewinn melden**, then intro `text-[14.5px] text-muted-foreground
-  max-w-[560px]`: „Für Matches, die nicht gespielt wurden. Ein Freigewinn
+  max-w-[560px]`: "Für Matches, die nicht gespielt wurden. Ein Freigewinn
   muss **vorab mit dem Staff abgesprochen** sein und zählt erst, wenn ein
   Staff-Mitglied ihn bestätigt hat." (bold `font-semibold text-brand-blue
   dark:text-white`).
 - Sections (pattern per §4): **Wer erhält den Freigewinn?** — two pick cards
   (`grid grid-cols-2 gap-3`), avatar + name + sublabel **Du** / **Gegner**,
   selected state as §4 cards. **Begründung** — `Textarea rows-4`, placeholder
-  „z. B. Gegner war trotz mehrerer Terminvorschläge nicht erreichbar."
+  "z. B. Gegner war trotz mehrerer Terminvorschläge nicht erreichbar."
   **Mit wem abgesprochen?** — staff `Select` (`max-w-[340px]`), options
-  labeled `{Name} · {Rolle}`, placeholder „Staff-Mitglied wählen …".
+  labeled `{Name} · {Rolle}`, placeholder "Staff-Mitglied wählen …".
 - Sticky bar (§7) swaps copy: incomplete **Noch offen: Spieler · Begründung ·
   Staff-Mitglied**; complete **Freigewinn für dich/{opponent} melden — wartet
   danach auf Staff-Bestätigung.**; subline **Zählt erst nach Bestätigung durch
@@ -238,7 +238,7 @@ Shown to participants once a result exists; no sticky bar.
 3. Banner `rounded-xl border border-brand-orange/45 bg-brand-orange/5 px-6
    py-5 flex flex-col gap-1.5`: `text-[15px] font-semibold text-brand-blue
    dark:text-white` **Noch nicht gewertet** over `text-sm
-   text-muted-foreground` „Ein Staff-Mitglied prüft die Meldung. Erst nach
+   text-muted-foreground` "Ein Staff-Mitglied prüft die Meldung. Erst nach
    der Bestätigung zählt der Freigewinn für die Tabelle — bis dahin bleibt
    das Match offen."
 4. Detail stack (`flex flex-col gap-4.5`), each block label `text-xs

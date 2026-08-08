@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import type { MotwWeek } from "../motw";
 
 // The season strip: every Spieltag at once, with its pick state. This is what
-// replaced the separate „Frühere Spieltage" list — a round whose pick still has
+// replaced the separate "Frühere Spieltage" list — a round whose pick still has
 // no VOD is visible here without a second list to work through.
 //
 // The three marks are shapes, not colors (filled dot / ring / dash), and the

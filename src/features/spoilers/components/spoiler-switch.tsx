@@ -10,7 +10,7 @@ import { spoilersOffCookie } from "../spoilers";
 // to the page state.
 //
 // On-track: brand-blue in light (navy on white reads on its own, and matches
-// the „Spoiler-Schutz" label). In dark, brand-blue sits at nearly the page
+// the "Spoiler-Schutz" label). In dark, brand-blue sits at nearly the page
 // background's luminance, so it falls back to the design-system default orange
 // track (design/SPOILER-SCHUTZ.md §2.1). The white thumb and the off-state are
 // the component defaults, readable in both modes.

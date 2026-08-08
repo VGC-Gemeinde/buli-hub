@@ -6,7 +6,7 @@
 export type MatchOutcome = "normal" | "free_win" | "double_loss";
 
 export type ResultMessageInput = {
-  groupName: string; // „Division 1a"
+  groupName: string; // "Division 1a"
   round: number;
   playerAName: string;
   playerBName: string;

@@ -58,7 +58,7 @@ truth.
 - Screenshot/file upload — the thread handles it.
 - A "Fehler melden" button on an error boundary. Genuinely the best entry
   point, but the app has no `error.tsx` today; adding one is its own slice.
-- Public „Bekannte Fehler" list — the obvious v2, nearly free once the rows
+- Public "Bekannte Fehler" list — the obvious v2, nearly free once the rows
   exist, and it cuts duplicate reports better than any dedupe logic.
 
 ## Data — new table `feedback_reports`
@@ -151,7 +151,7 @@ guild-agnostic — the app never has to be told where the forum lives.
   scrolls (it previously constrained neither, so any dialog taller than the
   viewport ran off a phone screen unreachable). This one goes further and turns
   that scrolling off (`overflow-y-hidden`) in favour of its own flex layout, so
-  only the middle section scrolls and „Absenden" is never something you have to
+  only the middle section scrolls and "Absenden" is never something you have to
   scroll to find. That is why the action bar is a separate
   `<FeedbackActions>` — it must sit outside the scrolling body. `min-h-0` on
   the scroll container is what lets a flex child actually shrink.
@@ -197,7 +197,7 @@ guild-agnostic — the app never has to be told where the forum lives.
 - `APP_BUILD_SHA` — added to the Cloud Run deploy step in `ci.yml` as
   `--update-env-vars APP_BUILD_SHA=${{ github.sha }}` (`--update-`, not
   `--set-`, so the service's manually configured vars survive). Unset → the
-  context block reads „lokal".
+  context block reads "lokal".
 - All of the above documented in `.env.example`; the forum channel and tag
   ids in `docs/deployment.md`.
 

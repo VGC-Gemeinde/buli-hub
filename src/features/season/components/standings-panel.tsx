@@ -49,7 +49,7 @@ export type ZoneMap = Map<string, Zone>;
 // The standings table itself — dumb, view-only. Shared by the group and the
 // division view. Rows can be tinted by post-season zone (rail + soft tint); the
 // current player is always marked (orange rail/tint when unzoned, plus bold name,
-// „Du" badge and filled avatar). The Platz + Spieler columns stay frozen (sticky)
+// "Du" badge and filled avatar). The Platz + Spieler columns stay frozen (sticky)
 // on the left as the score columns scroll; frozen cells carry an opaque base + a
 // `before` tint so scrolled columns don't bleed through, and the rail sits on the
 // rank cell's left edge. `groupLabels` adds a sub-division chip in the division
@@ -295,7 +295,7 @@ export function StandingsPanel({
 }
 
 // A switcher segment. The relevant table's segment carries a skewed tick — the
-// „this one decides" marker (navy on the active orange fill, orange otherwise).
+// "this one decides" marker (navy on the active orange fill, orange otherwise).
 function Segment({
   active,
   onClick,

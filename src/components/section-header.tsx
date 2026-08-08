@@ -21,7 +21,7 @@ export function SectionHeader({
   /**
    * Let a long title wrap instead of truncating. Truncation is right for
    * dynamic names (a division, a player) where the column is fixed; a static
-   * heading that reads „Ablauf des Ligabet…" on a phone is not.
+   * heading that reads "Ablauf des Ligabet…" on a phone is not.
    */
   wrap?: boolean;
   className?: string;

@@ -42,7 +42,7 @@ export function ImpersonationPicker({
 
       {matches.length === 0 ? (
         <p className="text-[13px] text-muted-foreground">
-          Keine Treffer für „{query}".
+          Keine Treffer für "{query}".
         </p>
       ) : (
         <ul className="flex flex-col gap-2">

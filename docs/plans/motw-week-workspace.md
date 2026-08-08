@@ -29,18 +29,18 @@ One domain rule did change: which rounds are pickable.
   VOD uploads lag the week.
 - **Candidate rows with substance**: per player, the placement in the table
   that decides their division, the match record, and whether they own a capture
-  card — with „never filled in their profile" as its own state, so a default
+  card — with "never filled in their profile" as its own state, so a default
   `false` is never read as an answer. Symmetric two-sided layout, like the
   public billboard's matchup row.
 - **Filtering + sorting** of the candidate list: **division** chips that
   combine (not sub-division, not one-at-a-time) with the top two divisions
-  preselected and „Alle" as a select-all/clear-all toggle; a labelled
+  preselected and "Alle" as a select-all/clear-all toggle; a labelled
   **Sortierung** toggle (Division / Platzierung — best combined placement
   first); and a filter for matches nobody can record (no capture card on either
   side).
-- **No „Frühere Spieltage" list** — past picks are reachable through the pager,
+- **No "Frühere Spieltage" list** — past picks are reachable through the pager,
   and the pager's per-round marker surfaces a missing VOD without a second list.
-- One line changed outside the workspace: the dashboard todo's „Jetzt wählen"
+- One line changed outside the workspace: the dashboard todo's "Jetzt wählen"
   links to `?spieltag={round}`, so it lands on the week it is about.
 
 **Out:**
@@ -66,13 +66,13 @@ protection back onto an already-public result and make Discord delete and repost
 result/VOD messages for a week that is over. Backfilling a week that never had
 one disturbs no such history.
 
-Consequence worth knowing: because „settled" is decided by the pick existing, a
+Consequence worth knowing: because "settled" is decided by the pick existing, a
 backfilled past pick cannot be undone through the UI — the round closes the
 moment it is set.
 
 The gate lives in `actions.ts` (`selectMotw`, `removeMotw`), which now reads the
 window's selections to evaluate it. `saveMotwYoutubeUrl` gates on nothing, for
-every round. `motwTodo` is untouched — the nudge stays „current, else next".
+every round. `motwTodo` is untouched — the nudge stays "current, else next".
 
 ## Pure logic (`motw.ts`, unit-tested)
 
@@ -133,22 +133,22 @@ dropped afterwards); the view keeps the panel, the VOD field and the link, and
 says so in place of the matchup.
 
 `recordability(candidate)` → `"yes" | "no" | "unknown"` — whether the match can
-produce a VOD at all. **„unknown" is its own answer, not a soft „no":** a player
+produce a VOD at all. **"unknown" is its own answer, not a soft "no":** a player
 who never saved their profile carries `hasCaptureCard: false` by default, which
 says nothing about whether they own one. Staff need that difference so they can
 ask the player rather than skip the matchup. Drives the row marker, the
-per-player icon, and the „Nur aufnehmbar" filter — which hides only a definite
+per-player icon, and the "Nur aufnehmbar" filter — which hides only a definite
 `"no"`, since an unknown is exactly what should be chased up.
 
 Division filter (the chips combine rather than replacing each other — the MotW
-is picked across the league, so „Division 1 and 2" is the normal view):
+is picked across the league, so "Division 1 and 2" is the normal view):
 
 - `defaultDivisionFilter(tiers)` — the top `DEFAULT_FILTER_TIERS` (2) divisions
   that exist. That is where the featured match almost always comes from, so the
   common case opens without a click and the lower divisions are one chip away.
-- `toggleAllDivisions(selected, all)` — „Alle" selects every division unless
+- `toggleAllDivisions(selected, all)` — "Alle" selects every division unless
   every one is already selected, in which case it clears the selection. A stale
-  tier in `selected` never counts towards „complete".
+  tier in `selected` never counts towards "complete".
 
 ## Queries (`motw/queries.ts`, integration-tested)
 
@@ -157,17 +157,17 @@ Two additions.
 - `windowPlayerForm(windowId)` → `Map<userId, { rank, wins, losses, dropped }>`.
   Reuses `divisionsWithGroupSizes` + `divisionGroups` + `computeStandings` /
   `divisionStandings`, and picks the same table `findMotw` already picks for the
-  billboard's „Platz {n}": the Gesamttabelle in division mode, the group table
+  billboard's "Platz {n}": the Gesamttabelle in division mode, the group table
   otherwise. One place decides what a placement means for the MotW.
 - `profileFlags()` → `Map<userId, { hasCaptureCard, edited }>`. Both facts come
   from one query because neither is usable without the other: `hasCaptureCard`
-  defaults to `false`, so `edited` is what separates „answered no" from „never
+  defaults to `false`, so `edited` is what separates "answered no" from "never
   answered".
 
 `StaffMatchRow` gained `tier` (already selected internally, just not exposed) so
 the page can build `MotwCandidate` without re-parsing the group name. The page
 otherwise keeps using `windowMatchOverview` for the pairings — it already filters
-`decidedByDrop` matches out and carries `outcome` for the „gemeldet" marker.
+`decidedByDrop` matches out and carries `outcome` for the "gemeldet" marker.
 
 ## Views
 
@@ -184,9 +184,9 @@ Visual spec of record: `design/MATCH-OF-THE-WEEK.md` §5. In short:
 - **Week panel** (`motw-manager.tsx`) — head with state chip, then the pick
   panel or the appropriate empty state, then the picker.
 - **Picker** (`motw-candidate-row.tsx`, `motw-player.tsx`) — full-row buttons,
-  players mirrored around a centered „vs.", placement/record/capture-card per
+  players mirrored around a centered "vs.", placement/record/capture-card per
   player, one marker per row, division filter + Division/Platzierung sort +
-  „Nur aufnehmbar".
+  "Nur aufnehmbar".
 - **VOD field** (`motw-vod-field.tsx`) — extracted from the old manager,
   collapses to a YouTube button once a link is set.
 
@@ -199,7 +199,7 @@ Visual spec of record: `design/MATCH-OF-THE-WEEK.md` §5. In short:
   card forced `false`), and two thirds of the rest own a capture card. All three
   states the picker distinguishes therefore occur — roughly 35 / 34 / 69 of 136
   players are unknown / no / yes. Before this the whole column was `false` and
-  every profile untouched, so nothing ever read as a definite „no".
+  every profile untouched, so nothing ever read as a definite "no".
 - `seed.ts` — **the seeded league shape** (`DEV_SEASON_SHAPE`): seven divisions
   of two groups of 8, except **Division 4 with five groups**, and Division 4
   alone decided by its **Gesamttabelle** while the rest use group tables. 136
@@ -218,7 +218,7 @@ Visual spec of record: `design/MATCH-OF-THE-WEEK.md` §5. In short:
   open future weeks. The manager is rendered four times (`initialRound` 1–4) so
   all of them are on the page. The candidate fixtures carry a missing placement,
   a dropped player, all three capture-card states, an unrecordable pairing and
-  an „unklar" one.
+  an "unklar" one.
 
 ## Tests
 
@@ -251,7 +251,7 @@ Gesamttabelle in `division` mode (two equal groups whose winners are both rank
 1 in their own group and split by game differential when merged); no entry for
 a user outside the season. `profileFlags` reports both columns, with two players
 sharing `hasCaptureCard: false` and differing only in `edited` — the distinction
-the whole „unklar" state rests on.
+the whole "unklar" state rests on.
 
 **Action gate (`actions.integration.test.ts`, new)** — the rule from every side:
 `selectMotw` picks the running Spieltag and one two weeks out, **backfills a

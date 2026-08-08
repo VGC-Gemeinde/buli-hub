@@ -196,7 +196,7 @@ describe("toggleAllDivisions", () => {
   });
 
   it("ignores a stale selection outside the season's divisions", () => {
-    // A tier that is no longer in the list must not count towards „complete".
+    // A tier that is no longer in the list must not count towards "complete".
     expect(toggleAllDivisions(new Set([1, 2, 9]), all)).toEqual(new Set(all));
   });
 

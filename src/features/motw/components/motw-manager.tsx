@@ -216,9 +216,11 @@ function PickPanel({
         ) : null}
         {match ? <RowMarker candidate={match} /> : null}
         {matchId ? (
+          // Wrapped lines align left (DESIGN.md §6): below sm the link takes
+          // its own left-aligned line, flush right only on the sm+ one-liner.
           <Link
             href={`/match/${matchId}`}
-            className="ml-auto font-medium text-[13px] text-muted-foreground transition-colors hover:text-brand-blue dark:hover:text-white"
+            className="w-full font-medium text-[13px] text-muted-foreground transition-colors hover:text-brand-blue sm:ml-auto sm:w-auto dark:hover:text-white"
           >
             Zum Match →
           </Link>
@@ -307,7 +309,7 @@ function Picker({
     const filtered = week.candidates.filter(
       (candidate) =>
         selectedTiers.has(candidate.tier) &&
-        // Only a definite „no" is hidden. An unknown is exactly the matchup
+        // Only a definite "no" is hidden. An unknown is exactly the matchup
         // staff should chase up, not one to bury.
         (!recordableOnly || recordability(candidate) !== "no"),
     );
@@ -367,7 +369,7 @@ function Picker({
 
         <div className="flex flex-wrap items-center gap-2">
           {/* The label lives inside the pill so the two options read as one
-              control that sorts — next to „Nur aufnehmbar", which filters,
+              control that sorts — next to "Nur aufnehmbar", which filters,
               they would otherwise look like three chips of the same kind.
               `aria-hidden` because the legend already names the group. */}
           <fieldset className="flex items-center gap-1.5 rounded-full border py-[3px] pr-[3px] pl-3">
@@ -454,7 +456,7 @@ function FilterChip({
       onClick={onClick}
       className={cn(
         "rounded-full border px-3 py-1 text-[12.5px] transition-colors",
-        // Orange is the „active" surface (DESIGN.md §8.1/§8.2); white text and
+        // Orange is the "active" surface (DESIGN.md §8.1/§8.2); white text and
         // semibold, since a 12.5px label on solid orange needs the weight.
         active
           ? "border-brand-orange bg-brand-orange font-semibold text-white"

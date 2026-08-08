@@ -5,7 +5,7 @@ import type { DropCandidate } from "../queries";
 import { DropPlayerDialog, UndropButton } from "./drops-section";
 
 // The staff panel on the public player profile — same anatomy as the match
-// page's staff panel (navy card, „Nur für Staff sichtbar"). One action: drop
+// page's staff panel (navy card, "Nur für Staff sichtbar"). One action: drop
 // the player (reason + type-to-confirm), or lift an existing drop.
 export function ProfileStaffPanel({
   player,
@@ -36,7 +36,7 @@ export function ProfileStaffPanel({
               <p className="font-semibold text-sm">Gedroppt</p>
               <p className="truncate text-[13px] text-muted-foreground">
                 {dropReason
-                  ? `„${dropReason}" · Aufheben stellt alle Ergebnisse wieder her.`
+                  ? `"${dropReason}" · Aufheben stellt alle Ergebnisse wieder her.`
                   : "Aufheben stellt alle Ergebnisse wieder her."}
               </p>
             </div>

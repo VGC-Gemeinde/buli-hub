@@ -10,7 +10,7 @@ Until now the roster existed only on the staff dashboard.
 
 In:
 
-- A „Teilnehmerfeld" section on `/spieler`, below the primary panel, with the
+- A "Teilnehmerfeld" section on `/spieler`, below the primary panel, with the
   player count in the header and one chip per registered player (avatar + name).
 - Visible in every pre-season dashboard view: `register_cta`, `registered_open`,
   `registered_closed`, `not_registered_closed` — i.e. whether or not the viewer
@@ -52,7 +52,7 @@ dashboard does. The count is the array length; no second query.
 
 `createdAt` is fetched but deliberately never rendered, and the grid sorts
 alphabetically (German collation) — the player-facing list must not turn into a
-„who signed up first" ranking.
+"who signed up first" ranking.
 
 No schema change. No migration. No Discord touchpoint.
 
@@ -64,8 +64,8 @@ No schema change. No migration. No Discord touchpoint.
   prop (`ReactNode`) for the empty-state card; `RegisteredPlayer` moves with it.
   Staff dashboard passes its existing Anmeldelink copy.
 - `features/season/components/participant-list.tsx` — new `ParticipantList`:
-  `SectionHeader` („Teilnehmerfeld", `count`) + `PlayerGrid` with player-facing
-  empty copy („Noch hat sich niemand angemeldet — sei der Erste.").
+  `SectionHeader` ("Teilnehmerfeld", `count`) + `PlayerGrid` with player-facing
+  empty copy ("Noch hat sich niemand angemeldet — sei der Erste.").
 - `app/spieler/page.tsx` — fetch the roster in the existing `Promise.all`-style
   lead-in when `window && showsRoster(phase)`, render `ParticipantList` inside
   `Shell` below the panel. The in-season branch is untouched.
@@ -89,7 +89,7 @@ pass can add a disclosure.
 ## Notes
 
 - Names and avatars are already public via `/spieler/[userId]`, so this exposes
-  no new class of data. What is new is „who is in for this season" before the
+  no new class of data. What is new is "who is in for this season" before the
   seeding is published — an intentional decision by the maintainer.
 - Local verification: `/dev/seed-registrations` populates a window, and
   `/dev/clear-registrations` empties it for the empty state.

@@ -34,7 +34,7 @@ export function OpenRegistrationDialog({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  // Type-to-confirm phrase names what is opened: „Saison 1" (design §10) —
+  // Type-to-confirm phrase names what is opened: "Saison 1" (design §10) —
   // shorter and clearer than the action name. Purely a client-side gate; the
   // server action re-checks role + state.
   const confirmationPhrase = seasonName(Number(seasonNumber));

@@ -229,8 +229,8 @@ export function FeedbackPanel({
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder={
             kind === "bug"
-              ? "Kurz in einem Satz, z. B. „Spieltag lädt nicht“"
-              : "Kurz in einem Satz, z. B. „Kalender-Export“"
+              ? 'Kurz in einem Satz, z. B. "Spieltag lädt nicht"'
+              : 'Kurz in einem Satz, z. B. "Kalender-Export"'
           }
         />
       </div>
@@ -316,7 +316,7 @@ export function FeedbackPanel({
           ) : null}
         </div>
 
-        {/* Picker first: on mobile it is the only route, and „Strg+V" there is
+        {/* Picker first: on mobile it is the only route, and "Strg+V" there is
             just noise. */}
         <p className="text-[12px] text-muted-foreground">
           Bild auswählen, hierher ziehen oder mit{" "}
@@ -338,7 +338,7 @@ export function FeedbackPanel({
         />
       </div>
 
-      {/* Naming the captured context beats a vague „wir schicken etwas mit". */}
+      {/* Naming the captured context beats a vague "wir schicken etwas mit". */}
       <div className="flex flex-col gap-2 rounded-lg bg-muted px-4 py-3">
         <div className="flex items-center gap-2">
           <Tick size="s" color="neutral" />
@@ -371,7 +371,7 @@ export function FeedbackPanel({
 /**
  * The action bar. Separate from the panel because the dialog pins it below a
  * scrolling body — on a phone the form is taller than the screen, and
- * „Absenden" must not be the thing you have to scroll to find.
+ * "Absenden" must not be the thing you have to scroll to find.
  */
 export function FeedbackActions({
   sent = false,

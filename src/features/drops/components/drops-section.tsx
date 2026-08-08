@@ -124,7 +124,7 @@ function DropListRow({ drop }: { drop: DropRow }) {
           </span>
           {drop.reason ? (
             <span className="truncate text-[13px] text-muted-foreground">
-              „{drop.reason}"
+              "{drop.reason}"
             </span>
           ) : null}
         </div>

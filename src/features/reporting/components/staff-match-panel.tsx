@@ -14,13 +14,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Identity } from "@/features/season/dashboard";
+import type { MatchOutcome } from "../report";
+import type { NormalEditorInitial } from "../result-draft";
 import { awardDoubleLoss, confirmFreeWin, reopenMatch } from "../staff-actions";
 import { AwardFreewinDialog } from "./award-freewin-dialog";
 import { DisputeResolveDialog } from "./dispute-resolve-dialog";
-import {
-  type NormalEditorInitial,
-  StaffResultEditor,
-} from "./staff-result-editor";
+import { StaffResultEditor } from "./staff-result-editor";
 
 type ActionState = "none" | "pending" | "reported";
 
@@ -34,6 +33,8 @@ export function StaffMatchPanel({
   playerA,
   playerB,
   hasResult,
+  outcome,
+  winnerName,
   isPendingFreeWin,
   pendingWinnerName,
   editorInitial,
@@ -47,9 +48,12 @@ export function StaffMatchPanel({
   playerA: Identity;
   playerB: Identity;
   hasResult: boolean;
+  // The counted result, for the dispute decision's context.
+  outcome?: MatchOutcome | null;
+  winnerName?: string | null;
   isPendingFreeWin: boolean;
   pendingWinnerName?: string | null;
-  // Prefill for the „bearbeiten" editor — only for a reported normal result.
+  // Prefill for the "bearbeiten" editor — only for a reported normal result.
   editorInitial?: NormalEditorInitial | null;
   disputeOpen?: boolean;
   disputeReason?: string | null;
@@ -77,8 +81,9 @@ export function StaffMatchPanel({
     router.refresh();
   }
 
-  const context =
-    state === "pending"
+  const context = disputeOpen
+    ? "Dieses Match ist angefochten. Jeder Eingriff läuft über die Entscheidung, damit Ergebnis und Anfechtung zusammenpassen."
+    : state === "pending"
       ? "Der Freewin zählt erst nach Bestätigung für die Tabelle."
       : state === "reported"
         ? "Eingriffe überschreiben bzw. löschen das gemeldete Ergebnis."
@@ -119,20 +124,29 @@ export function StaffMatchPanel({
       </div>
       <p className="mt-1.5 text-[13.5px] text-muted-foreground">{context}</p>
 
-      {disputeOpen ? (
+      {/* While a dispute is open the decision is the only way in: it contains
+          every correction path, so no second route can leave the result and the
+          dispute saying different things. */}
+      {disputeOpen && outcome ? (
         <ActionRow
           title="Anfechtung offen"
-          consequence="Ein Spieler hat das Ergebnis angefochten. Prüfen und entscheiden."
+          consequence="Bestätigen, korrigieren, Freewin, Doppelniederlage oder zurücksetzen. Alles in einem Schritt."
         >
           <DisputeResolveDialog
             matchId={matchId}
+            playerA={playerA}
+            playerB={playerB}
             reason={disputeReason ?? null}
             openedByName={disputeOpenedByName ?? null}
+            outcome={outcome}
+            winnerName={winnerName ?? null}
+            pendingFreeWin={isPendingFreeWin}
+            editorInitial={editorInitial ?? null}
           />
         </ActionRow>
       ) : null}
 
-      {state === "pending" ? (
+      {!disputeOpen && state === "pending" ? (
         <>
           <ActionRow
             title="Freewin bestätigen"
@@ -161,7 +175,7 @@ export function StaffMatchPanel({
         </>
       ) : null}
 
-      {state === "reported" ? (
+      {!disputeOpen && state === "reported" ? (
         <>
           {editorInitial ? (
             <ActionRow
@@ -204,7 +218,7 @@ export function StaffMatchPanel({
         </>
       ) : null}
 
-      {state === "none" ? (
+      {!disputeOpen && state === "none" ? (
         <>
           <ActionRow
             title="Freewin vergeben"

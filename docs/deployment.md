@@ -468,7 +468,7 @@ Differences from production, each for a reason:
   makes the app serve a disallow-all `robots.txt` and an
   `X-Robots-Tag: noindex, nofollow` header, so a pasted link cannot get it
   indexed.
-- `APP_BASE_URL` must be the staging URL, or the „Zum Match" links in Discord
+- `APP_BASE_URL` must be the staging URL, or the "Zum Match" links in Discord
   posts point at production.
 - **No role variables** — see above.
 - `ENABLE_DEV_TOOLS=true` + `DEV_TOOLS_TOKEN` turn on `/dev` (see below).

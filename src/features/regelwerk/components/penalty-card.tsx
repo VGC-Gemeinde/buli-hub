@@ -4,7 +4,7 @@ import { QualifierPill } from "@/features/regelwerk/components/pull-outs";
 // One Strafen situation (Teamsheet-Fehler, Disconnects, Ghosting, Bugs). The
 // chapter's other sections are prose; these are four parallel cases, and cards
 // make that parallel structure visible instead of burying it in one long list.
-// `qualifier` carries „Champions" on the two that only apply there.
+// `qualifier` carries "Champions" on the two that only apply there.
 export function PenaltyCard({
   title,
   qualifier,

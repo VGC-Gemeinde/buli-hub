@@ -276,7 +276,7 @@ Floating bottom-center while ≥1 checkbox is set:
   <span className="text-[13.5px] font-semibold">{n} ausgewählt</span>
   <span className="text-xs text-white/60">verschieben nach</span>
   {/* one 26px square button per division: 1…n, border-white/30 bg-white/10,
-      title={divisionName(t)} — plus „—" for Nicht platziert */}
+      title={divisionName(t)} — plus "—" for Nicht platziert */}
   <button className="text-[12.5px] text-white/60">Aufheben</button>
 </div>
 ```

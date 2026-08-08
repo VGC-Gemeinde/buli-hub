@@ -29,8 +29,8 @@ import {
 
 // `numeric` fields are text inputs with a numeric keypad rather than
 // `type="number"`: the browser blanks a number input's value for anything it
-// cannot parse, so „3b" would reach the validator as an empty field and could
-// never be reported as „keine Ziffern". inputMode keeps the mobile keypad.
+// cannot parse, so "3b" would reach the validator as an empty field and could
+// never be reported as "keine Ziffern". inputMode keeps the mobile keypad.
 const VETERAN_FIELDS = [
   {
     key: "prevSeason",
@@ -55,7 +55,7 @@ const VETERAN_FIELDS = [
 
 const PLATFORM_VALUES = Object.keys(PLATFORM_LABELS) as Platform[];
 
-// Where „jump to the first problem" sends focus. Radio groups and the slider
+// Where "jump to the first problem" sends focus. Radio groups and the slider
 // point at their container; `focusTarget` walks in to the real control.
 const FIELD_ANCHORS: Record<RegistrationField, string> = {
   platform: `platform-${PLATFORM_VALUES[0]}`,
@@ -359,7 +359,7 @@ export function RegistrationForm({
               onValueChange={([value]) =>
                 update({ skillSelfRating: value ?? 0 })
               }
-              // 0 is a real answer, so „touched" cannot be inferred from the
+              // 0 is a real answer, so "touched" cannot be inferred from the
               // value changing: a player who wants 0 never moves the thumb.
               onPointerDown={() =>
                 update({ skillSelfRating: draft.skillSelfRating ?? 0 })

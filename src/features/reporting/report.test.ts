@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   deriveSeries,
-  isPokepasteUrl,
   type ReportInput,
   reportSchema,
   toResultRows,
@@ -16,8 +15,8 @@ const optionalCtx = { ...ctx, proofRequired: false };
 const parse = (input: unknown) => reportSchema(ctx).safeParse(input);
 const parseOptional = (input: unknown) =>
   reportSchema(optionalCtx).safeParse(input);
-const PASTE_A = "https://pokepast.es/aaaa";
-const PASTE_B = "https://pokepast.es/bbbb";
+const SHEET_A = { source: "pokepaste" as const, ots: "Garchomp @ Life Orb" };
+const SHEET_B = { source: "import" as const, ots: "Whimsicott @ Occa Berry" };
 const REPLAY = "https://replay.pokemonshowdown.com/gen9-1";
 
 function normal(overrides: Record<string, unknown> = {}) {
@@ -28,8 +27,8 @@ function normal(overrides: Record<string, unknown> = {}) {
       { winnerId: "a", replayUrl: REPLAY },
       { winnerId: "a", replayUrl: REPLAY },
     ],
-    playerATeamUrl: PASTE_A,
-    playerBTeamUrl: PASTE_B,
+    playerASheet: SHEET_A,
+    playerBSheet: SHEET_B,
     ...overrides,
   };
 }
@@ -63,18 +62,6 @@ describe("deriveSeries", () => {
   });
   it("rejects an unknown winner", () => {
     expect(s(["a", "c"])).toEqual({ ok: false, reason: "unknown_player" });
-  });
-});
-
-describe("isPokepasteUrl", () => {
-  it("accepts https pokepast.es links", () => {
-    expect(isPokepasteUrl("https://pokepast.es/abc123")).toBe(true);
-    expect(isPokepasteUrl("https://www.pokepast.es/abc")).toBe(true);
-  });
-  it("rejects non-https, other hosts, and junk", () => {
-    expect(isPokepasteUrl("http://pokepast.es/abc")).toBe(false);
-    expect(isPokepasteUrl("https://example.com/abc")).toBe(false);
-    expect(isPokepasteUrl("not a url")).toBe(false);
   });
 });
 
@@ -120,10 +107,16 @@ describe("reportSchema — normal", () => {
       false,
     );
   });
-  it("rejects a missing or non-pokepaste team sheet", () => {
-    expect(parse(normal({ playerBTeamUrl: "" })).success).toBe(false);
+  it("rejects a missing or malformed team sheet", () => {
+    // The sheet's *contents* are validated server-side in the action (the
+    // parser lives outside this module); the schema guards the shape.
+    expect(parse(normal({ playerBSheet: undefined })).success).toBe(false);
     expect(
-      parse(normal({ playerBTeamUrl: "https://example.com/x" })).success,
+      parse(normal({ playerBSheet: { source: "import", ots: "" } })).success,
+    ).toBe(false);
+    expect(
+      parse(normal({ playerBSheet: { source: "elsewhere", ots: "x" } }))
+        .success,
     ).toBe(false);
   });
   it("rejects an illegal best-of-3 (game 3 after 2–0)", () => {
@@ -215,10 +208,21 @@ describe("reportSchema — free win", () => {
   });
 });
 
+const PARTICIPANTS = { playerAId: "a", playerBId: "b" };
+
 describe("toResultRows", () => {
+  it("keys each sheet to the player it belongs to", () => {
+    const input = parse(normal()).data as ReportInput;
+    const { sheets } = toResultRows(input, PARTICIPANTS);
+    expect(sheets).toEqual([
+      { playerId: "a", ...SHEET_A },
+      { playerId: "b", ...SHEET_B },
+    ]);
+  });
+
   it("maps a 2–0 to the match winner + game rows", () => {
     const input = parse(normal()).data as ReportInput;
-    const { result, games } = toResultRows(input);
+    const { result, games } = toResultRows(input, PARTICIPANTS);
     expect(result.outcome).toBe("normal");
     expect(result.winnerId).toBe("a");
     expect(result.videoUrl).toBeNull();
@@ -237,7 +241,7 @@ describe("toResultRows", () => {
         ],
       }),
     ).data as ReportInput;
-    const { result, games } = toResultRows(input);
+    const { result, games } = toResultRows(input, PARTICIPANTS);
     expect(result.winnerId).toBe("b");
     expect(games.every((g) => g.winnerId === "b")).toBe(true);
   });
@@ -250,7 +254,7 @@ describe("toResultRows", () => {
         videoUrl: "https://youtu.be/x",
       }),
     ).data as ReportInput;
-    const { result, games } = toResultRows(input);
+    const { result, games } = toResultRows(input, PARTICIPANTS);
     expect(result.videoUrl).toBe("https://youtu.be/x");
     expect(games.every((g) => g.replayUrl === null)).toBe(true);
   });
@@ -262,7 +266,8 @@ describe("toResultRows", () => {
       freeWinReason: "no show",
       discussedWithId: "staff1",
     };
-    const { result, games } = toResultRows(input);
+    const { result, games, sheets } = toResultRows(input, PARTICIPANTS);
+    expect(sheets).toEqual([]);
     expect(result).toMatchObject({
       outcome: "free_win",
       winnerId: "b",

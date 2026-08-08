@@ -5,18 +5,18 @@ export const MAX_SUB_DIVISION_SIZE = 24;
 export const MIN_DIVISIONS = 1;
 export const MAX_DIVISIONS = 20;
 
-// „Division 1", „Division 2", …
+// "Division 1", "Division 2", …
 export function divisionName(tier: number): string {
   return `Division ${tier}`;
 }
 
-// „Division 1a", „Division 1b", … — division tier + a letter for the 0-based
+// "Division 1a", "Division 1b", … — division tier + a letter for the 0-based
 // group position.
 export function subDivisionName(tier: number, position: number): string {
   return `Division ${subDivisionShortName(tier, position)}`;
 }
 
-// Short form „1a", „2c" — for tight columns/selects.
+// Short form "1a", "2c" — for tight columns/selects.
 export function subDivisionShortName(tier: number, position: number): string {
   return `${tier}${String.fromCharCode(97 + position)}`;
 }

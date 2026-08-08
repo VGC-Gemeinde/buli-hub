@@ -18,8 +18,8 @@ settings that save automatically.
     - Twitter/X-Handle (text)
     - Bluesky-Handle (text)
     - Herkunft: select with the 16 German Bundesländer + Österreich,
-      Schweiz, Luxemburg + „Andere" which reveals a free-text input
-  - Save feedback: „Speichern…" while in flight, „Gespeichert" on success,
+      Schweiz, Luxemburg + "Andere" which reveals a free-text input
+  - Save feedback: "Speichern…" while in flight, "Gespeichert" on success,
     error message on failure. Only the latest edit wins (in-flight guard).
   - First schema migration: `profiles` table + RLS defense-in-depth.
   - Header user menu links to `/profil`.
@@ -48,7 +48,7 @@ New table `profiles` (in `src/db/schema.ts`):
   and owner-only select/insert/update policies (defense-in-depth; app
   queries bypass RLS per CLAUDE.md).
 - The row is created lazily: the first autosave upserts it.
-- „Andere" needs no extra column — the select is a UI concern; `origin`
+- "Andere" needs no extra column — the select is a UI concern; `origin`
   stores whatever the user chose or typed. A pure function maps a stored
   value back to select+text form state.
 
@@ -68,7 +68,7 @@ New table `profiles` (in `src/db/schema.ts`):
   - `queries.ts` — `getProfile` / `upsertProfile` (Drizzle)
   - `components/profile-header.tsx` (avatar + name, initials fallback)
   - `components/settings-form.tsx` (client: debounced autosave, save-state
-    feedback, „Andere" toggle)
+    feedback, "Andere" toggle)
 - `src/app/profil/page.tsx` — thin wrapper: guard, load, render
 - `src/features/auth/components/user-menu.tsx` — wrap identity in a link to
   `/profil`

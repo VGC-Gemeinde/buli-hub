@@ -10,6 +10,6 @@ Tiny slice. The convention and its reasoning live in
   effectively ended 1–2h after German midnight), `formatGermanDateTime` for
   displayed timestamps (previously rendered in the *server's* timezone — UTC
   on Cloud Run — or the visitor's), `formatGermanDay` for day strings.
-- All 8 „today" call sites and all 12 formatter call sites converted; a bare
+- All 8 "today" call sites and all 12 formatter call sites converted; a bare
   `Intl.DateTimeFormat` or `toISOString().slice(0, 10)` outside the lib is a
   bug from now on.

@@ -13,7 +13,7 @@ export default function DatenschutzPage() {
       <p>
         Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der
         Verarbeitung personenbezogener Daten bei der Nutzung von Buli Hub, der
-        Turnierplattform der VGC Bundesliga (im Folgenden „die Plattform").
+        Turnierplattform der VGC Bundesliga (im Folgenden "die Plattform").
       </p>
 
       <h2>1. Verantwortlicher</h2>

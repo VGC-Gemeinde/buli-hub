@@ -28,7 +28,7 @@ splitting them after the fact would produce a first commit that never existed.
 
 - Staff-editable rules content. The text is hardcoded (see Decisions).
 - Any consequence for never accepting beyond the action-lock: no
-  „Regelwerk offen" staff list, no effect on seeding, no chased deadline.
+  "Regelwerk offen" staff list, no effect on seeding, no chased deadline.
 - Rules history / diffing across seasons. `/regelwerk` serves the running
   season only.
 - Acceptance for staff-only actions. Staff act as officials, not as players.
@@ -57,7 +57,7 @@ splitting them after the fact would produce a first commit that never existed.
    asks again rather than silently reusing the old agreement.
 6. **Registrations that predate acceptance stay valid.** Registration is already
    open for Saison 9, so registered players exist who never saw an acceptance
-   step. They are „registered, not accepted" and get the reminder. Retroactively
+   step. They are "registered, not accepted" and get the reminder. Retroactively
    voiding a real registration for a step that did not exist is not defensible.
 7. **Acceptance happens where the player is asked, never on the rules page.**
    `/regelwerk` is a document and carries no acceptance control. A player
@@ -74,7 +74,7 @@ splitting them after the fact would produce a first commit that never existed.
    **This supersedes hand-off §4 and §5.3**, which put the control at the end
    of the document behind a checkbox and a sticky bar, on the reasoning that a
    player who can tick a box in a modal has not read the rules. The maintainer's
-   call: we trust our players, and the record exists to answer „did they agree",
+   call: we trust our players, and the record exists to answer "did they agree",
    not to prove they were on the page. A future session should not restore the
    inline block from the hand-off.
 8. **One button, no confirmation checkbox in the dialog.** The dialog's copy
@@ -111,7 +111,7 @@ timestamp stands.
 
 ## Gate — which actions
 
-„Player action" means a mutation a player performs as a participant of the
+"Player action" means a mutation a player performs as a participant of the
 running season. Concretely, today:
 
 | Action | File | Gated |
@@ -201,8 +201,8 @@ Two things slice 1 settled that the hand-off left to implementation:
   bullet-less lists today. Out of scope here, but worth fixing when those pages
   are next touched.
 - **`SectionHeader` gained an opt-in `wrap`.** Its `truncate` is right for
-  dynamic names in a fixed column, but turned „Ablauf des Ligabetriebs" into
-  „Ablauf des Ligabet…" on a phone. Default behaviour is unchanged.
+  dynamic names in a fixed column, but turned "Ablauf des Ligabetriebs" into
+  "Ablauf des Ligabet…" on a phone. Default behaviour is unchanged.
 
 Slice 2 ✅: acceptance table + migration, checkbox on `/anmeldung` gating submit
 and recording the acceptance, both dialogs carrying the confirm button, the
@@ -213,7 +213,7 @@ Three things slice 2 settled:
 
 - **Registering is accepting.** The form gates its own submit on the Regelwerk
   checkbox, so reaching `register` means the player agreed — and `register`
-  writes the acceptance row. That makes „since when" answerable for the whole
+  writes the acceptance row. That makes "since when" answerable for the whole
   field rather than only for players who later opened a prompt, and it leaves
   the dialogs covering exactly who they should: the Saison-9 players who
   registered before this feature existed. `register` does not re-verify the
@@ -223,7 +223,7 @@ Three things slice 2 settled:
   sits on `/spieler` and `/match/[matchId]`. In `SiteHeader` it would put the
   non-dismissible gate on `/regelwerk` itself, which is where a player goes to
   read what they are being asked to accept.
-- **`/dev/regelwerk?accept=0` instead of a persona.** „Registered but
+- **`/dev/regelwerk?accept=0` instead of a persona.** "Registered but
   unaccepted" is season state, not an auth-metadata shape, so it does not fit
   `personas.ts`. Acceptance is also one-way in the product, which would make
   each dialog reachable exactly once per developer per season; the dev route

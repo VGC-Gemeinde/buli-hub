@@ -8,20 +8,6 @@ import { type matchOutcomeEnum, platformEnum } from "@/db/schema";
 export type Platform = (typeof platformEnum.enumValues)[number];
 export type MatchOutcome = (typeof matchOutcomeEnum.enumValues)[number];
 
-// A valid https pokepaste link. Team sheets must be pokepaste URLs.
-export function isPokepasteUrl(value: string): boolean {
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    return false;
-  }
-  return (
-    url.protocol === "https:" &&
-    (url.hostname === "pokepast.es" || url.hostname === "www.pokepast.es")
-  );
-}
-
 function isHttpsUrl(value: string): boolean {
   try {
     return new URL(value).protocol === "https:";
@@ -98,12 +84,24 @@ const gameInputSchema = z.object({
   replayUrl: z.string().trim().optional(),
 });
 
+// A team sheet as it arrives from the form: already resolved and stripped by
+// `validateTeamsheet`, whichever of the three routes produced it. Only the
+// shape is checked here — the sheet's *contents* are re-parsed server-side in
+// the action, which is what keeps @pkmn out of this module and out of the
+// client bundle it feeds.
+const sheetInputSchema = z.object({
+  source: z.enum(["pokepaste", "vrpaste", "import"]),
+  ots: z.string().trim().min(1, "Pflichtfeld"),
+});
+
+export type SheetInput = z.infer<typeof sheetInputSchema>;
+
 const normalSchema = z.object({
   outcome: z.literal("normal"),
   platform: z.enum(platformValues, { error: "Bitte eine Plattform wählen" }),
   games: z.array(gameInputSchema).min(2).max(3),
-  playerATeamUrl: z.string().trim().min(1, "Pflichtfeld"),
-  playerBTeamUrl: z.string().trim().min(1, "Pflichtfeld"),
+  playerASheet: sheetInputSchema,
+  playerBSheet: sheetInputSchema,
   videoUrl: z.string().trim().nullish(),
 });
 
@@ -212,20 +210,6 @@ function refineReport(
         }
       });
     }
-    if (!isPokepasteUrl(value.playerATeamUrl)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["playerATeamUrl"],
-        message: "Bitte einen gültigen Pokepaste-Link angeben.",
-      });
-    }
-    if (!isPokepasteUrl(value.playerBTeamUrl)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["playerBTeamUrl"],
-        message: "Bitte einen gültigen Pokepaste-Link angeben.",
-      });
-    }
   } else if (value.outcome === "free_win") {
     if (value.winnerId !== playerAId && value.winnerId !== playerBId) {
       ctx.addIssue({
@@ -263,8 +247,6 @@ export type ResultRow = {
   outcome: MatchOutcome;
   winnerId: string | null;
   platform: Platform | null;
-  playerATeamUrl: string | null;
-  playerBTeamUrl: string | null;
   videoUrl: string | null;
   freeWinReason: string | null;
   discussedWithId: string | null;
@@ -276,13 +258,25 @@ export type GameRow = {
   replayUrl: string | null;
 };
 
+// A team sheet keyed to the player it belongs to. Persisted into `team_sheets`,
+// upserted on (matchId, playerId) so a correction keeps the paste URL alive.
+export type SheetRow = {
+  playerId: string;
+  source: SheetInput["source"];
+  ots: string;
+};
+
 // Maps a validated report to persistence rows. Game winners are already
 // absolute (the form picks a player), so the match winner is simply whoever won
-// two games; `playerATeamUrl`/`playerBTeamUrl` are keyed to player A/B by the
-// form and pass straight through.
-export function toResultRows(input: StaffResultInput): {
+// two games. The two sheets are keyed to player A/B by the form and become one
+// `team_sheets` row each; outcomes without games carry no sheets at all.
+export function toResultRows(
+  input: StaffResultInput,
+  participants?: { playerAId: string; playerBId: string },
+): {
   result: ResultRow;
   games: GameRow[];
+  sheets: SheetRow[];
 } {
   if (input.outcome === "double_loss") {
     return {
@@ -290,13 +284,12 @@ export function toResultRows(input: StaffResultInput): {
         outcome: "double_loss",
         winnerId: null,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: null,
         discussedWithId: null,
       },
       games: [],
+      sheets: [],
     };
   }
   if (input.outcome === "free_win") {
@@ -305,13 +298,12 @@ export function toResultRows(input: StaffResultInput): {
         outcome: "free_win",
         winnerId: input.winnerId,
         platform: null,
-        playerATeamUrl: null,
-        playerBTeamUrl: null,
         videoUrl: null,
         freeWinReason: input.freeWinReason,
         discussedWithId: input.discussedWithId,
       },
       games: [],
+      sheets: [],
     };
   }
 
@@ -332,12 +324,16 @@ export function toResultRows(input: StaffResultInput): {
       outcome: "normal",
       winnerId,
       platform: input.platform,
-      playerATeamUrl: input.playerATeamUrl,
-      playerBTeamUrl: input.playerBTeamUrl,
       videoUrl: input.platform === "cartridge" ? input.videoUrl || null : null,
       freeWinReason: null,
       discussedWithId: null,
     },
     games,
+    sheets: participants
+      ? [
+          { playerId: participants.playerAId, ...input.playerASheet },
+          { playerId: participants.playerBId, ...input.playerBSheet },
+        ]
+      : [],
   };
 }

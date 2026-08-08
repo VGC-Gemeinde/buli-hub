@@ -54,7 +54,7 @@ export function UserMenu({
         </DropdownMenuItem>
         {/* The footer link is the signed-out home of the ruleset; signed-in
             players look for it up here, next to everything else that is
-            „theirs". */}
+            "theirs". */}
         <DropdownMenuItem asChild className="font-medium">
           <Link href="/regelwerk">Regelwerk</Link>
         </DropdownMenuItem>

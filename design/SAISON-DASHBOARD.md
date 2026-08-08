@@ -22,7 +22,7 @@ Two structural ideas:
    the current empty **Disputes** placeholder, which is dropped entirely
    (bring the section back when the feature exists).
 
-**Lingo:** the community says **Freewin**, never „Freigewinn". Every UI string
+**Lingo:** the community says **Freewin**, never "Freigewinn". Every UI string
 in this feature (and the earlier player-side strings from MATCH-REPORTING.md)
 uses **Freewin / Freewins**. Code identifiers (`free_win`, `awardFreeWin`, …)
 stay as they are.
@@ -91,7 +91,7 @@ Row `flex items-center gap-3.5 rounded-lg border px-4 py-2`, left to right:
 - Status chip `shrink-0 rounded-full px-2.5 py-[3px] text-xs font-semibold
   whitespace-nowrap`, flex-centered text (MATCH-REPORTING.md §11):
   - overdue: `bg-destructive/8 text-destructive` — **seit {n} Tagen**
-    (days since `endsOn`; concrete age instead of the static „Überfällig"
+    (days since `endsOn`; concrete age instead of the static "Überfällig"
     label, which already heads the section)
   - open: `bg-muted text-muted-foreground` — **offen**
   - free win: `bg-brand-orange/14 text-brand-blue dark:text-white` —
@@ -123,7 +123,7 @@ the row link to the match page.
   (`size="sm"`, h-7) — **Bestätigen**; pending label **…** (existing
   behavior). No page navigation for the 95% case.
 - Line 2, indented to the pairing column (`pl-[110px]`): `text-[13px]
-  text-muted-foreground truncate` — **„{freeWinReason}" — gemeldet von
+  text-muted-foreground truncate` — **"{freeWinReason}" — gemeldet von
   {reporterName}, {reportedAt}** (`de-DE`, weekday short + `dd.MM.`). The
   reason is the decision input; staff must not have to click through to see
   it. Needs `freeWinReason` + reporter + `reportedAt` on `StaffMatchRow`.
@@ -169,35 +169,35 @@ the row link to the match page.
 
 State → rows (render only what applies, in this order):
 
-- **No result** — context: „Spieler melden Ergebnisse selbst. Staff greift
+- **No result** — context: "Spieler melden Ergebnisse selbst. Staff greift
   ein, wenn ein Match nicht zustande kommt."
-  1. **Freewin vergeben** / „Ein Spieler erhält den Sieg. Begründung
+  1. **Freewin vergeben** / "Ein Spieler erhält den Sieg. Begründung
      erforderlich — sofort gewertet." / outline **Vergeben…** → §8
-  2. **Doppelniederlage vergeben** / „Beide Spieler erhalten eine
+  2. **Doppelniederlage vergeben** / "Beide Spieler erhalten eine
      Niederlage, niemand einen Sieg." / outline **Vergeben…** → confirm
      dialog (existing copy, s/Freigewinn/Freewin/)
   If overdue, the page shows a status card above the panel (`rounded-lg
   border px-4.5 py-3.5 flex items-center gap-3`): chip **seit {n} Tagen
-  überfällig** (§4 overdue chip) + `text-sm text-muted-foreground` „Noch
+  überfällig** (§4 overdue chip) + `text-sm text-muted-foreground` "Noch
   kein Ergebnis gemeldet."
-- **Pending free win** — context: „Der Freewin zählt erst nach Bestätigung
+- **Pending free win** — context: "Der Freewin zählt erst nach Bestätigung
   für die Tabelle." Above the panel, the pending summary per
   MATCH-REPORTING.md §10.
-  1. **Freewin bestätigen** / „Sieg für {winner} wird gewertet." /
+  1. **Freewin bestätigen** / "Sieg für {winner} wird gewertet." /
      **default Button** (the only primary in the whole zone) — **Bestätigen**
-  2. **Zurückweisen** / „Meldung wird gelöscht, das Match kann neu gemeldet
+  2. **Zurückweisen** / "Meldung wird gelöscht, das Match kann neu gemeldet
      werden." / outline **Zurückweisen…** → confirm dialog. This is
      `reopenMatch` renamed for this state — same action, but in the
      vocabulary of the decision being made.
-- **Result reported** — context: „Eingriffe überschreiben bzw. löschen das
+- **Result reported** — context: "Eingriffe überschreiben bzw. löschen das
   gemeldete Ergebnis."
-  1. **Ergebnis zurücksetzen** / „Löscht das Ergebnis — das Match kann neu
+  1. **Ergebnis zurücksetzen** / "Löscht das Ergebnis — das Match kann neu
      gemeldet werden." / outline with destructive accent
      (`border-destructive/35 text-destructive`) — **Zurücksetzen…** →
      confirm dialog (existing)
-  2. **Freewin vergeben** / „Überschreibt das gemeldete Ergebnis.
+  2. **Freewin vergeben** / "Überschreibt das gemeldete Ergebnis.
      Begründung erforderlich." / outline **Vergeben…** → §8
-  3. **Doppelniederlage vergeben** / „Überschreibt das gemeldete Ergebnis —
+  3. **Doppelniederlage vergeben** / "Überschreibt das gemeldete Ergebnis —
      beide verlieren." / outline **Vergeben…** → confirm dialog
 - Errors: `text-destructive text-sm` at the bottom of the panel (existing).
 
@@ -214,7 +214,7 @@ component, receives the match. `DialogContent` width ~480px.
   win (MATCH-REPORTING.md §8): avatar `size-[30px]` + name; selected card
   `border-2 border-brand-orange` + trailing orange tick, unselected
   `border bg-background`.
-- **Begründung** — `Textarea rows-3`, placeholder „z. B. {b} hat auf keine
+- **Begründung** — `Textarea rows-3`, placeholder "z. B. {b} hat auf keine
   Terminanfrage reagiert." Helper line under it `text-[12.5px]
   text-muted-foreground`: **Sichtbar für beide Spieler auf der
   Match-Seite.** — the reason is public, say so before it's written.
@@ -234,7 +234,7 @@ component, receives the match. `DialogContent` width ~480px.
 ## 10. Checklist
 
 1. `staff/page.tsx`: regular-season phase renders the dashboard inline;
-   season strip + stat tiles + sections (§1–6); old „Reguläre Saison" card
+   season strip + stat tiles + sections (§1–6); old "Reguläre Saison" card
    removed
 2. `staff/saison/page.tsx`: delete, redirect to `/staff` (§1)
 3. `saison-dashboard.tsx`: row pattern, day-count chips, reason line +

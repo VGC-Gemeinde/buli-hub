@@ -25,7 +25,7 @@ balance invariant or finalize gating beyond the new count.
 ## Scope
 
 **In:** schema column, pure `assignZones`/`validatePostSeason` support, the staff
-dialog's top-division „Meister-Playoff" cluster + preview band, the player table
+dialog's top-division "Meister-Playoff" cluster + preview band, the player table
 zone + legend, dev-seed coverage on Division 1.
 
 **Out:** the tournament (bracket, results, crowning the champion).
@@ -47,10 +47,10 @@ zone + legend, dev-seed coverage on Division 1.
 - `src/features/seeding/queries.ts` — `divisionsWithGroupSizes`, `divisionPostSeason`,
   `savePostSeasonConfig` carry the column.
 - `src/features/seeding/components/post-season-dialog.tsx` — the top division's
-  (disabled) promotion clusters are replaced by a single gold „Meister-Playoff"
+  (disabled) promotion clusters are replaced by a single gold "Meister-Playoff"
   cluster; the preview strip and validation include the champion band.
 - `src/features/season/components/standings-panel.tsx` — `champion` zone tint/rail +
-  legend entry („Meister-Playoff").
+  legend entry ("Meister-Playoff").
 - `src/app/spieler/page.tsx` — pass `championshipPlayoffSlots` into `assignZones`.
 - `src/app/globals.css` + `design/globals.css` — `--zone-champion` (gold) + utility.
 - `src/features/dev/seed.ts` — give Division 1 a championship playoff in the seeded

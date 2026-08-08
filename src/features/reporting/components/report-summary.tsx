@@ -8,6 +8,7 @@ import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PLATFORM_LABELS } from "@/features/registration/registration";
 import type { Identity } from "@/features/season/dashboard";
 import { SpoilerPill } from "@/features/spoilers/components/spoiler-score";
+import { pastePath } from "@/features/teamsheets/paths";
 import { formatGermanDateTime } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import type { StoredResult } from "../queries";
@@ -79,7 +80,7 @@ function BackAndEyebrow({
 export type SpoilerMode = "none" | "default" | "motw";
 
 // Read-only view of a recorded result. A participant sees it from their own
-// perspective („Du" / „Sieg für dich"); a neutral observer (viewerId null or not
+// perspective ("Du" / "Sieg für dich"); a neutral observer (viewerId null or not
 // a participant) sees the objective Player A vs Player B view. Corrections go
 // through the dispute flow. Everything shown here is public once the game is
 // played; disputes live outside this component.
@@ -174,7 +175,7 @@ export function ReportSummary({
   if (result.outcome === "free_win") {
     // Neutral observers only ever reach this branch for a confirmed free win
     // (the page hides pending ones); it is shown as the walkover 2:0. While
-    // covered, nothing may say „Freewin" — the eyebrow and headline show the
+    // covered, nothing may say "Freewin" — the eyebrow and headline show the
     // neutral pairing (§3.2).
     const pending = result.confirmedAt === null;
     const self = result.winnerId === viewer.userId ? 2 : 0;
@@ -257,7 +258,7 @@ export function ReportSummary({
   // The rendered game list. While the spoiler mode is active, a Bo3 that
   // ended 2:0 must not betray itself by its row count (§3.6): a phantom third
   // row renders as a normal covered row — its replay button links game 2's
-  // replay as a dummy — and becomes the „Nicht gespielt" ghost on reveal.
+  // replay as a dummy — and becomes the "Nicht gespielt" ghost on reveal.
   const games: {
     gameNumber: number;
     winnerName: string | null;
@@ -269,6 +270,13 @@ export function ReportSummary({
     replayUrl: game.replayUrl ?? null,
     phantom: false,
   }));
+  const sheetA = result.sheets.find(
+    (sheet) => sheet.playerId === playerA.userId,
+  );
+  const sheetB = result.sheets.find(
+    (sheet) => sheet.playerId === playerB.userId,
+  );
+
   if (spoilerActive && result.games.length === 2) {
     games.push({
       gameNumber: 3,
@@ -361,12 +369,15 @@ export function ReportSummary({
               return (
                 <div
                   key={game.gameNumber}
-                  className="flex items-center gap-3.5 rounded-lg border px-4 py-3"
+                  className="flex flex-wrap items-center gap-x-3.5 gap-y-2 rounded-lg border px-4 py-3"
                 >
                   <span className="w-[58px] shrink-0 whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.08em]">
                     Spiel {game.gameNumber}
                   </span>
-                  <span className="flex min-h-[31px] flex-1 items-center gap-2 font-semibold text-sm">
+                  {/* The floor keeps the winner name readable; if the replay
+                      button no longer fits next to it, it wraps onto its own
+                      line instead of squeezing the name away. */}
+                  <span className="flex min-h-[31px] min-w-36 flex-1 items-center gap-2 font-semibold text-sm">
                     <span
                       className={
                         gameCovered
@@ -385,7 +396,7 @@ export function ReportSummary({
                         className="h-[13px] w-[88px]"
                       />
                     ) : (
-                      <span className="text-brand-blue dark:text-white">
+                      <span className="truncate text-brand-blue dark:text-white">
                         {game.winnerName}
                       </span>
                     )}
@@ -395,7 +406,7 @@ export function ReportSummary({
                       href={game.replayUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-md border px-3 py-1.5 font-semibold text-[13px] hover:border-brand-orange hover:bg-brand-orange/5"
+                      className="shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 font-semibold text-[13px] hover:border-brand-orange hover:bg-brand-orange/5"
                     >
                       Replay ansehen ↗
                     </a>
@@ -410,18 +421,18 @@ export function ReportSummary({
       <section className="mt-9 flex flex-col gap-3">
         <SectionHead title="Teamsheets" />
         <div className="flex flex-col gap-2">
-          {result.playerATeamUrl ? (
+          {sheetA ? (
             <LinkCard
               label={`Team ${playerA.name}`}
-              href={result.playerATeamUrl}
-              trailing="pokepast.es ↗"
+              href={pastePath(sheetA.id)}
+              trailing="Teamsheet ansehen ↗"
             />
           ) : null}
-          {result.playerBTeamUrl ? (
+          {sheetB ? (
             <LinkCard
               label={`Team ${playerB.name}`}
-              href={result.playerBTeamUrl}
-              trailing="pokepast.es ↗"
+              href={pastePath(sheetB.id)}
+              trailing="Teamsheet ansehen ↗"
             />
           ) : null}
           {result.videoUrl ? (
@@ -713,7 +724,7 @@ function ScoreSide({
           )}
         />
         {reserveMarker ? (
-          // Reserved marker row: empty while covered, holds the „Sieger"
+          // Reserved marker row: empty while covered, holds the "Sieger"
           // marker after reveal — the names never move (§3.4).
           <span className="flex h-[15px] items-center">{marker}</span>
         ) : (

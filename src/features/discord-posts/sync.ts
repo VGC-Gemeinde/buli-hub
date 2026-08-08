@@ -4,6 +4,7 @@ import {
   getMatchForReport,
   getMatchResult,
 } from "@/features/reporting/queries";
+import { pasteUrl } from "@/features/teamsheets/paths";
 import {
   deleteChannelMessage,
   editChannelMessage,
@@ -23,6 +24,17 @@ import { deletePostRow, getPost, type PostKind, upsertPost } from "./queries";
 function configuredChannel(): string | null {
   const id = process.env.DISCORD_RESULTS_CHANNEL_ID;
   return id && id.length > 0 ? id : null;
+}
+
+// The public paste for a player's sheet, absolute. Null when the sheet is
+// missing (free win) or APP_BASE_URL is unset — the message then omits the
+// team block rather than posting a dead relative link.
+function teamSheetUrl(
+  result: { sheets: { playerId: string; id: string }[] },
+  playerId: string,
+): string | null {
+  const sheet = result.sheets.find((row) => row.playerId === playerId);
+  return sheet ? pasteUrl(sheet.id) : null;
 }
 
 function matchUrl(matchId: string): string | null {
@@ -138,8 +150,8 @@ export async function syncResultPost(matchId: string): Promise<void> {
       scoreB: result.games.filter((g) => g.winnerId === match.playerB?.userId)
         .length,
       platform: result.platform,
-      playerATeamUrl: result.playerATeamUrl,
-      playerBTeamUrl: result.playerBTeamUrl,
+      playerATeamUrl: teamSheetUrl(result, match.playerA.userId),
+      playerBTeamUrl: teamSheetUrl(result, match.playerB.userId),
       videoUrl: result.videoUrl,
       replayUrls: result.games
         .map((g) => g.replayUrl)

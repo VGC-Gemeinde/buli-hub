@@ -38,15 +38,15 @@ keinen Beweis. `X = 0` ist erlaubt (nirgends Pflicht).
 ## Preseason-Konfiguration
 
 - Die Entscheidung lebt in der **Regel-Ansicht** (Schritt 3 der Leiste, Label
-  **„Regeln"**): eine eigene Karte „Replay-Pflicht" über der
-  Auf-/Abstiegs-Leiter — Eingabe „Pflicht bis Division ___" (0–20, leer =
+  **"Regeln"**): eine eigene Karte "Replay-Pflicht" über der
+  Auf-/Abstiegs-Leiter — Eingabe "Pflicht bis Division ___" (0–20, leer =
   unentschieden) mit Klartext-Zusammenfassung der Wirkung. Unabhängig von den
   Gruppen entscheidbar, speichert debounced. Nur mit Steuerung editierbar,
   bis zum Finalize.
 - Schritt 3 ist erst **done, wenn beide Saison-Regeln entschieden sind**
   (Auf-/Abstieg gespeichert **und** Replay-Pflicht gesetzt); das Sublabel
-  nennt den nächsten offenen Teil („Auf- & Abstieg speichern" →
-  „Replay-Pflicht festlegen" → „Regeln gespeichert").
+  nennt den nächsten offenen Teil ("Auf- & Abstieg speichern" →
+  "Replay-Pflicht festlegen" → "Regeln gespeichert").
 - Eigene Action `setReplayRequirement` (Control-Gate wie `configureSeeding`,
   aber **ohne** den PostSeason-Stempel zu berühren — die Regel hat mit den
   Gruppen nichts zu tun). Zod-Schema in `seeding.ts`.
@@ -65,7 +65,7 @@ keinen Beweis. `X = 0` ist erlaubt (nirgends Pflicht).
   divisions.tier × seedings.replay_required_tiers); Player-Action
   (`reportMatch`) und Staff-Actions (Result-Editor) reichen es in die Schemas.
 - Client: `ReportForm` bekommt `proofRequired` als Prop (Match-Page reicht
-  durch) — Chips „Pflicht"/„optional" pro Replay-Feld, Video-Feld
+  durch) — Chips "Pflicht"/"optional" pro Replay-Feld, Video-Feld
   Pflicht-Markierung, Submit-Gating und Hinweistexte entsprechend. Der
   Staff-Result-Editor validiert nur serverseitig (unverändert minimal).
 

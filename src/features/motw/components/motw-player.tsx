@@ -6,7 +6,7 @@ import type { MotwPlayer } from "../motw";
 
 // The player side of a MotW matchup, shared by the picker rows and the pick
 // panel — the same broadcast anatomy as the public billboard: avatars on the
-// outside, names meeting at the centered „vs.".
+// outside, names meeting at the centered "vs.".
 //
 // `side` is the half of the row the player occupies. Everything mirrors around
 // the centre, so the placement chip always sits nearest the middle on both
@@ -22,7 +22,7 @@ export function CaptureCardMark({
   player: MotwPlayer;
   size?: "sm" | "lg";
 }) {
-  // An untouched profile is „unknown", not „no": `hasCaptureCard` defaults to
+  // An untouched profile is "unknown", not "no": `hasCaptureCard` defaults to
   // false, so a player who never saved their settings would otherwise look like
   // they answered the question. Staff can then ask instead of skipping them.
   const state = player.hasCaptureCard
@@ -61,7 +61,7 @@ export function CaptureCardMark({
   );
 }
 
-// „#2 4–1 📹" — placement first and boxed, because that is what the pick is
+// "#2 4–1 📹" — placement first and boxed, because that is what the pick is
 // judged on at a glance; the match record follows, quieter. Deliberately no
 // game differential: it is table detail that does not change which matchup is
 // worth featuring, and it crowded the line.

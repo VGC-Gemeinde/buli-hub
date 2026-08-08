@@ -18,7 +18,7 @@ import { dismissRegistrationHint } from "../actions";
 // Styled with the loud emphasisSurface treatment — the same box weight the
 // Regelwerk uses for the one rule players kept skimming past. Players ignored
 // the muted version, so this deliberately borrows the treatment reserved for
-// „this one is not optional", popping equally in light and dark.
+// "this one is not optional", popping equally in light and dark.
 export function ProfileHint() {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) {

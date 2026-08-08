@@ -18,7 +18,7 @@ function parseIso(value: string): Date | undefined {
 }
 
 // While the popover is open, the trigger carries the same orange focus ring
-// an Input shows while being edited — the pickers' „active" state.
+// an Input shows while being edited — the pickers' "active" state.
 const OPEN_RING =
   "data-[state=open]:border-ring data-[state=open]:ring-3 data-[state=open]:ring-ring/50";
 

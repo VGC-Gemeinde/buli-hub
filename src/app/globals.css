@@ -69,7 +69,7 @@
   --brand-orange: #ff7b00; /* pawmo-orange */
 
   /* Zone palette (DESIGN.md §2.9) — decoupled from brand orange so orange keeps
-     meaning „active / you". Same values in both modes; navy-compatible chroma. */
+     meaning "active / you". Same values in both modes; navy-compatible chroma. */
   --zone-promote: oklch(0.6 0.12 158); /* Aufstieg direkt — green */
   --zone-playoff: oklch(0.78 0.13 78); /* Auf-/Abstiegs-Playoff — amber */
   --zone-demote: oklch(0.55 0.19 27); /* Abstieg direkt — red */
@@ -164,7 +164,7 @@
 }
 
 /* Deadline-shift feedback in the schedule dialog: rows after an edited week
-   flash once so the „shifts everything after" rule is visible. */
+   flash once so the "shifts everything after" rule is visible. */
 @keyframes rowflash {
   from {
     background-color: rgba(255, 123, 0, 0.14);

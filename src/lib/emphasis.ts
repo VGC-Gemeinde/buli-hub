@@ -1,4 +1,4 @@
-// The loud „do not skim past" surface: a 2px tone border over a 12% tone wash.
+// The loud "do not skim past" surface: a 2px tone border over a 12% tone wash.
 // The wash is the same weight in light and dark on purpose — 5% orange/red
 // reads on white but disappears on the dark navy background, so both modes use
 // the heavier value to pop equally. Shared by the registration/dashboard

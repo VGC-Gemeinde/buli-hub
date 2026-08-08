@@ -23,14 +23,14 @@ export async function SiteHeader({
 }) {
   const current = await currentUser();
   const isStaff = current !== null && roleAtLeast(current.role, "staff");
-  // The „Liga" entry only appears while the public overview is live.
+  // The "Liga" entry only appears while the public overview is live.
   const seasonRunning = current !== null ? await seasonIsRunning() : false;
 
   return (
     <div className={className}>
       <div className="h-[3px] bg-brand-orange" />
       <header className="flex items-center justify-between gap-4 border-b px-5 py-2.5">
-        <div className="flex min-w-0 items-center gap-7">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-7">
           <Link href="/" className="flex shrink-0 items-center gap-3">
             <Image
               src="/logo.svg"

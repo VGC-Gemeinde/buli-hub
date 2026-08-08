@@ -29,7 +29,7 @@ export function regelwerkPrompt(input: AcceptanceInput): RegelwerkPrompt {
   if (input.phase === "regular_season") {
     return "gate";
   }
-  // „not_started" means this player registered for a season that has since been
+  // "not_started" means this player registered for a season that has since been
   // replaced; there is nothing running to accept rules for.
   return input.phase === "not_started" ? "none" : "reminder";
 }

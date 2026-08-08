@@ -20,12 +20,16 @@ export function MotwMatchBanner({
         Spieltag {round}
       </span>
       {youtubeUrl ? (
-        <Button asChild size="sm" className="ml-auto">
-          <a href={youtubeUrl} target="_blank" rel="noreferrer">
-            <Play aria-hidden className="size-3.5 fill-current" />
-            Auf YouTube ansehen
-          </a>
-        </Button>
+        // Wrapped lines align left (DESIGN.md §6): below sm the button gets
+        // its own left-aligned line, flush right only on the sm+ one-liner.
+        <div className="w-full sm:ml-auto sm:w-auto">
+          <Button asChild size="sm">
+            <a href={youtubeUrl} target="_blank" rel="noreferrer">
+              <Play aria-hidden className="size-3.5 fill-current" />
+              Auf YouTube ansehen
+            </a>
+          </Button>
+        </div>
       ) : null}
     </div>
   );

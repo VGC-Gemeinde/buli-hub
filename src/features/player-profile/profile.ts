@@ -12,8 +12,8 @@ export type ProfileScheduleRow = {
   round: number;
   startsOn: string;
   endsOn: string;
-  opponent: Identity | null; // null = bye („spielfrei")
-  reported: boolean; // a public result exists (pending free wins stay „offen")
+  opponent: Identity | null; // null = bye ("spielfrei")
+  reported: boolean; // a public result exists (pending free wins stay "offen")
   scoreSelf: number | null;
   scoreOpponent: number | null;
   // The viewer participates in this match (owner viewing their own profile,
@@ -31,7 +31,7 @@ export function profileScheduleRows(input: {
 }): ProfileScheduleRow[] {
   return input.matches.map((match) => {
     const result = input.resultByMatchId.get(match.matchId) ?? null;
-    // A pending (unconfirmed) free win is not public — the row stays „offen".
+    // A pending (unconfirmed) free win is not public — the row stays "offen".
     const pending =
       result?.outcome === "free_win" && result.confirmedAt === null;
     const reported = result !== null && !pending;

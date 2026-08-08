@@ -17,11 +17,11 @@ reproduces it in full — no rule was dropped or reworded beyond formatting.
 
 ## 1. Naming and route
 
-The route is **`/regelwerk`**, the noun is **„Regelwerk"** everywhere in the UI.
+The route is **`/regelwerk`**, the noun is **"Regelwerk"** everywhere in the UI.
 
-Do not call it „Regeln": that name is already taken inside the app for the staff
+Do not call it "Regeln": that name is already taken inside the app for the staff
 seeding rules (Auf-/Abstieg + Replay-Pflicht — `steps.ts`, `post-season-panel.tsx`,
-step label „Regeln"). Two different things called „Regeln" in one product is a
+step label "Regeln"). Two different things called "Regeln" in one product is a
 support problem.
 
 `/regelwerk` always serves the **running season**. The h1 block names the season
@@ -97,7 +97,7 @@ that registration means understanding and accepting the rules, and that changes
 are announced on Discord. Same status-line pattern as `/anmeldung` §1 — season
 and validity are never a guess.
 
-### 2.4 „Auf einen Blick" — six tiles
+### 2.4 "Auf einen Blick" — six tiles
 
 A `grid grid-cols-3 gap-3` directly under the head. Each tile:
 `flex flex-col gap-1 rounded-lg border border-border bg-card px-4 py-3.5`, kicker
@@ -157,7 +157,7 @@ Two things are required:
    `mb-1.5` on the `li` instead (`space-y-*` is not compiled either).
 
 Key terms inside a bullet get `font-semibold text-foreground` — dates,
-thresholds, „freie Teamwahl", „Wesen", division numbers. Nothing else is
+thresholds, "freie Teamwahl", "Wesen", division numbers. Nothing else is
 emphasised; the bold words are the scan layer.
 
 ### 2.7 The four pull-outs
@@ -167,7 +167,7 @@ each becomes a small diagram. All four are `rounded-lg border border-border
 bg-card p-6`, titled with `Tick size="m"` + `text-[13px] font-semibold uppercase
 tracking-[0.16em] text-muted-foreground`.
 
-**a) Deine Spielwoche** (chapter 3, above „Scheduling"). Seven equal cells,
+**a) Deine Spielwoche** (chapter 3, above "Scheduling"). Seven equal cells,
 `flex gap-1`, each `flex flex-1 flex-col items-center gap-1.5 rounded-md bg-muted
 py-2.5` with day abbreviation (`font-heading font-bold text-[13px]`) and a
 sub-label. Mo shows `0:00`, So shows `23:59`, the others `—`. **Mi** is the one
@@ -224,7 +224,7 @@ text-foreground` kicker + `text-[13px] text-muted-foreground leading-[1.55]` bod
 
 Used four times, and only these: **Replay-Pflicht** (Div 1 & 2, Tick orange),
 **Nachrichten sind unveränderlich** (Tick navy), **Greift kein Tiebreaker**
-(Tick navy), and the „Bis dahin" box inside the gate dialog (§5.2).
+(Tick navy), and the "Bis dahin" box inside the gate dialog (§5.2).
 
 No left-border accent bars — `DESIGN.md` forbids them.
 
@@ -251,7 +251,7 @@ Reference: 1b.
    it is ticked. The rules require participants to understand and accept them —
    registration is the only place that becomes verifiable.
 3. **Spieler-Dashboard** — a quiet side card (kicker `Saison 9`, title
-   `Regelwerk`, one line of copy, `ActionLink` „Regelwerk öffnen") for in-season
+   `Regelwerk`, one line of copy, `ActionLink` "Regelwerk öffnen") for in-season
    lookups. Not a CTA.
 
 **Deliberately not in `HeaderNav`.** The nav is signed-in only and has three
@@ -346,7 +346,7 @@ owns the mobile adaptation. The specific decisions needed:
 
 - **Chapter list.** A `w-56` sticky sidebar has no room below `lg`. Below that
   breakpoint drop the two-column layout to one and turn the aside into a
-  collapsed chapter list directly under the page head (a `<details>` „Inhalt", or
+  collapsed chapter list directly under the page head (a `<details>` "Inhalt", or
   a horizontally scrollable chip row). Do **not** keep it sticky on mobile — it
   would eat a third of the viewport. The scroll-spy is then decorative; that is
   acceptable.
@@ -398,14 +398,14 @@ These are not design questions. They block implementation:
 3. **Content ownership.** Hardcoded per season, or editable by staff?
 4. **Does an existing registration without acceptance stay valid?** Registration
    is already open for Saison 9, so there are registered players who have never
-   seen an acceptance step. The design treats them as „registered, not accepted"
+   seen an acceptance step. The design treats them as "registered, not accepted"
    and shows them 5.1 — confirm that is the intent rather than invalidating
    their registration.
 
 ## 9. Checklist
 
 1. Schema: acceptance row (season/window id + user id + accepted_at) +
-   migration; query for „has the current user accepted the current season".
+   migration; query for "has the current user accepted the current season".
 2. New route `src/app/regelwerk/page.tsx` + `src/features/regelwerk/` per §2;
    chapter list as a client component (scroll-spy), everything else server-rendered.
 3. Prose lists: add a compiled `.list-disc` rule to `globals.css` or use the

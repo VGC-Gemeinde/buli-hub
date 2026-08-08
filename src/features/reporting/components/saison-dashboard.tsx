@@ -229,12 +229,12 @@ export function SaisonDashboard({
                     </Link>
                     {m.dispute ? (
                       <p className="truncate text-[13px] text-muted-foreground">
-                        „{m.dispute.reason}" · {m.dispute.openedByName ?? "—"}
+                        "{m.dispute.reason}" · {m.dispute.openedByName ?? "—"}
                       </p>
                     ) : null}
                   </div>
                 </div>
-                <div className="flex justify-end sm:contents">
+                <div className="flex sm:contents">
                   <Button
                     asChild
                     size="sm"
@@ -277,7 +277,7 @@ export function SaisonDashboard({
                     </Link>
                     {m.freeWinReason ? (
                       <p className="truncate text-[13px] text-muted-foreground">
-                        „{m.freeWinReason}" · gemeldet von{" "}
+                        "{m.freeWinReason}" · gemeldet von{" "}
                         {m.reporterName ?? "—"}
                         {m.reportedAt
                           ? `, ${reportedAtLabel(m.reportedAt)}`
@@ -393,8 +393,13 @@ export function SaisonDashboard({
                         {d.playerB.name}
                       </Link>
                       <p className="truncate text-[13px] text-muted-foreground">
-                        „{d.reason}" · {d.openedByName ?? "—"}
+                        "{d.reason}" · {d.openedByName ?? "—"}
                       </p>
+                      {d.note ? (
+                        <p className="truncate text-[13px] text-muted-foreground">
+                          Entscheidung: "{d.note}"
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:contents">

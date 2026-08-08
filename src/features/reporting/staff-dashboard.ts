@@ -4,7 +4,7 @@ import type { StaffMatchRow } from "./queries";
 export type MatchBuckets = {
   // Past matchday, still unreported — needs chasing.
   overdue: StaffMatchRow[];
-  // Every match of the current matchday (the „alle dieser Woche" filter shows
+  // Every match of the current matchday (the "alle dieser Woche" filter shows
   // all of these; the default view shows only the unreported ones).
   thisWeek: StaffMatchRow[];
   // Reported free wins still awaiting staff confirmation.
@@ -45,7 +45,7 @@ export function bucketMatches(input: {
 }
 
 // Whether a this-week match still needs a result (drives the default vs
-// „alle" filter).
+// "alle" filter).
 export function isUnreported(match: StaffMatchRow): boolean {
   return match.outcome === null;
 }

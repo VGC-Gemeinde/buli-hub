@@ -160,7 +160,7 @@ function ReminderDialog({ seasonNumber }: { seasonNumber: number }) {
 
 /**
  * Season running, still unaccepted. Non-dismissible — but it carries the
- * confirm button itself, so „the only way out" is one click rather than a trip
+ * confirm button itself, so "the only way out" is one click rather than a trip
  * through the document.
  */
 function GateDialog({ seasonNumber }: { seasonNumber: number }) {

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { Button } from "@/components/ui/button";
 
-// No registration open / between seasons — a calm „nothing yet" state
+// No registration open / between seasons — a calm "nothing yet" state
 // (§4.7 keine_saison). Informational: neutral tick.
 export function ComingSoonPanel() {
   return (

@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils";
 
 // Callout for hard rules that must not be skimmed past (design §2.8). Used
 // sparingly and deliberately — Replay-Pflicht, unveränderliche Nachrichten,
-// „greift kein Tiebreaker", and the gate dialog's „Bis dahin".
+// "greift kein Tiebreaker", and the gate dialog's "Bis dahin".
 //
 // `emphasis` is for the one rule players kept scrolling past. A muted box
 // reads as an aside, and three of them in a row train the eye to skip all
 // three; the orange border and tint are the same treatment the emphasised fact
 // tile and the acceptance prompt use, so the page already teaches that it
-// means „this one is not optional". No left-border accent bars, no gradients —
+// means "this one is not optional". No left-border accent bars, no gradients —
 // DESIGN.md forbids both.
 export function Callout({
   title,

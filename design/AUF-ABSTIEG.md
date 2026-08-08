@@ -55,7 +55,7 @@ Intro line under the title (replaces the current `DialogDescription`):
   segmented control (`rounded-full border p-[3px]`, segments `h-[26px]
   rounded-full px-3 text-[12.5px] font-semibold`): **Gruppentabelle** |
   **Gesamttabelle**. Active = `bg-brand-blue text-white`. Gesamttabelle
-  disabled (`opacity-40 cursor-not-allowed` + title „Nur bei mindestens zwei
+  disabled (`opacity-40 cursor-not-allowed` + title "Nur bei mindestens zwei
   gleich großen Gruppen verfügbar") when `divisionModeAvailable` is false.
 
 **Body row** (`flex flex-col gap-3 px-5 py-4`):
@@ -67,7 +67,7 @@ Intro line under the title (replaces the current `DialogDescription`):
    group in Gruppen mode, whole division in Gesamt mode). Squares
    `h-[30px] rounded-[7px] border text-[11.5px] font-semibold`, width 34px
    (≤10 places) / 28px (≤16) / 22px (more), `flex-wrap`. Place number inside;
-   `title` names the zone („Platz 3 — Aufstiegs-Playoff"). Fills: promote
+   `title` names the zone ("Platz 3 — Aufstiegs-Playoff"). Fills: promote
    solid `bg-zone-promote text-white`, playoff `bg-zone-playoff
    text-brand-blue`, demote `bg-zone-demote text-white`, rest `bg-muted
    text-muted-foreground`. **Overbooked overlap** (spans exceed capacity)
@@ -100,7 +100,7 @@ Intro line under the title (replaces the current `DialogDescription`):
   text-zone-promote`); else **✕ Differenz {n}** in the demote red variants.
 - Right: `↑ {n}` (`font-bold text-zone-promote`) + **steigen auf (…)**.
 
-The seam replaces the abstract per-row „Bilanz ↑ 4 · ↓ 4" column: the invariant
+The seam replaces the abstract per-row "Bilanz ↑ 4 · ↓ 4" column: the invariant
 `demotions(t) == promotions(t+1)` is judged **at the boundary it concerns**.
 
 ### 2.3 Footer / validation
@@ -109,7 +109,7 @@ The seam replaces the abstract per-row „Bilanz ↑ 4 · ↓ 4" column: the inv
   text-white`) + **Regeln gültig — nach dem Speichern kann die Einteilung
   finalisiert werden.**
 - Invalid: the issue list (existing `messageForIssue` texts, plus the balance
-  message spelled with both numbers: „Division 1 & 2: 4 Abstiege stehen 2
+  message spelled with both numbers: "Division 1 & 2: 4 Abstiege stehen 2
   Aufstiegen gegenüber — die Zahlen müssen sich decken.") in
   `text-destructive text-[13px]`, `max-h-16 overflow-auto`, no box border —
   the errors are already localized at seams/strips.
@@ -137,7 +137,7 @@ Boundary rule is enforced by the disabled clusters (top/lowest), so
 - New **Diff.** column stays as shipped.
 - **Gruppe chip** (division view only): after the player name,
   `rounded-full bg-muted px-[7px] py-[2px] text-[10.5px] font-bold
-  text-muted-foreground` showing the sub-division („2a"). Answers "who is from
+  text-muted-foreground` showing the sub-division ("2a"). Answers "who is from
   my group?" in the merged table; omit in the group view.
 
 ### 3.2 Legend (`ZoneLegend`)
@@ -153,7 +153,7 @@ Direkter Abstieg**.
   active segment `bg-brand-orange text-brand-blue` (primary-foreground is
   navy, not white — see DESIGN.md §1). The segment of the **relevant** table
   carries a small skewed tick (`h-[7px] w-3.5 -skew-x-[18deg]`,
-  `bg-brand-orange` when inactive, `bg-brand-blue` when active) — the „this
+  `bg-brand-orange` when inactive, `bg-brand-blue` when active) — the "this
   one decides" marker.
 - One-line context under the section header, 13px muted, three variants:
   - division mode, division view: **Auf- und Abstieg wird über die

@@ -120,7 +120,7 @@ export async function register(input: unknown): Promise<RegisterResult> {
 
   // Registering means accepting: `validateRegistration` rejects a draft whose
   // Regelwerk tick is missing, so anyone who gets here has agreed. Recording
-  // it now is what makes „since when" answerable for the whole field, rather
+  // it now is what makes "since when" answerable for the whole field, rather
   // than only for the players who later opened a prompt.
   await recordAcceptance(window.id, user.id);
 

@@ -31,7 +31,7 @@ function daysBetween(fromIso: string, toIsoStr: string): number {
   return Math.round((toUtcMs(toIsoStr) - toUtcMs(fromIso)) / DAY_MS);
 }
 
-// „Spieltag 1", „Spieltag 2", …
+// "Spieltag 1", "Spieltag 2", …
 export function matchdayName(round: number): string {
   return `Spieltag ${round}`;
 }

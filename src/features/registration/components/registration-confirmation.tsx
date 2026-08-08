@@ -38,7 +38,7 @@ export function RegistrationConfirmation({
   seasonName: string;
   canWithdraw: boolean;
   closesAt: Date | null;
-  // Overrides the default subline — e.g. the locked „warte auf deine Paarungen"
+  // Overrides the default subline — e.g. the locked "warte auf deine Paarungen"
   // message once registration has closed.
   note?: string;
 }) {

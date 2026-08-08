@@ -159,6 +159,7 @@ Anchored 26px from the bottom of the viewport, centered: two skewed orange ticks
 - Buttons: default variant = orange primary in both modes. Destructive/outline/ghost as stock shadcn.
 - Charts (future standings/stats): `--chart-1` blue, `--chart-2` orange, then supporting navy tints.
 - Page headings: h1–h3 are automatically uppercase; don't fight it. For UI labels that must not be uppercase, use styled `div`/`p`, not heading tags.
+- **Wrapped lines align left.** A card row may right-align its trailing content (`ml-auto`, `justify-end`, `text-right`) only while everything shares one line. As soon as that content moves to a line of its own — `flex-wrap` kicking in, a `w-full` block below `sm`, a grid collapsing to one column — the new line starts at the left edge like every other line. Right alignment inherited from the one-line layout looks broken on a wrapped line. In practice: gate the alignment behind the breakpoint (`sm:ml-auto`, `sm:justify-end`) and let the stacked mobile layout default to left.
 
 ## 7. Implementation checklist
 
@@ -228,7 +229,7 @@ Single exception: the landing credit keeps `tracking-[0.16em]`.
 
 Two styles only. **Inline** (prose): brand-blue, `underline
 underline-offset-[3px]`. **Action** (standalone): `font-semibold
-text-brand-blue dark:text-white` + trailing „→", hover underline. Bare text
+text-brand-blue dark:text-white` + trailing "→", hover underline. Bare text
 links that behave like buttons become outline buttons instead.
 
 ### 8.8 Empty / edge state — `<EmptyStateCard>` (`src/components/empty-state-card.tsx`)
@@ -240,7 +241,7 @@ special case.
 
 ### 8.9 Zone palette (standings) — tokens in `globals.css`
 
-Decoupled from brand orange so orange keeps meaning „active / you":
+Decoupled from brand orange so orange keeps meaning "active / you":
 
 | Zone | Token | Value |
 |---|---|---|
@@ -256,4 +257,4 @@ text + rail position carry it too.
 ### 8.10 Name fallback — `playerName()` (`src/lib/player-name.ts`)
 
 Every player-name render uses the chain `displayName → username →
-„Discord-Nutzer"`; never an empty cell or ad-hoc „Unbekannt".
+"Discord-Nutzer"`; never an empty cell or ad-hoc "Unbekannt".

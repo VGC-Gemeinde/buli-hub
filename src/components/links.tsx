@@ -21,8 +21,8 @@ export function InlineLink({
   );
 }
 
-// Standalone action link: semibold brand-blue with a trailing „→" and hover
-// underline („Zum Spieler-Dashboard →", „Ansehen →"). Renders a Next.js Link
+// Standalone action link: semibold brand-blue with a trailing "→" and hover
+// underline ("Zum Spieler-Dashboard →", "Ansehen →"). Renders a Next.js Link
 // when `href` is given, otherwise a button for in-place actions.
 type ActionLinkProps = {
   href?: string;

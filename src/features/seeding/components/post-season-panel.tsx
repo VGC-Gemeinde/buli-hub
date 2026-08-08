@@ -174,7 +174,7 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
   }
 }
 
-// What the step bar's „Auf- & Abstieg" sublabel needs from the (possibly
+// What the step bar's "Auf- & Abstieg" sublabel needs from the (possibly
 // unsaved) editor; the caller combines it with the saved stamp.
 export type PanelRulesStatus = {
   dirty: boolean;
@@ -186,7 +186,7 @@ export type PanelRulesStatus = {
 // balance seam between neighbours. Counts are per group in Gruppen mode, per
 // division in Gesamttabelle mode. Live-validates; saving persists and (when
 // valid) marks the step done so the seeding can be finalized. Rendered as the
-// page's „Auf- & Abstieg" view (the step bar navigates here); it stays mounted
+// page's "Auf- & Abstieg" view (the step bar navigates here); it stays mounted
 // while the sheet is shown, so unsaved edits survive switching views.
 export function PostSeasonPanel({
   divisions,
@@ -695,7 +695,7 @@ function Stepper({
 }
 
 // The seam names its divisions explicitly — the ladder scrolls (up to 7
-// cards), so „ab/auf" alone would lose its reference. Both sides name the
+// cards), so "ab/auf" alone would lose its reference. Both sides name the
 // upper division: down out of it, up into it.
 function SeamRow({ upper, lower }: { upper: Row; lower: Row }) {
   const demotions = effectiveMovement(forValidation(upper)).demotions;

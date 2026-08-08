@@ -21,7 +21,7 @@ function PullOut({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** „nur in Gruppentabellen", „Champions" — scope qualifiers on a rule. */
+/** "nur in Gruppentabellen", "Champions" — scope qualifiers on a rule. */
 export function QualifierPill({ children }: { children: ReactNode }) {
   return (
     <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.06em]">

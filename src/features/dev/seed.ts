@@ -11,6 +11,7 @@ import {
   profiles,
   registrations,
   subDivisions,
+  teamSheets,
 } from "@/db/schema";
 import { syncResultPost } from "@/features/discord-posts/sync";
 import type {
@@ -46,6 +47,7 @@ import {
 } from "@/features/seeding/queries";
 import { latestWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
+import { SEED_SHEET_A, SEED_SHEET_B } from "./teamsheets";
 
 // Dev-only test-data generator: a closed registration window filled with fake
 // registered players so staff can exercise the seeding tool at realistic
@@ -73,7 +75,7 @@ async function insertSeedAuthUsers(
     ({ id, email }) =>
       // The token columns must be '' and not NULL: GoTrue scans them into
       // non-nullable Go strings on every read, and a NULL makes it 500 (its
-      // error body is empty — the „{}" the impersonation route used to show).
+      // error body is empty — the "{}" the impersonation route used to show).
       // `admin.createUser` sets them to '', which is what a persona login does;
       // a direct insert defaults them to NULL, so they are set explicitly here.
       sql`(${id}, ${email}, 'authenticated', 'authenticated', ${GOTRUE_INSTANCE},
@@ -252,7 +254,7 @@ export const DEV_SEASON_SHAPE: DevSeedingShape = {
 // Builds the seeding up to the grouping step: creates the divisions,
 // distributes players across them and generates sub-divisions. Post-season
 // rules and finalize are deliberately left out — this is the state right before
-// the „Auf- & Abstieg" step.
+// the "Auf- & Abstieg" step.
 async function groupDevSeeding(
   windowId: string,
   shape: DevSeedingShape,
@@ -311,7 +313,7 @@ async function groupDevSeeding(
 
 // Builds a complete, finalized seeding from the window's registered players:
 // grouping plus valid post-season rules and the replay decision, then
-// finalize. Lets the „Spielplan erstellen" flow be exercised without
+// finalize. Lets the "Spielplan erstellen" flow be exercised without
 // hand-running the seeding tool.
 async function finalizeDevSeeding(
   windowId: string,
@@ -377,7 +379,7 @@ async function applyDevPostSeason(
   }
 
   // One division decided by its Gesamttabelle rather than the group tables, so
-  // every consumer of „the table that decides a division" meets both modes.
+  // every consumer of "the table that decides a division" meets both modes.
   if (divisionTableTier != null) {
     const index = divs.findIndex((d) => d.tier === divisionTableTier);
     if (index >= 0 && divisionModeAvailable(divs[index].groupSizes)) {
@@ -444,10 +446,12 @@ async function insertNormalResult(
     outcome: "normal",
     winnerId: winner,
     platform: "showdown",
-    playerATeamUrl: "https://pokepast.es/seed-a",
-    playerBTeamUrl: "https://pokepast.es/seed-b",
     reportedById: a,
   });
+  await db.insert(teamSheets).values([
+    { matchId, playerId: a, source: "import", ots: SEED_SHEET_A },
+    { matchId, playerId: b, source: "pokepaste", ots: SEED_SHEET_B },
+  ]);
   await db.insert(matchGames).values(
     games.map((w, i) => ({
       matchId,
@@ -512,7 +516,7 @@ export async function reportDevResults(count: number): Promise<number> {
 // standings have something to chew on. Past rounds are mostly reported with
 // mixed winners and 2:0/2:1 scores, plus one of each edge state (overdue,
 // pending free win, confirmed free win, double loss); the current round is
-// half-reported (the rest „offen"); future rounds stay open.
+// half-reported (the rest "offen"); future rounds stay open.
 async function seedDevResults(
   windowId: string,
   staffId: string,
@@ -597,7 +601,7 @@ async function seedDevResults(
         await reportNormal(match.id, a, b, k % 4 === 0 ? a : b, false);
         motwMatchId ??= match.id;
       }
-      // odd → left „offen" this week
+      // odd → left "offen" this week
     }
     // future rounds stay open
   }
@@ -641,7 +645,7 @@ async function seedDevResults(
   }
 
   // One open dispute (loser contests the result) and one already resolved, so
-  // both the „Angefochten" worklist and the resolved history have content.
+  // both the "Angefochten" worklist and the resolved history have content.
   if (reportedNormal[0]) {
     const m = reportedNormal[0];
     await db.insert(disputes).values({
@@ -660,6 +664,7 @@ async function seedDevResults(
       resolution: "upheld",
       resolvedById: m.a,
       resolvedAt: new Date(),
+      note: "Beide Replays geprüft, das gemeldete Ergebnis stimmt.",
     });
   }
 }
@@ -705,8 +710,8 @@ export async function generateSeedData(
   );
   // Profile mix. `has_capture_card` can only be true because the owner saved
   // their settings, so the seed keeps that invariant: a player who never
-  // touched their profile is always `false`, and that `false` means „unknown",
-  // not „owns none". All three states the MotW picker distinguishes therefore
+  // touched their profile is always `false`, and that `false` means "unknown",
+  // not "owns none". All three states the MotW picker distinguishes therefore
   // occur — roughly a quarter never filled anything in, and of the rest two
   // thirds own a capture card.
   const editedAt = new Date();
@@ -723,7 +728,7 @@ export async function generateSeedData(
     }),
   );
 
-  // A staff member: opens the window and is the „besprochen mit" contact on
+  // A staff member: opens the window and is the "besprochen mit" contact on
   // player-reported free wins. Not registered — staff don't play the season.
   const staffId = randomUUID();
   await insertSeedAuthUsers([

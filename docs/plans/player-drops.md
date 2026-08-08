@@ -32,8 +32,8 @@ call site of one pure, exhaustively tested override.
 - **Standings**: dropped players stay in the table with a small "Drop"
   marker; their matches count as 0:2 losses. Post-season zones follow the
   standings automatically.
-- **Match page**: a banner for everyone — „{Name} wurde gedroppt — das Match
-  zählt als Freewin (2:0) für {Gegner}" (or „… als Doppelniederlage") — above
+- **Match page**: a banner for everyone — "{Name} wurde gedroppt — das Match
+  zählt als Freewin (2:0) für {Gegner}" (or "… als Doppelniederlage") — above
   the stored content, which stays fully visible as history (played result,
   replays, teamsheets). Unreported drop-decided matches show the banner
   instead of the open/report state.
@@ -114,7 +114,7 @@ Each assembles view models from stored results and now maps them through
 ## Views
 
 - **Staff dashboard**: a "Drops" section — list of dropped players (name,
-  group, reason, date, „Drop aufheben") and a „Spieler droppen" dialog:
+  group, reason, date, "Drop aufheben") and a "Spieler droppen" dialog:
   player select (placed, active players with group label), required reason
   (staff-internal), `TypeToConfirm` on the player's name.
 - **Public/player tables**: small "Drop" tag on the row.

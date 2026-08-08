@@ -63,12 +63,12 @@ Bare `RadioGroupItem` rows become card-sized tap targets. Wrap each option in a
 ```
 
 - Plattform: full-width two-column grid.
-- „Hast du schon einmal teilgenommen?": identical pattern and full width —
+- "Hast du schon einmal teilgenommen?": identical pattern and full width —
   same two-column grid as Plattform.
 - Checked state: `border-brand-orange` + `bg-brand-orange/5` on the card; the
   Radix indicator dot is orange via `--primary` already.
 
-### Veteran history (the „Ja" branch)
+### Veteran history (the "Ja" branch)
 
 The four fields move from a long single column into a labeled 2×2 grid:
 
@@ -86,7 +86,7 @@ The four fields move from a long single column into a labeled 2×2 grid:
 </div>
 ```
 
-### Skill slider (the „Nein" branch)
+### Skill slider (the "Nein" branch)
 
 Value moves out of the label text into a right-aligned readout:
 

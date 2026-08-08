@@ -160,7 +160,7 @@ function DivisionView({
   meId: string;
   spoilersOff: boolean;
 }) {
-  // Selection is either a sub-division id or „gesamt" (only offered when the
+  // Selection is either a sub-division id or "gesamt" (only offered when the
   // division has a merged Gesamttabelle, i.e. in division mode). Gesamt shows the
   // merged table and the whole division's schedule; it is the default there.
   const gesamt = division.divisionStandings !== null;
@@ -184,10 +184,10 @@ function DivisionView({
 
   const matchday = matchdays.find((m) => m.round === round) ?? null;
   // Both section heads carry the same meta (§4.5): the division name in Gesamt
-  // mode, otherwise the full group name („Division 1a").
+  // mode, otherwise the full group name ("Division 1a").
   const scopeMeta = showGesamt || !group ? division.name : group.name;
-  // Group switcher labels are short („1a" → uppercased „1A"); the division is
-  // already named in the row above, so the „Division"-prefix would be redundant.
+  // Group switcher labels are short ("1a" → uppercased "1A"); the division is
+  // already named in the row above, so the "Division"-prefix would be redundant.
   const options = [
     ...(gesamt ? [{ value: "gesamt", label: "Gesamt" }] : []),
     ...division.groups.map((g) => ({
@@ -258,7 +258,7 @@ function DivisionView({
 
 // Browsable version of the dashboard's progress strip: one clickable segment per
 // Spieltag. The current matchday keeps its orange marker; the selected round is
-// outlined so you can tell „viewing" from „live".
+// outlined so you can tell "viewing" from "live".
 function SpieltagTimeline({
   selected,
   total,
@@ -391,14 +391,14 @@ function MatchRow({
           spielfrei
         </span>
       ) : (
-        // Fixed-width slot: pill ⇄ score ⇄ „offen" swap without any shift.
+        // Fixed-width slot: pill ⇄ score ⇄ "offen" swap without any shift.
         // `relative` lifts the pill above the stretched match link.
         // w-14, not w-12: the slot also holds the MotW pill, which measures 54px
         // in Montserrat and overflowed a 48px slot. Kept a fixed width rather
         // than fit-content so the column stays aligned across rows.
         <span className="relative flex w-14 shrink-0 items-center justify-center font-semibold text-muted-foreground text-xs tabular-nums">
           {match.reported ? (
-            // A pending free win is not shown publicly until confirmed → „offen".
+            // A pending free win is not shown publicly until confirmed → "offen".
             <SpoilerScore
               scoreA={match.scoreA}
               scoreB={match.scoreB}

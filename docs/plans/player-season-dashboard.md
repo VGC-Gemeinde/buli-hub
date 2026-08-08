@@ -1,12 +1,12 @@
 # Player season dashboard
 
-**Status: done** (2026-07-03) — „Spieler-Dashboard" at `/spieler`, phase-aware
+**Status: done** (2026-07-03) — "Spieler-Dashboard" at `/spieler`, phase-aware
 across the whole lifecycle. Verified end to end via a persona on a seeded
 running season.
 
 The personal, per-player home for the running regular season: where a player
 sees **their group and their weekly matches**. It is the surface the result
-**reporting** flow will attach to later — a match row is where „Ergebnis melden"
+**reporting** flow will attach to later — a match row is where "Ergebnis melden"
 will live — so it is built first, before reporting and before the staff
 running-season dashboard.
 
@@ -28,7 +28,7 @@ This feature is the read surface; the rest of the running season builds on it:
 ## Scope
 
 **In:**
-- A player's own group identity (division + sub-division, e.g. „Division 1a").
+- A player's own group identity (division + sub-division, e.g. "Division 1a").
 - The season schedule: matchdays (weeks) with their dates and deadlines.
 - The player's matches across the season: opponent per round, with the current
   week highlighted and past / upcoming distinguished; byes shown as such.
@@ -48,10 +48,10 @@ Unlike the Staff-Bereich — deliberately tucked in the user-menu popout because
 it is gated and staff are taught it — this dashboard is for **every** player and
 must be easy to find:
 
-- A **primary nav link in `SiteHeader`** („Spieler-Dashboard"), visible to all
+- A **primary nav link in `SiteHeader`** ("Spieler-Dashboard"), visible to all
   signed-in users. It is phase-aware (see States), so it stays useful before the
   season runs, not only during it.
-- The signed-in **home** (`/`) surfaces it (its „Features in Arbeit"
+- The signed-in **home** (`/`) surfaces it (its "Features in Arbeit"
   placeholder gives way to a prominent entry / CTA to the dashboard).
 - Route: **`/spieler`** (consistent with `/anmeldung`, `/profil`). The exact
   path is not important; discoverability is.
@@ -61,7 +61,7 @@ must be easy to find:
 Three stacked sections, top to bottom:
 
 1. **Next pairing** — the prominent hero at the top: the player's *next* match —
-   opponent (or „Bye"), matchday no., its deadline (`matchdays.ends_on`) and
+   opponent (or "Bye"), matchday no., its deadline (`matchdays.ends_on`) and
    days remaining. This is the one thing a player opens the page for.
 2. **Group table** — a standings table for the player's sub-division: every
    member with rank, name and points. **Until reporting exists, points are
@@ -81,17 +81,17 @@ derived from `seasonPhase` plus whether the player has a registration row
 
 **Regular season (schedule exists):**
 - **Placed** — the three sections above (next pairing / group table / upcoming).
-- **Bye week** — the next-pairing hero reads „Bye" (a `matches` row with
+- **Bye week** — the next-pairing hero reads "Bye" (a `matches` row with
   `player_b_id` null where the player is A); the following real match still
   appears under upcoming.
-- **Not placed** — signed in but no placement in the running season: „du bist in
+- **Not placed** — signed in but no placement in the running season: "du bist in
   der laufenden Saison nicht dabei."
 
 **Before the regular season:**
 - **No registration open** (`not_started` / between seasons) — a landing-style
-  „coming soon" message, like today's signed-in home: the league is in progress,
+  "coming soon" message, like today's signed-in home: the league is in progress,
   the next season will appear here. Nothing actionable.
-- **Registration open, not registered** — a call to action: „die Anmeldung für
+- **Registration open, not registered** — a call to action: "die Anmeldung für
   {Saison} läuft" + a button to `/anmeldung`.
 - **Registration open, registered** — the existing `RegistrationConfirmation`
   with `canWithdraw = true`: the player's submitted details plus the ability to
@@ -100,12 +100,12 @@ derived from `seasonPhase` plus whether the player has a registration row
 - **Registration closed, registered** (seeding / division step) — the same
   `RegistrationConfirmation` in read-only form (`canWithdraw = false`) with a
   note that entries can no longer be changed and to wait for the pairings.
-- **Registration closed, not registered** — „die Anmeldung ist geschlossen — du
+- **Registration closed, not registered** — "die Anmeldung ist geschlossen — du
   bist in dieser Saison nicht dabei."
 
-Reuse: the two „registered" states are the existing `RegistrationConfirmation`
+Reuse: the two "registered" states are the existing `RegistrationConfirmation`
 component. It already toggles the withdraw control via `canWithdraw`; the only
-addition is an **optional note prop** for the closed-state „du kannst deine
+addition is an **optional note prop** for the closed-state "du kannst deine
 Angaben nicht mehr ändern — warte auf deine Paarungen" line (its default stays
 the current Discord subline).
 
@@ -153,12 +153,12 @@ None — read-only view, no mutations, no notifications.
   actually lands on a populated dashboard. Today's seed only reaches a closed
   window; this adds the phase the dashboard needs.
 - **Personas**: ensure a persona is placed in a group of that seeded season so
-  „Meine Saison" is non-empty for it.
+  "Meine Saison" is non-empty for it.
 
 ## Tests
 
 - **Unit**: `currentMatchday`, `classifyMatch`, `opponentOf` (all cases above).
-- **Integration**: the „my season" query — placement → group → matches +
+- **Integration**: the "my season" query — placement → group → matches +
   opponents + matchdays round-trips for a seeded running season; a user with no
   placement returns the not-in-season shape.
 - **Manual/browser**: a placed persona sees their group + schedule with the
@@ -176,7 +176,7 @@ None — pre-season behavior is settled (see States and decision 6).
 2. **Read-only v1** — no reporting; match rows are the attachment point for the
    future report action. The **group table ships now with hard-coded 0 points**
    so the layout is settled before results exist.
-3. **Prominent navigation** — primary „Spieler-Dashboard" header link (visible
+3. **Prominent navigation** — primary "Spieler-Dashboard" header link (visible
    to all signed-in users) + home entry, not hidden like the Staff-Bereich,
    because every player uses it.
 4. **Layout** — next pairing (hero) → group table (columns Platz · Spieler ·
@@ -186,6 +186,6 @@ None — pre-season behavior is settled (see States and decision 6).
    matches (+ registration read for the pre-season states).
 6. **Phase-aware year-round** — the dashboard adapts across the whole lifecycle:
    coming-soon (no registration) → register CTA (open, not registered) →
-   editable confirmation (open, registered) → read-only confirmation + „warte
+   editable confirmation (open, registered) → read-only confirmation + "warte
    auf deine Paarungen" (closed, registered) → the running-season dashboard.
    Reuses `RegistrationConfirmation` for the registered states.

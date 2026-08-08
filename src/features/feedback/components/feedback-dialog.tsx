@@ -150,7 +150,7 @@ export function FeedbackDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* DialogContent caps the height and scrolls itself; here the whole form
-          scrolling would push „Absenden" out of reach on a phone. So take over:
+          scrolling would push "Absenden" out of reach on a phone. So take over:
           `overflow-y-hidden` turns the primitive's scrolling off (same
           Tailwind group, so it replaces it), padding moves inside, and only the
           middle section scrolls — title and action bar stay pinned. */}

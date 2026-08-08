@@ -12,8 +12,8 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
 /**
  * Resolves the registration branch from detection + self-report:
  * - detected returning → returning, no extra questions
- * - not detected, „ja" → returning, veteran-history questions
- * - not detected, „nein" → new, new-player questions
+ * - not detected, "ja" → returning, veteran-history questions
+ * - not detected, "nein" → new, new-player questions
  * `participatedBefore` is only meaningful when not detected; it must be
  * answered there (null → the form is incomplete).
  */
@@ -64,11 +64,11 @@ export const platformSchema = z.enum(platformEnum.enumValues, {
  *
  * Two reasons it cannot be `z.coerce.number()`. First, the form's inputs are
  * text inputs on purpose: an `<input type="number">` reports "" for anything
- * the browser cannot parse, so „3b" would arrive here as an empty field and no
+ * the browser cannot parse, so "3b" would arrive here as an empty field and no
  * message could ever name the real problem. Second, coercion turns "" into 0
- * and „1e2" into 100, which makes an untouched field report „Mindestens 1" and
- * gibberish report „Höchstens 30". Starting from the string keeps „nicht
- * ausgefüllt" and „keine Zahl" distinguishable. Output is a number, so the
+ * and "1e2" into 100, which makes an untouched field report "Mindestens 1" and
+ * gibberish report "Höchstens 30". Starting from the string keeps "nicht
+ * ausgefüllt" and "keine Zahl" distinguishable. Output is a number, so the
  * seeding tool and the integer columns are unaffected.
  */
 function wholeNumberField(max: number, tooBig: string) {
@@ -99,7 +99,7 @@ export const veteranHistorySchema = z.object({
 });
 
 export const newPlayerSchema = z.object({
-  // null is „slider never touched". 0 is a real answer („blutiger Anfänger"),
+  // null is "slider never touched". 0 is a real answer ("blutiger Anfänger"),
   // so the two cannot share a representation: a player who means 0 and a
   // player who skipped the question would otherwise be indistinguishable.
   skillSelfRating: z
@@ -120,7 +120,7 @@ export type NewPlayerAnswers = z.output<typeof newPlayerSchema>;
 
 /**
  * The form as the player has filled it in so far: every answer in the shape
- * the controls produce (numbers as typed strings, „not answered yet" as null).
+ * the controls produce (numbers as typed strings, "not answered yet" as null).
  * `detectedReturning` is server-derived and added to the draft on arrival, so
  * the client cannot talk itself into the no-questions branch.
  */
@@ -148,7 +148,7 @@ export const EMPTY_VETERAN_DRAFT: VeteranDraft = {
   prevPlacement: "",
 };
 
-// Source order, so „jump to the first problem" lands on the field the player
+// Source order, so "jump to the first problem" lands on the field the player
 // would reach first when reading down the page.
 export const REGISTRATION_FIELDS = [
   "platform",
@@ -168,7 +168,7 @@ export type RegistrationFieldErrors = Partial<
 >;
 
 // Zod reports every failing check on a string; the player only wants the first
-// one („Pflichtfeld" before „Bitte nur Ziffern eingeben").
+// one ("Pflichtfeld" before "Bitte nur Ziffern eingeben").
 function firstMessagePerField(error: z.ZodError): RegistrationFieldErrors {
   const errors: RegistrationFieldErrors = {};
   for (const [field, messages] of Object.entries(

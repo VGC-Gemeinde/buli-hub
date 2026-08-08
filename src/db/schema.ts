@@ -143,7 +143,7 @@ export const relevantTableEnum = pgEnum("relevant_table", [
 ]);
 
 // A division = a skill tier within a season (1 = top). Name is derived:
-// „Division {tier}". The post-season columns are the promotion/demotion rules
+// "Division {tier}". The post-season columns are the promotion/demotion rules
 // (see docs/plans/post-season-setup.md): guaranteed movement + playoff slots,
 // interpreted per group in sub_division mode, per division in division mode.
 export const divisions = pgTable(
@@ -177,7 +177,7 @@ export const divisions = pgTable(
 );
 
 // A sub-division = a round-robin group within a division. Name is derived from
-// the division tier and the 0-based position → letter: „Division {tier}{a,b,…}".
+// the division tier and the 0-based position → letter: "Division {tier}{a,b,…}".
 export const subDivisions = pgTable(
   "sub_divisions",
   {
@@ -269,9 +269,9 @@ export const matches = pgTable("matches", {
 });
 
 // The kind of result recorded for a match. Drives which columns are meaningful
-// and how standings count it. „normal" = a best-of-3 was played (winner from the
-// games); „free_win" = a walkover (winner set, no games, pending staff
-// confirmation); „double_loss" = both players lose, no winner. Only normal and
+// and how standings count it. "normal" = a best-of-3 was played (winner from the
+// games); "free_win" = a walkover (winner set, no games, pending staff
+// confirmation); "double_loss" = both players lose, no winner. Only normal and
 // free_win are player-reportable; double_loss (and corrections/confirmation) are
 // staff-issued — modeled now, their UI arrives with the staff dashboard.
 export const matchOutcomeEnum = pgEnum("match_outcome", [
@@ -291,9 +291,8 @@ export const matchResults = pgTable("match_results", {
   winnerId: uuid("winner_id"),
   // Platform the match was played on. Set for normal; null otherwise.
   platform: platformEnum("platform"),
-  // Both required for a normal report (pokepaste URLs); null otherwise.
-  playerATeamUrl: text("player_a_team_url"),
-  playerBTeamUrl: text("player_b_team_url"),
+  // Team sheets are not columns here: they live in `team_sheets`, keyed by
+  // (match_id, player_id). A normal result requires one per participant.
   // Cartridge only: one optional match video (per-game replays live on
   // match_games for Showdown).
   videoUrl: text("video_url"),
@@ -338,6 +337,43 @@ export const matchGames = pgTable(
       .defaultNow(),
   },
   (table) => [unique().on(table.matchId, table.gameNumber)],
+);
+
+// How a team sheet reached us. Kept for diagnosis — VRPaste is an undocumented
+// internal API, so "which route was this" is the first question when a report
+// fails. The submitted URL itself is deliberately not stored: it points at a
+// paste that still carries the EVs this table exists to strip.
+export const teamsheetSourceEnum = pgEnum("teamsheet_source", [
+  "pokepaste",
+  "vrpaste",
+  "import",
+]);
+
+// One player's open team sheet for one match, and the public paste behind
+// `/pastes/<id>`. `ots` is the canonical Showdown export rebuilt from exactly
+// five fields per Pokémon (species, item, ability, nature, moves) — stats are
+// not stripped from the stored text, they are never written into it.
+//
+// The id is the public slug, and a correction updates this row in place rather
+// than minting a new one: a paste is the identity of a match slot ("Team von
+// Kuro · Saison 1 · Woche 3"), so a stale URL under that title would be a lie.
+// FKs + RLS in a custom migration.
+export const teamSheets = pgTable(
+  "team_sheets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    matchId: uuid("match_id").notNull(),
+    playerId: uuid("player_id").notNull(),
+    source: teamsheetSourceEnum("source").notNull(),
+    ots: text("ots").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.matchId, table.playerId)],
 );
 
 // The Match of the Week (never translated): one featured match per Spieltag

@@ -25,7 +25,7 @@ MotW rules flow through automatically).
   settings page.)
 - **Identity block**: reuse `ProfileHeader` (avatar, name, `roleLabel`
   badge, @handle) — identical to the edit page's header.
-- **Season line** (when placed in the running season): „{Division 1a} ·
+- **Season line** (when placed in the running season): "{Division 1a} ·
   Platz {n}" from the group standings, with the Drop tag when the player is
   dropped. Not placed / no running season → an informational card instead
   (header always renders).
@@ -34,7 +34,7 @@ MotW rules flow through automatically).
   the site-wide spoiler rules: covered pill with tap-to-reveal, MotW rows
   show the orange MotW pill (exempt from the switch), matches involving the
   *viewer* are always open (own results are never spoilers). Byes render
-  „spielfrei".
+  "spielfrei".
 - **Page switch**: the same `SpoilerSwitch` (cookie `spoilers_off`) in the
   page header — arriving with protection off keeps the page open; default
   is protected; flipping it here affects the whole site, exactly like the

@@ -146,12 +146,35 @@ const NAME_POOL = [
   "Marek",
 ];
 
+// Only new players are ever asked for their achievements (the veteran branch of
+// the registration form does not have the field), and it is optional there — so
+// a realistic sheet has a filled Erfolge column for most, but not all, new
+// players. The mix is deliberate: short entries, long ones that must truncate,
+// and a few that are honest about having none.
+const ACHIEVEMENT_POOL = [
+  "Top 16 Regional Dortmund",
+  "Platz 3 bei der Herbst-Bo3",
+  "Regional Top 8 Stuttgart",
+  "Meister Saison 8",
+  "Day 2 auf der EUIC 2025",
+  "2x Top Cut bei lokalen Cups",
+  "Nichts Großes, spiele hauptsächlich Ladder",
+  "Platz 1 im Community-Turnier der VGC Gemeinde",
+  "Top 32 bei den German Nationals, dazu mehrere Top Cuts auf kleineren Regionals und ein zweiter Platz bei einem Online-Cup mit 128 Teilnehmern",
+  "Beste Ladder-Platzierung 1850 auf Showdown",
+  "Halbfinale im Bundesliga-Pokal Saison 7",
+  "Top 4 Midseason Showdown",
+  "Zwei Jahre in Folge Top 64 auf der Worlds-Ladder",
+  "Erster Platz bei einem lokalen Turnier in Köln, seitdem regelmäßig im Top Cut der Regionals",
+] as const;
+
 export type SeedRegistration = {
   displayName: string;
   username: string;
   platform: Platform;
   status: PlayerStatus;
   skillSelfRating: number | null;
+  greatestAchievements: string | null;
   participatedBefore: boolean | null;
   prevSeason: string | null;
   prevName: string | null;
@@ -180,6 +203,7 @@ export function buildSeedRegistrations(
         platform,
         status: "returning",
         skillSelfRating: null,
+        greatestAchievements: null,
         participatedBefore: true,
         prevSeason: `Saison ${Math.floor(rng() * 4) + 1}`,
         prevName: displayName,
@@ -193,6 +217,7 @@ export function buildSeedRegistrations(
         platform,
         status: "new",
         skillSelfRating: Math.floor(rng() * 11),
+        greatestAchievements: rng() < 0.75 ? pick(ACHIEVEMENT_POOL) : null,
         participatedBefore: false,
         prevSeason: null,
         prevName: null,
@@ -760,6 +785,7 @@ export async function generateSeedData(
       prevDivision: spec.prevDivision,
       prevPlacement: spec.prevPlacement,
       skillSelfRating: spec.skillSelfRating,
+      greatestAchievements: spec.greatestAchievements,
     })),
   );
 
@@ -777,6 +803,7 @@ export async function generateSeedData(
         status: "new",
         participatedBefore: false,
         skillSelfRating: 7,
+        greatestAchievements: "Top 8 bei der Bundesliga-Endrunde Saison 8",
       })
       .onConflictDoNothing();
   }

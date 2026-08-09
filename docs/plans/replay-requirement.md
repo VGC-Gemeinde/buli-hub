@@ -19,7 +19,7 @@ Ein Match in Division `tier` braucht Beweis, wenn `tier <= X`:
 | Showdown | Replay-Link pro Spiel (wie heute) | Replays optional; wenn angegeben, gültige https-URL |
 | Cartridge | Video-Link Pflicht (https) | Video optional (wie heute) |
 
-Unverändert: Teamsheets (Pokepaste) bleiben überall Pflicht; Replays gibt es
+Unverändert: Teamsheets bleiben überall Pflicht; Replays gibt es
 nur für Showdown, Video nur für Cartridge; Free Win / Double Loss brauchen
 keinen Beweis. `X = 0` ist erlaubt (nirgends Pflicht).
 

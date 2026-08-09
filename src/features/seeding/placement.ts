@@ -81,9 +81,12 @@ export function autoDivisionPlacements(
   return placements;
 }
 
-// Order for manual placement: returning players first (staff place them from
-// their history), then new players by self-rating descending. Stable within
-// each group. Auto-seeding by prior standings will replace this once it exists.
+// Order for manual placement: returning players first, then new players by
+// self-rating descending. Stable within each group. Returning players are
+// auto-placed into their previous division (`autoDivisionPlacements`), so the
+// ones that surface first in "Nicht platziert" are exactly those the automatic
+// step could not place — no previous division recorded, or one outside the
+// season's tier range. They need a staff decision, so they belong at the top.
 export function orderForPlacement<
   T extends Pick<SeedingPlayer, "status" | "skillSelfRating">,
 >(players: readonly T[]): T[] {

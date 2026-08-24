@@ -9,6 +9,14 @@ import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { DropsSection } from "@/features/drops/components/drops-section";
 import { listDropCandidates, listDrops } from "@/features/drops/queries";
+import { MembershipList } from "@/features/membership/components/membership-list";
+import { MembershipWarningCard } from "@/features/membership/components/warning-card";
+import {
+  bucketMembership,
+  type RosterMembership,
+} from "@/features/membership/membership";
+import { registeredMembership } from "@/features/membership/queries";
+import { sweepGuildMemberships } from "@/features/membership/sweep";
 import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
 import { motwTodo } from "@/features/motw/motw";
 import { motwForWindow } from "@/features/motw/queries";
@@ -21,22 +29,20 @@ import {
 import { bucketMatches } from "@/features/reporting/staff-dashboard";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
-import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
-import { hasSchedule, subDivisionRosters } from "@/features/schedule/queries";
+import { subDivisionRosters } from "@/features/schedule/queries";
 import { defaultDeadlines, spieltagCount } from "@/features/schedule/spieltage";
 import {
   currentMatchday,
   type MatchdayLite,
 } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
-import { getSeeding } from "@/features/seeding/queries";
-import { SeasonCard } from "@/features/staff/components/registration-status";
-import { latestWindow } from "@/features/staff/queries";
 import {
-  registrationState,
-  seasonName,
-} from "@/features/staff/registration-window";
-import { seasonPhase } from "@/features/staff/season-phase";
+  PreseasonTodoCard,
+  type ScheduleSetup,
+} from "@/features/staff/components/preseason-todo-card";
+import { SeasonCard } from "@/features/staff/components/registration-status";
+import { latestWindow, windowSeasonPhase } from "@/features/staff/queries";
+import { seasonName } from "@/features/staff/registration-window";
 import { formatGermanDay, germanToday } from "@/lib/german-time";
 import { playerName } from "@/lib/player-name";
 
@@ -118,17 +124,23 @@ export default async function StaffPage() {
   }
 
   const window = await latestWindow();
-  const state = registrationState(window, new Date());
-  const seeding =
-    window && state === "closed" ? await getSeeding(window.id) : null;
-  const seedingFinalized = Boolean(seeding?.finalizedAt);
-  const scheduleExists =
-    window && seedingFinalized ? await hasSchedule(window.id) : false;
-  const phase = seasonPhase({
-    registration: state,
-    seedingFinalized,
-    hasSchedule: scheduleExists,
-  });
+  const { phase, registration: state } = window
+    ? await windowSeasonPhase(window)
+    : {
+        phase: "not_started" as const,
+        registration: "not_started" as const,
+      };
+
+  // Membership state of the registered roster, freshly swept (one Discord
+  // call, fail-open). Both layouts show the list, and the warning card up top
+  // fires whenever confirmed non-members are registered.
+  let membershipRoster: RosterMembership[] = [];
+  if (window) {
+    await sweepGuildMemberships(window.id);
+    membershipRoster = await registeredMembership(window.id);
+  }
+  const nonMemberCount = bucketMembership(membershipRoster).nonMembers.length;
+  const membershipListId = "discord-mitgliedschaft";
 
   // Running season: the /staff page *is* the dashboard — staff lands on their
   // work, no separate page.
@@ -176,6 +188,12 @@ export default async function StaffPage() {
               week={week}
             />
             {todo ? <MotwTodoCard todo={todo} /> : null}
+            {nonMemberCount > 0 ? (
+              <MembershipWarningCard
+                count={nonMemberCount}
+                listId={membershipListId}
+              />
+            ) : null}
             <SaisonDashboard
               overdue={overdue}
               thisWeek={thisWeek}
@@ -185,6 +203,12 @@ export default async function StaffPage() {
               today={today}
             />
             <DropsSection drops={drops} candidates={dropCandidates} />
+            <MembershipList
+              roster={membershipRoster}
+              seasonName={seasonName(window.seasonNumber)}
+              canCancel={false}
+              id={membershipListId}
+            />
           </div>
         </main>
       </div>
@@ -204,13 +228,7 @@ export default async function StaffPage() {
       }))
     : [];
 
-  let scheduleSetup: {
-    seasonStart: string;
-    deadlines: string[];
-    groups: number;
-    matches: number;
-    largest: number;
-  } | null = null;
+  let scheduleSetup: ScheduleSetup | null = null;
   if (phase === "seeded" && window) {
     const rosters = await subDivisionRosters(window.id);
     const sizes = rosters.map((roster) => roster.userIds.length);
@@ -235,6 +253,17 @@ export default async function StaffPage() {
           Staff-Bereich
         </h1>
         <div className="flex flex-col gap-10">
+          {phase === "registration_closed" || phase === "seeded" ? (
+            <PreseasonTodoCard phase={phase} scheduleSetup={scheduleSetup} />
+          ) : null}
+
+          {nonMemberCount > 0 ? (
+            <MembershipWarningCard
+              count={nonMemberCount}
+              listId={membershipListId}
+            />
+          ) : null}
+
           <section className="flex flex-col gap-5">
             <SectionHeader>Saison</SectionHeader>
             <SeasonCard
@@ -262,39 +291,13 @@ export default async function StaffPage() {
             </section>
           ) : null}
 
-          {state === "closed" ? (
-            <section className="flex flex-col gap-5">
-              <SectionHeader>Einteilung &amp; Spielplan</SectionHeader>
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    asChild
-                    variant={seedingFinalized ? "outline" : "default"}
-                  >
-                    <Link href="/staff/seeding">
-                      {seedingFinalized
-                        ? "Divisionen ansehen"
-                        : "Divisionen einteilen"}
-                    </Link>
-                  </Button>
-                  {phase === "seeded" && scheduleSetup ? (
-                    <CreateScheduleDialog
-                      seasonStart={scheduleSetup.seasonStart}
-                      defaultDeadlines={scheduleSetup.deadlines}
-                      largest={scheduleSetup.largest}
-                    />
-                  ) : null}
-                </div>
-                {phase === "seeded" && scheduleSetup ? (
-                  <p className="text-[13px] text-muted-foreground">
-                    {scheduleSetup.groups} Gruppen ·{" "}
-                    {scheduleSetup.deadlines.length} Spieltage ·{" "}
-                    {scheduleSetup.matches} Spiele. Die Saison startet mit der
-                    Erstellung des Spielplans.
-                  </p>
-                ) : null}
-              </div>
-            </section>
+          {window ? (
+            <MembershipList
+              roster={membershipRoster}
+              seasonName={seasonName(window.seasonNumber)}
+              canCancel={phase === "registration_closed"}
+              id={membershipListId}
+            />
           ) : null}
         </div>
       </main>

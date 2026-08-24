@@ -176,6 +176,18 @@ export async function assignPlayersToDivision(
     });
 }
 
+// Removes a player's placement entirely. Part of a staff registration cancel:
+// a draft seeding may already have placed the player, and schedule generation
+// reads placements alone, so an orphaned row would put a ghost player into the
+// Spielplan.
+export async function removePlacement(windowId: string, userId: string) {
+  await db
+    .delete(placements)
+    .where(
+      and(eq(placements.windowId, windowId), eq(placements.userId, userId)),
+    );
+}
+
 // Creates the divisions for tiers 1..count. Used by the auto-init, which sets
 // up the divisions without a seedings row (the group size is chosen by staff
 // afterwards). No-op for count < 1.

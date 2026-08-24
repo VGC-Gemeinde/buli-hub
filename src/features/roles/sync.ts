@@ -47,6 +47,13 @@ export async function syncMember(
   const member = identity.discordId
     ? await fetchGuildMember(config.guildId, identity.discordId)
     : null;
+  // Only a real lookup may write the membership flag: without a discordId,
+  // member === null means "could not check", not "not a member". A thrown
+  // fetch never reaches the upsert, so an API error leaves it untouched too —
+  // a confirmed 404 is the only thing that ever writes false.
+  const membership = identity.discordId
+    ? { guildMember: member !== null, guildMemberCheckedAt: new Date() }
+    : {};
   const role = deriveRole(member?.roles ?? null, config.roleIds);
   const stored = guildIdentity(config.guildId, member, {
     displayName: identity.displayName,
@@ -57,10 +64,10 @@ export async function syncMember(
   const roleSyncedAt = new Date();
   await db
     .insert(profiles)
-    .values({ userId, role, roleSyncedAt, ...stored })
+    .values({ userId, role, roleSyncedAt, ...stored, ...membership })
     .onConflictDoUpdate({
       target: profiles.userId,
-      set: { role, roleSyncedAt, ...stored },
+      set: { role, roleSyncedAt, ...stored, ...membership },
     });
 
   return role;

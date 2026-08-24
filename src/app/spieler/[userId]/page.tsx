@@ -13,6 +13,8 @@ import { ProfileSpielplan } from "@/features/player-profile/components/profile-s
 import { profileScheduleRows } from "@/features/player-profile/profile";
 import { profileIdentity } from "@/features/player-profile/queries";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
+import { ProfileCancelPanel } from "@/features/registration/components/profile-cancel-panel";
+import { getRegistration } from "@/features/registration/queries";
 import { groupResults, subDivisionResults } from "@/features/reporting/queries";
 import { computeStandings } from "@/features/reporting/standings";
 import { currentUser } from "@/features/roles/guard";
@@ -29,7 +31,7 @@ import {
   parseSpoilersOff,
   SPOILERS_OFF_COOKIE,
 } from "@/features/spoilers/spoilers";
-import { latestWindow } from "@/features/staff/queries";
+import { latestWindow, windowSeasonPhase } from "@/features/staff/queries";
 import { seasonName } from "@/features/staff/registration-window";
 
 // The public player profile: the identity block known from the edit page,
@@ -104,11 +106,18 @@ export default async function PlayerProfilePage({
     };
   }
 
-  // Staff panel (drop / un-drop), only for staff and only when the player is
-  // placed in the running season — otherwise there is nothing to act on.
+  // Staff panel, only for staff and only when there is something to act on:
+  // between Anmeldeschluss and finalized seeding a registration can be
+  // cancelled; a placed player can be dropped / un-dropped.
   const isStaff = current !== null && roleAtLeast(current.role, "staff");
+  const phase =
+    isStaff && window ? (await windowSeasonPhase(window)).phase : null;
+  const canCancel =
+    phase === "registration_closed" &&
+    window !== null &&
+    (await getRegistration(window.id, userId)) !== null;
   const dropState =
-    isStaff && window && placement
+    isStaff && window && placement && !canCancel
       ? await placementDropState(window.id, userId)
       : null;
 
@@ -157,7 +166,12 @@ export default async function PlayerProfilePage({
           </div>
         )}
 
-        {dropState && window && placement ? (
+        {canCancel && window ? (
+          <ProfileCancelPanel
+            player={{ userId, name: identity.name }}
+            seasonName={seasonName(window.seasonNumber)}
+          />
+        ) : dropState && window && placement ? (
           <ProfileStaffPanel
             player={{
               userId,

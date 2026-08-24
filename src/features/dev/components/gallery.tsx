@@ -31,6 +31,11 @@ import {
   FeedbackPanel,
 } from "@/features/feedback/components/feedback-panel";
 import { canSend, type FeedbackKind } from "@/features/feedback/feedback";
+import { MembershipBlockedCard } from "@/features/membership/components/blocked-card";
+import { MembershipGateBody } from "@/features/membership/components/gate-dialog";
+import { MembershipList } from "@/features/membership/components/membership-list";
+import { MembershipWarningCard } from "@/features/membership/components/warning-card";
+import type { RosterMembership } from "@/features/membership/membership";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import { MotwManager } from "@/features/motw/components/motw-manager";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
@@ -76,6 +81,8 @@ import {
   TiebreakerPullOut,
 } from "@/features/regelwerk/components/pull-outs";
 import { SAISON_9 } from "@/features/regelwerk/content/saison-9";
+import { CancelRegistrationDialog } from "@/features/registration/components/cancel-registration-dialog";
+import { ProfileCancelPanel } from "@/features/registration/components/profile-cancel-panel";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { RegistrationForm } from "@/features/registration/components/registration-form";
@@ -117,6 +124,7 @@ import { seedingSteps } from "@/features/seeding/steps";
 import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
 import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
+import { PreseasonTodoCard } from "@/features/staff/components/preseason-todo-card";
 import { SeasonCard } from "@/features/staff/components/registration-status";
 import type { RegistrationState } from "@/features/staff/registration-window";
 import { TeamSheetCards } from "@/features/teamsheets/components/team-sheet-cards";
@@ -1287,6 +1295,38 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Staff: Nächster Schritt</h2>
+        <Specimen label="Anmeldung geschlossen — Einteilung steht aus">
+          <PreseasonTodoCard phase="registration_closed" scheduleSetup={null} />
+        </Specimen>
+        <Specimen label="Einteilung finalisiert — Spielplan erstellen (Dialog ohne Staff-Login wirkungslos)">
+          <PreseasonTodoCard
+            phase="seeded"
+            scheduleSetup={{
+              seasonStart: "2026-08-24",
+              deadlines: [
+                "2026-08-30",
+                "2026-09-06",
+                "2026-09-13",
+                "2026-09-20",
+                "2026-09-27",
+                "2026-10-04",
+                "2026-10-11",
+                "2026-10-18",
+                "2026-10-25",
+              ],
+              groups: 8,
+              matches: 144,
+              largest: 10,
+            }}
+          />
+        </Specimen>
+        <Specimen label="Einteilung finalisiert — kein Spielplan berechenbar">
+          <PreseasonTodoCard phase="seeded" scheduleSetup={null} />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Anmeldungs-Grid</h2>
         <Specimen label="leer (Staff-Text)">
           <PlayerGrid
@@ -1799,6 +1839,12 @@ export function Gallery() {
               dropReason="Inaktivität, mehrfach nicht erreichbar."
             />
           </div>
+        </Specimen>
+        <Specimen label="Staff-Panel — Anmeldung stornieren (nur zwischen Anmeldeschluss und Einteilung)">
+          <ProfileCancelPanel
+            player={{ userId: "b", name: "Falinks" }}
+            seasonName="Saison 9"
+          />
         </Specimen>
       </section>
 
@@ -2393,6 +2439,51 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Discord-Mitgliedschaft</h2>
+        {/* Same closed-Dialog trick as the Regelwerk gate above: the real
+            dialog is non-dismissible and would take the gallery hostage. */}
+        <Specimen label="Sperr-Dialog — Konto nicht auf dem Server (navy, nicht schließbar)">
+          <Dialog>
+            <DialogWidth>
+              <MembershipGateBody />
+            </DialogWidth>
+          </Dialog>
+        </Specimen>
+        <Specimen label="Anmeldung — blockiert, weil nicht auf dem Server">
+          <MembershipBlockedCard />
+        </Specimen>
+        <Specimen label="Staff — Warnung oben auf dem Dashboard (einer / mehrere)">
+          <div className="flex flex-col gap-3">
+            <MembershipWarningCard count={1} listId="gallery-membership" />
+            <MembershipWarningCard count={3} listId="gallery-membership" />
+          </div>
+        </Specimen>
+        <Specimen label="Staff — Liste (nicht auf dem Server · noch nicht geprüft), mit Stornieren">
+          <MembershipList
+            roster={MEMBERSHIP_ROSTER}
+            seasonName="Saison 9"
+            canCancel
+          />
+        </Specimen>
+        <Specimen label="Staff — alle bestätigt">
+          <MembershipList
+            roster={MEMBERSHIP_ROSTER_CONFIRMED}
+            seasonName="Saison 9"
+            canCancel={false}
+          />
+        </Specimen>
+        <Specimen label="Anmeldung stornieren — Bestätigungsdialog (Staff, nur nach Anmeldeschluss)">
+          <CancelRegistrationDialog
+            seasonName="Saison 9"
+            player={{
+              userId: "66666666-6666-4666-8666-666666666666",
+              name: "Ausgetreten",
+            }}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Dev: Impersonation</h2>
         <Specimen label="Picker — Suche, Rollen, Drop-Markierung, Kappung">
           <ImpersonationPicker users={IMPERSONATION_USERS} />
@@ -2408,6 +2499,37 @@ export function Gallery() {
 // Deliberately includes the shapes a cloned season produces: umlauts, an
 // overlong name, a dropped player, a user with no profile identity at all, and
 // enough rows to trip the "weitere Treffer" cap.
+// One confirmed non-member, one never-checked, one confirmed member (does not
+// appear in the list, only in the roster stamp).
+const MEMBERSHIP_ROSTER: RosterMembership[] = [
+  {
+    userId: "66666666-6666-4666-8666-666666666666",
+    displayName: "Ausgetreten",
+    username: "ausgetreten",
+    avatarUrl: null,
+    guildMember: false,
+    guildMemberCheckedAt: new Date("2026-08-20T14:32:00Z"),
+  },
+  {
+    userId: "77777777-7777-4777-8777-777777777777",
+    displayName: "Nie Geprüft",
+    username: "nie_geprueft",
+    avatarUrl: null,
+    guildMember: null,
+    guildMemberCheckedAt: null,
+  },
+  {
+    userId: "88888888-8888-4888-8888-888888888888",
+    displayName: "Brav Dabei",
+    username: "brav",
+    avatarUrl: null,
+    guildMember: true,
+    guildMemberCheckedAt: new Date("2026-08-21T09:00:00Z"),
+  },
+];
+
+const MEMBERSHIP_ROSTER_CONFIRMED: RosterMembership[] = [MEMBERSHIP_ROSTER[2]];
+
 const IMPERSONATION_USERS: ImpersonatableUser[] = [
   {
     userId: "11111111-1111-4111-8111-111111111111",

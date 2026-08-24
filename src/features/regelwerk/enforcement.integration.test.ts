@@ -48,6 +48,8 @@ function signedInAsAlice() {
     displayName: "Alice",
     username: "alice",
     avatarUrl: null,
+    // Membership-neutral: the membership lock has its own enforcement suite.
+    guildMember: null,
   });
 }
 

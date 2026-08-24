@@ -3,6 +3,7 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Tick } from "@/components/tick";
+import { DISCORD_INVITE_URL } from "@/lib/discord-invite";
 import { cn } from "@/lib/utils";
 
 export type ChapterLink = {
@@ -97,7 +98,7 @@ function QuestionsHint() {
     <div className="border-t pt-4 text-[12.5px] text-muted-foreground leading-[1.55]">
       Fragen? Die beantworten wir im{" "}
       <a
-        href="https://discord.gg/YeVggq5bgK"
+        href={DISCORD_INVITE_URL}
         target="_blank"
         rel="noreferrer"
         className="font-semibold text-brand-blue underline underline-offset-[3px] dark:text-white"

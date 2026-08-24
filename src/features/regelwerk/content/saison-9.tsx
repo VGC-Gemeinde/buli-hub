@@ -16,14 +16,13 @@ import {
   TiebreakerPullOut,
 } from "@/features/regelwerk/components/pull-outs";
 import type { RegelwerkDocument } from "@/features/regelwerk/content/types";
+import { DISCORD_INVITE_URL as DISCORD_INVITE } from "@/lib/discord-invite";
 
 // The Saison-9 ruleset as supplied by the Orga, reproduced in full — no rule
 // dropped or reworded beyond formatting. The four pull-outs and the callouts
 // restate rules that also appear in the prose around them; that repetition is
 // deliberate (design §2.7), because those are the rules players look up
 // mid-match.
-
-const DISCORD_INVITE = "https://discord.gg/YeVggq5bgK";
 
 export const SAISON_9: RegelwerkDocument = {
   seasonNumber: 9,

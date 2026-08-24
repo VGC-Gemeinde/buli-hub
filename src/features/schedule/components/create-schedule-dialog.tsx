@@ -69,10 +69,12 @@ export function CreateScheduleDialog({
   seasonStart,
   defaultDeadlines,
   largest,
+  triggerSize = "default",
 }: {
   seasonStart: string;
   defaultDeadlines: string[];
   largest: number;
+  triggerSize?: "default" | "sm";
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -140,7 +142,9 @@ export function CreateScheduleDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button type="button">Spielplan erstellen</Button>
+        <Button type="button" size={triggerSize}>
+          Spielplan erstellen
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[640px]">
         <DialogHeader>

@@ -49,6 +49,21 @@ describe("personas", () => {
     expect(personaToAdminPayload(mustGet("leer")).user_metadata).toEqual({});
   });
 
+  it("kein-server is a confirmed non-member with baseline role", () => {
+    const persona = mustGet("kein-server");
+    expect(persona.role).toBe("player");
+    expect(persona.guildMember).toBe(false);
+  });
+
+  it("every persona pins its membership explicitly", () => {
+    for (const persona of PERSONAS) {
+      expect(
+        persona.guildMember === null ||
+          typeof persona.guildMember === "boolean",
+      ).toBe(true);
+    }
+  });
+
   it("returns null for unknown personas", () => {
     expect(getPersona("unbekannt")).toBeNull();
   });

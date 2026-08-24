@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { membershipBlock } from "@/features/membership/membership";
 import {
   clearAcceptance,
   recordAcceptance,
 } from "@/features/regelwerk/queries";
+import { currentUser } from "@/features/roles/guard";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
 import { createClient } from "@/lib/supabase/server";
@@ -34,21 +36,28 @@ export type RegisterResult =
 export type RegisterInput = RegistrationDraft;
 
 export async function register(input: unknown): Promise<RegisterResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  // currentUser rather than the bare Supabase session: it runs the role sync
+  // when stale, so the membership flag checked below is at most TTL-old.
+  const current = await currentUser();
+  if (!current) {
     return { ok: false, error: "Nicht angemeldet" };
   }
+  const userId = current.userId;
 
   const window = await latestWindow();
   if (!window || registrationState(window, new Date()) !== "open") {
     return { ok: false, error: "Die Anmeldung ist nicht geöffnet" };
   }
 
-  if (await getRegistration(window.id, user.id)) {
+  if (await getRegistration(window.id, userId)) {
     return { ok: false, error: "Du bist bereits angemeldet" };
+  }
+
+  // Confirmed non-members cannot register; unknown fails open by design
+  // (membershipBlock only fires on a stored false).
+  const blocked = membershipBlock(current.guildMember);
+  if (blocked) {
+    return blocked;
   }
 
   const draft = registrationDraftSchema.safeParse(input);
@@ -58,7 +67,7 @@ export async function register(input: unknown): Promise<RegisterResult> {
 
   // Detection is server-side — never trust the client on returning status.
   const detectedReturning =
-    (await priorRegistrationCount(window.id, user.id)) > 0;
+    (await priorRegistrationCount(window.id, userId)) > 0;
 
   // The same validator the form runs, so a stale client gets field-precise
   // messages instead of one generic sentence, and the two cannot drift.
@@ -107,7 +116,7 @@ export async function register(input: unknown): Promise<RegisterResult> {
 
   await createRegistration({
     windowId: window.id,
-    userId: user.id,
+    userId,
     platform: platform.data,
     status: resolved.status,
     // Store the self-report only when it drove the decision.
@@ -122,7 +131,7 @@ export async function register(input: unknown): Promise<RegisterResult> {
   // Regelwerk tick is missing, so anyone who gets here has agreed. Recording
   // it now is what makes "since when" answerable for the whole field, rather
   // than only for the players who later opened a prompt.
-  await recordAcceptance(window.id, user.id);
+  await recordAcceptance(window.id, userId);
 
   revalidatePath("/anmeldung");
   revalidatePath("/staff");

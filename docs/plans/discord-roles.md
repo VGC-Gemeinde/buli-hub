@@ -70,6 +70,10 @@ full staff access; the app has no finer per-section scoping.
 by the league staff role alone. The bot must be a member of the guild; the
 single-member REST lookup
 (`GET /guilds/{guild}/members/{user}`) needs no privileged gateway intent.
+(The membership feature's roster sweep additionally uses the guild members
+*list*, which does require the Server Members Intent — enabled on the bot for
+that reason; see docs/plans/discord-membership.md. Role sync itself still
+works without it.)
 
 ## Schema
 

@@ -3,6 +3,8 @@ import { EmptyStateCard } from "@/components/empty-state-card";
 import { SiteHeader } from "@/components/site-header";
 import { Tick } from "@/components/tick";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
+import { MembershipBlockedCard } from "@/features/membership/components/blocked-card";
+import { isConfirmedNonMember } from "@/features/membership/membership";
 import { getProfile } from "@/features/profile/queries";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
@@ -186,6 +188,17 @@ export default async function AnmeldungPage() {
             Geschlossen seit {formatLongTimestamp(window.closesAt)}
           </p>
         </EmptyStateCard>
+      </Shell>
+    );
+  }
+
+  // Confirmed non-members register on the server first. After the registration
+  // branch on purpose: an already-registered player still sees their
+  // confirmation and can withdraw; the season gate handles their membership.
+  if (isConfirmedNonMember(current.guildMember)) {
+    return (
+      <Shell state={state} closesAt={closesAt} season={seasonLabel}>
+        <MembershipBlockedCard />
       </Shell>
     );
   }

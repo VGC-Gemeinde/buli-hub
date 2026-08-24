@@ -3,8 +3,8 @@ import type { RegisteredPlayer } from "@/components/player-grid";
 import { SiteHeader } from "@/components/site-header";
 import { markDropped } from "@/features/drops/drops";
 import { droppedIdsForWindow } from "@/features/drops/queries";
+import { SeasonGates } from "@/features/membership/components/season-gates";
 import { getProfile } from "@/features/profile/queries";
-import { RegelwerkPrompt } from "@/features/regelwerk/components/prompt";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import {
@@ -217,7 +217,7 @@ export default async function SpielerPage() {
 
     return (
       <div className="flex flex-1 flex-col">
-        <RegelwerkPrompt />
+        <SeasonGates />
         <SiteHeader />
         <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 pt-11 pb-18">
           {showProfileHint ? (
@@ -298,7 +298,7 @@ export default async function SpielerPage() {
 
   return (
     <Shell>
-      <RegelwerkPrompt />
+      <SeasonGates />
       {showProfileHint ? (
         <div className="mb-8">
           <ProfileHint />

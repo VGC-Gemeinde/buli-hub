@@ -16,6 +16,10 @@ export type CurrentUser = {
   displayName: string | null;
   username: string | null;
   avatarUrl: string | null;
+  // Tri-state guild membership from the profile row: null = never confirmed,
+  // false = Discord confirmed the account is not on the server. Consumers
+  // must fail open on null (see features/membership/membership.ts).
+  guildMember: boolean | null;
 };
 
 // Resolves the signed-in user's role (TTL-revalidated) and stored guild
@@ -41,7 +45,12 @@ export const currentUser = cache(
     // fresh.
     const role = await getRole(user.id, identity);
     const stored = await db.query.profiles.findFirst({
-      columns: { displayName: true, username: true, avatarUrl: true },
+      columns: {
+        displayName: true,
+        username: true,
+        avatarUrl: true,
+        guildMember: true,
+      },
       where: eq(profiles.userId, user.id),
     });
 
@@ -52,6 +61,7 @@ export const currentUser = cache(
       displayName: stored?.displayName ?? identity.displayName,
       username: stored?.username ?? identity.username,
       avatarUrl: stored?.avatarUrl ?? identity.avatarUrl,
+      guildMember: stored?.guildMember ?? null,
     };
   },
 );

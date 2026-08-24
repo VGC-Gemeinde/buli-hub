@@ -3,7 +3,12 @@
 
 import type { Role } from "@/features/roles/roles";
 
-export type PersonaId = "voll" | "kein-avatar" | "langer-name" | "leer";
+export type PersonaId =
+  | "voll"
+  | "kein-avatar"
+  | "langer-name"
+  | "leer"
+  | "kein-server";
 
 export type Persona = {
   id: PersonaId;
@@ -13,6 +18,9 @@ export type Persona = {
   // Written directly to the profile row on /dev/login — personas have fake
   // Discord ids, so their roles cannot come from a real guild lookup.
   role: Role;
+  // Pinned guild membership, same reasoning as role: null = never confirmed
+  // (the fail-open state), false = confirmed non-member (gated everywhere).
+  guildMember: boolean | null;
 };
 
 // Discord's public default avatar — a real, always-available image URL.
@@ -32,6 +40,7 @@ export const PERSONAS: readonly Persona[] = [
       provider_id: "100000000000000001",
     },
     role: "admin",
+    guildMember: true,
   },
   {
     id: "kein-avatar",
@@ -44,6 +53,7 @@ export const PERSONAS: readonly Persona[] = [
       provider_id: "100000000000000002",
     },
     role: "staff",
+    guildMember: true,
   },
   {
     id: "langer-name",
@@ -60,6 +70,7 @@ export const PERSONAS: readonly Persona[] = [
       provider_id: "100000000000000003",
     },
     role: "dev",
+    guildMember: true,
   },
   {
     id: "leer",
@@ -67,6 +78,23 @@ export const PERSONAS: readonly Persona[] = [
     description: "Leere Metadaten — alle Fallbacks gleichzeitig",
     userMetadata: {},
     role: "player",
+    guildMember: null,
+  },
+  {
+    id: "kein-server",
+    label: "Kein Server",
+    description:
+      "Vom Discord-Server ausgetreten — Mitgliedschafts-Gate überall",
+    userMetadata: {
+      avatar_url: AVATAR_URL,
+      picture: AVATAR_URL,
+      custom_claims: { global_name: "Ausgetreten" },
+      full_name: "ausgetreten",
+      name: "ausgetreten",
+      provider_id: "100000000000000005",
+    },
+    role: "player",
+    guildMember: false,
   },
 ];
 

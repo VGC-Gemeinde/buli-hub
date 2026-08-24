@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { syncResultPost } from "@/features/discord-posts/sync";
 import { droppedIdsForSubDivision } from "@/features/drops/queries";
+import { membershipBlock } from "@/features/membership/membership";
 import { regelwerkBlock } from "@/features/regelwerk/guard";
 import { currentUser } from "@/features/roles/guard";
 import {
@@ -26,6 +27,13 @@ export async function reportMatch(input: {
   const current = await currentUser();
   if (!current) {
     return { ok: false, error: "Nicht angemeldet" };
+  }
+
+  // Membership before Regelwerk, matching the season gate's precedence: the
+  // refusal names the gate the player is currently looking at.
+  const memberBlocked = membershipBlock(current.guildMember);
+  if (memberBlocked) {
+    return memberBlocked;
   }
 
   const blocked = await regelwerkBlock(current.userId);

@@ -158,6 +158,11 @@ async function pinPersonaProfile(email: string, persona: Persona) {
   const values = {
     role: persona.role,
     roleSyncedAt: farFuture,
+    // Membership is pinned the same way (the far-future sync date keeps the
+    // TTL revalidation from ever overwriting it). null = never confirmed,
+    // so no checked-at either.
+    guildMember: persona.guildMember,
+    guildMemberCheckedAt: persona.guildMember === null ? null : new Date(),
     displayName: identity.displayName,
     username: identity.username,
     avatarUrl: identity.avatarUrl,

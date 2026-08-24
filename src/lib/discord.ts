@@ -198,6 +198,51 @@ export async function deleteChannelMessage(
 }
 
 /**
+ * Fetches the Discord user ids of every guild member, via the paginated
+ * members list. Unlike the single-member lookup below this requires the
+ * privileged Server Members Intent on the bot. Throws on any non-2xx —
+ * notably the 403 of a bot without the intent — so callers fail open and
+ * never treat a partial or missing list as "everyone left".
+ */
+export async function fetchGuildMemberIds(
+  guildId: string,
+): Promise<Set<string>> {
+  const ids = new Set<string>();
+  let after = "0";
+  for (;;) {
+    const response = await fetch(
+      `${API_BASE}/guilds/${guildId}/members?limit=1000&after=${after}`,
+      {
+        headers: { Authorization: `Bot ${botToken()}` },
+        cache: "no-store",
+      },
+    );
+    if (!response.ok) {
+      throw new Error(
+        `Discord API ${response.status}: ${await response.text()}`,
+      );
+    }
+    const page = (await response.json()) as { user?: { id?: unknown } }[];
+    if (!Array.isArray(page) || page.length === 0) {
+      return ids;
+    }
+    let last: string | null = null;
+    for (const member of page) {
+      const id = asString(member.user?.id);
+      if (id) {
+        ids.add(id);
+        // Pages are sorted ascending by user id, so the last id is the cursor.
+        last = id;
+      }
+    }
+    if (page.length < 1000 || last === null) {
+      return ids;
+    }
+    after = last;
+  }
+}
+
+/**
  * Fetches a guild member by Discord user id.
  * Returns null when the user is not a member of the guild.
  */

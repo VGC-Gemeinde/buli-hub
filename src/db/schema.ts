@@ -33,6 +33,18 @@ export const profiles = pgTable("profiles", {
   origin: text("origin"),
   role: roleEnum("role").notNull().default("player"),
   roleSyncedAt: timestamp("role_synced_at", { withTimezone: true }),
+  // Guild membership, server-managed, written only by the member sync and
+  // the staff overview's roster sweep, and only when a lookup actually ran:
+  // null = never confirmed either way, true/false = last confirmed state. A
+  // confirmed false gates registration and player actions; unknown always
+  // fails open.
+  guildMember: boolean("guild_member"),
+  // When guildMember was last actually confirmed (lookup succeeded or
+  // returned 404). Unlike roleSyncedAt, never bumped when the check could
+  // not run.
+  guildMemberCheckedAt: timestamp("guild_member_checked_at", {
+    withTimezone: true,
+  }),
   // Discord guild identity, server-managed (synced from the guild member,
   // JWT fallback for non-members). Nullable; null avatar → initials fallback.
   displayName: text("display_name"),

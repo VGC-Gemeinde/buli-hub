@@ -743,12 +743,19 @@ export async function generateSeedData(
   await db.insert(profiles).values(
     specs.map((spec, i) => {
       const untouched = i % 4 === 3;
+      // Membership mix on its own cadence, so all combinations occur: every
+      // fifth player was never checked (null — the fail-open state), the rest
+      // are members except the occasional confirmed leaver, so the staff
+      // section shows both buckets and the roster stamp at scale.
+      const membershipUnknown = i % 5 === 4;
       return {
         userId: ids[i],
         displayName: spec.displayName,
         username: spec.username,
         hasCaptureCard: !untouched && i % 3 !== 2,
         settingsEditedAt: untouched ? null : editedAt,
+        guildMember: membershipUnknown ? null : i % 9 !== 3,
+        guildMemberCheckedAt: membershipUnknown ? null : editedAt,
       };
     }),
   );

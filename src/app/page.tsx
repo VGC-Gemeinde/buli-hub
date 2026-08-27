@@ -5,6 +5,10 @@ import { SiteHeader } from "@/components/site-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
+import {
+  parseSignInErrorKind,
+  SIGN_IN_ERROR_COPY,
+} from "@/features/auth/sign-in-error";
 import { PublicLeague } from "@/features/public-league/components/public-league";
 import { publicLeagueOverview } from "@/features/public-league/queries";
 import { currentUser } from "@/features/roles/guard";
@@ -22,6 +26,7 @@ export default async function Home({
   searchParams: Promise<{ auth_error?: string }>;
 }) {
   const { auth_error } = await searchParams;
+  const signInError = parseSignInErrorKind(auth_error);
 
   // The landing page becomes the public league overview while a season runs.
   const { window, phase } = await currentSeason();
@@ -83,9 +88,9 @@ export default async function Home({
         ) : (
           <>
             <SignInButton size="lg" />
-            {auth_error ? (
-              <p className="mt-5 text-destructive text-sm">
-                Anmeldung fehlgeschlagen. Bitte versuche es erneut.
+            {signInError ? (
+              <p className="mt-5 max-w-[440px] text-destructive text-sm">
+                {SIGN_IN_ERROR_COPY[signInError]}
               </p>
             ) : null}
           </>

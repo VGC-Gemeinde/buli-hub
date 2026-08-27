@@ -14,6 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
+import {
+  SIGN_IN_ERROR_COPY,
+  SIGN_IN_ERROR_KINDS,
+} from "@/features/auth/sign-in-error";
 import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
 import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
 import {
@@ -1267,11 +1271,13 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Fehlermeldungen</h2>
-        <Specimen label="Anmeldefehler (Landing, ?auth_error=1)">
-          <p className="text-destructive text-sm">
-            Anmeldung fehlgeschlagen. Bitte versuche es erneut.
-          </p>
-        </Specimen>
+        {SIGN_IN_ERROR_KINDS.map((kind) => (
+          <Specimen key={kind} label={`Anmeldefehler (?auth_error=${kind})`}>
+            <p className="max-w-[440px] text-destructive text-sm">
+              {SIGN_IN_ERROR_COPY[kind]}
+            </p>
+          </Specimen>
+        ))}
       </section>
 
       <section className="flex flex-col gap-3">

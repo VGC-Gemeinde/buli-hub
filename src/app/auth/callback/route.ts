@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { discordIdentityFromUser } from "@/features/auth/identity";
+import {
+  classifySignInError,
+  SIGN_IN_ERROR_PARAM,
+} from "@/features/auth/sign-in-error";
 import { syncMember } from "@/features/roles/sync";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,6 +18,7 @@ export async function GET(request: Request) {
   // use APP_BASE_URL. Locally it is unset and the request origin is correct.
   const base = process.env.APP_BASE_URL || origin;
 
+  let exchangeError: string | null = null;
   if (code) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -27,7 +32,18 @@ export async function GET(request: Request) {
       }
       return NextResponse.redirect(base);
     }
+    exchangeError = error.message;
   }
 
-  return NextResponse.redirect(`${base}/?auth_error=1`);
+  // Supabase Auth reports its own rejections (e.g. Discord returned no
+  // verified email) as `error`/`error_description` instead of a code. The raw
+  // strings stay here in the log; only the category reaches the UI.
+  const failure = {
+    error: searchParams.get("error"),
+    description: searchParams.get("error_description"),
+    exchangeError,
+  };
+  const kind = classifySignInError(failure);
+  console.error(`Sign-in failed (${kind}):`, failure);
+  return NextResponse.redirect(`${base}/?${SIGN_IN_ERROR_PARAM}=${kind}`);
 }

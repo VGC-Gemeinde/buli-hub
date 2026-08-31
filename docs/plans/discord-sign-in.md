@@ -53,8 +53,14 @@ Discord Developer Portal (OAuth2 → Redirects):
   - `identity.ts` — pure function mapping a Supabase `User` to a display
     identity (Discord ID, username, avatar URL); the unit-testable core
   - `identity.test.ts`
+  - `sign-in-error.ts` — classifies a failed round-trip (`error_description`
+    from Supabase Auth or the code-exchange error) into a fixed enum
+    (`no_email`, `cancelled`, `unknown`) with our own German copy per kind.
+    Raw provider strings are logged server-side only; the landing page reads
+    `?auth_error=<kind>` and never renders anything from the upstream API.
   - `components/` — sign-in button, signed-in user menu (dumb components)
-- `src/app/auth/callback/route.ts` — thin wrapper: exchange code, redirect
+- `src/app/auth/callback/route.ts` — thin wrapper: exchange code, redirect;
+  on failure logs the raw cause and redirects with the classified kind
 - `src/app/layout.tsx` / `src/app/page.tsx` — minimal header slot showing
   sign-in state
 

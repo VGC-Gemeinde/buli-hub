@@ -2,7 +2,7 @@
 // `@/` alias and extension-less relative imports (tsconfig `paths`), which
 // Node's built-in TypeScript support does not resolve on its own.
 //
-//   node --import ./scripts/src-alias.register.mjs scripts/backfill-usage.ts
+//   node --import ./scripts/load-env.mjs --import ./scripts/src-alias.register.mjs scripts/backfill-usage.ts
 //
 // Registers src-alias.hooks.mjs as a module resolve hook (node:module
 // `register`, stable since Node 20.6).

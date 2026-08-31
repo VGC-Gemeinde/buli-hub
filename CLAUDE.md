@@ -53,7 +53,7 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
   scripts/              # maintenance entry points, run via `node scripts/<x>.ts`
   ```
 
-  `scripts/` holds orchestration only (spawning `pg_dump`, `psql`, `drizzle-kit`). Anything with logic worth testing lives under `src/features/` as a pure function and is imported from there — Node 24 runs TypeScript directly, so scripts need no build step and no extra dependency. Node does not resolve the `@/` alias or extension-less imports on its own, so a script that imports feature code which in turn imports `@/lib/db` or `@/db/schema` runs with `--import ./scripts/src-alias.register.mjs` (a 30-line resolve hook; see `usage:backfill` in `package.json`). Import-free pure modules, like the clone helpers, need nothing.
+  `scripts/` holds orchestration only (spawning `pg_dump`, `psql`, `drizzle-kit`). Anything with logic worth testing lives under `src/features/` as a pure function and is imported from there — Node 24 runs TypeScript directly, so scripts need no build step and no extra dependency. Node does not resolve the `@/` alias or extension-less imports on its own, so a script that imports feature code which in turn imports `@/lib/db` or `@/db/schema` runs with `--import ./scripts/load-env.mjs --import ./scripts/src-alias.register.mjs` (`.env` loaded before any module evaluates, plus a 30-line resolve hook; see `usage:backfill` in `package.json`). A script's own `process.loadEnvFile` is too late for modules with import-time env guards such as `src/lib/db.ts`. Import-free pure modules, like the clone helpers, need nothing.
 
 ## Testing strategy (pinned)
 

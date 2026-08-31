@@ -199,6 +199,25 @@ Then: install the **Renovate** GitHub app on the repo (config is
 
   Still to do: put the above on a schedule.
 
+- **Usage statistics** (`/staff/nutzung`, admin+; `docs/plans/usage-stats.md`)
+  count page loads into the app database themselves, so nothing here needs
+  setting up. One thing is run once, by hand: **the log backfill.** Cloud Run
+  keeps request logs for **30 days** (the `_Default` log bucket's retention,
+  unless raised in Logging → Logs Storage), so the month before the feature
+  deployed can be replayed into the counters. Do it soon after the deploy,
+  before that window moves on:
+
+  ```bash
+  gcloud auth login                       # needs read access to the project's logs
+  npm run usage:backfill                  # dry run: prints what would be written
+  npm run usage:backfill -- --apply       # writes to PROD_DATABASE_URL, once
+  ```
+
+  The script reduces every log row to an opaque visitor token on your machine
+  (no address is sent anywhere), stops at the instant live counting began so
+  the boundary day is not counted twice, and refuses to run a second time. A
+  local rehearsal is `--target=$DATABASE_URL`. Staging is not backfilled.
+
 ## 5. Dress rehearsal (before announcing)
 
 On the deployed service: sign in with a real Discord account → role sync

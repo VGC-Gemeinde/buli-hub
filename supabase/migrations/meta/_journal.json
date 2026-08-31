@@ -85,6 +85,20 @@
       "when": 1787524684583,
       "tag": "20260823223804_guild_membership",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788184699573,
+      "tag": "20260831135819_usage_stats",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788184706262,
+      "tag": "20260831135826_usage_stats_rls",
+      "breakpoints": true
     }
   ]
 }

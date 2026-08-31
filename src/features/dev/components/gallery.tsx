@@ -137,6 +137,12 @@ import {
   emptyTeamsheet,
   storedTeamsheet,
 } from "@/features/teamsheets/field-state";
+import {
+  UsageBarChart,
+  UsageLegend,
+} from "@/features/usage/components/usage-bar-chart";
+import { UsageCards } from "@/features/usage/components/usage-cards";
+import { UsageTable } from "@/features/usage/components/usage-table";
 
 const AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/1.png";
 
@@ -2498,9 +2504,76 @@ export function Gallery() {
           <ImpersonationPicker users={[]} />
         </Specimen>
       </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Nutzung (Staff-Bereich, admin+)</h2>
+        <Specimen label="UsageCards — Kennzahlen">
+          <UsageCards
+            cards={[
+              { label: "Heute", value: 143, unit: "Aufrufe" },
+              { label: "Heute", value: 61, unit: "Personen" },
+              { label: "Diese Woche", value: 188, unit: "Personen" },
+              { label: "Dieser Monat", value: 1204, unit: "Personen" },
+            ]}
+          />
+        </Specimen>
+        <Specimen label="UsageBarChart — gezählt · ruhig (0) · vor Beginn der Zählung (schraffiert)">
+          <div className="flex flex-col gap-3">
+            <UsageBarChart bars={USAGE_BARS} unit="Aufrufe" labelEvery={5} />
+            <UsageLegend />
+          </div>
+        </Specimen>
+        <Specimen label="UsageBarChart — noch nichts gezählt">
+          <UsageBarChart
+            bars={USAGE_BARS.map((bar) => ({
+              ...bar,
+              value: 0,
+              counted: false,
+            }))}
+            unit="Aufrufe"
+            labelEvery={5}
+          />
+        </Specimen>
+        <Specimen label="UsageTable — mit Zeile vor Beginn der Zählung">
+          <UsageTable
+            periodHeading="Tag"
+            rows={[
+              {
+                id: "2026-08-31",
+                label: "Mo., 31.08.2026",
+                visits: 143,
+                uniques: 61,
+                counted: true,
+              },
+              {
+                id: "2026-08-30",
+                label: "So., 30.08.2026",
+                visits: 0,
+                uniques: 0,
+                counted: true,
+              },
+              {
+                id: "2026-08-29",
+                label: "Sa., 29.08.2026",
+                visits: 0,
+                uniques: 0,
+                counted: false,
+              },
+            ]}
+          />
+        </Specimen>
+      </section>
     </div>
   );
 }
+
+// 30 days of bars: the first six from before counting began, one quiet day.
+const USAGE_BARS = Array.from({ length: 30 }, (_, i) => {
+  const day = String(i + 1).padStart(2, "0");
+  const counted = i >= 6;
+  const value = !counted || i === 13 ? 0 : 40 + ((i * 37) % 90);
+  return { label: `${day}.08.`, value, counted };
+});
 
 // Deliberately includes the shapes a cloned season produces: umlauts, an
 // overlong name, a dropped player, a user with no profile identity at all, and

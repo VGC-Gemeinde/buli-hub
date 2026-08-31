@@ -39,6 +39,12 @@ export default function DatenschutzPage() {
         stabilen Betrieb sowie der Abwehr von Missbrauch. Rechtsgrundlage ist
         das berechtigte Interesse gemäß Art. 6 Abs. 1 lit. f DSGVO.
       </p>
+      <p>
+        Zusätzlich zählt die Plattform Seitenaufrufe und die ungefähre Zahl der
+        Besucher pro Tag, Woche und Monat. Dafür werden IP-Adresse, Browser und
+        Nutzerkennung sofort in einen nicht umkehrbaren Zählwert umgewandelt;
+        gespeichert werden nur Summen, keine Einzelzugriffe.
+      </p>
 
       <h2>3. Anmeldung über Discord</h2>
       <p>

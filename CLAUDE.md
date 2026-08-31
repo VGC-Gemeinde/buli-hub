@@ -23,6 +23,7 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
 - **Zod** — validation, schemas shared between server and forms
 - **Tailwind CSS + shadcn/ui** — UI layer
 - **Team sheets** — the league runs **Pokémon Champions**; teams are built in Showdown. The hub is its own paste service: every reported sheet is parsed, validated as a complete open team sheet, stripped of stats and published at `/pastes/<uuid>` (`src/features/teamsheets/`). Parsing/serialising is `@pkmn/sets` (no game data, so it cannot go stale); `@pkmn/dex` and `@pkmn/img` are display-only (mega resolution, sprite ids, nature arrows), so a dex gap can never reject a submission. Sprites come from a public GCS bucket with a Showdown-CDN fallback. Details: `docs/plans/teamsheet-pastes.md`.
+- **Usage statistics** — the hub counts its own page loads (`src/features/usage/`, page at `/staff/nutzung` for admin+): the root layout renders `<CountPageLoad />`, which turns the request into a per-period salted hash folded into a HyperLogLog sketch and a counter in Postgres. Aggregates only, no per-request rows, no identifiers stored; `src/proxy.ts` passes the pathname along as `x-pathname` for it. History before the feature shipped is replayed once from Cloud Run logs (`npm run usage:backfill`). Details: `docs/plans/usage-stats.md`.
 - **Discord integration** — no bot service. The Next.js backend calls the **Discord REST API directly with a bot token** (messages, embeds, threads). Token comes from secret management, never from client code.
 - **Scheduled jobs** — Google **Cloud Scheduler** invoking route handlers
 - **Hosting** — Docker container on **Google Cloud Run**, scale-to-zero
@@ -52,7 +53,7 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
   scripts/              # maintenance entry points, run via `node scripts/<x>.ts`
   ```
 
-  `scripts/` holds orchestration only (spawning `pg_dump`, `psql`, `drizzle-kit`). Anything with logic worth testing lives under `src/features/` as a pure function and is imported from there — Node 24 runs TypeScript directly, so scripts need no build step and no extra dependency.
+  `scripts/` holds orchestration only (spawning `pg_dump`, `psql`, `drizzle-kit`). Anything with logic worth testing lives under `src/features/` as a pure function and is imported from there — Node 24 runs TypeScript directly, so scripts need no build step and no extra dependency. Node does not resolve the `@/` alias or extension-less imports on its own, so a script that imports feature code which in turn imports `@/lib/db` or `@/db/schema` runs with `--import ./scripts/src-alias.register.mjs` (a 30-line resolve hook; see `usage:backfill` in `package.json`). Import-free pure modules, like the clone helpers, need nothing.
 
 ## Testing strategy (pinned)
 

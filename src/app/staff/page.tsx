@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EmptyStateCard } from "@/components/empty-state-card";
+import { ActionLink } from "@/components/links";
 import { PlayerGrid, type RegisteredPlayer } from "@/components/player-grid";
 import { SectionHeader } from "@/components/section-header";
 import { SiteHeader } from "@/components/site-header";
@@ -249,9 +250,16 @@ export default async function StaffPage() {
     <div className="flex flex-1 flex-col">
       <SiteHeader />
       <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 py-12">
-        <h1 className="mb-9 text-[40px] text-brand-blue dark:text-white">
-          Staff-Bereich
-        </h1>
+        <div className="mb-9 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h1 className="text-[40px] text-brand-blue dark:text-white">
+            Staff-Bereich
+          </h1>
+          {roleAtLeast(current.role, "admin") ? (
+            <ActionLink href="/staff/nutzung" className="text-sm">
+              Nutzung
+            </ActionLink>
+          ) : null}
+        </div>
         <div className="flex flex-col gap-10">
           {phase === "registration_closed" || phase === "seeded" ? (
             <PreseasonTodoCard phase={phase} scheduleSetup={scheduleSetup} />

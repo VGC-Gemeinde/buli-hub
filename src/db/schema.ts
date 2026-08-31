@@ -6,13 +6,18 @@
 // Tables are added per feature (see CLAUDE.md); the schema stays central
 // because tables cross feature boundaries.
 
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
+  customType,
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -530,4 +535,69 @@ export const feedbackReports = pgTable(
       table.createdAt,
     ),
   ],
+);
+
+// --- Usage statistics (docs/plans/usage-stats.md) ---------------------------
+//
+// Aggregates only: how many page loads and roughly how many people per period.
+// There is no row per request and nothing that could be joined back to a
+// person. `sketch` is a 4096-byte HyperLogLog (src/features/usage/hll.ts);
+// a visitor's per-period hash bumps one register and is discarded. All three
+// tables are server-only (RLS on, no policies) via the custom migration.
+
+export const usagePeriodKindEnum = pgEnum("usage_period_kind", [
+  "day",
+  "week",
+  "month",
+]);
+
+// Drizzle has no bytea column; postgres-js reads and writes it as a Buffer.
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+// One row per Berlin calendar day (`2026-08-31`), ISO week (`2026-W36`) or
+// month (`2026-08`). `hours` is filled on day rows only: page loads per
+// Berlin hour, keyed "00".."23".
+export const usagePeriods = pgTable(
+  "usage_periods",
+  {
+    kind: usagePeriodKindEnum("kind").notNull(),
+    periodId: text("period_id").notNull(),
+    visits: integer("visits").notNull().default(0),
+    hours: jsonb("hours").$type<Record<string, number>>().notNull().default({}),
+    sketch: bytea("sketch").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.kind, table.periodId] })],
+);
+
+// The per-period salt that makes visitor hashes unlinkable across periods.
+// Created on first use, deleted 70 days after creation; period ids never
+// collide across kinds, so the id alone is the key.
+export const usageSalts = pgTable("usage_salts", {
+  periodId: text("period_id").primaryKey(),
+  salt: bytea("salt").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Single row: when counting began (only ever moves earlier) and whether the
+// one-shot log backfill has run. `started_at` is what tells "nobody came"
+// apart from "we weren't counting yet".
+export const usageCollection = pgTable(
+  "usage_collection",
+  {
+    id: boolean("id").primaryKey().default(true),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    backfilledAt: timestamp("backfilled_at", { withTimezone: true }),
+    backfillThrough: timestamp("backfill_through", { withTimezone: true }),
+    backfillVisits: integer("backfill_visits"),
+  },
+  (table) => [check("usage_collection_single_row", sql`${table.id}`)],
 );

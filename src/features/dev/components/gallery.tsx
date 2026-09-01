@@ -54,6 +54,7 @@ import { ProfileSpielplan } from "@/features/player-profile/components/profile-s
 import type { ProfileScheduleRow } from "@/features/player-profile/profile";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
+import { FullSchedule } from "@/features/public-league/components/full-schedule";
 import { PublicLeague } from "@/features/public-league/components/public-league";
 import type {
   PublicMatch,
@@ -2002,6 +2003,133 @@ export function Gallery() {
               groups: 16,
               firstDeadline: "2026-09-13",
               lastDeadline: "2026-10-25",
+            }}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Kompletter Spielplan (/spielplan)</h2>
+        <Specimen label="Alle Spieltage einer Division (gemeldet · offen · MotW · spielfrei) + Intern-Chip">
+          <FullSchedule
+            hiddenPreview
+            meId=""
+            initialSpoilersOff={false}
+            overview={{
+              seasonName: "Saison 9",
+              currentRound: 1,
+              totalRounds: 2,
+              motw: null,
+              matchdays: [
+                { round: 1, startsOn: "2026-09-01", endsOn: "2026-09-13" },
+                { round: 2, startsOn: "2026-09-14", endsOn: "2026-09-20" },
+              ],
+              divisions: [
+                {
+                  tier: 1,
+                  name: "Division 1",
+                  mode: "sub_division",
+                  divisionStandings: null,
+                  divisionZones: null,
+                  divisionGroupLabels: null,
+                  groups: [
+                    {
+                      subDivisionId: "g1",
+                      name: "Division 1a",
+                      shortName: "1a",
+                      standings: [],
+                      zones: null,
+                      matches: [
+                        {
+                          matchId: "m1",
+                          round: 1,
+                          playerA: {
+                            userId: "u1",
+                            name: "Frieda Immergrün",
+                            avatarUrl: null,
+                          },
+                          playerB: {
+                            userId: "u2",
+                            name: "Karl Kraut",
+                            avatarUrl: null,
+                          },
+                          reported: true,
+                          pending: false,
+                          scoreA: 2,
+                          scoreB: 1,
+                          winnerId: "u1",
+                          isMotw: false,
+                        },
+                        {
+                          matchId: "m2",
+                          round: 1,
+                          playerA: {
+                            userId: "u3",
+                            name: "Mara Blitz",
+                            avatarUrl: null,
+                          },
+                          playerB: null,
+                          reported: false,
+                          pending: false,
+                          scoreA: null,
+                          scoreB: null,
+                          winnerId: null,
+                          isMotw: false,
+                        },
+                        {
+                          matchId: "m3",
+                          round: 2,
+                          playerA: {
+                            userId: "u2",
+                            name: "Karl Kraut",
+                            avatarUrl: null,
+                          },
+                          playerB: {
+                            userId: "u3",
+                            name: "Mara Blitz",
+                            avatarUrl: null,
+                          },
+                          reported: false,
+                          pending: false,
+                          scoreA: null,
+                          scoreB: null,
+                          winnerId: null,
+                          isMotw: false,
+                        },
+                      ],
+                    },
+                    {
+                      subDivisionId: "g2",
+                      name: "Division 1b",
+                      shortName: "1b",
+                      standings: [],
+                      zones: null,
+                      matches: [
+                        {
+                          matchId: "m4",
+                          round: 1,
+                          playerA: {
+                            userId: "u4",
+                            name: "Ole Wetter",
+                            avatarUrl: null,
+                          },
+                          playerB: {
+                            userId: "u5",
+                            name: "Pia Sturm",
+                            avatarUrl: null,
+                          },
+                          reported: true,
+                          pending: false,
+                          scoreA: 2,
+                          scoreB: 0,
+                          winnerId: "u4",
+                          isMotw: true,
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
             }}
           />
         </Specimen>

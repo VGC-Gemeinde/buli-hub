@@ -106,6 +106,14 @@ function SeasonStrip({
           size="sm"
           className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
         >
+          <Link href="/spielplan">Spielplan</Link>
+        </Button>
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
+        >
           <Link href="/staff/motw">Match of the Week</Link>
         </Button>
         <Button

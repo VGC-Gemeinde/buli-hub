@@ -2,6 +2,7 @@
 
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TypeToConfirm } from "@/components/type-to-confirm";
@@ -77,7 +78,17 @@ export function PublishScheduleCard({ facts }: { facts: PublishFacts }) {
           nur für das Staff sichtbar, die Spieler warten auf ihre Paarungen.
         </p>
       </div>
-      <PublishScheduleDialog facts={facts} triggerSize="sm" />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          asChild
+          size="sm"
+          variant="outline"
+          className="border-brand-orange/50"
+        >
+          <Link href="/spielplan">Spielplan ansehen</Link>
+        </Button>
+        <PublishScheduleDialog facts={facts} triggerSize="sm" />
+      </div>
     </div>
   );
 }

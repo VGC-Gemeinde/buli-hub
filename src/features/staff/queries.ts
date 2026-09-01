@@ -38,6 +38,7 @@ export async function windowSeasonPhase(window: RegistrationWindow): Promise<{
       registration,
       seedingFinalized,
       hasSchedule: scheduleExists,
+      schedulePublished: window.schedulePublishedAt !== null,
     }),
     registration,
     seedingFinalized,

@@ -47,15 +47,19 @@ export function DropsSection({
 }) {
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <SectionHeader
-          tickColor="navy"
-          meta="Alle Matches zählen als Freewin für die Gegner"
-        >
-          Drops
-        </SectionHeader>
-        <DropPlayerDialog candidates={candidates} />
-      </div>
+      {/* The dialog trigger rides in `meta` (like the membership list's
+          refresh button) so the header keeps its full-width divider. */}
+      <SectionHeader
+        tickColor="navy"
+        meta={
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            Alle Matches zählen als Freewin für die Gegner
+            <DropPlayerDialog candidates={candidates} />
+          </span>
+        }
+      >
+        Drops
+      </SectionHeader>
       {drops.length === 0 ? (
         <p className="rounded-lg border px-4 py-4 text-center text-muted-foreground text-sm">
           Kein Spieler gedroppt.

@@ -6,6 +6,7 @@ import { droppedIdsForSubDivision } from "@/features/drops/queries";
 import { membershipBlock } from "@/features/membership/membership";
 import { regelwerkBlock } from "@/features/regelwerk/guard";
 import { currentUser } from "@/features/roles/guard";
+import { matchSchedulePublished } from "@/features/schedule/queries";
 import {
   getMatchForReport,
   getMatchResult,
@@ -47,6 +48,11 @@ export async function reportMatch(input: {
   }
   if (!match.playerB) {
     return { ok: false, error: "Ein Freilos kann nicht gemeldet werden" };
+  }
+  // Defense in depth while the schedule is staff-internal: nobody reports
+  // before the pairings are published.
+  if (!(await matchSchedulePublished(input.matchId))) {
+    return { ok: false, error: "Die Saison läuft noch nicht" };
   }
   if (
     current.userId !== match.playerA.userId &&

@@ -22,6 +22,7 @@ import {
 import type { EditorSheet } from "@/features/reporting/result-draft";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { matchSchedulePublished } from "@/features/schedule/queries";
 import {
   parseSpoilersOff,
   SPOILERS_OFF_COOKIE,
@@ -74,6 +75,12 @@ export default async function MatchReportPage({
       current.userId === match.playerB.userId);
   const isStaff = current !== null && roleAtLeast(current.role, "staff");
   const privileged = isParticipant || isStaff;
+
+  // While the match's season has not published its schedule, the page is
+  // staff-only — a shared link must not leak the hidden pairings.
+  if (!isStaff && !(await matchSchedulePublished(matchId))) {
+    notFound();
+  }
 
   const result = await getMatchResult(matchId);
   // Match of the Week: banner for everyone; the result is spoiler-protected

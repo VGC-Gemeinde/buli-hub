@@ -95,6 +95,7 @@ export default async function SpielerPage() {
     registration: state,
     seedingFinalized,
     hasSchedule: scheduleExists,
+    schedulePublished: Boolean(window?.schedulePublishedAt),
   });
 
   const registration = window

@@ -105,6 +105,7 @@ import type {
 } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
+import { PublishScheduleCard } from "@/features/schedule/components/publish-schedule-card";
 import { defaultDeadlines } from "@/features/schedule/spieltage";
 import { ParticipantList } from "@/features/season/components/participant-list";
 import {
@@ -1987,6 +1988,21 @@ export function Gallery() {
             seasonStart="2026-07-01"
             defaultDeadlines={defaultDeadlines("2026-07-01", 7)}
             largest={8}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Spielplan: Veröffentlichen</h2>
+        <Specimen label="Todo-Karte + Publish-Gate (Aktion ohne Staff-Login wirkungslos)">
+          <PublishScheduleCard
+            facts={{
+              rounds: 7,
+              matches: 68,
+              groups: 16,
+              firstDeadline: "2026-09-13",
+              lastDeadline: "2026-10-25",
+            }}
           />
         </Specimen>
       </section>

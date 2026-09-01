@@ -58,6 +58,13 @@ export default async function PlayerProfilePage({
   );
   const placement = window ? await playerPlacement(window.id, userId) : null;
 
+  // The season block (group, rank, Spielplan) is public only once the pairings
+  // are published; staff see it earlier for internal review
+  // (docs/plans/schedule-publish.md).
+  const isStaff = current !== null && roleAtLeast(current.role, "staff");
+  const scheduleVisible =
+    window !== null && (window.schedulePublishedAt !== null || isStaff);
+
   // The season block: group + rank from the (drop-aware) standings, plus the
   // schedule rows. Placed without a schedule yet → empty rows, handled below.
   let season: {
@@ -65,7 +72,7 @@ export default async function PlayerProfilePage({
     dropped: boolean;
     rows: ReturnType<typeof profileScheduleRows>;
   } | null = null;
-  if (window && placement) {
+  if (window && placement && scheduleVisible) {
     const [
       roster,
       results,
@@ -109,7 +116,6 @@ export default async function PlayerProfilePage({
   // Staff panel, only for staff and only when there is something to act on:
   // between Anmeldeschluss and finalized seeding a registration can be
   // cancelled; a placed player can be dropped / un-dropped.
-  const isStaff = current !== null && roleAtLeast(current.role, "staff");
   const phase =
     isStaff && window ? (await windowSeasonPhase(window)).phase : null;
   const canCancel =

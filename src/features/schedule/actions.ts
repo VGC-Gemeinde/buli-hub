@@ -7,7 +7,12 @@ import { getSeeding } from "@/features/seeding/queries";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
 import { germanToday } from "@/lib/german-time";
-import { hasSchedule, persistSchedule, subDivisionRosters } from "./queries";
+import {
+  hasSchedule,
+  markSchedulePublished,
+  persistSchedule,
+  subDivisionRosters,
+} from "./queries";
 import { generateRoundRobin } from "./round-robin";
 import {
   spieltagCount,
@@ -92,5 +97,32 @@ export async function createSchedule(input: {
 
   await persistSchedule(window.id, windows, matchRows);
   revalidatePath("/staff");
+  return { ok: true };
+}
+
+// Makes the generated schedule visible to players — the season flips from
+// schedule_hidden to regular_season everywhere at once. Terminal like the
+// steps before it: the timestamp is set once, there is no unpublish.
+export async function publishSchedule(): Promise<ScheduleResult> {
+  const current = await currentUser();
+  if (!current || !roleAtLeast(current.role, "staff")) {
+    return { ok: false, error: "Keine Berechtigung" };
+  }
+
+  const window = await latestWindow();
+  if (!window) {
+    return { ok: false, error: "Nicht möglich" };
+  }
+  if (!(await hasSchedule(window.id))) {
+    return { ok: false, error: "Der Spielplan wurde noch nicht erstellt" };
+  }
+  if (window.schedulePublishedAt !== null) {
+    return { ok: false, error: "Die Pairings wurden bereits veröffentlicht" };
+  }
+
+  await markSchedulePublished(window.id);
+  // The whole app changes at once: landing → Liga-Übersicht, header nav,
+  // Spieler-Dashboard, profile, staff hub.
+  revalidatePath("/", "layout");
   return { ok: true };
 }

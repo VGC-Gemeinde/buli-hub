@@ -90,6 +90,14 @@ export const registrationWindows = pgTable("registration_windows", {
   // system; every later window is the previous number + 1. See
   // docs/plans/season-number.md.
   seasonNumber: integer("season_number").notNull().default(1),
+  // When the generated schedule was made visible to players. Null = the
+  // schedule (if one exists) is staff-internal; the derived phase is then
+  // schedule_hidden instead of regular_season. Set once by the manual
+  // "Pairings veröffentlichen" staff action — publication is terminal, there
+  // is no unpublish. See docs/plans/schedule-publish.md.
+  schedulePublishedAt: timestamp("schedule_published_at", {
+    withTimezone: true,
+  }),
 });
 
 export const platformEnum = pgEnum("platform", ["showdown", "cartridge"]);

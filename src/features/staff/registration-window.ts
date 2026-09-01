@@ -6,6 +6,9 @@ export type RegistrationWindow = {
   closesAt: Date;
   openedBy: string;
   seasonNumber: number;
+  // Null until staff publish the generated schedule ("Pairings
+  // veröffentlichen") — the schedule is staff-internal before that.
+  schedulePublishedAt: Date | null;
 };
 
 export type RegistrationState = "not_started" | "open" | "closed";

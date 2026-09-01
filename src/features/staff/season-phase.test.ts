@@ -8,6 +8,7 @@ describe("seasonPhase", () => {
         registration: "not_started",
         seedingFinalized: false,
         hasSchedule: false,
+        schedulePublished: false,
       }),
     ).toBe("not_started");
   });
@@ -18,6 +19,7 @@ describe("seasonPhase", () => {
         registration: "open",
         seedingFinalized: false,
         hasSchedule: false,
+        schedulePublished: false,
       }),
     ).toBe("registration_open");
   });
@@ -28,6 +30,7 @@ describe("seasonPhase", () => {
         registration: "closed",
         seedingFinalized: false,
         hasSchedule: false,
+        schedulePublished: false,
       }),
     ).toBe("registration_closed");
   });
@@ -38,17 +41,41 @@ describe("seasonPhase", () => {
         registration: "closed",
         seedingFinalized: true,
         hasSchedule: false,
+        schedulePublished: false,
       }),
     ).toBe("seeded");
   });
 
-  it("is regular_season once a schedule exists", () => {
+  it("is schedule_hidden while a schedule exists unpublished", () => {
     expect(
       seasonPhase({
         registration: "closed",
         seedingFinalized: true,
         hasSchedule: true,
+        schedulePublished: false,
+      }),
+    ).toBe("schedule_hidden");
+  });
+
+  it("is regular_season once the schedule is published", () => {
+    expect(
+      seasonPhase({
+        registration: "closed",
+        seedingFinalized: true,
+        hasSchedule: true,
+        schedulePublished: true,
       }),
     ).toBe("regular_season");
+  });
+
+  it("ignores a published flag without a schedule", () => {
+    expect(
+      seasonPhase({
+        registration: "closed",
+        seedingFinalized: true,
+        hasSchedule: false,
+        schedulePublished: true,
+      }),
+    ).toBe("seeded");
   });
 });

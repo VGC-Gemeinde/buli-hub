@@ -18,6 +18,8 @@ import { currentUser } from "@/features/roles/guard";
 //   registers the signed-in persona so their Spieler-Dashboard is populated.
 //   finalize/schedule build the fixed league shape (`DEV_SEASON_SHAPE`) and
 //   ignore `count`.
+// - &hidden_schedule=1 stops one step earlier: schedule generated but not
+//   published (schedule_hidden) → the staff "Pairings veröffentlichen" flow.
 // - &even=1 is a running season with equal-size sub-divisions, so the division
 //   table appears on the Spieler-Dashboard (ignores count).
 // - &ladder=division|sub_division is a 3-division running season with the persona
@@ -46,6 +48,7 @@ export async function GET(request: Request) {
   const grouped = params.get("grouped") === "1";
   const finalize = params.get("finalize") === "1";
   const schedule = params.get("schedule") === "1";
+  const hiddenSchedule = params.get("hidden_schedule") === "1";
   // A finalized league is built to the fixed shape (7 divisions, Division 4 on
   // its Gesamttabelle), which fixes the player count — `count` only steers the
   // pre-seeding states, where an arbitrary field size is the point.
@@ -53,8 +56,16 @@ export async function GET(request: Request) {
     grouped,
     finalize,
     schedule,
+    unpublishedSchedule: hiddenSchedule,
     includeUserId: current?.userId,
-    shape: finalize || schedule ? DEV_SEASON_SHAPE : undefined,
+    shape:
+      finalize || schedule || hiddenSchedule ? DEV_SEASON_SHAPE : undefined,
   });
-  redirect(schedule ? "/spieler" : finalize ? "/staff" : "/staff/seeding");
+  redirect(
+    schedule
+      ? "/spieler"
+      : finalize || hiddenSchedule
+        ? "/staff"
+        : "/staff/seeding",
+  );
 }

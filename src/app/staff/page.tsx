@@ -30,6 +30,7 @@ import {
 import { bucketMatches } from "@/features/reporting/staff-dashboard";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { PublishScheduleCard } from "@/features/schedule/components/publish-schedule-card";
 import { subDivisionRosters } from "@/features/schedule/queries";
 import { defaultDeadlines, spieltagCount } from "@/features/schedule/spieltage";
 import {
@@ -58,11 +59,13 @@ function ddMM(dateStr: string): string {
 // that replace the pre-season Saison/Einteilung sections.
 function SeasonStrip({
   season,
+  label,
   currentRound,
   totalRounds,
   week,
 }: {
   season: string;
+  label: string;
   currentRound: number | null;
   totalRounds: number;
   week: MatchdayLite | null;
@@ -77,7 +80,7 @@ function SeasonStrip({
         </span>
         <Tick size="s" />
         <span className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
-          Reguläre Saison
+          {label}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -144,8 +147,9 @@ export default async function StaffPage() {
   const membershipListId = "discord-mitgliedschaft";
 
   // Running season: the /staff page *is* the dashboard — staff lands on their
-  // work, no separate page.
-  if (phase === "regular_season" && window) {
+  // work, no separate page. schedule_hidden gets the same dashboard (staff
+  // review the season exactly as it will run) plus the publish card on top.
+  if ((phase === "regular_season" || phase === "schedule_hidden") && window) {
     const today = germanToday();
     const [
       overview,
@@ -174,6 +178,21 @@ export default async function StaffPage() {
       selectedRounds: new Set(motwSelections.map((s) => s.round)),
     });
 
+    // schedule_hidden: the publish todo, summarizing what goes live. The
+    // overview excludes byes, so its length is the real match count; a
+    // schedule always has at least one matchday.
+    const sortedDays = [...matchdays].sort((a, b) => a.round - b.round);
+    const publishFacts =
+      phase === "schedule_hidden" && sortedDays.length > 0
+        ? {
+            rounds: sortedDays.length,
+            matches: overview.length,
+            groups: new Set(overview.map((m) => m.groupName)).size,
+            firstDeadline: sortedDays[0].endsOn,
+            lastDeadline: sortedDays[sortedDays.length - 1].endsOn,
+          }
+        : null;
+
     return (
       <div className="flex flex-1 flex-col">
         <SiteHeader />
@@ -184,10 +203,16 @@ export default async function StaffPage() {
           <div className="flex flex-col gap-4.5">
             <SeasonStrip
               season={seasonName(window.seasonNumber)}
+              label={
+                phase === "schedule_hidden"
+                  ? "Spielplan intern"
+                  : "Reguläre Saison"
+              }
               currentRound={week?.round ?? null}
               totalRounds={matchdays.length}
               week={week}
             />
+            {publishFacts ? <PublishScheduleCard facts={publishFacts} /> : null}
             {todo ? <MotwTodoCard todo={todo} /> : null}
             {nonMemberCount > 0 ? (
               <MembershipWarningCard

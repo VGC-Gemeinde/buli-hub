@@ -23,6 +23,7 @@ export async function currentSeason(): Promise<CurrentSeason> {
     registration: state,
     seedingFinalized: Boolean(seeding?.finalizedAt),
     hasSchedule: scheduleExists,
+    schedulePublished: Boolean(window?.schedulePublishedAt),
   });
   return { window, phase };
 }

@@ -10,7 +10,13 @@ import {
 } from "@/db/schema";
 import { createWindow, latestWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
-import { hasSchedule, persistSchedule, subDivisionRosters } from "./queries";
+import {
+  hasSchedule,
+  markSchedulePublished,
+  matchSchedulePublished,
+  persistSchedule,
+  subDivisionRosters,
+} from "./queries";
 import { generateRoundRobin } from "./round-robin";
 import {
   defaultDeadlines,
@@ -138,6 +144,35 @@ describe("persistSchedule", () => {
     expect(real).toHaveLength(9); // C(4,2)=6 + C(3,2)=3
     expect(byes).toHaveLength(3); // group B: one bye per round
     expect(await hasSchedule(windowId)).toBe(true);
+  });
+});
+
+describe("markSchedulePublished", () => {
+  async function anyMatchId(): Promise<string> {
+    const [row] = await db
+      .select({ id: matches.id })
+      .from(matches)
+      .where(inArray(matches.subDivisionId, [subAId, subBId]))
+      .limit(1);
+    return row.id;
+  }
+
+  it("generation leaves the schedule unpublished", async () => {
+    expect((await latestWindow())?.schedulePublishedAt).toBeNull();
+    expect(await matchSchedulePublished(await anyMatchId())).toBe(false);
+  });
+
+  it("stamps the window once and keeps the first timestamp", async () => {
+    await markSchedulePublished(windowId);
+    const first = (await latestWindow())?.schedulePublishedAt;
+    expect(first).toBeInstanceOf(Date);
+
+    // Idempotent under a double click: the null guard keeps the first stamp.
+    await markSchedulePublished(windowId);
+    expect((await latestWindow())?.schedulePublishedAt?.getTime()).toBe(
+      first?.getTime(),
+    );
+    expect(await matchSchedulePublished(await anyMatchId())).toBe(true);
   });
 });
 

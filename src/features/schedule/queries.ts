@@ -1,5 +1,12 @@
-import { and, asc, eq, isNotNull } from "drizzle-orm";
-import { matchdays, matches, placements } from "@/db/schema";
+import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
+import {
+  divisions,
+  matchdays,
+  matches,
+  placements,
+  registrationWindows,
+  subDivisions,
+} from "@/db/schema";
 import { db } from "@/lib/db";
 
 // Players placed in each sub-division of a finalized seeding, grouped and
@@ -47,6 +54,41 @@ export async function hasSchedule(windowId: string): Promise<boolean> {
     where: eq(matchdays.windowId, windowId),
   });
   return row !== undefined;
+}
+
+// Stamps the window's schedule as published. The null guard makes the update
+// idempotent under a double click — publication is terminal, the first
+// timestamp stands.
+export async function markSchedulePublished(windowId: string): Promise<void> {
+  await db
+    .update(registrationWindows)
+    .set({ schedulePublishedAt: new Date() })
+    .where(
+      and(
+        eq(registrationWindows.id, windowId),
+        isNull(registrationWindows.schedulePublishedAt),
+      ),
+    );
+}
+
+// Whether the match's own season has published its schedule. Gate for the
+// public match page and reporting: resolved per match (not via the latest
+// window), so links into past seasons keep working while a new season's
+// schedule is still hidden.
+export async function matchSchedulePublished(
+  matchId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ publishedAt: registrationWindows.schedulePublishedAt })
+    .from(matches)
+    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .innerJoin(
+      registrationWindows,
+      eq(registrationWindows.id, divisions.windowId),
+    )
+    .where(eq(matches.id, matchId));
+  return row !== undefined && row.publishedAt !== null;
 }
 
 // Persists the Spieltag calendar + all matches in one transaction. Generation is

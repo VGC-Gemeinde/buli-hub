@@ -15,6 +15,9 @@ export type Spielwoche = { start: string; end: string };
 // Type-to-confirm phrase for the terminal generate gate — names the action.
 export const SCHEDULE_CONFIRMATION_PHRASE = "Spielplan erstellen";
 
+// Type-to-confirm phrase for the terminal publish gate — names the action.
+export const PUBLISH_CONFIRMATION_PHRASE = "Pairings veröffentlichen";
+
 function toUtcMs(iso: string): number {
   return Date.parse(`${iso}T00:00:00Z`);
 }

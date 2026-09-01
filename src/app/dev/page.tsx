@@ -101,6 +101,18 @@ export default async function DevPage() {
             </span>
           </a>
           <a
+            href="/dev/seed-registrations?hidden_schedule=1"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Ligastruktur + interner Spielplan
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Spielplan erstellt, aber noch nicht veröffentlicht → zum
+              Staff-Bereich mit "Pairings veröffentlichen"
+            </span>
+          </a>
+          <a
             href="/dev/seed-registrations?even=1"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >

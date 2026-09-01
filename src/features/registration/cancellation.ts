@@ -17,6 +17,8 @@ export function cancellationBlocked(phase: SeasonPhase): string | null {
       return null;
     case "seeded":
       return "Die Einteilung ist bereits finalisiert. Entferne den Spieler stattdessen über einen Drop.";
+    case "schedule_hidden":
+      return "Der Spielplan ist bereits erstellt. Entferne den Spieler stattdessen über einen Drop.";
     case "regular_season":
       return "Die Saison läuft bereits. Entferne den Spieler stattdessen über einen Drop.";
   }

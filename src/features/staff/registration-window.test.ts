@@ -16,6 +16,7 @@ function windowClosingAt(closesAt: string): RegistrationWindow {
     closesAt: new Date(closesAt),
     openedBy: "u1",
     seasonNumber: 9,
+    schedulePublishedAt: null,
   };
 }
 

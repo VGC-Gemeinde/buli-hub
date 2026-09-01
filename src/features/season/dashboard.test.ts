@@ -91,13 +91,34 @@ describe("dashboardState", () => {
       }),
     ).toBe("not_registered_closed");
   });
+
+  it("keeps the closed-registration views while the schedule is hidden", () => {
+    expect(
+      dashboardState({
+        ...base,
+        phase: "schedule_hidden",
+        registration: "closed",
+        hasRegistration: true,
+      }),
+    ).toBe("registered_closed");
+    expect(
+      dashboardState({
+        ...base,
+        phase: "schedule_hidden",
+        registration: "closed",
+        hasRegistration: false,
+      }),
+    ).toBe("not_registered_closed");
+  });
 });
 
 describe("showsRoster", () => {
-  it("runs from the open registration until the season starts", () => {
+  it("runs from the open registration until the season visibly starts", () => {
     expect(showsRoster("registration_open")).toBe(true);
     expect(showsRoster("registration_closed")).toBe(true);
     expect(showsRoster("seeded")).toBe(true);
+    // A hidden schedule is still pre-season for players.
+    expect(showsRoster("schedule_hidden")).toBe(true);
   });
 
   it("is hidden before the registration opens and once the season runs", () => {

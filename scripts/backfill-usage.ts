@@ -33,11 +33,9 @@ import {
   readCollection,
 } from "@/features/usage/store";
 
-try {
-  process.loadEnvFile(".env");
-} catch {
-  // .env is optional; the connection string may come from the environment.
-}
+// .env is loaded by scripts/load-env.mjs (via --import in the npm script),
+// which runs before the imports above are evaluated. Loading it here would be
+// too late: src/lib/db.ts needs DATABASE_URL at import time.
 
 const { values } = parseArgs({
   options: {

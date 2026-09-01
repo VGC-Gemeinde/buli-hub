@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ActionLink } from "@/components/links";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { MotwBlock } from "@/features/motw/components/motw-block";
@@ -35,7 +36,7 @@ function day(dateStr: string): number {
 function month(dateStr: string): string {
   return MONTHS[Number(dateStr.slice(5, 7)) - 1] ?? "";
 }
-function weekRange(startsOn: string, endsOn: string): string {
+export function weekRange(startsOn: string, endsOn: string): string {
   return month(startsOn) === month(endsOn)
     ? `${day(startsOn)}.–${day(endsOn)}. ${month(endsOn)}`
     : `${day(startsOn)}. ${month(startsOn)} – ${day(endsOn)}. ${month(endsOn)}`;
@@ -44,7 +45,7 @@ function weekRange(startsOn: string, endsOn: string): string {
 // A pill switcher (division / group). Container `rounded-full`, 30px pills,
 // active = solid orange with white text (DESIGN.md §4.5, §8.2). Pills wrap on
 // narrow screens; the `py` on the row keeps a comfortable touch box.
-function Switcher({
+export function Switcher({
   options,
   selected,
   onSelect,
@@ -113,6 +114,9 @@ export function PublicLeague({
               Spieltag {overview.currentRound} / {overview.totalRounds}
             </span>
           ) : null}
+          <ActionLink href="/spielplan" className="text-sm">
+            Kompletter Spielplan
+          </ActionLink>
           <SpoilerSwitch spoilersOff={spoilersOff} onChange={setSpoilersOff} />
         </div>
       </div>
@@ -317,7 +321,7 @@ function SpieltagTimeline({
   );
 }
 
-function MatchdayList({
+export function MatchdayList({
   matches,
   meId,
   spoilersOff,

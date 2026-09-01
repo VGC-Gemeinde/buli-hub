@@ -19,6 +19,7 @@ import type {
   PlayerStatus,
 } from "@/features/registration/registration";
 import {
+  markSchedulePublished,
   persistSchedule,
   subDivisionRosters,
 } from "@/features/schedule/queries";
@@ -428,16 +429,22 @@ async function applyDevPostSeason(
   await savePostSeasonConfig(windowId, configs, valid);
 }
 
-// Generates the season's schedule from a finalized seeding, starting two weeks
-// in the past so the Spieler-Dashboard shows a mid-season state (past, current
-// and upcoming matchdays) rather than everything at round 1.
-async function generateDevSchedule(windowId: string): Promise<void> {
+// Generates the season's schedule from a finalized seeding. Published (the
+// default), it starts two weeks in the past so the Spieler-Dashboard shows a
+// mid-season state; unpublished it starts today, matching the real
+// schedule_hidden flow right after "Spielplan erstellen".
+async function generateDevSchedule(
+  windowId: string,
+  publish = true,
+): Promise<void> {
   const rosters = await subDivisionRosters(windowId);
   const count = spieltagCount(rosters.map((roster) => roster.userIds.length));
   if (count === 0) {
     return;
   }
-  const seasonStart = new Date(Date.now() - 14 * 86_400_000)
+  const seasonStart = (
+    publish ? new Date(Date.now() - 14 * 86_400_000) : new Date()
+  )
     .toISOString()
     .slice(0, 10);
   const deadlines = defaultDeadlines(seasonStart, count);
@@ -453,6 +460,9 @@ async function generateDevSchedule(windowId: string): Promise<void> {
     ),
   );
   await persistSchedule(windowId, windows, matchRows);
+  if (publish) {
+    await markSchedulePublished(windowId);
+  }
 }
 
 // Writes a normal best-of-3 result the way a player report stores it (result
@@ -701,6 +711,10 @@ export async function generateSeedData(
     grouped?: boolean;
     finalize?: boolean;
     schedule?: boolean;
+    // Schedule generated but not yet published (schedule_hidden) — the staff
+    // "Pairings veröffentlichen" flow. Implies finalize; ignored when
+    // `schedule` is set.
+    unpublishedSchedule?: boolean;
     includeUserId?: string;
     size?: number;
     divisionCount?: number;
@@ -711,7 +725,7 @@ export async function generateSeedData(
   } = {},
 ): Promise<{ windowId: string; staffId: string }> {
   // A schedule needs a finalized seeding to build from.
-  const finalize = opts.finalize || opts.schedule;
+  const finalize = opts.finalize || opts.schedule || opts.unpublishedSchedule;
   await clearSeedData();
 
   const shape: DevSeedingShape = opts.shape ?? {
@@ -823,6 +837,8 @@ export async function generateSeedData(
   if (opts.schedule) {
     await generateDevSchedule(window.id);
     await seedDevResults(window.id, staffId);
+  } else if (opts.unpublishedSchedule) {
+    await generateDevSchedule(window.id, false);
   }
 
   return { windowId: window.id, staffId };

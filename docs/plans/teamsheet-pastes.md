@@ -98,6 +98,13 @@ Override-Map in `mega.ts` (Stein → Mega-Spezies, Mega-Spezies → Fähigkeit),
 von `FORM_FIXUP` in `justhit.gg/scripts/build-sprites.mjs`. Ein Dutzend Zeilen statt
 einer Build-Pipeline gegen `smogon/pokemon-showdown`.
 
+Seit Regulation Set M-C (2026-09-08) ist die Fähigkeits-Map tatsächlich belegt: 0.10.11
+ist vom 2026-06-18 und führt Mega Garchomp Z, Mega Lucario Z, Mega Absol Z und Mega
+Golisopod mit einer veralteten Fähigkeit — bei den Z-Formen der des Gen-6-Megas, bei Mega
+Golisopod der der Basisform. Steine und Sprites kennt der Dex, nur die Fähigkeit nicht.
+Jeder Eintrag fliegt wieder raus, sobald eine `@pkmn/dex`-Veröffentlichung ihn
+überflüssig macht.
+
 `@pkmn/dex` gehört **nie** in ein Client-Bundle. Die Paste-Seite ist eine Server
 Component, die Vorschau im Modal kommt aus der Server Action.
 

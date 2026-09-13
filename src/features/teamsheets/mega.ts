@@ -12,7 +12,20 @@ import { Dex } from "@pkmn/dex";
 // Escape hatch for the window between a Champions patch and the next `@pkmn`
 // release. Keys are @pkmn ids (lowercase alphanumeric).
 const STONE_OVERRIDES: Record<string, { base: string; mega: string }> = {};
-const MEGA_ABILITY_OVERRIDES: Record<string, string> = {};
+
+// Regulation Set M-C (2026-09-08) added these five megas. `@pkmn/dex` 0.10.11
+// predates it and carries a stale slot 0 for four of them — the Gen 6 mega's
+// ability for the Z formes, the base species' for Mega Golisopod — so the
+// badge named the wrong one. Drop an entry once a `@pkmn/dex` release ships
+// the real ability. Mega Baxcalibur needs no entry: its slot 0 already reads
+// Thermal Exchange, which is its mega ability.
+const MEGA_ABILITY_OVERRIDES: Record<string, string> = {
+  garchompmegaz: "Levitate",
+  // Brand new in M-C, so no dex knows it yet: halves contact damage.
+  lucariomegaz: "Aura Guard",
+  absolmegaz: "Sharpness",
+  golisopodmega: "Tough Claws",
+};
 
 const toId = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -57,7 +70,13 @@ function stoneEvolution(item: string, species: string): StoneEvolution | null {
     : null;
 }
 
-// The single ability a species mega-evolves into (slot 0).
+// The single ability a species mega-evolves into (slot 0). Every mega has
+// exactly one, and it never depends on what the base form was listed with.
+// It may happen to read like a base ability, and for some megas it matches
+// the base's only one, but that is a coincidence and not the mega carrying
+// something over. So slot 0 is the whole answer, and a second slot in the
+// dex is stale data rather than a second possibility: reading past slot 0
+// would leave an Ice Body Baxcalibur on Ice Body instead of Thermal Exchange.
 function megaAbilityOf(mega: string): string | null {
   const override = MEGA_ABILITY_OVERRIDES[toId(mega)];
   if (override) {
@@ -93,6 +112,14 @@ export type MegaResolution = {
   megaAbility: string | null;
 };
 
+// A mega forme, by its forme name. "Mega" is not always the start of it: a
+// mega that keeps a forme of its own is named after both, so Meowstic-F-Mega
+// has the forme "F-Mega" and Tatsugiri-Droopy-Mega has "Droopy-Mega". Anchor
+// on the whole segment instead. Checked against the dex: this matches all ten
+// forme shapes and every one of the 97 megas a stone can produce, and nothing
+// that is not a mega.
+const MEGA_FORME = /(^|-)Mega(-|$)/i;
+
 // A mon shows its mega when it either *is* a mega forme in the paste, or holds
 // the stone that evolves it.
 export function resolveMega(
@@ -101,10 +128,17 @@ export function resolveMega(
 ): MegaResolution {
   const sp = Dex.species.get(species);
 
-  if (sp.exists && /^Mega/i.test(sp.forme ?? "")) {
+  if (sp.exists && MEGA_FORME.test(sp.forme ?? "")) {
+    // Which form it evolved from is a question its own stone answers, so ask
+    // the same lookup the held-stone branch below asks. Taking `baseSpecies`
+    // instead would drop a forme the mega keeps and turn Meowstic-F-Mega into
+    // a plain Meowstic. Rayquaza-Mega has no stone and falls back.
+    const evolution = sp.requiredItem
+      ? stoneEvolution(sp.requiredItem, sp.name)
+      : null;
     return {
       spriteSpecies: sp.name,
-      displayName: sp.baseSpecies || sp.name,
+      displayName: evolution?.base ?? sp.baseSpecies ?? sp.name,
       megaAbility: megaAbilityOf(sp.name),
     };
   }

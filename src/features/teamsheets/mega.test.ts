@@ -133,6 +133,101 @@ describe("resolveMega", () => {
       megaAbility: null,
     });
   });
+
+  // Regulation Set M-C, 2026-09-08. @pkmn/dex 0.10.11 predates it and hands
+  // back a placeholder ability for each of these, so the overrides carry the
+  // real ones. When a dex release makes one of these pass without its
+  // override, drop the override.
+  it("names the M-C mega abilities the dex does not have yet", () => {
+    const cases: [string, string, string][] = [
+      ["Garchomp", "Garchompite Z", "Levitate"],
+      ["Lucario", "Lucarionite Z", "Aura Guard"],
+      ["Absol", "Absolite Z", "Sharpness"],
+      ["Golisopod", "Golisopite", "Tough Claws"],
+    ];
+    for (const [species, stone, ability] of cases) {
+      expect(resolveMega(species, stone).megaAbility).toBe(ability);
+      // A paste that writes the mega inline must agree.
+      const mega = resolveMega(species, stone).spriteSpecies;
+      expect(resolveMega(mega, stone).megaAbility).toBe(ability);
+    }
+  });
+
+  it("never crosses Meowstic's two base formes", () => {
+    // One stone, two base formes, and the megas are named "Meowstic-M-Mega" /
+    // "Meowstic-F-Mega" — so the forme is not the "Mega" prefix the other
+    // megas use, and the male mega's holding form is plain "Meowstic". Each
+    // of the four spellings has to land on its own side.
+    const male = { spriteSpecies: "Meowstic-M-Mega", displayName: "Meowstic" };
+    const female = {
+      spriteSpecies: "Meowstic-F-Mega",
+      displayName: "Meowstic-F",
+    };
+    for (const written of ["Meowstic", "Meowstic-M", "Meowstic-M-Mega"]) {
+      const { spriteSpecies, displayName } = resolveMega(
+        written,
+        "Meowsticite",
+      );
+      expect({ spriteSpecies, displayName }).toEqual(male);
+    }
+    for (const written of ["Meowstic-F", "Meowstic-F-Mega"]) {
+      const { spriteSpecies, displayName } = resolveMega(
+        written,
+        "Meowsticite",
+      );
+      expect({ spriteSpecies, displayName }).toEqual(female);
+    }
+    expect(canonicalSpecies("Meowstic-M-Mega", "Meowsticite")).toBe("Meowstic");
+    expect(canonicalSpecies("Meowstic-F-Mega", "Meowsticite")).toBe(
+      "Meowstic-F",
+    );
+  });
+
+  it("keeps the forme of a mega written inline without its stone", () => {
+    // The forme of these megas does not start with "Mega", and the form they
+    // evolved from is not their `baseSpecies`. Reading either naively turns
+    // Meowstic-F-Mega into a plain Meowstic.
+    expect(resolveMega("Meowstic-F-Mega", null).displayName).toBe("Meowstic-F");
+    expect(resolveMega("Tatsugiri-Droopy-Mega", null).displayName).toBe(
+      "Tatsugiri-Droopy",
+    );
+    expect(resolveMega("Magearna-Original-Mega", null).displayName).toBe(
+      "Magearna-Original",
+    );
+    expect(resolveMega("Floette-Mega", null).displayName).toBe(
+      "Floette-Eternal",
+    );
+    // Rayquaza mega-evolves through a move, so it has no stone to ask.
+    expect(resolveMega("Rayquaza-Mega", null).displayName).toBe("Rayquaza");
+  });
+
+  it("keeps a base stone and its Z stone apart", () => {
+    // M-C is the first time one species has two stones. The lookup is keyed by
+    // the item, so Garchompite and Garchompite Z must not bleed into one
+    // another in either direction.
+    expect(resolveMega("Garchomp", "Garchompite").spriteSpecies).toBe(
+      "Garchomp-Mega",
+    );
+    expect(resolveMega("Garchomp", "Garchompite Z").spriteSpecies).toBe(
+      "Garchomp-Mega-Z",
+    );
+    // The stone decides, even when the paste writes the other forme inline.
+    // `canonicalSpecies` runs at parse time, so this is what gets stored and
+    // what every later render resolves from.
+    expect(canonicalSpecies("Garchomp-Mega-Z", "Garchompite")).toBe("Garchomp");
+    expect(resolveMega("Garchomp", "Garchompite").megaAbility).toBe(
+      "Sand Force",
+    );
+  });
+
+  it("reports the one mega ability even when the dex lists a second slot", () => {
+    // A mega has exactly one ability. 0.10.11 still gives Baxcalibur-Mega the
+    // base species' second slot, which upstream Showdown does not, so reading
+    // past slot 0 would wrongly leave an Ice Body Baxcalibur on Ice Body.
+    expect(resolveMega("Baxcalibur", "Baxcalibrite").megaAbility).toBe(
+      "Thermal Exchange",
+    );
+  });
 });
 
 describe("natureEffect", () => {

@@ -45,7 +45,7 @@ jobs:
       # deliberately; keep it in step with the CLI used locally.
       - uses: supabase/setup-cli@v1
         with:
-          version: 2.109.0
+          version: 2.117.0
       - run: supabase start
       - run: supabase db reset
       - run: npm test -- --run

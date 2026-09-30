@@ -39,8 +39,10 @@ only the active link carries it (inactive: `text-muted-foreground`, no tick).
 
 ## 2. Shell (`spieler/page.tsx`)
 
-- Widen: `max-w-[1040px] px-8 pt-11 pb-18` (currently `max-w-2xl`) — the
-  two-column body (§5–6) needs the room. Pre-season states keep rendering in
+- Widen: `max-w-[1040px] px-6 pt-8 pb-18 sm:px-8` — the two-column body
+  (§5–6) needs the room. In season the profile hint above the title is its
+  one-line `compact` form, so the whole week fits the screen
+  (docs/plans/player-dashboard-at-a-glance.md). Pre-season states keep rendering in
   the same shell, unchanged.
 - The in-season view replaces the static `h1` with a title row:
 
@@ -63,7 +65,7 @@ plain **Spieler-Dashboard** h1.
 
 ## 3. Season progress strip
 
-Directly under the title row (`mt-4.5 mb-8`), one segment per Spieltag:
+Directly under the title row (`mt-4 mb-6`), one segment per Spieltag:
 
 ```tsx
 <div className="flex items-center gap-3.5">
@@ -85,8 +87,8 @@ stays orange.
 
 ## 4. Hero — next pairing
 
-Card `rounded-lg border px-[30px] py-[26px]`, `flex items-center
-justify-between gap-6 flex-wrap`. Left column (`gap-4.5`):
+Card `rounded-lg border px-[30px] py-4`, `flex items-center
+justify-between gap-6 flex-wrap`. Left column (`gap-3.5`):
 
 1. Label row: tick `h-2 w-4 -skew-x-[18deg] bg-brand-orange` +
    `text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground`
@@ -122,60 +124,62 @@ kein Match. Zeit zum Vorbereiten." Right block: **Danach** label + "Spieltag
 
 ## 5. Dein Spielplan (left column)
 
-Body grid: `grid grid-cols-[1.25fr_1fr] gap-7 mt-10 items-start`
-(single column below `lg`). Section header = signature pattern (tick + h2
-`text-2xl`, `border-b pb-3`), right meta `{total} Spieltage`.
+Body grid: `grid lg:grid-cols-2 gap-7 mt-8 items-start` (single column below
+`lg`); equal halves, so a division table keeps all its columns. Section
+header = signature pattern (tick + h2 `text-2xl`, `border-b pb-3`), right
+meta `{total} Spieltage`.
 
-Rows (`flex flex-col gap-2`), one per Spieltag, `flex h-[54px] items-center
-gap-3.5 rounded-lg border py-2.5 pr-4 pl-2.5`:
+Spielplan and Tabelle share one anatomy so their first rows sit on one line:
+section header, then one card with a header row, then rows of the same
+height, and footnotes only below the card.
 
-- **Round chip** `size-[34px] rounded-lg bg-muted font-heading text-[17px]
-  font-bold text-muted-foreground` — current week: `bg-brand-orange
-  text-brand-blue`.
-- **Opponent** avatar `size-7` + `text-[15px] font-semibold truncate`. Bye
-  rows: dashed empty circle (`border border-dashed`) + `Spielfrei`
-  `font-medium text-muted-foreground`.
-- **Right cluster** (`flex items-center gap-3`), per state:
-  - upcoming: week range `text-[13px] text-muted-foreground` (`13.–19. Juli`)
-  - current: `text-xs font-semibold uppercase tracking-[0.1em]
-    text-brand-orange` **Diese Woche** + week range; row gets
-    `border-brand-orange/45 bg-brand-orange/5`
-  - played *(mit Reporting)*: outcome chip **then** score, so the scores
-    right-align down the column — chip `rounded-full px-2.5 py-[3px] text-xs
+The Spielplan is one card `rounded-lg border overflow-hidden`, a grid
+`grid-cols-[44px_minmax(0,1fr)_auto]` per row:
+
+- **Header row** `bg-muted/50 border-b`, `text-[11px] font-semibold uppercase
+  tracking-[0.1em] text-muted-foreground`, `py-2`: **Spt. · Gegner ·
+  Ergebnis** (the last right-aligned).
+- **Rows** `min-h-[43px] border-b last:border-b-0`, the height of a dense
+  table row: round number `text-sm font-semibold text-muted-foreground`,
+  opponent avatar `size-[26px]` + name `text-[14.5px] font-medium truncate`,
+  the right cell per state. The whole row links to the match (stretched
+  link), the name to the profile.
+- **Right cell**, per state:
+  - upcoming: week range `text-[13px] text-muted-foreground`, short months
+    (`5.–11. Okt.`, `28. Sep. – 4. Okt.`), numeric on phones (`5.10.–11.10.`)
+  - current: week range; the row carries the marking instead of a label:
+    6px orange rail on the left edge, `bg-brand-orange/6`, orange round
+    number
+  - played: outcome chip (from `sm`) then score, so the scores right-align
+    down the column. Chip `rounded-full px-2 py-[2px] text-[11.5px]
     font-semibold`, **Sieg** `bg-brand-orange/12 text-brand-blue`,
-    **Niederlage** `bg-muted text-muted-foreground`; score
-    `min-w-[34px] text-right font-heading text-[19px] font-bold
-    tracking-[0.04em] text-brand-blue dark:text-white` (`2 : 1`)
-  - past bye / past without result (v1): row at `opacity-55`, week range only
-  - **überfällig** *(mit Reporting)* — past round, no result: row
-    `border-destructive/35 bg-destructive/5`, chip **Überfällig**
-    `bg-destructive/10 text-destructive`, week range stays. Full opacity —
-    it needs attention, it must not fade.
+    **Niederlage** `bg-muted text-muted-foreground`; score `min-w-[38px]
+    text-right font-heading text-[17px] font-bold tracking-[0.04em]`
+  - pending free win: chip **Freewin · offen**
+  - overdue: red rail, `bg-destructive/6`, chip **Überfällig**
+    `bg-destructive/10 text-destructive` + week range
+  - bye: dashed empty circle + **Spielfrei**, past byes at `opacity-55`
+  - before a replacement's entry: `bg-muted/30`, muted name, dashed chip
+    **Vor deinem Einstieg** instead of the outcome chip
+    (docs/plans/player-replacement.md)
 
 ## 6. Tabelle (right column)
 
-Section header: tick + **Tabelle**, right meta `{groupName}`. Container
-`rounded-lg border overflow-hidden`; header row `grid
-grid-cols-[48px_1fr_60px_64px] bg-muted/50 px-4 py-2.5 border-b` with
-`text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground`
-labels **Platz · Spieler · Bilanz · Punkte** (last two right-aligned).
+Section header: tick + **Tabelle**. Right meta: `{groupName}`, or in division
+mode the compact switch between the group and the division table (`h-7`
+pills, the deciding table marked with the skewed tick), so nothing stands
+between header and table.
 
-Player rows, same grid, `px-4 py-2.25 border-b last:border-b-0`:
+The table is the shared `StandingsTable` (`dense`): `py-2` cells, the same
+row height as the Spielplan, fixed layout with the score columns sized by the
+header (Bilanz 76px, Diff. 60px, Punkte 72px) and the name column taking the
+rest and truncating. Row marking (zones, own row, Drop and Ersatz tags) as on
+every table.
 
-- Platz `text-sm font-semibold text-muted-foreground`; Spieler = avatar
-  `size-[26px]` + name `text-[14.5px] font-medium truncate`; Bilanz
-  `text-right text-sm text-muted-foreground` (`2 : 0`); Punkte
-  `text-right text-[14.5px] font-semibold`.
-- **Own row**: `bg-brand-orange/6`, name `font-semibold`, avatar filled
-  `bg-brand-blue text-white`, plus tag `text-[10px] font-bold uppercase
-  tracking-[0.1em] text-brand-orange` **Du** after the name.
-- **v1 (pre-reporting)**: all rows `0 : 0` / `0`, Platz **–** (em dash — no
-  fake ranking), ordered by name. No explanatory caption — the zeros are
-  self-evident.
-- **Mit Reporting**: Bilanz = W : L, Punkte = 3 · W (unreported/überfällige
-  matches count for nobody). Sort: `pts desc, losses asc, name asc
-  (localeCompare de)` — equal points with fewer losses ranks higher. Platz =
-  position 1…n.
+Below the card, one line: the zone legend followed by which table decides
+("Auf- und Abstieg wird innerhalb deiner Gruppe entschieden." or the division
+variants), then the withheld-results note when there is one. A division
+table is shown at full length; in division mode the page scrolls.
 
 ## 7. Not-placed state
 

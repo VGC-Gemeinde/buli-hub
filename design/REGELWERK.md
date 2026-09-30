@@ -250,9 +250,10 @@ Reference: 1b.
    `target="_blank"` so the half-filled form survives. Submit is disabled until
    it is ticked. The rules require participants to understand and accept them —
    registration is the only place that becomes verifiable.
-3. **Spieler-Dashboard** — a quiet side card (kicker `Saison 9`, title
-   `Regelwerk`, one line of copy, `ActionLink` "Regelwerk öffnen") for in-season
-   lookups. Not a CTA.
+
+The Spieler-Dashboard carries no Regelwerk entry: nobody needs it week by week,
+and the footer, the gate dialog ("Regelwerk lesen") and the Discord already
+lead there (docs/plans/player-dashboard-at-a-glance.md).
 
 **Deliberately not in `HeaderNav`.** The nav is signed-in only and has three
 entries; the Regelwerk must be readable *before* registration. Footer plus
@@ -410,7 +411,7 @@ These are not design questions. They block implementation:
    chapter list as a client component (scroll-spy), everything else server-rendered.
 3. Prose lists: add a compiled `.list-disc` rule to `globals.css` or use the
    inline `listStyle` per §2.6 — verify markers actually render in both modes.
-4. Footer link (§3.1), Anmeldung checkbox + gated submit (§3.2), dashboard card (§3.3).
+4. Footer link and Anmeldung checkbox + gated submit (§3).
 5. Acceptance server action + the confirmation block, confirmed state and sticky
    bar (§5.3).
 6. Reminder dialog, session-scoped (§5.1); gate dialog, non-dismissible (§5.2).

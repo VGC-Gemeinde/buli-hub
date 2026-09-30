@@ -17,8 +17,9 @@ splitting them after the fact would produce a first commit that never existed.
 
 - Public route `/regelwerk` rendering the Saison-9 rules in full, for the
   running season, readable signed out.
-- Entry points: footer link, acceptance checkbox on `/anmeldung`, side card on
-  the Spieler-Dashboard.
+- Entry points: footer link, acceptance checkbox on `/anmeldung`, and the
+  gate dialog. The Spieler-Dashboard has no Regelwerk card
+  (docs/plans/player-dashboard-at-a-glance.md).
 - Per-season acceptance record, written at registration or from the prompt.
 - Reminder dialog (registration open) and gate dialog (season running).
 - Server-side enforcement: an unaccepted player cannot take player actions.
@@ -190,7 +191,7 @@ on the gate, which is where being wrong is expensive:
 ## Definition of done
 
 Slice 1 ✅: `/regelwerk` renders the full ruleset in both colour modes, footer
-link, dashboard card, gallery states for the document's own components.
+link, gallery states for the document's own components.
 
 Two things slice 1 settled that the hand-off left to implementation:
 

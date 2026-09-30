@@ -314,10 +314,10 @@ export default async function SpielerPage() {
       <div className="flex flex-1 flex-col">
         <SeasonGates />
         <SiteHeader />
-        <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 pt-11 pb-18">
+        <main className="mx-auto w-full max-w-[1040px] flex-1 px-6 pt-8 pb-18 sm:px-8">
           {showProfileHint ? (
-            <div className="mb-8">
-              <ProfileHint />
+            <div className="mb-6">
+              <ProfileHint compact />
             </div>
           ) : null}
           <div className="flex flex-wrap items-baseline justify-between gap-4">
@@ -365,7 +365,6 @@ export default async function SpielerPage() {
             groupWithheld={groupWithheld}
             divisionWithheld={divisionWithheld}
             today={today}
-            seasonNumber={window.seasonNumber}
           />
         </main>
       </div>

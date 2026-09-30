@@ -81,7 +81,6 @@ import {
   ChapterDisclosure,
   ChapterSidebar,
 } from "@/features/regelwerk/components/chapter-list";
-import { RegelwerkCard } from "@/features/regelwerk/components/dashboard-card";
 import { FactsGrid } from "@/features/regelwerk/components/facts";
 import { PenaltyCard } from "@/features/regelwerk/components/penalty-card";
 import {
@@ -2749,7 +2748,6 @@ export function Gallery() {
             meId="me"
             divisionWithheld={1}
             today={DASH_TODAY}
-            seasonNumber={9}
           />
         </Specimen>
         <Specimen label="Gruppentabelle (Sub-Division-Modus, Zonen pro Gruppe)">
@@ -2772,7 +2770,6 @@ export function Gallery() {
             defaultScope="group"
             meId="me"
             today={DASH_TODAY}
-            seasonNumber={9}
           />
         </Specimen>
         <Specimen label="Als Ersatz ab Spieltag 2 (Hinweis, geerbter Spieltag 1 als Niederlage)">
@@ -2794,7 +2791,6 @@ export function Gallery() {
             defaultScope="group"
             meId="me"
             today={DASH_TODAY}
-            seasonNumber={9}
           />
         </Specimen>
         <Specimen label="Vorsaison: keine Saison">
@@ -3193,11 +3189,7 @@ export function Gallery() {
             <Bullet>Es ist kein Startgeld nötig.</Bullet>
           </Bullets>
         </Specimen>
-        <Specimen label="Dashboard-Karte — leiser Einstieg während der Saison">
-          <div className="max-w-sm">
-            <RegelwerkCard seasonNumber={9} />
-          </div>
-        </Specimen>
+
         <Specimen label="Regelwerk-Seite — noch nicht bestätigt (öffnet den Dialog)">
           <AcceptanceStatus seasonNumber={9} acceptedAt={null} />
         </Specimen>

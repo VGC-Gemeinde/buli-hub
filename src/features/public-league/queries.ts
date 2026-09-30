@@ -7,6 +7,11 @@ import {
 } from "@/features/motw/motw";
 import { motwForWindow } from "@/features/motw/queries";
 import { holdsForWindow } from "@/features/recordings/queries";
+import { replacementsForWindow } from "@/features/replacements/queries";
+import {
+  markReplacements,
+  replacementNotes,
+} from "@/features/replacements/replacement";
 import { scoreFor } from "@/features/reporting/match-state";
 import {
   divisionGroups,
@@ -155,14 +160,19 @@ export async function publicLeagueOverview(
   today: string,
   viewer: OverviewViewer,
 ): Promise<PublicOverview> {
-  const [configs, matchdays, motwSelections, holds, droppedIds] =
+  const [configs, matchdays, motwSelections, holds, droppedIds, replacements] =
     await Promise.all([
       divisionsWithGroupSizes(windowId),
       matchdaysForWindow(windowId),
       motwForWindow(windowId),
       holdsForWindow(windowId),
       droppedIdsForWindow(windowId),
+      replacementsForWindow(windowId),
     ]);
+  const marks: RowMarks = {
+    droppedIds,
+    replacementNotes: replacementNotes(replacements),
+  };
   const currentRound = currentMatchday(matchdays, today)?.round ?? null;
 
   const embargoes: EmbargoSources = {
@@ -173,7 +183,7 @@ export async function publicLeagueOverview(
   const divisions = await Promise.all(
     [...configs]
       .sort((a, b) => a.tier - b.tier)
-      .map((config) => buildDivision(config, embargoes, droppedIds, viewer)),
+      .map((config) => buildDivision(config, embargoes, marks, viewer)),
   );
 
   // The prominent block features the most recently confirmed Match of the
@@ -202,10 +212,23 @@ type EmbargoSources = {
   publicIds: ReadonlySet<string>;
 };
 
+// The row tags of a table: the "Drop" marker and the "Ersatz" marker.
+type RowMarks = {
+  droppedIds: ReadonlySet<string>;
+  replacementNotes: ReadonlyMap<string, string>;
+};
+
+function markRows(rows: readonly StandingsRow[], marks: RowMarks) {
+  return markReplacements(
+    markDropped(rows, marks.droppedIds),
+    marks.replacementNotes,
+  );
+}
+
 async function buildDivision(
   config: Awaited<ReturnType<typeof divisionsWithGroupSizes>>[number],
   embargoes: EmbargoSources,
-  droppedIds: ReadonlySet<string>,
+  marks: RowMarks,
   viewer: OverviewViewer,
 ): Promise<PublicDivision> {
   const groups = await divisionGroups(config.id);
@@ -229,7 +252,7 @@ async function buildDivision(
   // in division mode, where it decides promotion/relegation and carries the zones.
   const mergedRaw =
     mode === "division" ? divisionStandings(publicGroups) : null;
-  const merged = mergedRaw ? markDropped(mergedRaw, droppedIds) : null;
+  const merged = mergedRaw ? markRows(mergedRaw, marks) : null;
   const divisionZones = merged ? zoneMap(merged, counts) : null;
   const divisionGroupLabels = merged
     ? new Map(
@@ -253,7 +276,7 @@ async function buildDivision(
         mode,
         counts,
         embargoes,
-        droppedIds,
+        marks,
         viewer,
         withheldByGroup[index],
       ),
@@ -280,18 +303,20 @@ async function buildGroup(
   mode: "sub_division" | "division",
   counts: ReturnType<typeof zoneCounts>,
   embargoes: EmbargoSources,
-  droppedIds: ReadonlySet<string>,
+  marks: RowMarks,
   viewer: OverviewViewer,
   withheldResults: number,
 ): Promise<PublicGroup> {
-  const standings = markDropped(
+  const standings = markRows(
     computeStandings({ roster: group.roster, results: group.results }),
-    droppedIds,
+    marks,
   );
   // Zones sit on the relevant table only: the group table in sub_division mode.
   const zones = mode === "sub_division" ? zoneMap(standings, counts) : null;
 
-  const identityById = new Map(group.roster.map((m) => [m.userId, m]));
+  // Everyone placed, not just the table rows: a match of the rounds before a
+  // replacement still names the replaced player.
+  const identityById = new Map(group.members.map((m) => [m.userId, m]));
   const matches = await allMatches(
     group.subDivisionId,
     identityById,

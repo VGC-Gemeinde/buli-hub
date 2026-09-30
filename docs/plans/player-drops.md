@@ -51,7 +51,8 @@ call site of one pure, exhaustively tested override.
 
 **Out (deferred):**
 - Pre-season withdrawal (that is registration removal, a different feature).
-- Automatic re-seeding / roster refills after a drop.
+- Automatic re-seeding. Taking over a dropped player's slot is its own
+  feature: `player-replacement.md`.
 - Notifying the dropped player or opponents (Discord/DM).
 
 ## Data — three columns on `placements`

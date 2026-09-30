@@ -162,6 +162,27 @@
       "when": 1789099660529,
       "tag": "20260911040740_motw_candidates",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790759979586,
+      "tag": "20260930091939_player_replacements",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790759980495,
+      "tag": "20260930091940_player_replacements_fk_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790760950168,
+      "tag": "20260930093550_season9_replacement_backfill",
+      "breakpoints": true
     }
   ]
 }

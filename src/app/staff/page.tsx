@@ -29,6 +29,14 @@ import { StaleHoldsCard } from "@/features/recordings/components/stale-holds-car
 import { staleHolds, staleHoldsSummary } from "@/features/recordings/holds";
 import { holdsForWindow } from "@/features/recordings/queries";
 import { listRegistrations } from "@/features/registration/queries";
+import {
+  replacementCandidates,
+  replacementsForWindow,
+} from "@/features/replacements/queries";
+import {
+  entryRoundChoices,
+  missedByEntryRound,
+} from "@/features/replacements/replacement";
 import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
 import {
   windowMatchOverview,
@@ -200,6 +208,8 @@ export default async function StaffPage() {
       holds,
       drops,
       dropCandidates,
+      replacements,
+      replacementPool,
     ] = await Promise.all([
       windowMatchOverview(window.id),
       matchdaysForWindow(window.id),
@@ -208,7 +218,34 @@ export default async function StaffPage() {
       holdsForWindow(window.id),
       listDrops(window.id),
       listDropCandidates(window.id),
+      replacementsForWindow(window.id),
+      // Offers only in the running season: a hidden schedule has no player
+      // who could accept yet.
+      phase === "regular_season"
+        ? replacementCandidates(window.id)
+        : Promise.resolve(null),
     ]);
+    const entryChoices = entryRoundChoices(matchdays, today);
+    const offerOptions = replacementPool
+      ? { candidates: replacementPool, entryChoices }
+      : null;
+    // The overview holds every non-bye match of the season, which is exactly
+    // what a replacement's starting losses are counted from.
+    const slotMatches = overview.map((row) => ({
+      round: row.round,
+      playerAId: row.playerA.userId,
+      playerBId: row.playerB.userId,
+    }));
+    const missedByReplaced = Object.fromEntries(
+      drops.map((drop) => [
+        drop.identity.userId,
+        missedByEntryRound(
+          slotMatches,
+          drop.identity.userId,
+          entryChoices.map((choice) => choice.round),
+        ),
+      ]),
+    );
     const week = currentMatchday(matchdays, today);
     const { overdue, thisWeek, pendingFreeWins, disputed } = bucketMatches({
       matches: overview,
@@ -301,7 +338,13 @@ export default async function StaffPage() {
               resolvedDisputes={resolvedDisputes}
               today={today}
             />
-            <DropsSection drops={drops} candidates={dropCandidates} />
+            <DropsSection
+              drops={drops}
+              candidates={dropCandidates}
+              replacements={replacements}
+              offerOptions={offerOptions}
+              missedByReplaced={missedByReplaced}
+            />
             <MembershipList
               roster={membershipRoster}
               seasonName={seasonName(window.seasonNumber)}

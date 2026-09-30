@@ -9,6 +9,7 @@ import {
   motwForWindow,
 } from "@/features/motw/queries";
 import { clearMotwRole, holdsForWindow } from "@/features/recordings/queries";
+import { replacementStateOf } from "@/features/replacements/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
 import { currentMatchday } from "@/features/season/dashboard";
@@ -131,6 +132,23 @@ export async function undropPlayer(input: {
   const placement = await placementDropState(window.id, input.userId);
   if (!placement?.droppedAt) {
     return { ok: false, error: "Spieler ist nicht gedroppt" };
+  }
+  // A taken-over slot cannot be handed back: the matches from the entry round
+  // on belong to the replacement now (docs/plans/player-replacement.md). An
+  // open offer has to be withdrawn first, so nobody accepts a slot that is
+  // no longer free.
+  const replacement = await replacementStateOf(window.id, input.userId);
+  if (replacement === "accepted") {
+    return {
+      ok: false,
+      error: "Spieler wurde ersetzt, der Drop lässt sich nicht mehr aufheben",
+    };
+  }
+  if (replacement === "pending") {
+    return {
+      ok: false,
+      error: "Zieh zuerst das offene Ersatz-Angebot zurück",
+    };
   }
   await clearDropped(window.id, input.userId);
   revalidate();

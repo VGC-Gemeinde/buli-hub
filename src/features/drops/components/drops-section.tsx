@@ -22,6 +22,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
+import {
+  OfferReplacementDialog,
+  type ReplacementOfferOptions,
+} from "@/features/replacements/components/offer-dialog";
+import {
+  ReplacementStatusLine,
+  WithdrawOfferButton,
+} from "@/features/replacements/components/replacement-status";
+import type { ReplacementRow } from "@/features/replacements/queries";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { formatGermanDateTime } from "@/lib/german-time";
 import { dropPlayer, undropPlayer } from "../actions";
@@ -38,12 +47,23 @@ function ddMM(date: Date): string {
 // un-drop) and the drop dialog. A drop never destroys data — it flips the
 // counting override — but it changes every table immediately, hence the
 // type-to-confirm.
+// A dropped player can be un-dropped or replaced (docs/plans/player-
+// replacement.md); `replacements` carries the season's offers and, while
+// the season runs, the offer options.
 export function DropsSection({
   drops,
   candidates,
+  replacements = [],
+  offerOptions = null,
+  missedByReplaced = {},
 }: {
   drops: DropRow[];
   candidates: DropCandidate[];
+  replacements?: ReplacementRow[];
+  offerOptions?: ReplacementOfferOptions | null;
+  // Per dropped player: the losses a replacement would start with, per
+  // offered entry round.
+  missedByReplaced?: Record<string, Record<number, number>>;
 }) {
   return (
     <section className="flex flex-col gap-4">
@@ -67,7 +87,17 @@ export function DropsSection({
       ) : (
         <div className="flex flex-col gap-2">
           {drops.map((drop) => (
-            <DropListRow key={drop.identity.userId} drop={drop} />
+            <DropListRow
+              key={drop.identity.userId}
+              drop={drop}
+              replacement={
+                replacements.find(
+                  (r) => r.replaced.userId === drop.identity.userId,
+                ) ?? null
+              }
+              offerOptions={offerOptions}
+              missedByRound={missedByReplaced[drop.identity.userId]}
+            />
           ))}
         </div>
       )}
@@ -110,7 +140,17 @@ export function UndropButton({ userId }: { userId: string }) {
   );
 }
 
-function DropListRow({ drop }: { drop: DropRow }) {
+function DropListRow({
+  drop,
+  replacement,
+  offerOptions,
+  missedByRound,
+}: {
+  drop: DropRow;
+  replacement: ReplacementRow | null;
+  offerOptions: ReplacementOfferOptions | null;
+  missedByRound?: Record<number, number>;
+}) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3.5">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -131,8 +171,55 @@ function DropListRow({ drop }: { drop: DropRow }) {
               "{drop.reason}"
             </span>
           ) : null}
+          {replacement ? (
+            <ReplacementStatusLine
+              replacement={replacement.replacement}
+              entryRound={replacement.entryRound}
+              acceptedAt={replacement.acceptedAt}
+              offeredAt={replacement.offeredAt}
+            />
+          ) : null}
         </div>
       </div>
+      <DropActions
+        drop={drop}
+        replacement={replacement}
+        offerOptions={offerOptions}
+        missedByRound={missedByRound}
+      />
+    </div>
+  );
+}
+
+// What staff can still do about a drop: replace or un-drop it; with an open
+// offer, withdraw that; once replaced, nothing (the slot is taken).
+export function DropActions({
+  drop,
+  replacement,
+  offerOptions,
+  missedByRound,
+}: {
+  drop: Pick<DropRow, "identity" | "groupName">;
+  replacement: ReplacementRow | null;
+  offerOptions: ReplacementOfferOptions | null;
+  missedByRound?: Record<number, number>;
+}) {
+  if (replacement?.acceptedAt) {
+    return null;
+  }
+  if (replacement) {
+    return <WithdrawOfferButton replacedUserId={drop.identity.userId} />;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {offerOptions ? (
+        <OfferReplacementDialog
+          replaced={drop.identity}
+          groupName={drop.groupName}
+          options={offerOptions}
+          missedByRound={missedByRound}
+        />
+      ) : null}
       <UndropButton userId={drop.identity.userId} />
     </div>
   );

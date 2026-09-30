@@ -251,6 +251,36 @@ export const placements = pgTable(
   (table) => [unique().on(table.windowId, table.userId)],
 );
 
+// A dropped player's slot taken over by someone who was not in the season
+// (docs/plans/player-replacement.md). Staff offer it with an entry round; the
+// offered user accepts on the Spieler-Dashboard, which moves the dropped
+// player's matches from the entry round on onto them. Pending while
+// `accepted_at` is null; a withdrawn offer is deleted. From acceptance on the
+// dropped player leaves every table and the replacement's row carries the
+// slot's earlier matches as the drop losses they are. One replacement per
+// dropped player, one slot per replacement. FKs + RLS in a custom migration.
+export const playerReplacements = pgTable(
+  "player_replacements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    windowId: uuid("window_id").notNull(),
+    replacedUserId: uuid("replaced_user_id").notNull(),
+    replacementUserId: uuid("replacement_user_id").notNull(),
+    offeredById: uuid("offered_by_id"),
+    offeredAt: timestamp("offered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Staff's choice on the offer; moved forward on acceptance if that
+    // matchday is already over by then.
+    entryRound: integer("entry_round").notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  },
+  (table) => [
+    unique().on(table.windowId, table.replacedUserId),
+    unique().on(table.windowId, table.replacementUserId),
+  ],
+);
+
 // Who is currently driving a season's seeding. Division seeding is a live staff
 // meeting (one person shares their screen, the group discusses); this soft lock
 // keeps everyone else in read-only until they explicitly take control. A stale

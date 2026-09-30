@@ -153,6 +153,14 @@ export function StandingsTable({
                           Drop
                         </span>
                       ) : null}
+                      {row.replacement ? (
+                        <span
+                          title={`${row.replacement}. Die Spieltage davor zählen für diesen Platz als Niederlage.`}
+                          className="shrink-0 rounded-full border border-brand-blue/30 bg-brand-blue/6 px-[7px] py-[2px] font-bold text-[10.5px] text-brand-blue uppercase tracking-[0.06em] dark:border-white/30 dark:text-white"
+                        >
+                          Ersatz
+                        </span>
+                      ) : null}
                       {me ? (
                         <span className="shrink-0 font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
                           Du

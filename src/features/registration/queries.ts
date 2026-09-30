@@ -46,8 +46,10 @@ export async function priorRegistrationCount(
   return row?.value ?? 0;
 }
 
-export async function createRegistration(input: NewRegistration) {
-  await db.insert(registrations).values({
+// The column values of a registration row — shared with a replacement's
+// acceptance, which writes the same row inside its transaction.
+export function registrationRow(input: NewRegistration) {
+  return {
     windowId: input.windowId,
     userId: input.userId,
     platform: input.platform,
@@ -59,7 +61,11 @@ export async function createRegistration(input: NewRegistration) {
     prevPlacement: input.veteran?.prevPlacement ?? null,
     skillSelfRating: input.newPlayer?.skillSelfRating ?? null,
     greatestAchievements: input.newPlayer?.greatestAchievements ?? null,
-  });
+  };
+}
+
+export async function createRegistration(input: NewRegistration) {
+  await db.insert(registrations).values(registrationRow(input));
 }
 
 export async function deleteRegistration(windowId: string, userId: string) {

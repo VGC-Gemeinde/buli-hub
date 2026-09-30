@@ -18,15 +18,9 @@ import {
   priorRegistrationCount,
 } from "./queries";
 import {
-  firstErrorField,
-  newPlayerSchema,
-  platformSchema,
+  parseRegistration,
   type RegistrationDraft,
   type RegistrationFieldErrors,
-  registrationDraftSchema,
-  resolvePlayerStatus,
-  validateRegistration,
-  veteranHistorySchema,
 } from "./registration";
 
 export type RegisterResult =
@@ -60,71 +54,18 @@ export async function register(input: unknown): Promise<RegisterResult> {
     return blocked;
   }
 
-  const draft = registrationDraftSchema.safeParse(input);
-  if (!draft.success) {
-    return { ok: false, error: "Die Anmeldung konnte nicht gelesen werden" };
-  }
-
   // Detection is server-side — never trust the client on returning status.
   const detectedReturning =
     (await priorRegistrationCount(window.id, userId)) > 0;
-
-  // The same validator the form runs, so a stale client gets field-precise
-  // messages instead of one generic sentence, and the two cannot drift.
-  const fieldErrors = validateRegistration({
-    ...draft.data,
-    detectedReturning,
-  });
-  if (firstErrorField(fieldErrors)) {
-    return {
-      ok: false,
-      error: "Bitte prüfe die markierten Felder.",
-      fieldErrors,
-    };
-  }
-
-  const platform = platformSchema.safeParse(draft.data.platform);
-  const resolved = resolvePlayerStatus({
-    detectedReturning,
-    participatedBefore: draft.data.participatedBefore,
-  });
-  if (!platform.success || !resolved) {
-    return { ok: false, error: "Die Anmeldung konnte nicht gelesen werden" };
-  }
-
-  // Re-parsed rather than assumed: validation above only produced messages,
-  // these calls produce the typed values the columns need.
-  let veteran = null;
-  let newPlayer = null;
-
-  if (resolved.needsVeteranHistory) {
-    const parsed = veteranHistorySchema.safeParse(draft.data.veteran);
-    if (!parsed.success) {
-      return { ok: false, error: "Bitte alle Felder zur Historie ausfüllen" };
-    }
-    veteran = parsed.data;
-  } else if (resolved.status === "new") {
-    const parsed = newPlayerSchema.safeParse({
-      skillSelfRating: draft.data.skillSelfRating,
-      greatestAchievements: draft.data.greatestAchievements,
-    });
-    if (!parsed.success) {
-      return { ok: false, error: "Bitte deine Einschätzung abgeben" };
-    }
-    newPlayer = parsed.data;
+  const parsed = parseRegistration(input, detectedReturning);
+  if (!parsed.ok) {
+    return parsed;
   }
 
   await createRegistration({
     windowId: window.id,
     userId,
-    platform: platform.data,
-    status: resolved.status,
-    // Store the self-report only when it drove the decision.
-    participatedBefore: detectedReturning
-      ? null
-      : draft.data.participatedBefore,
-    veteran,
-    newPlayer,
+    ...parsed.values,
   });
 
   // Registering means accepting: `validateRegistration` rejects a draft whose

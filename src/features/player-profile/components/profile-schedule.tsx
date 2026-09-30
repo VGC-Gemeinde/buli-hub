@@ -112,6 +112,9 @@ function ScheduleRow({
   const className = cn(
     "flex items-center gap-3 rounded-lg border px-3.5 py-2.5 text-sm",
     row.opponent && "transition-colors hover:border-brand-orange/50",
+    // Decided before the player took the slot over (a replacement's
+    // inheritance): part of the record, quieter than their own play.
+    row.inherited && "border-dashed bg-muted/25",
   );
   const content = (
     <>
@@ -134,6 +137,14 @@ function ScheduleRow({
               name={row.opponent.name}
               className="relative truncate font-medium"
             />
+            {row.inherited ? (
+              <span
+                title="Vor dem Einstieg als Ersatz. Das Match zählt für diesen Platz als Niederlage."
+                className="shrink-0 rounded-full border border-dashed px-[7px] py-[1px] font-semibold text-[10.5px] text-muted-foreground"
+              >
+                Vor Einstieg
+              </span>
+            ) : null}
           </span>
           {/* w-14, not w-12: this slot also holds the MotW pill, which measures
               54px in Montserrat and overflowed a 48px slot. */}

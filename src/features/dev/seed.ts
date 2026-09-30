@@ -20,6 +20,7 @@ import type {
   Platform,
   PlayerStatus,
 } from "@/features/registration/registration";
+import { acceptOffer, createOffer } from "@/features/replacements/queries";
 import {
   markSchedulePublished,
   persistSchedule,
@@ -761,6 +762,26 @@ async function seedDevResults(
     await seedStreamPhotos(photoFor);
   }
 
+  // Player replacements (docs/plans/player-replacement.md), clear of every
+  // player the MotW, the holds, the disputes and the plain drop already use.
+  const busy = new Set(
+    [
+      ...featured,
+      dropCandidate?.playerAId,
+      staleHold?.playerAId,
+      staleHold?.playerBId,
+      ...reportedNormal.slice(0, 2).flatMap((m) => [m.a, m.b]),
+    ].filter((id): id is string | null => id !== undefined),
+  );
+  await seedReplacements({
+    windowId,
+    staffId,
+    all,
+    busy,
+    currentRound,
+    totalRounds: days.length,
+  });
+
   // One open dispute (loser contests the result) and one already resolved, so
   // both the "Angefochten" worklist and the resolved history have content.
   if (reportedNormal[0]) {
@@ -784,6 +805,117 @@ async function seedDevResults(
       note: "Beide Replays geprüft, das gemeldete Ergebnis stimmt.",
     });
   }
+}
+
+// Two replacement states on top of the plain drop: a slot already taken over
+// from the running Spieltag on (the earlier rounds inherited as losses; the
+// replacement is a fresh seed user, so /dev/login-as shows their side), and a
+// dropped player whose offer to another fresh seed user is still open —
+// impersonate "Angefragt Ari" to see the acceptance card on /spieler.
+async function seedReplacements(input: {
+  windowId: string;
+  staffId: string;
+  all: { round: number; playerAId: string; playerBId: string | null }[];
+  busy: ReadonlySet<string | null>;
+  currentRound: number;
+  totalRounds: number;
+}): Promise<void> {
+  const free: string[] = [];
+  for (const match of input.all) {
+    for (const id of [match.playerAId, match.playerBId]) {
+      if (id && !input.busy.has(id) && !free.includes(id)) {
+        free.push(id);
+      }
+    }
+  }
+  // Two players who never meet, so the two slots stay independent.
+  const takenOver = free[0];
+  const offered = free.find(
+    (id) =>
+      id !== takenOver &&
+      !input.all.some(
+        (m) =>
+          (m.playerAId === takenOver && m.playerBId === id) ||
+          (m.playerAId === id && m.playerBId === takenOver),
+      ),
+  );
+  if (!takenOver || !offered) {
+    return;
+  }
+
+  const newcomers = [
+    { id: randomUUID(), displayName: "Nachrücker Nemo", username: "nemo_nach" },
+    { id: randomUUID(), displayName: "Angefragt Ari", username: "ari_vgc" },
+  ];
+  await insertSeedAuthUsers(
+    newcomers.map((user, i) => ({
+      id: user.id,
+      email: `${SEED_EMAIL_PREFIX}ersatz-${i}${SEED_EMAIL_DOMAIN}`,
+    })),
+  );
+  await db.insert(profiles).values(
+    newcomers.map((user) => ({
+      userId: user.id,
+      displayName: user.displayName,
+      username: user.username,
+      guildMember: true,
+      guildMemberCheckedAt: new Date(),
+    })),
+  );
+
+  const drop = (userId: string, reason: string) =>
+    db
+      .update(placements)
+      .set({
+        droppedAt: new Date(),
+        droppedById: input.staffId,
+        dropReason: reason,
+      })
+      .where(
+        and(
+          eq(placements.windowId, input.windowId),
+          eq(placements.userId, userId),
+        ),
+      );
+
+  // Taken over from the running Spieltag (at least 2, so something is
+  // inherited; at most the last one).
+  const entryRound = Math.min(
+    Math.max(input.currentRound, 2),
+    input.totalRounds,
+  );
+  await drop(takenOver, "Kein Bock mehr");
+  await createOffer({
+    windowId: input.windowId,
+    replacedUserId: takenOver,
+    replacementUserId: newcomers[0].id,
+    offeredById: input.staffId,
+    entryRound,
+  });
+  await acceptOffer({
+    registration: {
+      windowId: input.windowId,
+      userId: newcomers[0].id,
+      platform: "showdown",
+      status: "new",
+      participatedBefore: false,
+      veteran: null,
+      newPlayer: {
+        skillSelfRating: 3,
+        greatestAchievements: "Regionals Top 16",
+      },
+    },
+    entryRound,
+  });
+
+  await drop(offered, "Server verlassen");
+  await createOffer({
+    windowId: input.windowId,
+    replacedUserId: offered,
+    replacementUserId: newcomers[1].id,
+    offeredById: input.staffId,
+    entryRound: Math.min(input.currentRound, input.totalRounds),
+  });
 }
 
 export async function generateSeedData(

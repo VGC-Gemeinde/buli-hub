@@ -298,6 +298,9 @@ function ScheduleRow({
     state === "current" && "border-brand-orange/45 bg-brand-orange/5",
     state === "overdue" && "border-destructive/35 bg-destructive/5",
     pastBye && "opacity-55",
+    // Decided before the player took the slot over: part of the record, not
+    // of their own play, so it reads as a quieter, dashed row.
+    match.inherited && "border-dashed bg-muted/25",
   );
 
   const inner = (
@@ -371,15 +374,27 @@ function RowRight({
     </span>
   );
   if (state === "reported" && result) {
+    // An inherited match is the predecessor's, decided by their drop: scored
+    // from meId it reads as the loss it counts as for the slot.
     const score = scoreFor(meId, result);
     return (
       <div className="ml-auto flex w-full shrink-0 items-center gap-3 sm:w-auto">
+        {match.inherited ? (
+          <span
+            title="Vor deinem Einstieg als Ersatz. Das Match zählt für deinen Platz als Niederlage."
+            className="whitespace-nowrap rounded-full border border-dashed px-2.5 py-[2px] font-semibold text-muted-foreground text-xs"
+          >
+            Vor deinem Einstieg
+          </span>
+        ) : null}
         {result.disputed ? (
           <span className="whitespace-nowrap rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
             Angefochten
           </span>
         ) : null}
-        {score.label ? (
+        {/* An inherited row says what it is instead: its score is always
+            the loss, and the extra chip would crowd a phone-width row. */}
+        {score.label && !match.inherited ? (
           <span
             className={cn(
               "whitespace-nowrap rounded-full px-2.5 py-[3px] font-semibold text-xs",

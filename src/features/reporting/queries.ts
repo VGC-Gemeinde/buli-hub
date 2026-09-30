@@ -18,6 +18,12 @@ import {
   droppedIdsForSubDivision,
   droppedIdsForWindow,
 } from "@/features/drops/queries";
+import { acceptedReplacementsForSubDivision } from "@/features/replacements/queries";
+import {
+  attributeReplacements,
+  replacedByMap,
+  standingsRoster,
+} from "@/features/replacements/replacement";
 import type { Identity } from "@/features/season/dashboard";
 import { groupRoster } from "@/features/season/queries";
 import { subDivisionName } from "@/features/seeding/seeding";
@@ -267,11 +273,13 @@ async function writeSheets(
 // Every match of a sub-division with its result state — the input for
 // `computeStandings`. Results are mapped through the drop override: matches
 // of a dropped player count as 2:0 free wins for the opponent, whatever is
-// (or is not) stored.
+// (or is not) stored. Then every match still on a replaced player is
+// attributed to whoever holds the slot now (docs/plans/player-replacement.md),
+// so the table shows the slot as one row.
 export async function groupResults(
   subDivisionId: string,
 ): Promise<ResultForStandings[]> {
-  const [rows, droppedIds] = await Promise.all([
+  const [rows, droppedIds, replacements] = await Promise.all([
     db
       .select({
         matchId: matches.id,
@@ -288,6 +296,7 @@ export async function groupResults(
       .where(eq(matches.subDivisionId, subDivisionId))
       .orderBy(asc(matchGames.gameNumber)),
     droppedIdsForSubDivision(subDivisionId),
+    acceptedReplacementsForSubDivision(subDivisionId),
   ]);
 
   const byMatch = new Map<string, ResultForStandings>();
@@ -311,18 +320,42 @@ export async function groupResults(
       });
     }
   }
-  return [...byMatch.values()].map((entry) =>
-    effectiveResult(entry, droppedIds),
+  return attributeReplacements(
+    [...byMatch.values()].map((entry) => effectiveResult(entry, droppedIds)),
+    replacedByMap(replacements),
   );
+}
+
+// One group's standings input. `roster` is the table's rows, one per slot: a
+// replaced player is not in it. `members` is everyone placed in the group,
+// replaced players included, for resolving names on matches (a match of the
+// rounds before a replacement still shows the replaced player).
+export type GroupStandingsInput = {
+  roster: Identity[];
+  members: Identity[];
+  results: ResultForStandings[];
+};
+
+export async function groupStandingsInput(
+  subDivisionId: string,
+): Promise<GroupStandingsInput> {
+  const [members, results, replacements] = await Promise.all([
+    groupRoster(subDivisionId),
+    groupResults(subDivisionId),
+    acceptedReplacementsForSubDivision(subDivisionId),
+  ]);
+  return {
+    roster: standingsRoster(members, replacedByMap(replacements)),
+    members,
+    results,
+  };
 }
 
 // One sub-division's standings input, plus its id/position — the per-group shape
 // `divisionStandings` merges into a division table.
-export type DivisionGroup = {
+export type DivisionGroup = GroupStandingsInput & {
   subDivisionId: string;
   position: number;
-  roster: Identity[];
-  results: ResultForStandings[];
 };
 
 // Every sub-division of a division with its roster + results, ordered by
@@ -341,8 +374,7 @@ export async function divisionGroups(
     subs.map(async (sub) => ({
       subDivisionId: sub.id,
       position: sub.position,
-      roster: await groupRoster(sub.id),
-      results: await groupResults(sub.id),
+      ...(await groupStandingsInput(sub.id)),
     })),
   );
 }

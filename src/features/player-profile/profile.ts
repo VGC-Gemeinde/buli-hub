@@ -24,6 +24,8 @@ export type ProfileScheduleRow = {
   isMine: boolean;
   isMotw: boolean;
   embargo: ResultEmbargo;
+  // From before the player took the slot over as a replacement.
+  inherited: boolean;
 };
 
 export function profileScheduleRows(input: {
@@ -68,6 +70,7 @@ export function profileScheduleRows(input: {
       isMine,
       isMotw: motw !== null,
       embargo,
+      inherited: match.inherited === true,
     };
     if (embargo?.access !== "withheld") {
       return row;

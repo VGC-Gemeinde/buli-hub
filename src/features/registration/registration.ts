@@ -233,3 +233,88 @@ export function firstErrorField(
 ): RegistrationField | null {
   return REGISTRATION_FIELDS.find((field) => errors[field]) ?? null;
 }
+
+// The typed values a submitted registration stores, once it passed. Shared by
+// the registration itself and a replacement's acceptance, which asks the same
+// questions (docs/plans/player-replacement.md).
+export type RegistrationValues = {
+  platform: Platform;
+  status: PlayerStatus;
+  participatedBefore: boolean | null;
+  veteran: VeteranHistory | null;
+  newPlayer: NewPlayerAnswers | null;
+};
+
+export type ParsedRegistration =
+  | { ok: true; values: RegistrationValues }
+  | { ok: false; error: string; fieldErrors?: RegistrationFieldErrors };
+
+// Validates a submitted draft the way the form does and turns it into the
+// stored values. `detectedReturning` comes from the server, never the client.
+export function parseRegistration(
+  input: unknown,
+  detectedReturning: boolean,
+): ParsedRegistration {
+  const draft = registrationDraftSchema.safeParse(input);
+  if (!draft.success) {
+    return { ok: false, error: "Die Anmeldung konnte nicht gelesen werden" };
+  }
+
+  // The same validator the form runs, so a stale client gets field-precise
+  // messages instead of one generic sentence, and the two cannot drift.
+  const fieldErrors = validateRegistration({
+    ...draft.data,
+    detectedReturning,
+  });
+  if (firstErrorField(fieldErrors)) {
+    return {
+      ok: false,
+      error: "Bitte prüfe die markierten Felder.",
+      fieldErrors,
+    };
+  }
+
+  const platform = platformSchema.safeParse(draft.data.platform);
+  const resolved = resolvePlayerStatus({
+    detectedReturning,
+    participatedBefore: draft.data.participatedBefore,
+  });
+  if (!platform.success || !resolved) {
+    return { ok: false, error: "Die Anmeldung konnte nicht gelesen werden" };
+  }
+
+  // Re-parsed rather than assumed: validation above only produced messages,
+  // these calls produce the typed values the columns need.
+  let veteran: VeteranHistory | null = null;
+  let newPlayer: NewPlayerAnswers | null = null;
+  if (resolved.needsVeteranHistory) {
+    const parsed = veteranHistorySchema.safeParse(draft.data.veteran);
+    if (!parsed.success) {
+      return { ok: false, error: "Bitte alle Felder zur Historie ausfüllen" };
+    }
+    veteran = parsed.data;
+  } else if (resolved.status === "new") {
+    const parsed = newPlayerSchema.safeParse({
+      skillSelfRating: draft.data.skillSelfRating,
+      greatestAchievements: draft.data.greatestAchievements,
+    });
+    if (!parsed.success) {
+      return { ok: false, error: "Bitte deine Einschätzung abgeben" };
+    }
+    newPlayer = parsed.data;
+  }
+
+  return {
+    ok: true,
+    values: {
+      platform: platform.data,
+      status: resolved.status,
+      // Store the self-report only when it drove the decision.
+      participatedBefore: detectedReturning
+        ? null
+        : draft.data.participatedBefore,
+      veteran,
+      newPlayer,
+    },
+  };
+}

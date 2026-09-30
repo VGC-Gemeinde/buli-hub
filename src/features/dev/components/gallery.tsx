@@ -102,6 +102,13 @@ import { ProfileCancelPanel } from "@/features/registration/components/profile-c
 import { ProfileHint } from "@/features/registration/components/profile-hint";
 import { RegistrationConfirmation } from "@/features/registration/components/registration-confirmation";
 import { RegistrationForm } from "@/features/registration/components/registration-form";
+import {
+  OfferReplacementDialog,
+  type ReplacementOfferOptions,
+} from "@/features/replacements/components/offer-dialog";
+import { ReplacementOfferPanel } from "@/features/replacements/components/offer-panel";
+import { ReplacementNote } from "@/features/replacements/components/replacement-note";
+import type { ReplacementRow } from "@/features/replacements/queries";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
 import { DisputeResolveDialog } from "@/features/reporting/components/dispute-resolve-dialog";
 import { PublicMatchView } from "@/features/reporting/components/public-match-view";
@@ -212,6 +219,24 @@ const DASH_RESULTS = new Map<string, MatchResultLite>([
       confirmedAt: null,
       disputed: false,
       games: [{ winnerId: "me" }, { winnerId: "a" }, { winnerId: "me" }],
+    },
+  ],
+]);
+// The same schedule for a replacement who came in at Spieltag 2: round 1 is
+// the predecessor's match, decided by the drop and inherited as a loss.
+const DASH_MATCHES_REPLACEMENT: PlayerMatch[] = DASH_MATCHES.map((match) =>
+  match.round === 1 ? { ...match, inherited: true } : match,
+);
+const DASH_RESULTS_REPLACEMENT = new Map<string, MatchResultLite>([
+  [
+    "m1",
+    {
+      matchId: "m1",
+      outcome: "free_win",
+      winnerId: "a",
+      confirmedAt: new Date(0),
+      disputed: false,
+      games: [],
     },
   ],
 ]);
@@ -565,6 +590,8 @@ const DASH_STANDINGS: StandingsRow[] = [
     gamesWon: 0,
     gamesLost: 2,
     rank: 2,
+    // Shows the "Ersatz" tag in every standings specimen.
+    replacement: "Ersatz für Nacli ab Spieltag 2",
   },
   // b and c are genuinely tied (no games played) → shared rank 3, no rank 4.
   {
@@ -693,6 +720,48 @@ const asIdentity = (row: StandingsRow) => ({
   avatarUrl: row.avatarUrl,
 });
 
+// Player replacements (docs/plans/player-replacement.md): an open offer and
+// a completed one, the offer dialog's options, and the players involved.
+const REPLACED_NACLI = { userId: "n", name: "Nacli", avatarUrl: null };
+const REPLACEMENT_OFFER_OPTIONS: ReplacementOfferOptions = {
+  candidates: [
+    { userId: "r1", name: "Tinkatink", username: "tinka", avatarUrl: null },
+    {
+      userId: "r2",
+      name: "Wiglett",
+      username: "wiglett_vgc",
+      avatarUrl: AVATAR_URL,
+    },
+    { userId: "r3", name: "Flittle", username: "flittle", avatarUrl: null },
+    {
+      userId: "r4",
+      name: "Blaubeerkuchenbäckermeisterin Annegret III.",
+      username: "annegret",
+      avatarUrl: AVATAR_URL,
+    },
+  ],
+  entryChoices: [
+    { round: 3, running: true, startsOn: "2026-09-21", endsOn: "2026-10-04" },
+    { round: 4, running: false, startsOn: "2026-10-05", endsOn: "2026-10-11" },
+  ],
+};
+const REPLACEMENT_PENDING: ReplacementRow = {
+  id: "rp1",
+  replaced: { userId: "c", name: "Pawmi", avatarUrl: null },
+  replacement: { userId: "r2", name: "Wiglett", avatarUrl: AVATAR_URL },
+  entryRound: 3,
+  offeredAt: new Date("2026-09-22T18:00:00Z"),
+  acceptedAt: null,
+};
+const REPLACEMENT_ACCEPTED: ReplacementRow = {
+  id: "rp2",
+  replaced: REPLACED_NACLI,
+  replacement: { userId: "a", name: "Falinks", avatarUrl: null },
+  entryRound: 2,
+  offeredAt: new Date("2026-09-14T15:30:00Z"),
+  acceptedAt: new Date("2026-09-14T22:11:00Z"),
+};
+
 // Profile page Spielplan: every row state at once.
 const profileRow = (
   matchId: string,
@@ -710,6 +779,7 @@ const profileRow = (
   isMine: false,
   isMotw: false,
   embargo: null,
+  inherited: false,
   ...extra,
 });
 const PROFILE_ROWS: ProfileScheduleRow[] = [
@@ -748,6 +818,15 @@ const PROFILE_ROWS: ProfileScheduleRow[] = [
   profileRow("pr8", 8, {
     reported: true,
     embargo: { reason: "recording", access: "withheld" },
+  }),
+  // A replacement's inheritance: the slot's match from before the entry,
+  // decided by the predecessor's drop.
+  profileRow("pr9", 9, {
+    reported: true,
+    scoreSelf: 0,
+    scoreOpponent: 2,
+    isMine: true,
+    inherited: true,
   }),
 ];
 
@@ -2079,14 +2158,42 @@ export function Gallery() {
                 name: "Falinks",
                 groupName: "Division 1a",
               }}
+              avatarUrl={null}
               dropped={false}
               dropReason={null}
+              replacement={null}
+              offerOptions={null}
               streamPhotoUrl={GALLERY_STREAM_PHOTO}
             />
             <ProfileStaffPanel
               player={{ userId: "c", name: "Pawmi", groupName: "Division 1a" }}
+              avatarUrl={null}
               dropped
               dropReason="Inaktivität, mehrfach nicht erreichbar."
+              replacement={null}
+              offerOptions={REPLACEMENT_OFFER_OPTIONS}
+              streamPhotoUrl={null}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Staff-Panel — gedroppt mit offenem Ersatz-Angebot / ersetzt (kein Aufheben mehr)">
+          <div className="flex flex-col gap-4">
+            <ProfileStaffPanel
+              player={{ userId: "c", name: "Pawmi", groupName: "Division 1a" }}
+              avatarUrl={null}
+              dropped
+              dropReason="Server verlassen"
+              replacement={REPLACEMENT_PENDING}
+              offerOptions={REPLACEMENT_OFFER_OPTIONS}
+              streamPhotoUrl={null}
+            />
+            <ProfileStaffPanel
+              player={{ userId: "n", name: "Nacli", groupName: "Division 1a" }}
+              avatarUrl={null}
+              dropped
+              dropReason="Kein Bock mehr"
+              replacement={REPLACEMENT_ACCEPTED}
+              offerOptions={REPLACEMENT_OFFER_OPTIONS}
               streamPhotoUrl={null}
             />
           </div>
@@ -2132,6 +2239,92 @@ export function Gallery() {
               { userId: "b", name: "Wooloo", groupName: "Division 1a" },
             ]}
           />
+        </Specimen>
+        <Specimen label="Staff: Drops-Sektion mit Ersatz (Ersatz einsetzen · Angebot offen · ersetzt)">
+          <DropsSection
+            drops={[
+              {
+                identity: { userId: "d", name: "Grafaiai", avatarUrl: null },
+                groupName: "Division 1b",
+                reason: "Inaktivität, mehrfach nicht erreichbar.",
+                droppedAt: new Date("2026-09-20T10:00:00Z"),
+              },
+              {
+                identity: REPLACEMENT_PENDING.replaced,
+                groupName: "Division 1a",
+                reason: "Server verlassen",
+                droppedAt: new Date("2026-09-21T10:00:00Z"),
+              },
+              {
+                identity: REPLACED_NACLI,
+                groupName: "Division 1a",
+                reason: "Kein Bock mehr",
+                droppedAt: new Date("2026-09-14T15:17:00Z"),
+              },
+            ]}
+            candidates={[]}
+            replacements={[REPLACEMENT_PENDING, REPLACEMENT_ACCEPTED]}
+            offerOptions={REPLACEMENT_OFFER_OPTIONS}
+            missedByReplaced={{ d: { 3: 2, 4: 3 } }}
+          />
+        </Specimen>
+        <Specimen label="Staff: Ersatz-Dialog, Saison vorbei (Knopf gesperrt)">
+          <OfferReplacementDialog
+            replaced={REPLACED_NACLI}
+            groupName="Division 1a"
+            options={{ ...REPLACEMENT_OFFER_OPTIONS, entryChoices: [] }}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Ersatzspieler</h2>
+        <Specimen label="Spieler-Dashboard: Angebot mit Formular (Einstieg Spieltag 3, zwei Niederlagen)">
+          <ReplacementOfferPanel
+            replaced={REPLACED_NACLI}
+            groupName="Division 1a"
+            seasonName="Saison 9"
+            entryRound={3}
+            entryStartsOn="2026-09-21"
+            entryEndsOn="2026-10-04"
+            missed={2}
+          >
+            <RegistrationForm
+              displayName="Wiglett"
+              username="wiglett_vgc"
+              detectedReturning={false}
+              submit={async () => ({ ok: true })}
+              submitLabel="Platz übernehmen"
+              footnote="Mit dem Absenden übernimmst du den Platz verbindlich. Ab Spieltag 3 gilt dein Spielplan."
+            />
+          </ReplacementOfferPanel>
+        </Specimen>
+        <Specimen label="Spieler-Dashboard: Angebot ohne verpasste Spieltage, Mitgliedschaft fehlt">
+          <ReplacementOfferPanel
+            replaced={REPLACED_NACLI}
+            groupName="Division 2b"
+            seasonName="Saison 9"
+            entryRound={1}
+            entryStartsOn="2026-09-02"
+            entryEndsOn="2026-09-13"
+            missed={0}
+          >
+            <MembershipBlockedCard />
+          </ReplacementOfferPanel>
+        </Specimen>
+        <Specimen label="Spieler-Dashboard: Hinweis unter dem Titel (Ersatz / ersetzt)">
+          <div className="flex flex-col">
+            <ReplacementNote
+              kind="replacing"
+              other={REPLACED_NACLI}
+              entryRound={2}
+            />
+            <ReplacementNote
+              kind="replaced"
+              other={REPLACEMENT_ACCEPTED.replacement}
+              entryRound={2}
+            />
+          </div>
         </Specimen>
       </section>
 
@@ -2493,6 +2686,28 @@ export function Gallery() {
               demotionPlayoff: 0,
               demotions: 1,
             })}
+            divisionName="Division 1"
+            divisionStandings={null}
+            defaultScope="group"
+            meId="me"
+            today={DASH_TODAY}
+            seasonNumber={9}
+          />
+        </Specimen>
+        <Specimen label="Als Ersatz ab Spieltag 2 (Hinweis, geerbter Spieltag 1 als Niederlage)">
+          <ReplacementNote
+            kind="replacing"
+            other={REPLACED_NACLI}
+            entryRound={2}
+          />
+          <InSeasonDashboard
+            groupName="Division 1a"
+            currentRound={2}
+            totalRounds={4}
+            next={DASH_MATCHES_REPLACEMENT[1]}
+            matches={DASH_MATCHES_REPLACEMENT}
+            resultByMatchId={DASH_RESULTS_REPLACEMENT}
+            standings={DASH_STANDINGS}
             divisionName="Division 1"
             divisionStandings={null}
             defaultScope="group"

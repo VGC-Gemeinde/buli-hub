@@ -45,8 +45,8 @@ in the table. The round 1 opponent has one win from that match.
 
 **In:**
 
-- **Staff actions on a dropped player** (staff drops list and the player's
-  profile): "Drop aufheben" (existing) or "Ersatz einsetzen". A replaced
+- **Staff actions on a dropped player** (the dropped row on the Teilnehmer
+  page and the player's profile): "Drop aufheben" (existing) or "Ersatz einsetzen". A replaced
   player can no longer be un-dropped (`undropPlayer` refuses with a reason).
 - **Offer** (staff+): pick a user who has signed in to the hub at least once
   and holds no placement in the window, and the entry round: the running
@@ -153,7 +153,7 @@ A withdrawn offer is deleted, no history row: nothing happened yet.
 Touched elsewhere: `groupResults` / `groupStandingsInput` / `divisionGroups`
 (reporting), `buildPlayerMatches` / `splitPlayerMatches` (season), the
 standings table tag, the profile schedule and season line, `undropPlayer`
-(refuses a replaced player and one with an open offer), the staff Drops list
+(refuses a replaced player and one with an open offer), the Teilnehmer rows
 and profile staff panel (`DropActions`: replace, un-drop, withdraw, or
 nothing once replaced).
 

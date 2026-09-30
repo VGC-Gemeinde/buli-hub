@@ -7,6 +7,7 @@ import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
 import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { scoreHidden } from "@/features/spoilers/spoilers";
+import { hoverCard } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
 import type { ProfileScheduleRow } from "../profile";
 import { PlayerLink } from "./player-link";
@@ -111,7 +112,7 @@ function ScheduleRow({
 
   const className = cn(
     "flex items-center gap-3 rounded-lg border px-3.5 py-2.5 text-sm",
-    row.opponent && "transition-colors hover:border-brand-orange/50",
+    row.opponent && hoverCard,
     // Decided before the player took the slot over (a replacement's
     // inheritance): part of the record, quieter than their own play.
     row.inherited && "border-dashed bg-muted/25",

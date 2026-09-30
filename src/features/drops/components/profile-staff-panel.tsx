@@ -10,7 +10,7 @@ import type { ReplacementRow } from "@/features/replacements/queries";
 import { removeStreamPhotoFor } from "@/features/stream-photos/actions";
 import { STREAM_PHOTO } from "@/features/stream-photos/photo";
 import type { DropCandidate } from "../queries";
-import { DropActions, DropPlayerDialog } from "./drops-section";
+import { DropActions, DropPlayerDialog } from "./drop-controls";
 
 // The staff panel on the public player profile — same anatomy as the match
 // page's staff panel (navy card, "Nur für Staff sichtbar"). One action: drop

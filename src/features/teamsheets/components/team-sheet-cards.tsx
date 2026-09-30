@@ -53,7 +53,7 @@ function Card({ card, animate }: { card: SheetCard; animate: boolean }) {
     animate && card.sprite.animated ? card.sprite.animated : card.sprite.still;
 
   return (
-    <li className="flex gap-3.5 rounded-xl border bg-card p-4 transition-colors hover:border-brand-orange/50 sm:gap-4">
+    <li className="flex gap-3.5 rounded-xl border bg-card p-4 sm:gap-4">
       <div className="relative flex size-[84px] shrink-0 items-center justify-center">
         {/* biome-ignore lint/performance/noImgElement: sprite renders come from an external bucket as animated webp; next/image would need remote-pattern config and would break the animation */}
         <img

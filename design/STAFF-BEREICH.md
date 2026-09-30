@@ -10,37 +10,16 @@ plus one constant. Reference design: project file "Staff-Bereich.dc.html"
 
 ---
 
-## 1. User menu → Staff-Bereich item (`user-menu.tsx`)
+## 1. Entry point
 
-New `DropdownMenuItem` between **Profil** and **Abmelden**: Link to `/staff`,
-`font-medium` like the Profil item.
+The Staff-Bereich is a top-level entry of the header for staff
+(`NAVIGATION.md`). The user menu lists no sections, so it has no staff item.
 
-- Item row: `flex items-center justify-between`; right-aligned decorative tick
-  `<div className="h-[7px] w-3.5 -skew-x-[18deg] bg-brand-orange" />` — marks the
-  privileged area. Drop it if it reads as noise in practice.
-- Rendered only when `roleAtLeast(role, "staff")` (existing guard). No header link;
-  non-staff users never see the entry.
+## 2. `/staff` layout
 
-## 2. `/staff` layout (`staff/page.tsx`)
-
-- Widen the content column: `max-w-[960px]` (currently `max-w-xl`), `px-8 py-12`.
-- `h1` **Staff-Bereich** — `text-4xl text-brand-blue dark:text-white`, `mb-9`.
-- Sections stack with `gap-10`. Section headers use the signature pattern
-  (tick + h2, per SIGNED-IN.md §3) **plus** `border-b pb-3.5` on the row:
-
-```tsx
-<div className="flex items-baseline justify-between border-b pb-3.5">
-  <div className="flex items-center gap-2.5">
-    <div className="h-[9px] w-[18px] -skew-x-[18deg] bg-brand-orange" />
-    <h2 className="text-[26px] tracking-[0.03em]">Anmeldungen</h2>
-  </div>
-  <span className="text-muted-foreground text-sm">{players.length} gesamt</span>
-</div>
-```
-
-Section names: **Saison** (always) and **Anmeldungen** (only in `open`/`closed` —
-before the registration opens there are no registrations, so the section does not
-exist at all).
+The page layout, the navigation and the lists are described in
+`STAFF-DASHBOARD.md`. The season card below is the first block of the
+overview before the season runs.
 
 ## 3. Season card — three status variants (`registration-status.tsx`)
 
@@ -99,34 +78,11 @@ No Anmeldungen section in this state.
 - No link block — the link is dead after close.
 - Anmeldungen section stays visible (final list).
 
-## 4. Player grid (replaces `PlayerList`)
+## 4. Registrations
 
-Registrations render as a dense chip grid, not a single-column list — goal is
-maximum names per viewport.
-
-- Sort by Discord username:
-  `players.toSorted((a, b) => a.name.localeCompare(b.name, "de", { sensitivity: "base" }))`
-- Grid: `grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2`
-- Chip:
-
-```tsx
-<div className="flex min-w-0 items-center gap-2 rounded-lg border py-1 pr-2.5 pl-1">
-  <Avatar className="size-6">
-    {player.avatarUrl ? <AvatarImage src={player.avatarUrl} alt="" /> : null}
-    <AvatarFallback className="text-[10px] font-semibold">
-      {player.name.slice(0, 2).toUpperCase()}
-    </AvatarFallback>
-  </Avatar>
-  <span className="truncate text-sm font-medium">{player.name}</span>
-</div>
-```
-
-- The count lives in the section header (§2), no separate "{n} angemeldete
-  Spieler" line.
-- Empty state (open, 0 registrations): keep the existing dashed box —
-  `rounded-lg border border-dashed px-4 py-8 text-center text-muted-foreground text-sm`
-  **Noch keine Anmeldungen.** — instead of the grid.
-- `RegisteredPlayer` gains `avatarUrl?: string`.
+The registrations are listed on the Teilnehmer page (`STAFF-DASHBOARD.md`
+§5), with their Discord membership and the cancel action; the overview only
+counts them.
 
 ## 5. Open-registration dialog (`open-registration-dialog.tsx`, `registration-window.ts`)
 

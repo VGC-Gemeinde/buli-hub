@@ -24,7 +24,7 @@ import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { divisionName } from "@/features/seeding/seeding";
 import { StreamPhotoMark } from "@/features/stream-photos/components/stream-photo-mark";
-import { emphasisSurface } from "@/lib/emphasis";
+import { emphasisSurface, hoverCard } from "@/lib/emphasis";
 import { formatGermanDay } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import { holdMatch, releaseHold } from "../actions";
@@ -400,7 +400,7 @@ function WeekPager({
                   "flex w-[42px] shrink-0 flex-col items-center gap-1.5 rounded-lg border py-1.5 transition-colors",
                   active
                     ? "border-brand-blue bg-brand-blue text-white"
-                    : "hover:border-brand-orange/50 hover:bg-muted",
+                    : hoverCard,
                   isCurrent && !active && "border-brand-orange/70",
                   isCurrent &&
                     active &&

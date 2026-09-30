@@ -3,18 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-// The seeding page is `min-w-[1520px]` by design: seeding is a live staff
-// meeting driven from one large, shared screen. On a small viewport we say so
+// The seeding workspace is `min-w-[1520px]` by design (it scrolls sideways
+// inside its frame on a narrower window): seeding is a live staff meeting
+// driven from one large, shared screen. On a small viewport we say so
 // plainly rather than let someone fight an unusable layout. Non-blocking; the
 // acknowledgement is remembered for the browser session so navigation within
 // seeding does not re-nag.
 //
-// This is a plain fixed overlay rather than the shared Dialog on purpose: the
-// seeding page forces the document far wider than the viewport, and a
-// translate-centered, portaled dialog ends up anchored to that oversized canvas
-// instead of the screen. A `fixed inset-0` flex container has no such ambiguity —
-// no ancestor here establishes a containing block for `fixed`, so it pins to the
-// viewport and centres on the visible screen.
+// A plain fixed overlay rather than the shared Dialog: a `fixed inset-0` flex
+// container pins to the viewport and centres on the visible screen whatever
+// the wide workspace behind it does.
 const BREAKPOINT = "(max-width: 1023px)";
 const ACK_KEY = "seeding-mobile-ack";
 

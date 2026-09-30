@@ -48,7 +48,7 @@ profiles, match pages, Regelwerk, their own profile settings.
   - Replacements: banned users are not offered as candidates,
     `offerReplacement` refuses them, and `acceptReplacement` refuses a user
     banned after the offer.
-- **Staff page** `/staff/banliste`, linked from the Staff-Bereich header:
+- **Staff page** `/staff/banliste`, in the staff tab bar:
   active bans (player, reason, since, by whom, "Aufheben") and the lifted ones
   as a quieter history below.
 
@@ -140,7 +140,7 @@ this person banned before, and why".
   `PlayerPicker` in `src/components/player-picker.tsx`), `BanList` (id-only
   bans tagged "Nie im Hub" with the id; "Ban aufheben" asks once inline),
   `BannedCard` for players. The page is `src/app/staff/banliste/page.tsx`,
-  linked from the Staff-Bereich heading next to "Nutzung".
+  a `StaffPage` in the hub group of the staff tab bar.
 
 Touched elsewhere: `register()`, `/anmeldung`, the Spieler-Dashboard's
 register panel, `replacementCandidates` / `offerBlock` / `acceptReplacement`,

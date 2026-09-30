@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { hoverCard } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
 import type { MotwWeek } from "../motw";
 
@@ -212,9 +213,7 @@ function WeekChip({
       onClick={onSelect}
       className={cn(
         "flex w-[42px] shrink-0 flex-col items-center gap-1.5 rounded-lg border py-1.5 transition-colors",
-        active
-          ? "border-brand-blue bg-brand-blue text-white"
-          : "hover:border-brand-orange/50 hover:bg-muted",
+        active ? "border-brand-blue bg-brand-blue text-white" : hoverCard,
         isCurrent && !active && "border-brand-orange/70",
         isCurrent &&
           active &&

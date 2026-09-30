@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { SectionHeader } from "@/components/section-header";
 import { Button } from "@/components/ui/button";
+import { hoverCard } from "@/lib/emphasis";
 import { isAllowedImageType } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import { removeStreamPhoto, saveStreamPhoto } from "../actions";
@@ -105,9 +106,7 @@ export function StreamPhotoCard({ photoUrl }: { photoUrl: string | null }) {
           style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }}
           className={cn(
             "relative shrink-0 overflow-hidden rounded-xl border bg-muted/40 transition-colors",
-            dragging
-              ? "border-brand-orange bg-brand-orange/10"
-              : "hover:border-brand-orange/60",
+            dragging ? "border-brand-orange bg-brand-orange/10" : hoverCard,
           )}
           aria-label={photoUrl ? "Bild ersetzen" : "Bild wählen"}
         >

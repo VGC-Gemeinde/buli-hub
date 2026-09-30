@@ -32,6 +32,7 @@ export type MotwActionResult = { ok: true } | { ok: false; error: string };
 function revalidate(matchId: string | null, playerIds: (string | null)[] = []) {
   revalidatePath("/");
   revalidatePath("/spielplan");
+  revalidatePath("/staff/spielplan");
   revalidatePath("/staff");
   revalidatePath("/staff/motw");
   revalidatePath("/staff/aufnahmen");

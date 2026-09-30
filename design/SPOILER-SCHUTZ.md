@@ -140,7 +140,7 @@ without being spoiled. Participants and staff see everything as today.
 `getMatchResult` already ships full data to the client; reveal is a courtesy
 tag, not security (unchanged trade-off, see plan doc).
 
-Page order and chrome unchanged: `SiteHeader` breadcrumb → back link →
+Page order and chrome unchanged: `SiteHeader` → back link →
 (MotW banner) → eyebrow + status chip → `h1` → scoreboard → meta line →
 Spiele → Teamsheets.
 

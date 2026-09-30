@@ -6,6 +6,7 @@ import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { matchDisplayState, scoreFor } from "@/features/reporting/match-state";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
+import { hoverRow } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
 import { daysUntil, type Identity, type PlayerMatch } from "../dashboard";
 import { PlayerAvatar } from "./player-avatar";
@@ -359,7 +360,7 @@ function ScheduleRow({
         state === "current" && "bg-brand-orange/6",
         state === "overdue" && "bg-destructive/6",
         match.inherited && "bg-muted/30",
-        !isBye && "hover:bg-muted/40",
+        !isBye && hoverRow,
       )}
     >
       {/* The row links to the match via a stretched link underneath; the

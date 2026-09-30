@@ -31,9 +31,7 @@ import {
   SEED_SHEET_A,
   SEED_SHEET_B,
 } from "@/features/dev/teamsheets";
-import { DiscordSeasonCard } from "@/features/discord-season/components/discord-season-card";
 import { DropBanner } from "@/features/drops/components/drop-banner";
-import { DropsSection } from "@/features/drops/components/drops-section";
 import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
 import {
   FeedbackActions,
@@ -42,13 +40,9 @@ import {
 import { canSend, type FeedbackKind } from "@/features/feedback/feedback";
 import { MembershipBlockedCard } from "@/features/membership/components/blocked-card";
 import { MembershipGateBody } from "@/features/membership/components/gate-dialog";
-import { MembershipList } from "@/features/membership/components/membership-list";
-import { MembershipWarningCard } from "@/features/membership/components/warning-card";
-import type { RosterMembership } from "@/features/membership/membership";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import { MotwManager } from "@/features/motw/components/motw-manager";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
-import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
 import type {
   MotwBlockData,
   MotwCandidate,
@@ -57,6 +51,8 @@ import type {
   MotwRole,
   MotwWeek,
 } from "@/features/motw/motw";
+import { SectionNav } from "@/features/navigation/components/section-nav";
+import { sectionRow } from "@/features/navigation/sections";
 import { ProfileSpielplan } from "@/features/player-profile/components/profile-schedule";
 import type { ProfileScheduleRow } from "@/features/player-profile/profile";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
@@ -117,8 +113,8 @@ import { DisputeResolveDialog } from "@/features/reporting/components/dispute-re
 import { PublicMatchView } from "@/features/reporting/components/public-match-view";
 import { ReportForm } from "@/features/reporting/components/report-form";
 import { ReportSummary } from "@/features/reporting/components/report-summary";
-import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
 import { StaffResultEditor } from "@/features/reporting/components/staff-result-editor";
+import { WeekMatches } from "@/features/reporting/components/week-matches";
 import type {
   DisputeRow,
   MatchResultLite,
@@ -127,7 +123,6 @@ import type {
 } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
-import { PublishScheduleCard } from "@/features/schedule/components/publish-schedule-card";
 import { defaultDeadlines } from "@/features/schedule/spieltage";
 import { ParticipantList } from "@/features/season/components/participant-list";
 import {
@@ -151,9 +146,15 @@ import { seedingSteps } from "@/features/seeding/steps";
 import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
 import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { CopyLinkButton } from "@/features/staff/components/copy-link-button";
-import { PreseasonTodoCard } from "@/features/staff/components/preseason-todo-card";
+import {
+  StaffParticipantList,
+  type StaffParticipantRow,
+} from "@/features/staff/components/participant-list";
 import { SeasonCard } from "@/features/staff/components/registration-status";
+import { StatTile } from "@/features/staff/components/stat-tile";
+import { TodoList } from "@/features/staff/components/todo-list";
 import type { RegistrationState } from "@/features/staff/registration-window";
+import type { Todo } from "@/features/staff/todos";
 import { StreamPhotoCard } from "@/features/stream-photos/components/stream-photo-card";
 import { StreamPhotoHint } from "@/features/stream-photos/components/stream-photo-hint";
 import { StreamPhotoMark } from "@/features/stream-photos/components/stream-photo-mark";
@@ -824,6 +825,81 @@ const BAN_CANDIDATES: BanCandidate[] = [
     avatarUrl: AVATAR_URL,
     discordId: "100000000000000012",
   },
+];
+
+// Staff-Bereich: todos in both tones, participants in every state.
+const GALLERY_TODOS: Todo[] = [
+  {
+    id: "overdue",
+    tone: "urgent",
+    title: "2 Matches sind überfällig",
+    detail:
+      "Der Spieltag ist vorbei und es gibt kein Ergebnis. Nachhaken oder einen Freewin vergeben.",
+    action: { kind: "link", href: "/staff/woche", label: "Ansehen" },
+  },
+  {
+    id: "motw",
+    tone: "due",
+    title: "Kandidaten für Spieltag 3 wählen",
+    detail:
+      "Der nächste Spieltag hat noch keine Kandidaten für das Match of the Week.",
+    action: { kind: "link", href: "/staff/motw", label: "Jetzt wählen" },
+  },
+  {
+    id: "discord",
+    tone: "due",
+    title: "Discord stimmt nicht mit der Liga überein",
+    detail:
+      "17 von 18 Gruppen mit Rolle und Kanal · 130 von 133 Spielern mit beiden Rollen · Letzter Abgleich: 30.09.26, 12:00",
+    lines: ["Gruppe 4e: Kanal fehlt"],
+    action: { kind: "discord_sync" },
+  },
+];
+const participant = (
+  userId: string,
+  name: string,
+  facts: Partial<StaffParticipantRow["facts"]>,
+  extra: Partial<StaffParticipantRow> = {},
+): StaffParticipantRow => ({
+  identity: { userId, name, avatarUrl: null },
+  username: name.toLowerCase(),
+  groupName: facts.groupName ?? "Division 1a",
+  guildMember: facts.guildMember ?? true,
+  guildMemberCheckedAt: null,
+  dropped: facts.dropped ?? false,
+  dropReason: null,
+  replacement: null,
+  facts: {
+    guildMember: true,
+    groupName: "Division 1a",
+    dropped: false,
+    replacement: null,
+    ...facts,
+  },
+  ...extra,
+});
+const GALLERY_PARTICIPANTS: StaffParticipantRow[] = [
+  participant("p1", "Falinks", {}),
+  participant("p2", "Pawmi", { guildMember: false }),
+  participant("p3", "Wooloo", { guildMember: null }),
+  participant(
+    "p4",
+    "Nacli",
+    {
+      dropped: true,
+      replacement: { kind: "replaced", otherName: "Nachrücker Nemo" },
+    },
+    { dropReason: "Kein Bock mehr", replacement: REPLACEMENT_ACCEPTED },
+  ),
+  participant(
+    "p5",
+    "Grafaiai",
+    { dropped: true },
+    { dropReason: "Inaktivität, mehrfach nicht erreichbar." },
+  ),
+  participant("p6", "Nachrücker Nemo", {
+    replacement: { kind: "replacing", otherName: "Nacli" },
+  }),
 ];
 
 // Profile page Spielplan: every row state at once.
@@ -1688,34 +1764,6 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Staff: Nächster Schritt</h2>
-        <Specimen label="Anmeldung geschlossen — Einteilung steht aus">
-          <PreseasonTodoCard phase="registration_closed" scheduleSetup={null} />
-        </Specimen>
-        <Specimen label="Einteilung finalisiert — Spielplan erstellen (Dialog ohne Staff-Login wirkungslos)">
-          <PreseasonTodoCard
-            phase="seeded"
-            scheduleSetup={{
-              seasonStart: "2026-08-24",
-              deadlines: [
-                "2026-08-30",
-                "2026-09-06",
-                "2026-09-13",
-                "2026-09-20",
-                "2026-09-27",
-                "2026-10-04",
-                "2026-10-11",
-                "2026-10-18",
-                "2026-10-25",
-              ],
-              groups: 8,
-              matches: 144,
-              largest: 10,
-            }}
-          />
-        </Specimen>
-        <Specimen label="Einteilung finalisiert — kein Spielplan berechenbar">
-          <PreseasonTodoCard phase="seeded" scheduleSetup={null} />
-        </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">
@@ -2288,50 +2336,6 @@ export function Gallery() {
             />
           </div>
         </Specimen>
-        <Specimen label="Staff: Drops-Sektion (Liste + Dialog; Aktionen ohne Staff-Login wirkungslos)">
-          <DropsSection
-            drops={[
-              {
-                identity: { userId: "c", name: "Pawmi", avatarUrl: null },
-                groupName: "Division 1a",
-                reason: "Inaktivität, mehrfach nicht erreichbar.",
-                droppedAt: new Date("2026-07-06T10:00:00Z"),
-              },
-            ]}
-            candidates={[
-              { userId: "a", name: "Falinks", groupName: "Division 1a" },
-              { userId: "b", name: "Wooloo", groupName: "Division 1a" },
-            ]}
-          />
-        </Specimen>
-        <Specimen label="Staff: Drops-Sektion mit Ersatz (Ersatz einsetzen · Angebot offen · ersetzt)">
-          <DropsSection
-            drops={[
-              {
-                identity: { userId: "d", name: "Grafaiai", avatarUrl: null },
-                groupName: "Division 1b",
-                reason: "Inaktivität, mehrfach nicht erreichbar.",
-                droppedAt: new Date("2026-09-20T10:00:00Z"),
-              },
-              {
-                identity: REPLACEMENT_PENDING.replaced,
-                groupName: "Division 1a",
-                reason: "Server verlassen",
-                droppedAt: new Date("2026-09-21T10:00:00Z"),
-              },
-              {
-                identity: REPLACED_NACLI,
-                groupName: "Division 1a",
-                reason: "Kein Bock mehr",
-                droppedAt: new Date("2026-09-14T15:17:00Z"),
-              },
-            ]}
-            candidates={[]}
-            replacements={[REPLACEMENT_PENDING, REPLACEMENT_ACCEPTED]}
-            offerOptions={REPLACEMENT_OFFER_OPTIONS}
-            missedByReplaced={{ d: { 3: 2, 4: 3 } }}
-          />
-        </Specimen>
         <Specimen label="Staff: Ersatz-Dialog, Saison vorbei (Knopf gesperrt)">
           <OfferReplacementDialog
             replaced={REPLACED_NACLI}
@@ -2465,21 +2469,6 @@ export function Gallery() {
             spoilerMode="motw"
           />
         </Specimen>
-        <Specimen label="Staff-Todo — nächste Woche ohne Kandidaten (Hinweis)">
-          <MotwTodoCard
-            todo={{ round: 3, kind: "nominate", urgency: "warning" }}
-          />
-        </Specimen>
-        <Specimen label="Staff-Todo — aktuelle Woche ohne Kandidaten (dringend)">
-          <MotwTodoCard
-            todo={{ round: 2, kind: "nominate", urgency: "urgent" }}
-          />
-        </Specimen>
-        <Specimen label="Staff-Todo — vergangene Woche nicht bestätigt (dringend)">
-          <MotwTodoCard
-            todo={{ round: 2, kind: "confirm", urgency: "urgent" }}
-          />
-        </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">
@@ -2577,17 +2566,6 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Spielplan: Veröffentlichen</h2>
-        <Specimen label="Todo-Karte + Publish-Gate (Aktion ohne Staff-Login wirkungslos)">
-          <PublishScheduleCard
-            facts={{
-              rounds: 7,
-              matches: 68,
-              groups: 16,
-              firstDeadline: "2026-09-13",
-              lastDeadline: "2026-10-25",
-            }}
-          />
-        </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">
@@ -2976,15 +2954,94 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-2xl">Staff: Saison-Dashboard</h2>
-        <Specimen label="Worklist (überfällig · angefochten · diese Woche · Freewins)">
-          <SaisonDashboard
+        <h2 className="text-2xl">Staff-Bereich</h2>
+        <Specimen label="Bereichszeile: Staff (aktiv je nach Seite), Liga, Spieler mit Anmeldung">
+          <div className="flex flex-col gap-4">
+            <SectionNav
+              groups={
+                sectionRow("staff", {
+                  phase: "regular_season",
+                  role: "admin",
+                }) ?? []
+              }
+            />
+            <SectionNav
+              groups={
+                sectionRow("liga", { phase: "regular_season", role: null }) ??
+                []
+              }
+            />
+            <SectionNav
+              groups={
+                sectionRow("spieler", {
+                  phase: "registration_open",
+                  role: null,
+                  registrationRelevant: true,
+                }) ?? []
+              }
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Zu erledigen: dringend (rot) vor fällig (orange), mit Link und Steuerelement">
+          <TodoList
+            todos={GALLERY_TODOS}
+            renderControl={() => (
+              <Button type="button" size="sm" variant="outline">
+                Jetzt abgleichen
+              </Button>
+            )}
+          />
+        </Specimen>
+        <Specimen label="Zu erledigen: nichts offen">
+          <TodoList todos={[]} renderControl={() => null} />
+        </Specimen>
+        <Specimen label="Kacheln: Diese Woche (Alarm nur bei Zahl > 0) und Saison">
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatTile value={33} label="Offen" href="/staff/woche" />
+              <StatTile value={35} sub="von 68" label="Gemeldet" />
+              <StatTile value={0} label="Überfällig" alert />
+              <StatTile value={1} label="Angefochten" alert />
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatTile value={133} label="Spieler" />
+              <StatTile value={3} label="Drops" />
+              <StatTile value={11} label="Nicht auf dem Server" />
+              <StatTile value={1} sub="von 1" label="MotW bestätigt" />
+            </div>
+          </div>
+        </Specimen>
+        <Specimen label="Woche: Worklists (überfällig · angefochten · Freewins) und Spieltag mit Umschalter">
+          <WeekMatches
             overdue={STAFF_OVERDUE}
             thisWeek={STAFF_WEEK}
             pendingFreeWins={STAFF_PENDING}
             disputed={STAFF_DISPUTED}
             resolvedDisputes={STAFF_RESOLVED}
+            round={2}
+            totalRounds={7}
+            currentRound={2}
             today="2026-07-10"
+          />
+        </Specimen>
+        <Specimen label="Teilnehmer: laufende Saison (Filter, Status-Tags, Drop / Ersatz je Zeile)">
+          <StaffParticipantList
+            rows={GALLERY_PARTICIPANTS}
+            actions="drop"
+            seasonName="Saison 9"
+            offerOptions={REPLACEMENT_OFFER_OPTIONS}
+            missedByReplaced={{}}
+            checkedAt={new Date("2026-09-30T11:59:00Z")}
+          />
+        </Specimen>
+        <Specimen label="Teilnehmer: vor der Saison (Stornieren je Zeile), leer">
+          <StaffParticipantList
+            rows={[]}
+            actions="cancel"
+            seasonName="Saison 10"
+            offerOptions={null}
+            missedByReplaced={{}}
+            checkedAt={null}
           />
         </Specimen>
       </section>
@@ -3221,33 +3278,6 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Discord-Saison (Rollen & Gruppenkanäle)</h2>
-        <Specimen label="Staff — Abweichung (Fehler, fehlende Gruppe, übersprungene Spieler)">
-          <DiscordSeasonCard
-            view={{
-              kind: "attention",
-              ranAt: new Date("2026-09-06T18:05:00+02:00"),
-              groups: { ready: 3, total: 4 },
-              players: { ready: 37, total: 40 },
-              error:
-                "Kanal für Division 2b konnte nicht angelegt werden (HTTP 403)",
-              skipped: [
-                { name: "Alice", reason: "no_discord_id" },
-                { name: "Bob", reason: "error" },
-              ],
-            }}
-          />
-        </Specimen>
-        <Specimen label="Staff — Abgleich läuft nicht (letzter Lauf über eine Stunde her)">
-          <DiscordSeasonCard
-            view={{
-              kind: "stale",
-              ranAt: new Date("2026-09-06T09:40:00+02:00"),
-            }}
-          />
-        </Specimen>
-        <Specimen label="Staff — noch kein Abgleich (Button ohne Staff-Login wirkungslos)">
-          <DiscordSeasonCard view={{ kind: "never" }} />
-        </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">
@@ -3263,26 +3293,6 @@ export function Gallery() {
         </Specimen>
         <Specimen label="Anmeldung — blockiert, weil nicht auf dem Server">
           <MembershipBlockedCard />
-        </Specimen>
-        <Specimen label="Staff — Warnung oben auf dem Dashboard (einer / mehrere)">
-          <div className="flex flex-col gap-3">
-            <MembershipWarningCard count={1} listId="gallery-membership" />
-            <MembershipWarningCard count={3} listId="gallery-membership" />
-          </div>
-        </Specimen>
-        <Specimen label="Staff — Liste (nicht auf dem Server · noch nicht geprüft), mit Stornieren">
-          <MembershipList
-            roster={MEMBERSHIP_ROSTER}
-            seasonName="Saison 9"
-            canCancel
-          />
-        </Specimen>
-        <Specimen label="Staff — alle bestätigt">
-          <MembershipList
-            roster={MEMBERSHIP_ROSTER_CONFIRMED}
-            seasonName="Saison 9"
-            canCancel={false}
-          />
         </Specimen>
         <Specimen label="Anmeldung stornieren — Bestätigungsdialog (Staff, nur nach Anmeldeschluss)">
           <CancelRegistrationDialog
@@ -3378,37 +3388,6 @@ const USAGE_BARS = Array.from({ length: 30 }, (_, i) => {
 // Deliberately includes the shapes a cloned season produces: umlauts, an
 // overlong name, a dropped player, a user with no profile identity at all, and
 // enough rows to trip the "weitere Treffer" cap.
-// One confirmed non-member, one never-checked, one confirmed member (does not
-// appear in the list, only in the roster stamp).
-const MEMBERSHIP_ROSTER: RosterMembership[] = [
-  {
-    userId: "66666666-6666-4666-8666-666666666666",
-    displayName: "Ausgetreten",
-    username: "ausgetreten",
-    avatarUrl: null,
-    guildMember: false,
-    guildMemberCheckedAt: new Date("2026-08-20T14:32:00Z"),
-  },
-  {
-    userId: "77777777-7777-4777-8777-777777777777",
-    displayName: "Nie Geprüft",
-    username: "nie_geprueft",
-    avatarUrl: null,
-    guildMember: null,
-    guildMemberCheckedAt: null,
-  },
-  {
-    userId: "88888888-8888-4888-8888-888888888888",
-    displayName: "Brav Dabei",
-    username: "brav",
-    avatarUrl: null,
-    guildMember: true,
-    guildMemberCheckedAt: new Date("2026-08-21T09:00:00Z"),
-  },
-];
-
-const MEMBERSHIP_ROSTER_CONFIRMED: RosterMembership[] = [MEMBERSHIP_ROSTER[2]];
-
 const IMPERSONATION_USERS: ImpersonatableUser[] = [
   {
     userId: "11111111-1111-4111-8111-111111111111",

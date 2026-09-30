@@ -25,8 +25,9 @@ public-league conventions.
 - Data: `publicLeagueOverview(window.id, seasonNumber, today)` — reused
   unchanged; every `PublicGroup` already carries all rounds' matches with
   results, MotW badges and spoiler-safe fields.
-- `SiteHeader` with `breadcrumb="Spielplan"` (root → "/", like the profile
-  pages); spoiler cookie read exactly as on `/`.
+- `SiteHeader section="liga"`: the page is the Liga row's "Spielplan"
+  (`docs/plans/site-navigation.md`); spoiler cookie read exactly as on `/`.
+  Staff reach the same schedule inside their area at `/staff/spielplan`.
 
 ## View
 
@@ -48,16 +49,12 @@ public-league conventions.
 
 ## Entry points
 
-- **Public overview (`/`)**: `ActionLink` "Kompletter Spielplan" in the header
-  row next to the Spieltag counter / spoiler switch.
-- **`PublishScheduleCard`**: second button "Spielplan ansehen" (outline,
-  `border-brand-orange/50`) beside the publish trigger — the two-button
-  anatomy of the pre-season todo card. This is the staff preview entry while
-  the schedule is hidden.
-- **Staff `SeasonStrip`**: a third outline button "Spielplan" beside
-  MotW/Divisionen.
-- No new site-header nav entry: "Liga" keeps pointing at the overview, which
-  links the page.
+- **Site navigation**: "Spielplan" in the Liga section's row
+  (`docs/plans/site-navigation.md`), next to "Übersicht". The overview itself
+  carries no extra link to it.
+- **Staff**: the same schedule inside the Staff-Bereich at `/staff/spielplan`
+  (tab "Spielplan" in the staff row), which is also the preview while the
+  schedule is still internal.
 
 ## Tests & dev tooling
 

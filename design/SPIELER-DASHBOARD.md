@@ -22,20 +22,10 @@ with the reporting feature — no layout change, cells fill in.
 
 ---
 
-## 1. Header navigation (`site-header.tsx`)
+## 1. Header navigation
 
-Primary nav link for **every signed-in user** (unlike the gated
-Staff-Bereich menu item), left cluster next to the wordmark, `gap-7` from it:
-
-```tsx
-<Link href="/spieler" className="flex items-center gap-2">
-  <div className="h-2 w-4 -skew-x-[18deg] bg-brand-orange" />
-  <span className="text-sm font-semibold text-brand-blue dark:text-white">Spieler-Dashboard</span>
-</Link>
-```
-
-The tick doubles as the active-state marker; if more nav links arrive later,
-only the active link carries it (inactive: `text-muted-foreground`, no tick).
+The header and its navigation are described in `NAVIGATION.md`; the
+Spieler-Dashboard is one of its top-level sections.
 
 ## 2. Shell (`spieler/page.tsx`)
 

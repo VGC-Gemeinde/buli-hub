@@ -1,79 +1,99 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Tick } from "@/components/tick";
+import type { Section } from "@/features/navigation/sections";
 import { cn } from "@/lib/utils";
 
-// The signed-in header navigation (DESIGN.md §3). Top-level entries — "Liga"
-// (only while a season runs), "Spieler-Dashboard", and "Staff-Bereich" (staff
-// only) — each with a tick that is orange when active, neutral otherwise. On a
-// sub-page a `breadcrumb` collapses the nav into a trail "{root} / {current}".
+// A label that always takes the width of its bold form, so the tab moving to
+// another entry never shifts its neighbours.
+function Label({ text }: { text: string }) {
+  return (
+    <span className="grid">
+      <span className="col-start-1 row-start-1">{text}</span>
+      <span
+        aria-hidden
+        className="invisible col-start-1 row-start-1 font-semibold"
+      >
+        {text}
+      </span>
+    </span>
+  );
+}
+
+// The main bar's navigation (design/NAVIGATION.md §3.2). The same entries on
+// every page: "Liga" (only while a season runs), "Spieler-Dashboard",
+// "Staff-Bereich" (staff only). The page's `section` is a tab: a `bg-muted`
+// shape with rounded top corners behind the entry, running straight into the
+// section row of the same colour below, plus the orange tick. Below `sm` the
+// labels take their short forms so the bar stays one line.
 export function HeaderNav({
   isStaff,
   seasonRunning,
-  breadcrumb,
-  breadcrumbRoot,
+  section,
 }: {
   isStaff: boolean;
   seasonRunning: boolean;
-  breadcrumb?: string;
-  breadcrumbRoot?: { href: string; label: string };
+  section?: Section;
 }) {
-  const pathname = usePathname();
-
-  if (breadcrumb) {
-    const root = breadcrumbRoot ?? {
+  const entries: {
+    href: string;
+    label: string;
+    short: string;
+    section: Section;
+  }[] = [
+    ...(seasonRunning
+      ? [{ href: "/", label: "Liga", short: "Liga", section: "liga" as const }]
+      : []),
+    {
       href: "/spieler",
       label: "Spieler-Dashboard",
-    };
-    return (
-      <div className="flex min-w-0 items-center gap-2.5">
-        <Link href={root.href} className="flex min-w-0 items-center gap-2">
-          <Tick size="s" color="neutral" />
-          <span className="truncate font-medium text-muted-foreground text-sm hover:text-brand-blue dark:hover:text-white">
-            {root.label}
-          </span>
-        </Link>
-        <span className="shrink-0 text-[13px] text-border">/</span>
-        {/* The current page wins the space fight: it keeps up to ~45vw
-            before truncating, the root label gives way first. */}
-        <span className="max-w-[45vw] shrink-0 truncate font-semibold text-brand-blue text-sm dark:text-white">
-          {breadcrumb}
-        </span>
-      </div>
-    );
-  }
-
-  const entries = [
-    ...(seasonRunning ? [{ href: "/", label: "Liga" }] : []),
-    { href: "/spieler", label: "Spieler-Dashboard" },
-    ...(isStaff ? [{ href: "/staff", label: "Staff-Bereich" }] : []),
+      short: "Spieler",
+      section: "spieler",
+    },
+    ...(isStaff
+      ? [
+          {
+            href: "/staff",
+            label: "Staff-Bereich",
+            short: "Staff",
+            section: "staff" as const,
+          },
+        ]
+      : []),
   ];
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
+    <nav aria-label="Hauptnavigation" className="flex h-full items-stretch">
       {entries.map((entry) => {
-        const active = isActive(entry.href);
+        const active = entry.section === section;
         return (
           <Link
             key={entry.href}
             href={entry.href}
-            aria-current={active ? "page" : undefined}
-            className="flex items-center gap-2"
+            // "true", not "page": the page itself is marked in the row.
+            aria-current={active ? "true" : undefined}
+            className={cn(
+              "relative flex items-center whitespace-nowrap px-[11px] text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 sm:px-[18px]",
+              active
+                ? "font-semibold text-brand-blue dark:text-white"
+                : "font-medium text-muted-foreground hover:text-brand-blue dark:hover:text-white",
+            )}
           >
-            <Tick size="s" color={active ? "orange" : "neutral"} />
-            <span
-              className={cn(
-                "whitespace-nowrap text-sm",
-                active
-                  ? "font-semibold text-brand-blue dark:text-white"
-                  : "font-medium text-muted-foreground hover:text-brand-blue dark:hover:text-white",
-              )}
-            >
-              {entry.label}
+            {active ? (
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-t-md bg-muted"
+              />
+            ) : null}
+            <span className="relative flex items-center gap-[7px] sm:gap-2">
+              <Tick size="s" color={active ? "orange" : "neutral"} />
+              <span className="sm:hidden">
+                <Label text={entry.short} />
+              </span>
+              <span className="hidden sm:block">
+                <Label text={entry.label} />
+              </span>
             </span>
           </Link>
         );

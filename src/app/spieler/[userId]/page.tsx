@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/back-link";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { SiteHeader } from "@/components/site-header";
 import { Tick } from "@/components/tick";
@@ -223,11 +224,11 @@ export default async function PlayerProfilePage({
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader
-        breadcrumb="Spieler-Profil"
-        breadcrumbRoot={{ href: "/", label: "Übersicht" }}
-      />
+      <SiteHeader section="liga" />
       <main className="mx-auto w-full max-w-[640px] flex-1 px-6 py-12 sm:px-8">
+        {/* A profile is not a destination of the navigation; the way back
+            is here (docs/plans/site-navigation.md). */}
+        <BackLink fallbackHref="/" />
         <ProfileHeader
           displayName={identity.displayName}
           username={identity.username}

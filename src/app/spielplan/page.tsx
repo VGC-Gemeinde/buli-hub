@@ -40,10 +40,7 @@ export default async function SpielplanPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader
-        breadcrumb="Spielplan"
-        breadcrumbRoot={{ href: "/", label: "Übersicht" }}
-      />
+      <SiteHeader section="liga" />
       <FullSchedule
         overview={overview}
         meId={current?.userId ?? ""}

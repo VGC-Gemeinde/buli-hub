@@ -88,6 +88,7 @@ export async function listRegistrations(windowId: string) {
       displayName: profiles.displayName,
       username: profiles.username,
       avatarUrl: profiles.avatarUrl,
+      status: registrations.status,
       createdAt: registrations.createdAt,
     })
     .from(registrations)

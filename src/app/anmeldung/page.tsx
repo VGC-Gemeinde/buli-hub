@@ -80,7 +80,7 @@ function Shell({
 }) {
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
+      <SiteHeader section="spieler" />
       <main className="mx-auto w-full max-w-xl flex-1 px-6 py-12">
         <h1 className="mb-2.5 text-4xl text-brand-blue dark:text-white">
           Anmeldung

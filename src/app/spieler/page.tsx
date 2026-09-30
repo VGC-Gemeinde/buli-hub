@@ -91,7 +91,7 @@ import { playerName } from "@/lib/player-name";
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
+      <SiteHeader section="spieler" />
       <main className="mx-auto w-full max-w-[640px] flex-1 px-6 py-12 sm:px-8">
         <h1 className="mb-9 text-[32px] text-brand-blue sm:text-[40px] dark:text-white">
           Spieler-Dashboard
@@ -313,7 +313,7 @@ export default async function SpielerPage() {
     return (
       <div className="flex flex-1 flex-col">
         <SeasonGates />
-        <SiteHeader />
+        <SiteHeader section="spieler" />
         <main className="mx-auto w-full max-w-[1040px] flex-1 px-6 pt-8 pb-18 sm:px-8">
           {showProfileHint ? (
             <div className="mb-6">

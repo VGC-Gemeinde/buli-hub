@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 import { Suspense } from "react";
+import { NavigationMemory } from "@/components/back-link";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CountPageLoad } from "@/features/usage/count-page-load";
@@ -41,6 +42,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <NavigationMemory />
           {children}
           <SiteFooter />
         </ThemeProvider>

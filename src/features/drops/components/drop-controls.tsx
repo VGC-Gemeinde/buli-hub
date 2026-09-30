@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SectionHeader } from "@/components/section-header";
 import { TypeToConfirm } from "@/components/type-to-confirm";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,89 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlayerLink } from "@/features/player-profile/components/player-link";
 import {
   OfferReplacementDialog,
   type ReplacementOfferOptions,
 } from "@/features/replacements/components/offer-dialog";
-import {
-  ReplacementStatusLine,
-  WithdrawOfferButton,
-} from "@/features/replacements/components/replacement-status";
+import { WithdrawOfferButton } from "@/features/replacements/components/replacement-status";
 import type { ReplacementRow } from "@/features/replacements/queries";
-import { PlayerAvatar } from "@/features/season/components/player-avatar";
-import { formatGermanDateTime } from "@/lib/german-time";
 import { dropPlayer, undropPlayer } from "../actions";
 import type { DropCandidate, DropRow } from "../queries";
-
-function ddMM(date: Date): string {
-  return formatGermanDateTime(date, {
-    day: "2-digit",
-    month: "2-digit",
-  });
-}
-
-// The staff dashboard's Drops section: the list of dropped players (with
-// un-drop) and the drop dialog. A drop never destroys data — it flips the
-// counting override — but it changes every table immediately, hence the
-// type-to-confirm.
-// A dropped player can be un-dropped or replaced (docs/plans/player-
-// replacement.md); `replacements` carries the season's offers and, while
-// the season runs, the offer options.
-export function DropsSection({
-  drops,
-  candidates,
-  replacements = [],
-  offerOptions = null,
-  missedByReplaced = {},
-}: {
-  drops: DropRow[];
-  candidates: DropCandidate[];
-  replacements?: ReplacementRow[];
-  offerOptions?: ReplacementOfferOptions | null;
-  // Per dropped player: the losses a replacement would start with, per
-  // offered entry round.
-  missedByReplaced?: Record<string, Record<number, number>>;
-}) {
-  return (
-    <section className="flex flex-col gap-4">
-      {/* The dialog trigger rides in `meta` (like the membership list's
-          refresh button) so the header keeps its full-width divider. */}
-      <SectionHeader
-        tickColor="navy"
-        meta={
-          <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            Alle Matches zählen als Freewin für die Gegner
-            <DropPlayerDialog candidates={candidates} />
-          </span>
-        }
-      >
-        Drops
-      </SectionHeader>
-      {drops.length === 0 ? (
-        <p className="rounded-lg border px-4 py-4 text-center text-muted-foreground text-sm">
-          Kein Spieler gedroppt.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {drops.map((drop) => (
-            <DropListRow
-              key={drop.identity.userId}
-              drop={drop}
-              replacement={
-                replacements.find(
-                  (r) => r.replaced.userId === drop.identity.userId,
-                ) ?? null
-              }
-              offerOptions={offerOptions}
-              missedByRound={missedByReplaced[drop.identity.userId]}
-            />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
 
 // The un-drop control, shared by the dashboard list and the profile staff
 // panel. Nothing was destroyed by the drop, so no extra confirmation.
@@ -136,57 +60,6 @@ export function UndropButton({ userId }: { userId: string }) {
       >
         {pending ? "Wird aufgehoben…" : "Drop aufheben"}
       </Button>
-    </div>
-  );
-}
-
-function DropListRow({
-  drop,
-  replacement,
-  offerOptions,
-  missedByRound,
-}: {
-  drop: DropRow;
-  replacement: ReplacementRow | null;
-  offerOptions: ReplacementOfferOptions | null;
-  missedByRound?: Record<number, number>;
-}) {
-  return (
-    <div className="flex flex-col gap-2 rounded-lg border px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3.5">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <PlayerAvatar identity={drop.identity} size="size-[26px]" />
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate font-medium text-sm">
-            <PlayerLink
-              userId={drop.identity.userId}
-              name={drop.identity.name}
-            />
-            <span className="text-muted-foreground">
-              {" "}
-              · {drop.groupName} · seit {ddMM(drop.droppedAt)}
-            </span>
-          </span>
-          {drop.reason ? (
-            <span className="truncate text-[13px] text-muted-foreground">
-              "{drop.reason}"
-            </span>
-          ) : null}
-          {replacement ? (
-            <ReplacementStatusLine
-              replacement={replacement.replacement}
-              entryRound={replacement.entryRound}
-              acceptedAt={replacement.acceptedAt}
-              offeredAt={replacement.offeredAt}
-            />
-          ) : null}
-        </div>
-      </div>
-      <DropActions
-        drop={drop}
-        replacement={replacement}
-        offerOptions={offerOptions}
-        missedByRound={missedByRound}
-      />
     </div>
   );
 }
@@ -232,10 +105,14 @@ export function DropPlayerDialog({
   candidates = [],
   fixed,
   triggerSize = "default",
+  quiet = false,
 }: {
   candidates?: DropCandidate[];
   fixed?: DropCandidate;
   triggerSize?: "default" | "sm";
+  // A ghost "Droppen" for long lists where every row carries it (the
+  // Teilnehmer page); the full outline button elsewhere.
+  quiet?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -272,11 +149,12 @@ export function DropPlayerDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
         type="button"
-        variant="outline"
+        variant={quiet ? "ghost" : "outline"}
         size={triggerSize}
+        className={quiet ? "text-muted-foreground" : undefined}
         onClick={() => setOpen(true)}
       >
-        Spieler droppen
+        {quiet ? "Droppen" : "Spieler droppen"}
       </Button>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>

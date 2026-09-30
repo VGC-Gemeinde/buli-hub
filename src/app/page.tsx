@@ -53,7 +53,7 @@ export default async function Home({
     );
     return (
       <div className="flex flex-1 flex-col">
-        <SiteHeader />
+        <SiteHeader section="liga" />
         <PublicLeague
           overview={overview}
           meId={current?.userId ?? ""}

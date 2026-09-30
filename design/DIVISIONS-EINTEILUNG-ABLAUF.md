@@ -23,11 +23,9 @@ pill, giving one chrome row back to the sheet.
 
 ## 1. Page chrome (`seeding-toolbar.tsx`)
 
-- The back link loses its own row and becomes a **breadcrumb inside the title
-  row**: `ChevronLeft` (13px) + **Staff-Bereich**, `text-[13px] font-medium
-  text-muted-foreground hover:text-foreground`, followed by a divider
-  `h-[18px] w-px bg-border`, then the existing tick + h1 + season label
-  (unchanged). Title row: `flex items-center gap-4 px-7 pt-3.5 pb-2.5`.
+- No back link: the site header's Staff-Bereich row is the way around
+  (`NAVIGATION.md`). The title row holds the tick + h1 + season label.
+  Title row: `flex items-center gap-4 px-7 pt-3.5 pb-2.5`.
 - Right side of the title row: the **control pill** (§3). The `ControlBar`
   strip below the toolbar is removed.
 - The two `Meter` components are **gone** — placement/grouping progress lives
@@ -215,7 +213,7 @@ steppers, seams all stay. Deltas:
 
 ## 8. Checklist
 
-1. `seeding-toolbar.tsx`: breadcrumb in title row, meters removed, control
+1. `seeding-toolbar.tsx`: title row without back link, meters removed, control
    pill right (§1, §3); contextual row per view + finalized notice slot (§4)
 2. `step-bar.tsx`: numbered circles, progress sublabels, segment
    active/hover treatment with inset bottom rule, chevron separators, flow

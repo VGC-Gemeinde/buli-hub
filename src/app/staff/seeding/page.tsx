@@ -14,6 +14,7 @@ import {
   listSeedingPlayers,
   listSubDivisions,
 } from "@/features/seeding/queries";
+import { StaffPage } from "@/features/staff/components/staff-page";
 import { latestWindow } from "@/features/staff/queries";
 import {
   registrationState,
@@ -31,18 +32,11 @@ export default async function SeedingPage() {
 
   if (!window || state !== "closed") {
     return (
-      <div className="flex flex-1 flex-col">
-        <SiteHeader />
-        <main className="mx-auto w-full max-w-xl flex-1 px-6 py-12">
-          <h1 className="mb-9 text-4xl text-brand-blue dark:text-white">
-            Divisionen einteilen
-          </h1>
-          <EmptyStateCard title="Anmeldung läuft noch" informational>
-            Die Einteilung ist erst möglich, sobald die Anmeldung geschlossen
-            ist.
-          </EmptyStateCard>
-        </main>
-      </div>
+      <StaffPage title="Divisionen">
+        <EmptyStateCard title="Anmeldung läuft noch" informational>
+          Die Einteilung ist erst möglich, sobald die Anmeldung geschlossen ist.
+        </EmptyStateCard>
+      </StaffPage>
     );
   }
 
@@ -63,24 +57,33 @@ export default async function SeedingPage() {
   });
 
   return (
-    <div className="flex h-screen min-w-[1520px] flex-col overflow-hidden">
-      <SiteHeader className="shrink-0" />
+    // The header (with the staff navigation) sits exactly as on every other
+    // staff page; only
+    // the workspace below is the wide one (a live meeting on one large
+    // screen), and on a narrower window it scrolls sideways inside its own
+    // frame instead of widening the whole document.
+    <div className="flex h-screen flex-col overflow-hidden">
+      <SiteHeader className="shrink-0" section="staff" />
       <MobileWarning />
-      <SeedingWorkspace
-        players={players}
-        divisions={divisions}
-        subDivisions={subDivisions}
-        initialSize={seeding?.subDivisionSize ?? null}
-        initialDivisionCount={divisions.length}
-        initialReplayTiers={seeding?.replayRequiredTiers ?? null}
-        season={seasonName(window.seasonNumber)}
-        postSeason={postSeason}
-        postSeasonConfigured={Boolean(seeding?.postSeasonConfiguredAt)}
-        finalized={Boolean(seeding?.finalizedAt)}
-        finalizedAt={seeding?.finalizedAt ?? null}
-        initialControlState={controlState}
-        initialHolderName={lock?.holderName ?? null}
-      />
+      <div className="flex min-h-0 flex-1 overflow-x-auto">
+        <div className="flex min-w-[1520px] flex-1 flex-col">
+          <SeedingWorkspace
+            players={players}
+            divisions={divisions}
+            subDivisions={subDivisions}
+            initialSize={seeding?.subDivisionSize ?? null}
+            initialDivisionCount={divisions.length}
+            initialReplayTiers={seeding?.replayRequiredTiers ?? null}
+            season={seasonName(window.seasonNumber)}
+            postSeason={postSeason}
+            postSeasonConfigured={Boolean(seeding?.postSeasonConfiguredAt)}
+            finalized={Boolean(seeding?.finalizedAt)}
+            finalizedAt={seeding?.finalizedAt ?? null}
+            initialControlState={controlState}
+            initialHolderName={lock?.holderName ?? null}
+          />
+        </div>
+      </div>
     </div>
   );
 }

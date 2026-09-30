@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ActionLink } from "@/components/links";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { MotwBlock } from "@/features/motw/components/motw-block";
@@ -13,6 +12,7 @@ import type { MatchdayLite } from "@/features/season/dashboard";
 import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
 import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
 import { scoreHidden } from "@/features/spoilers/spoilers";
+import { hoverCard } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
 import type { PublicDivision, PublicMatch, PublicOverview } from "../queries";
 
@@ -114,9 +114,6 @@ export function PublicLeague({
               Spieltag {overview.currentRound} / {overview.totalRounds}
             </span>
           ) : null}
-          <ActionLink href="/spielplan" className="text-sm">
-            Kompletter Spielplan
-          </ActionLink>
           <SpoilerSwitch spoilersOff={spoilersOff} onChange={setSpoilersOff} />
         </div>
       </div>
@@ -385,7 +382,7 @@ function MatchRow({
   const className = cn(
     "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
     mine && "border-brand-orange/40 bg-brand-orange/5",
-    match.playerB && "transition-colors hover:border-brand-orange/50",
+    match.playerB && hoverCard,
   );
   const content = (
     <>

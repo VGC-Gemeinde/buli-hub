@@ -190,8 +190,9 @@ Always `skewX(-18deg)`. Exactly three sizes:
 | M | 18×9 | section headers (h2), panel titles, empty-state cards |
 | L | 22×11 | page titles (h1), landing credit |
 
-Color: `orange` (active / you) · `neutral` = `bg-border` (informational /
-inactive) · `navy` (staff / officiating).
+Color: `orange` (active / you) · `neutral` = `bg-border`, `dark:bg-white/30`
+(informational / inactive; the border token alone is too faint on the dark
+navy and on `bg-muted`) · `navy` (staff / officiating).
 
 ### 8.2 Text on orange is white
 
@@ -258,3 +259,18 @@ text + rail position carry it too.
 
 Every player-name render uses the chain `displayName → username →
 "Discord-Nutzer"`; never an empty cell or ad-hoc "Unbekannt".
+
+### 8.11 Hover on clickable surfaces — `hoverCard` / `hoverRow` (`src/lib/emphasis.ts`)
+
+Two answers, readable in light and dark alike (a half-transparent orange
+border alone vanishes on white):
+
+- **`hoverCard`**: a bordered card or row that is a link or a button (stat
+  tiles, match rows, profile Spielplan rows, pager steps, MotW options): the
+  border turns fully orange over a faint orange wash
+  (`bg-brand-orange/[0.06]`).
+- **`hoverRow`**: a row without a border of its own inside a card or list
+  (the dashboard Spielplan, picker options, seeding sheet rows, choice cards
+  in dialogs): the full `bg-muted` background.
+
+Something that is not clickable gets no hover at all.

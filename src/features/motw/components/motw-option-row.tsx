@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { hoverCard } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
 import { type MotwOption, recordability } from "../motw";
 import { MotwSide } from "./motw-player";
@@ -57,7 +58,7 @@ export function MotwOptionRow({
           "border-brand-orange/55 bg-brand-orange/[0.07]",
         (state === "primary" || state === "backup") &&
           "border-brand-blue/40 bg-brand-blue/[0.04] dark:border-white/30 dark:bg-white/[0.05]",
-        !picked && "hover:border-brand-orange/40 hover:bg-brand-orange/[0.045]",
+        !picked && hoverCard,
         disabled && !picked && "pointer-events-none opacity-55",
         !picked && "cursor-pointer",
       )}

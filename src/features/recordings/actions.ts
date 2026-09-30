@@ -20,6 +20,7 @@ export type RecordingActionResult = { ok: true } | { ok: false; error: string };
 function revalidate(matchId: string, playerIds: (string | null)[]) {
   revalidatePath("/");
   revalidatePath("/spielplan");
+  revalidatePath("/staff/spielplan");
   revalidatePath("/staff");
   revalidatePath("/staff/aufnahmen");
   revalidatePath(`/match/${matchId}`);

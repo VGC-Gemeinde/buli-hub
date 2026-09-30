@@ -50,7 +50,7 @@ MotW rules flow through automatically).
   - Match page: `ReportSummary` scoreboard sides + mobile rows,
     `PublicMatchView` sides.
   - MotW billboard sides.
-  - Staff drops list.
+  - The Teilnehmer rows in the Staff-Bereich.
   Deliberately *not* linked: rows that are themselves links (public
   overview match rows, staff dashboard/MotW manager rows — the match link
   wins; profiles stay reachable via the match page).

@@ -6,6 +6,7 @@ import { droppedIdsForSubDivision } from "@/features/drops/queries";
 import { SeasonGates } from "@/features/membership/components/season-gates";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
 import { motwByMatchId } from "@/features/motw/queries";
+import { matchPageSection } from "@/features/navigation/sections";
 import { RecordingBanner } from "@/features/recordings/components/recording-banner";
 import { isHeld } from "@/features/recordings/queries";
 import { DisputeDialog } from "@/features/reporting/components/dispute-dialog";
@@ -131,20 +132,10 @@ export default async function MatchReportPage({
     privileged && !dispute ? await matchResolvedDispute(matchId) : null;
   const staffOptions =
     !result && isParticipant ? await listStaffAndAdmins() : [];
-  const breadcrumb = shownResult
-    ? shownResult.outcome === "free_win"
-      ? "Freewin"
-      : "Ergebnis"
-    : isParticipant
-      ? "Ergebnis melden"
-      : "Spiel";
-  // Participants return to their dashboard, staff to the Staff area, neutral
-  // observers to the public overview.
-  const back = isParticipant
-    ? { href: "/spieler", label: "Zurück zur Übersicht" }
-    : isStaff
-      ? { href: "/staff", label: "Staff-Bereich" }
-      : { href: "/", label: "Zur Übersicht" };
+  // Without a previous page in the hub, "Zurück" leads to where the viewer
+  // belongs: participants to their dashboard, staff to the Staff area,
+  // neutral observers to the public overview.
+  const backHref = isParticipant ? "/spieler" : isStaff ? "/staff" : "/";
   const editorInitial =
     result && result.outcome === "normal"
       ? {
@@ -191,8 +182,7 @@ export default async function MatchReportPage({
       round={match.round}
       groupName={match.groupName}
       disputed={dispute !== null}
-      backHref={back.href}
-      backLabel={back.label}
+      backHref={backHref}
       spoilerMode={spoilerMode}
     />
   ) : null;
@@ -200,14 +190,7 @@ export default async function MatchReportPage({
   return (
     <div className="flex flex-1 flex-col">
       <SeasonGates />
-      <SiteHeader
-        breadcrumb={breadcrumb}
-        breadcrumbRoot={
-          isStaff && !isParticipant
-            ? { href: "/staff", label: "Staff-Bereich" }
-            : { href: "/spieler", label: "Spieler-Dashboard" }
-        }
-      />
+      <SiteHeader section={matchPageSection({ isParticipant, isStaff })} />
       <main className="mx-auto w-full max-w-[760px] flex-1 px-6 pt-9 pb-[168px] sm:px-8 sm:pb-[140px]">
         {motw ? (
           <MotwMatchBanner

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
-import { emphasisSurface } from "@/lib/emphasis";
+import { emphasisSurface, hoverCard } from "@/lib/emphasis";
 import {
   formatGermanDateTime,
   formatGermanDay,
@@ -123,19 +123,38 @@ function MatchRow({
   );
 }
 
-export function SaisonDashboard({
+// The body of the Woche page (docs/plans/staff-dashboard.md): the season's
+// worklists first, each only when it has something (overdue matches with the
+// free-win award, open disputes, free wins to confirm), then one Spieltag's
+// matches with a pager, then the resolved disputes as history. Each worklist
+// carries an anchor id, which the dashboard's todos and tiles link to.
+export const WEEK_ANCHORS = {
+  overdue: "ueberfaellig",
+  disputed: "angefochten",
+  freeWins: "freewins",
+  round: "spieltag",
+} as const;
+
+export function WeekMatches({
   overdue,
   thisWeek,
   pendingFreeWins,
   disputed,
   resolvedDisputes,
+  round,
+  totalRounds,
+  currentRound,
   today = germanToday(),
 }: {
   overdue: StaffMatchRow[];
+  // The matches of the Spieltag on screen (`round`).
   thisWeek: StaffMatchRow[];
   pendingFreeWins: StaffMatchRow[];
   disputed: StaffMatchRow[];
   resolvedDisputes: DisputeRow[];
+  round: number | null;
+  totalRounds: number;
+  currentRound: number | null;
   today?: string;
 }) {
   const router = useRouter();
@@ -166,17 +185,13 @@ export function SaisonDashboard({
 
   return (
     <div className="flex flex-col gap-8.5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Überfällig" value={overdue.length} alert />
-        <Stat label="Angefochten" value={disputed.length} alert />
-        <Stat label="Offen diese Woche" value={weekOpen.length} />
-        <Stat label="Freewins offen" value={pendingFreeWins.length} />
-      </div>
-
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
       {overdue.length > 0 ? (
-        <section className="flex flex-col gap-3">
+        <section
+          id={WEEK_ANCHORS.overdue}
+          className="flex scroll-mt-6 flex-col gap-3"
+        >
           <SectionHead title="Überfällig" count={overdue.length} />
           <div className="flex flex-col gap-2">
             {overdue.map((m) => (
@@ -206,7 +221,10 @@ export function SaisonDashboard({
       ) : null}
 
       {disputed.length > 0 ? (
-        <section className="flex flex-col gap-3">
+        <section
+          id={WEEK_ANCHORS.disputed}
+          className="flex scroll-mt-6 flex-col gap-3"
+        >
           <SectionHead title="Angefochten" count={disputed.length} />
           <div className="flex flex-col gap-2">
             {disputed.map((m) => (
@@ -251,7 +269,10 @@ export function SaisonDashboard({
       ) : null}
 
       {pendingFreeWins.length > 0 ? (
-        <section className="flex flex-col gap-3">
+        <section
+          id={WEEK_ANCHORS.freeWins}
+          className="flex scroll-mt-6 flex-col gap-3"
+        >
           <SectionHead
             title="Freewins bestätigen"
             count={pendingFreeWins.length}
@@ -305,29 +326,46 @@ export function SaisonDashboard({
         </section>
       ) : null}
 
-      {allClear ? (
+      {allClear && round === currentRound ? (
         <EmptyStateCard title="Alles erledigt" informational>
           Alle {thisWeek.length} Matches dieser Woche sind gemeldet, nichts ist
           überfällig, keine Freewins offen, keine Anfechtungen.
         </EmptyStateCard>
       ) : null}
 
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <SectionHead title="Diese Woche offen" count={weekOpen.length} />
-          <button
-            type="button"
-            onClick={() => setShowAllWeek((v) => !v)}
-            className="font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
-          >
-            {showAllWeek ? "Nur offene" : `Alle anzeigen (${thisWeek.length})`}
-          </button>
+      <section
+        id={WEEK_ANCHORS.round}
+        className="flex scroll-mt-6 flex-col gap-3"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <SectionHead
+            title={round === null ? "Spieltag" : `Spieltag ${round}`}
+            count={weekOpen.length}
+          />
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setShowAllWeek((v) => !v)}
+              className="font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
+            >
+              {showAllWeek
+                ? "Nur offene"
+                : `Alle anzeigen (${thisWeek.length})`}
+            </button>
+            {round !== null ? (
+              <RoundPager
+                round={round}
+                totalRounds={totalRounds}
+                currentRound={currentRound}
+              />
+            ) : null}
+          </div>
         </div>
         {weekShown.length === 0 ? (
           <p className="rounded-lg border px-4 py-4 text-center text-muted-foreground text-sm">
             {showAllWeek
-              ? "Diese Woche sind keine Matches angesetzt."
-              : "Diese Woche ist alles gemeldet."}
+              ? "An diesem Spieltag sind keine Matches angesetzt."
+              : "An diesem Spieltag ist alles gemeldet."}
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -426,42 +464,47 @@ export function SaisonDashboard({
   );
 }
 
-function Stat({
-  label,
-  value,
-  alert,
+// Previous / next Spieltag, and back to the running one. Links, so a
+// Spieltag has a URL (`?spieltag=n#spieltag`) and the back button works.
+function RoundPager({
+  round,
+  totalRounds,
+  currentRound,
 }: {
-  label: string;
-  value: number;
-  alert?: boolean;
+  round: number;
+  totalRounds: number;
+  currentRound: number | null;
 }) {
-  const isAlert = alert && value > 0;
+  const href = (n: number) =>
+    `/staff/woche?spieltag=${n}#${WEEK_ANCHORS.round}`;
+  const step = `flex size-8 items-center justify-center rounded-md border text-muted-foreground hover:text-brand-blue dark:hover:text-white ${hoverCard}`;
+  const disabled = "pointer-events-none opacity-40";
   return (
-    <div
-      className={cn(
-        "rounded-lg border px-4.5 py-3.5",
-        isAlert && "border-destructive/40 bg-destructive/5",
-      )}
-    >
-      <div
-        className={cn(
-          "font-bold font-heading text-[32px] leading-none tabular-nums",
-          value === 0
-            ? "text-[oklch(0.72_0.02_262)]"
-            : "text-brand-blue dark:text-white",
-          isAlert && "text-destructive",
-        )}
+    <div className="flex items-center gap-1.5">
+      <Link
+        href={href(Math.max(1, round - 1))}
+        aria-label="Vorheriger Spieltag"
+        aria-disabled={round <= 1}
+        className={cn(step, round <= 1 && disabled)}
       >
-        {value}
-      </div>
-      <div
-        className={cn(
-          "mt-1 font-semibold text-xs uppercase tracking-[0.08em]",
-          isAlert ? "text-destructive" : "text-muted-foreground",
-        )}
+        ‹
+      </Link>
+      {currentRound !== null && round !== currentRound ? (
+        <Link
+          href={href(currentRound)}
+          className="px-1.5 font-medium text-[13px] text-brand-blue hover:underline dark:text-white"
+        >
+          Aktueller
+        </Link>
+      ) : null}
+      <Link
+        href={href(Math.min(totalRounds, round + 1))}
+        aria-label="Nächster Spieltag"
+        aria-disabled={round >= totalRounds}
+        className={cn(step, round >= totalRounds && disabled)}
       >
-        {label}
-      </div>
+        ›
+      </Link>
     </div>
   );
 }

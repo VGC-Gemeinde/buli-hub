@@ -90,32 +90,30 @@ not gated: `acceptRegelwerk` (blocking it could wedge the two gates),
 
 ## Staff overview + roster sweep
 
-The "Discord-Mitgliedschaft" section (`MembershipList`,
-`src/features/membership/components/membership-list.tsx`) renders on `/staff`
-in both the pre-season and the running-season layout, whenever a window
-exists — the page sweeps and queries the roster once and feeds both the list
-and the warning card. It lists registered players
-who are confirmed non-members ("Nicht auf dem Server") or never checked
-("Noch nicht geprüft") — two distinct buckets, because one is a fact and the
-other an admission. Dropped players are not on the roster
-(`registeredMembership` leaves out a dropped placement): membership is a
+The membership state of the registered roster is shown on the Teilnehmer
+page (`/staff/teilnehmer`, `docs/plans/staff-dashboard.md`): every registered
+player with a tag, "Nicht auf dem Server" for confirmed non-members and
+"Nicht geprüft" for those never checked (two distinct tags, because one is a
+fact and the other an admission), with a filter for each. Dropped players
+leave the membership picture (`registeredMembership` leaves out a dropped
+placement, and the Teilnehmer filters skip dropped rows): membership is a
 condition of taking part, so a dropped player who left the server is nothing
-to clarify, and neither the list nor the warning card counts them. The header stamp is the oldest `guild_member_checked_at`
+to clarify. The list header's stamp is the oldest `guild_member_checked_at`
 on the roster: everyone confirmed was checked at least since then.
 
-Every load of `/staff` re-checks the whole roster (`sweepGuildMemberships`,
-`src/features/membership/sweep.ts`): one paginated call to the guild members
-*list* (`fetchGuildMemberIds`), compared against the registered players'
-Discord ids, written back in one upsert. No TTL — the check is one API call,
-so the list is simply always current when the page renders; the small refresh
-icon next to the stamp (`RefreshListButton`) just re-renders the route, which
-re-runs the sweep.
+Every load of `/staff` and of the Teilnehmer page re-checks the whole roster
+(`sweepGuildMemberships`, `src/features/membership/sweep.ts`): one paginated
+call to the guild members *list* (`fetchGuildMemberIds`), compared against
+the registered players' Discord ids, written back in one upsert. No TTL — the
+check is one API call, so the list is simply always current when the page
+renders; the small refresh icon next to the stamp (`RefreshListButton`) just
+re-renders the route, which re-runs the sweep.
 
-As long as the swept roster contains confirmed non-members, the top of the
-dashboard carries the `MembershipWarningCard` (todo-card anatomy, orange, in
-both layouts): the count, the ask to clarify with the players, and a
-same-page anchor to the list. Never for merely unchecked players — the card
-states a fact, the list carries the admission.
+As long as the swept roster contains confirmed non-members, the overview's
+"Zu erledigen" carries a todo (orange): the count, the ask to clarify with the
+players, and a link to the Teilnehmer page filtered to them. Never for merely
+unchecked players — the todo states a fact; the unchecked ones are a number
+on the overview and a filter on the list.
 The list endpoint requires the privileged **Server Members Intent**, which is
 enabled on the bot for this (the per-player role sync and the player-facing
 recheck keep using the intent-free single-member lookup; see
@@ -163,12 +161,11 @@ since a deleted row has nothing to attach it to.
 
 UI: the dialog is always for a given player (no picker — the lists around it
 already are the picker) and appears in two places, in both phases the gate
-allows: on each non-member row of the membership section, and
+allows: as the quiet "Stornieren" on each row of the Teilnehmer page, and
 as the staff panel on the public player profile (`ProfileCancelPanel`, same
 anatomy as the drop panel that takes its place once the player is placed in
 the running season — so the profile always offers the one removal that fits
-the phase). The Anmeldungen `PlayerGrid` stays untouched (an avatar-chip grid
-with no row affordance surface). The phase derivation shared by the staff
+the phase). The phase derivation shared by the staff
 dashboard, the cancel action and the profile page lives in
 `windowSeasonPhase` (`src/features/staff/queries.ts`).
 

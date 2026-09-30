@@ -23,10 +23,13 @@ export function CancelRegistrationDialog({
   seasonName,
   player,
   triggerSize = "default",
+  quiet = false,
 }: {
   seasonName: string;
   player: CancelCandidate;
   triggerSize?: "default" | "sm";
+  // A ghost "Stornieren" for long lists where every row carries it.
+  quiet?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -54,11 +57,12 @@ export function CancelRegistrationDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
         type="button"
-        variant="outline"
+        variant={quiet ? "ghost" : "outline"}
         size={triggerSize}
+        className={quiet ? "text-muted-foreground" : undefined}
         onClick={() => setOpen(true)}
       >
-        Anmeldung stornieren
+        {quiet ? "Stornieren" : "Anmeldung stornieren"}
       </Button>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>

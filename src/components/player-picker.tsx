@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
+import { hoverRow } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
 
 export type PickablePlayer = {
@@ -92,7 +93,8 @@ export function PlayerPicker({
                 aria-selected={active}
                 onClick={() => onSelect(player.userId)}
                 className={cn(
-                  "flex min-w-0 shrink-0 items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50",
+                  "flex min-w-0 shrink-0 items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  hoverRow,
                   active &&
                     "border-brand-orange bg-brand-orange/8 hover:bg-brand-orange/8",
                 )}

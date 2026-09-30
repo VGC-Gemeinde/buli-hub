@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { banBlock } from "@/features/bans/bans";
+import { isBanned } from "@/features/bans/queries";
 import { membershipBlock } from "@/features/membership/membership";
 import {
   clearAcceptance,
@@ -52,6 +54,11 @@ export async function register(input: unknown): Promise<RegisterResult> {
   const blocked = membershipBlock(current.guildMember);
   if (blocked) {
     return blocked;
+  }
+  // The Banliste (docs/plans/banlist.md): a banned account cannot register.
+  const banned = banBlock(await isBanned(current.discordId));
+  if (banned) {
+    return banned;
   }
 
   // Detection is server-side — never trust the client on returning status.

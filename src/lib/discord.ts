@@ -598,3 +598,40 @@ export async function removeMemberRole(
   );
   return response.ok ? { ok: true } : { ok: false, status: response.status };
 }
+
+// A Discord account by id, for naming someone the hub has never seen (a ban
+// by Discord-ID, docs/plans/banlist.md). Works for any account, member of
+// the server or not. Null on 404 (no such account); throws on anything else,
+// so callers can fail open.
+export async function fetchDiscordUser(discordUserId: string): Promise<{
+  id: string;
+  username: string;
+  globalName: string | null;
+  avatarUrl: string | null;
+} | null> {
+  const response = await apiFetch(`/users/${discordUserId}`, {
+    cache: "no-store",
+  });
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Discord API ${response.status}: ${await response.text()}`);
+  }
+  const user = (await response.json()) as {
+    id?: unknown;
+    username?: unknown;
+    global_name?: unknown;
+    avatar?: unknown;
+  };
+  const id = asString(user.id) ?? discordUserId;
+  const avatar = asString(user.avatar);
+  return {
+    id,
+    username: asString(user.username) ?? id,
+    globalName: asString(user.global_name),
+    avatarUrl: avatar
+      ? `${CDN_BASE}/avatars/${id}/${avatar}.${avatarExt(avatar)}`
+      : null,
+  };
+}

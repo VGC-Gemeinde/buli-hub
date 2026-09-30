@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { banBlock } from "@/features/bans/bans";
+import { isBanned } from "@/features/bans/queries";
 import { syncSeasonDiscord } from "@/features/discord-season/converge";
 import { membershipBlock } from "@/features/membership/membership";
 import { priorRegistrationCount } from "@/features/registration/queries";
@@ -79,6 +81,7 @@ export async function offerReplacement(input: {
     candidateExists: context.candidateExists,
     candidatePlaced: context.candidatePlaced,
     candidateHasOffer: context.candidateHasOffer,
+    candidateBanned: context.candidateBanned,
     entryRoundOffered: choices.some((c) => c.round === input.entryRound),
   });
   if (blocked) {
@@ -139,6 +142,12 @@ export async function acceptReplacement(
   const blocked = membershipBlock(current.guildMember);
   if (blocked) {
     return blocked;
+  }
+  // Taking over a slot is a way into the season like registering, so a ban
+  // placed after the offer still stops it (docs/plans/banlist.md).
+  const banned = banBlock(await isBanned(current.discordId));
+  if (banned) {
+    return banned;
   }
 
   const detectedReturning =

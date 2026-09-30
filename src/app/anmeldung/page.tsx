@@ -3,6 +3,8 @@ import { EmptyStateCard } from "@/components/empty-state-card";
 import { SiteHeader } from "@/components/site-header";
 import { Tick } from "@/components/tick";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
+import { BannedCard } from "@/features/bans/components/banned-card";
+import { isBanned } from "@/features/bans/queries";
 import { MembershipBlockedCard } from "@/features/membership/components/blocked-card";
 import { isConfirmedNonMember } from "@/features/membership/membership";
 import { getProfile } from "@/features/profile/queries";
@@ -188,6 +190,17 @@ export default async function AnmeldungPage() {
             Geschlossen seit {formatLongTimestamp(window.closesAt)}
           </p>
         </EmptyStateCard>
+      </Shell>
+    );
+  }
+
+  // A banned account cannot register (docs/plans/banlist.md). After the
+  // registration branch for the same reason as the membership block below: a
+  // player banned while registered keeps seeing their confirmation.
+  if (await isBanned(current.discordId)) {
+    return (
+      <Shell state={state} closesAt={closesAt} season={seasonLabel}>
+        <BannedCard />
       </Shell>
     );
   }

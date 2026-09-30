@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import type { RegisteredPlayer } from "@/components/player-grid";
 import { SiteHeader } from "@/components/site-header";
+import { BannedCard } from "@/features/bans/components/banned-card";
+import { isBanned } from "@/features/bans/queries";
 import { markDropped } from "@/features/drops/drops";
 import { droppedIdsForWindow } from "@/features/drops/queries";
 import { MembershipBlockedCard } from "@/features/membership/components/blocked-card";
@@ -126,9 +128,12 @@ export default async function SpielerPage() {
     schedulePublished: Boolean(window?.schedulePublishedAt),
   });
 
-  const registration = window
-    ? await getRegistration(window.id, current.userId)
-    : null;
+  const [registration, banned] = await Promise.all([
+    window ? getRegistration(window.id, current.userId) : null,
+    // Only the registration paths ask; everything else stays open to a
+    // banned player (docs/plans/banlist.md).
+    isBanned(current.discordId),
+  ]);
   const placement =
     window && phase === "regular_season"
       ? await playerPlacement(window.id, current.userId)
@@ -402,7 +407,9 @@ export default async function SpielerPage() {
               entryRound,
             )}
           >
-            {isConfirmedNonMember(current.guildMember) ? (
+            {banned ? (
+              <BannedCard />
+            ) : isConfirmedNonMember(current.guildMember) ? (
               <MembershipBlockedCard />
             ) : (
               <RegistrationForm
@@ -429,7 +436,11 @@ export default async function SpielerPage() {
   const seasonLabel = window ? seasonName(window.seasonNumber) : "";
   const panel =
     view === "register_cta" ? (
-      <RegisterCtaPanel seasonName={seasonLabel} />
+      banned ? (
+        <BannedCard />
+      ) : (
+        <RegisterCtaPanel seasonName={seasonLabel} />
+      )
     ) : view === "registered_open" && registration ? (
       <RegistrationConfirmation
         data={registration}

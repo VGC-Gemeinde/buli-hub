@@ -28,6 +28,7 @@ import { motwForWindow } from "@/features/motw/queries";
 import { StaleHoldsCard } from "@/features/recordings/components/stale-holds-card";
 import { staleHolds, staleHoldsSummary } from "@/features/recordings/holds";
 import { holdsForWindow } from "@/features/recordings/queries";
+import { cancellationBlocked } from "@/features/registration/cancellation";
 import { listRegistrations } from "@/features/registration/queries";
 import {
   replacementCandidates,
@@ -152,20 +153,26 @@ function SeasonStrip({
   );
 }
 
-// Page heading shared by every phase of the Staff-Bereich. The usage stats
-// link is admin+ (docs/plans/usage-stats.md) and must appear in each layout
-// branch below, so it lives here rather than in one of them.
+// Page heading shared by every phase of the Staff-Bereich. Its links are the
+// pages that matter in every phase, so they live here rather than in one
+// layout branch: the Banliste (docs/plans/banlist.md) for all staff, the
+// usage stats for admin+ (docs/plans/usage-stats.md).
 function StaffHeading({ role }: { role: Role }) {
   return (
     <div className="mb-9 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
       <h1 className="text-[40px] text-brand-blue dark:text-white">
         Staff-Bereich
       </h1>
-      {roleAtLeast(role, "admin") ? (
-        <ActionLink href="/staff/nutzung" className="text-sm">
-          Nutzung
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+        <ActionLink href="/staff/banliste" className="text-sm">
+          Banliste
         </ActionLink>
-      ) : null}
+        {roleAtLeast(role, "admin") ? (
+          <ActionLink href="/staff/nutzung" className="text-sm">
+            Nutzung
+          </ActionLink>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -435,7 +442,7 @@ export default async function StaffPage() {
             <MembershipList
               roster={membershipRoster}
               seasonName={seasonName(window.seasonNumber)}
-              canCancel={phase === "registration_closed"}
+              canCancel={cancellationBlocked(phase) === null}
               id={membershipListId}
             />
           ) : null}

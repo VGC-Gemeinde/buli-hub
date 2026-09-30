@@ -281,6 +281,36 @@ export const playerReplacements = pgTable(
   ],
 );
 
+// The Banliste (docs/plans/banlist.md): people barred from registering for
+// future seasons. A ban is on the Discord account, not on a hub user id —
+// the one key shared by bans of hub players and of people who never signed
+// in (players from before the hub), and what makes the latter catch the
+// person the day they first sign in. Lifting sets `lifted_at`, so the
+// history stays. At most one active ban per account. FKs + RLS in a custom
+// migration.
+export const bans = pgTable(
+  "bans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    discordId: text("discord_id").notNull(),
+    // The account's name at ban time, from the hub profile or a Discord
+    // lookup — what the list shows when nobody in the hub has this id.
+    discordName: text("discord_name"),
+    reason: text("reason").notNull(),
+    bannedById: uuid("banned_by_id"),
+    bannedAt: timestamp("banned_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    liftedAt: timestamp("lifted_at", { withTimezone: true }),
+    liftedById: uuid("lifted_by_id"),
+  },
+  (table) => [
+    uniqueIndex("bans_active_discord_id_uq")
+      .on(table.discordId)
+      .where(sql`${table.liftedAt} is null`),
+  ],
+);
+
 // Who is currently driving a season's seeding. Division seeding is a live staff
 // meeting (one person shares their screen, the group discusses); this soft lock
 // keeps everyone else in read-only until they explicitly take control. A stale

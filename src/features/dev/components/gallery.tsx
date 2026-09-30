@@ -18,6 +18,10 @@ import {
   SIGN_IN_ERROR_COPY,
   SIGN_IN_ERROR_KINDS,
 } from "@/features/auth/sign-in-error";
+import { BanDialog } from "@/features/bans/components/ban-dialog";
+import { BanList } from "@/features/bans/components/ban-list";
+import { BannedCard } from "@/features/bans/components/banned-card";
+import type { BanCandidate, BanRow } from "@/features/bans/queries";
 import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
 import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
 import {
@@ -761,6 +765,67 @@ const REPLACEMENT_ACCEPTED: ReplacementRow = {
   offeredAt: new Date("2026-09-14T15:30:00Z"),
   acceptedAt: new Date("2026-09-14T22:11:00Z"),
 };
+
+// The Banliste: a banned hub player, an id-only ban, a lifted one.
+const BAN_ROWS: BanRow[] = [
+  {
+    id: "ban1",
+    discordId: "499000000000000001",
+    person: { userId: "b1", name: "Gebannter Bernd", avatarUrl: AVATAR_URL },
+    inHub: true,
+    reason: "Beleidigungen im Discord, zweimal verwarnt.",
+    bannedAt: new Date("2026-09-10T18:00:00Z"),
+    bannedByName: "Orga Team",
+    liftedAt: null,
+    liftedByName: null,
+  },
+  {
+    id: "ban2",
+    discordId: "499000000000000002",
+    person: {
+      userId: "499000000000000002",
+      name: "Altmeister Alfred",
+      avatarUrl: null,
+    },
+    inHub: false,
+    reason: "Aus Saison 3: Playoffs nicht angetreten, danach nicht erreichbar.",
+    bannedAt: new Date("2026-08-01T12:00:00Z"),
+    bannedByName: "Orga Team",
+    liftedAt: null,
+    liftedByName: null,
+  },
+  {
+    id: "ban3",
+    discordId: "499000000000000003",
+    person: {
+      userId: "499000000000000003",
+      name: "Ehemals Emil",
+      avatarUrl: null,
+    },
+    inHub: false,
+    reason: "Account geteilt.",
+    bannedAt: new Date("2026-03-14T12:00:00Z"),
+    bannedByName: "Orga Team",
+    liftedAt: new Date("2026-07-01T12:00:00Z"),
+    liftedByName: "Testerino",
+  },
+];
+const BAN_CANDIDATES: BanCandidate[] = [
+  {
+    userId: "c1",
+    name: "Tinkatink",
+    username: "tinka",
+    avatarUrl: null,
+    discordId: "100000000000000011",
+  },
+  {
+    userId: "c2",
+    name: "Wiglett",
+    username: "wiglett_vgc",
+    avatarUrl: AVATAR_URL,
+    discordId: "100000000000000012",
+  },
+];
 
 // Profile page Spielplan: every row state at once.
 const profileRow = (
@@ -2274,6 +2339,22 @@ export function Gallery() {
             groupName="Division 1a"
             options={{ ...REPLACEMENT_OFFER_OPTIONS, entryChoices: [] }}
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Banliste</h2>
+        <Specimen label="Staff: Liste (Hub-Spieler, nur per Discord-ID, aufgehoben; Aufheben fragt inline nach)">
+          <BanList bans={BAN_ROWS} />
+        </Specimen>
+        <Specimen label="Staff: Liste leer">
+          <BanList bans={[]} />
+        </Specimen>
+        <Specimen label="Staff: Ban-Dialog (Hub-Spieler / Discord-ID; Konflikte nur mit Staff-Login)">
+          <BanDialog candidates={BAN_CANDIDATES} />
+        </Specimen>
+        <Specimen label="Spieler: Anmeldung gesperrt (/anmeldung, Dashboard)">
+          <BannedCard />
         </Specimen>
       </section>
 

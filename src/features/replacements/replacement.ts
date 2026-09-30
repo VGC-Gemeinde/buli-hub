@@ -142,6 +142,7 @@ export function offerBlock(input: {
   candidateExists: boolean;
   candidatePlaced: boolean;
   candidateHasOffer: boolean;
+  candidateBanned: boolean;
   entryRoundOffered: boolean;
 }): string | null {
   if (!input.replacedHasGroup) {
@@ -158,6 +159,9 @@ export function offerBlock(input: {
   }
   if (!input.candidateExists) {
     return "Dieser Nutzer war noch nie im Buli-Hub angemeldet";
+  }
+  if (input.candidateBanned) {
+    return "Dieser Spieler steht auf der Banliste";
   }
   if (input.candidatePlaced) {
     return "Dieser Spieler spielt in dieser Saison bereits mit";

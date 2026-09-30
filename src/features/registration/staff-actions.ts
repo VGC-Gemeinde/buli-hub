@@ -14,11 +14,10 @@ export type CancelRegistrationResult =
   | { ok: false; error: string };
 
 /**
- * Staff cancel of another player's registration, for the gap between
- * Anmeldeschluss and the finalized seeding — the primary case being a
- * registered player who is not (or no longer) on the Discord server. The
- * player withdraws themself while the window is open; from the finalized
- * seeding onward removal is a drop (`cancellationBlocked` says so).
+ * Staff cancel of another player's registration, from the open window until
+ * the finalized seeding — typically a registered player who is not (or no
+ * longer) on the Discord server, or one about to be banned. From the
+ * finalized seeding onward removal is a drop (`cancellationBlocked` says so).
  *
  * Mirrors withdraw(): registration and acceptance go together, plus any draft
  * placement. Deletes run placement → acceptance → registration, so an

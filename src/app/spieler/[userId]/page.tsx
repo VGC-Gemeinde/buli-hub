@@ -14,6 +14,7 @@ import { profileScheduleRows } from "@/features/player-profile/profile";
 import { profileIdentity } from "@/features/player-profile/queries";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { holdsForWindow } from "@/features/recordings/queries";
+import { cancellationBlocked } from "@/features/registration/cancellation";
 import { ProfileCancelPanel } from "@/features/registration/components/profile-cancel-panel";
 import { getRegistration } from "@/features/registration/queries";
 import {
@@ -184,12 +185,13 @@ export default async function PlayerProfilePage({
   }
 
   // Staff panel, only for staff and only when there is something to act on:
-  // between Anmeldeschluss and finalized seeding a registration can be
+  // from the open window until the finalized seeding a registration can be
   // cancelled; a placed player can be dropped / un-dropped.
   const phase =
     isStaff && window ? (await windowSeasonPhase(window)).phase : null;
   const canCancel =
-    phase === "registration_closed" &&
+    phase !== null &&
+    cancellationBlocked(phase) === null &&
     window !== null &&
     (await getRegistration(window.id, userId)) !== null;
   const dropState =

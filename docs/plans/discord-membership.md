@@ -135,11 +135,12 @@ which is intended.
 
 `cancelRegistration` (`src/features/registration/staff-actions.ts`, staff
 only) removes another player's registration — the primary case being a
-registered player who is not on the server. Allowed **only** in season phase
-`registration_closed`; the pure gate `cancellationBlocked`
+registered player who is not on the server, or one about to be banned
+(`docs/plans/banlist.md`). Allowed in the season phases `registration_open`
+and `registration_closed`; the pure gate `cancellationBlocked`
 (`src/features/registration/cancellation.ts`) refuses every other phase with
-a reason. While the window is open players withdraw themselves; from the
-finalized seeding onward removal goes through the drop flow —
+a reason. While the window is open players can also withdraw themselves;
+from the finalized seeding onward removal goes through the drop flow —
 `finalizeSeeding()` stays one-way, there is no unfinalize.
 
 Semantics mirror `withdraw()`, plus one thing `withdraw()` never faced: a
@@ -153,15 +154,16 @@ idempotent; no transaction, matching `withdraw()`.
 The phase is derived at action time exactly as the staff dashboard derives it
 (TOCTOU against a concurrent `finalizeSeeding()` is accepted: seeding is a
 live staff session behind the seeding lock, and the deletes stay
-self-consistent). A cancelled player cannot re-register while the window is
-closed; only reopening the registration changes that. The registration
+self-consistent). A player cancelled while the window is open can register
+again (unless banned); once it is closed, only reopening the registration
+changes that. The registration
 answers are gone for good — hence the type-to-confirm dialog
 (`CancelRegistrationDialog`), unlike the revertable drop, and no reason field,
 since a deleted row has nothing to attach it to.
 
 UI: the dialog is always for a given player (no picker — the lists around it
-already are the picker) and appears in two places, only in
-`registration_closed`: on each non-member row of the membership section, and
+already are the picker) and appears in two places, in both phases the gate
+allows: on each non-member row of the membership section, and
 as the staff panel on the public player profile (`ProfileCancelPanel`, same
 anatomy as the drop panel that takes its place once the player is placed in
 the running season — so the profile always offers the one removal that fits

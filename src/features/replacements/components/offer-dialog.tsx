@@ -1,8 +1,8 @@
 "use client";
 
-import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { PlayerPicker } from "@/components/player-picker";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,12 +12,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import type { Identity } from "@/features/season/dashboard";
 import { formatGermanDayRange } from "@/lib/german-time";
-import { cn } from "@/lib/utils";
 import { offerReplacement } from "../actions";
 import type { ReplacementCandidate } from "../queries";
 
@@ -32,9 +30,6 @@ export type ReplacementOfferOptions = {
     endsOn: string;
   }[];
 };
-
-// Long lists are searched, not scrolled: the picker shows this many matches.
-const VISIBLE_CANDIDATES = 60;
 
 function losses(count: number): string {
   if (count === 0) {
@@ -68,7 +63,6 @@ export function OfferReplacementDialog({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const [candidateId, setCandidateId] = useState<string | null>(null);
   const [round, setRound] = useState<string>(
     String(options.entryChoices[0]?.round ?? ""),
@@ -76,23 +70,11 @@ export function OfferReplacementDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const matches = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase("de");
-    const all = needle
-      ? options.candidates.filter(
-          (c) =>
-            c.name.toLocaleLowerCase("de").includes(needle) ||
-            (c.username ?? "").toLocaleLowerCase("de").includes(needle),
-        )
-      : options.candidates;
-    return { shown: all.slice(0, VISIBLE_CANDIDATES), total: all.length };
-  }, [options.candidates, query]);
   const selected =
     options.candidates.find((c) => c.userId === candidateId) ?? null;
   const seasonOver = options.entryChoices.length === 0;
 
   function reset() {
-    setQuery("");
     setCandidateId(null);
     setRound(String(options.entryChoices[0]?.round ?? ""));
     setError(null);
@@ -159,80 +141,14 @@ export function OfferReplacementDialog({
               <span className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.12em]">
                 Spieler
               </span>
-              <span className="ml-auto text-[12.5px] text-muted-foreground tabular-nums">
-                {matches.total === options.candidates.length
-                  ? `${options.candidates.length} verfügbar`
-                  : `${matches.total} von ${options.candidates.length}`}
-              </span>
             </div>
-            <div className="relative">
-              <Search
-                aria-hidden
-                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                aria-label="Spieler suchen"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Name oder Discord-Name suchen"
-                autoComplete="off"
-                className="h-10 pl-9"
-              />
-            </div>
-            <div
-              role="listbox"
-              aria-label="Spieler"
-              className="flex h-[280px] flex-col gap-1 overflow-y-auto rounded-lg border p-1.5 md:h-[400px]"
-            >
-              {matches.shown.length === 0 ? (
-                <p className="m-auto max-w-[300px] px-3 text-center text-muted-foreground text-sm leading-relaxed">
-                  Niemand gefunden. Der Spieler muss sich einmal im Buli-Hub
-                  angemeldet haben und darf nicht schon mitspielen.
-                </p>
-              ) : (
-                matches.shown.map((candidate) => {
-                  const active = candidate.userId === candidateId;
-                  return (
-                    <button
-                      key={candidate.userId}
-                      type="button"
-                      role="option"
-                      aria-selected={active}
-                      onClick={() => setCandidateId(candidate.userId)}
-                      className={cn(
-                        "flex min-w-0 shrink-0 items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50",
-                        active &&
-                          "border-brand-orange bg-brand-orange/8 hover:bg-brand-orange/8",
-                      )}
-                    >
-                      <PlayerAvatar identity={candidate} size="size-8" />
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate font-medium text-[14.5px]">
-                          {candidate.name}
-                        </span>
-                        {candidate.username &&
-                        candidate.username !== candidate.name ? (
-                          <span className="truncate text-[12.5px] text-muted-foreground">
-                            @{candidate.username}
-                          </span>
-                        ) : null}
-                      </span>
-                      {active ? (
-                        <span className="shrink-0 font-semibold text-[11px] text-brand-orange uppercase tracking-[0.1em]">
-                          Gewählt
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-            {matches.total > matches.shown.length ? (
-              <p className="text-[12.5px] text-muted-foreground">
-                {matches.total - matches.shown.length} weitere. Such nach dem
-                Namen, um sie zu finden.
-              </p>
-            ) : null}
+            <PlayerPicker
+              players={options.candidates}
+              selectedId={candidateId}
+              onSelect={setCandidateId}
+              emptyText="Niemand gefunden. Der Spieler muss sich einmal im Buli-Hub angemeldet haben und darf nicht schon mitspielen oder gesperrt sein."
+              listClassName="h-[280px] md:h-[400px]"
+            />
           </div>
 
           {/* Right: the decision. */}

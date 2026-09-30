@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { sql } from "drizzle-orm";
-import { profiles } from "@/db/schema";
+import { bans, profiles } from "@/db/schema";
 import { discordIdentityFromUser } from "@/features/auth/identity";
 import { db } from "@/lib/db";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -147,4 +147,16 @@ async function pinPersonaProfile(email: string, persona: Persona) {
     .insert(profiles)
     .values({ userId, ...values })
     .onConflictDoUpdate({ target: profiles.userId, set: values });
+
+  if (persona.banned && identity.discordId) {
+    // Idempotent: the partial unique index keeps it to one active ban.
+    await db
+      .insert(bans)
+      .values({
+        discordId: identity.discordId,
+        discordName: identity.displayName,
+        reason: "Dev-Persona: gesperrt, um die gesperrte Anmeldung zu sehen.",
+      })
+      .onConflictDoNothing();
+  }
 }

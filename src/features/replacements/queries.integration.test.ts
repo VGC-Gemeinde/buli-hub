@@ -150,6 +150,7 @@ describe("offer lifecycle", () => {
       candidateExists: true,
       candidatePlaced: false,
       candidateHasOffer: false,
+      candidateBanned: false,
     });
     const strangerContext = await offerContext({
       windowId,

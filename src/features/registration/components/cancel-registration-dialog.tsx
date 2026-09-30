@@ -67,8 +67,8 @@ export function CancelRegistrationDialog({
             Die Anmeldung von {player.name} für {seasonName} wird endgültig
             gelöscht, ebenso die Regelwerk-Bestätigung und eine eventuelle
             Platzierung in der Einteilung. Das lässt sich nicht rückgängig
-            machen. Erneut anmelden kann sich der Spieler nur, wenn die
-            Anmeldung wieder geöffnet wird.
+            machen. Erneut anmelden kann sich der Spieler nur, solange die
+            Anmeldung offen ist.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">

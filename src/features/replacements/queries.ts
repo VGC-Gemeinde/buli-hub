@@ -9,6 +9,11 @@ import {
   registrations,
   subDivisions,
 } from "@/db/schema";
+import {
+  bannedUserIds,
+  discordIdOfUser,
+  isBanned,
+} from "@/features/bans/queries";
 import { recordAcceptance } from "@/features/regelwerk/queries";
 import {
   type NewRegistration,
@@ -153,44 +158,52 @@ export async function offerContext(input: {
   candidateExists: boolean;
   candidatePlaced: boolean;
   candidateHasOffer: boolean;
+  candidateBanned: boolean;
 }> {
-  const [replacedPlacement, existing, candidate, candidatePlacement, offer] =
-    await Promise.all([
-      db.query.placements.findFirst({
-        columns: { droppedAt: true, subDivisionId: true },
-        where: and(
-          eq(placements.windowId, input.windowId),
-          eq(placements.userId, input.replacedUserId),
-        ),
-      }),
-      db.query.playerReplacements.findFirst({
-        columns: { acceptedAt: true },
-        where: and(
-          eq(playerReplacements.windowId, input.windowId),
-          eq(playerReplacements.replacedUserId, input.replacedUserId),
-        ),
-      }),
-      // "Signed in once" is what a profile row means: it is written on the
-      // first sign-in's role sync.
-      db.query.profiles.findFirst({
-        columns: { userId: true },
-        where: eq(profiles.userId, input.candidateUserId),
-      }),
-      db.query.placements.findFirst({
-        columns: { id: true },
-        where: and(
-          eq(placements.windowId, input.windowId),
-          eq(placements.userId, input.candidateUserId),
-        ),
-      }),
-      db.query.playerReplacements.findFirst({
-        columns: { id: true },
-        where: and(
-          eq(playerReplacements.windowId, input.windowId),
-          eq(playerReplacements.replacementUserId, input.candidateUserId),
-        ),
-      }),
-    ]);
+  const [
+    replacedPlacement,
+    existing,
+    candidate,
+    candidatePlacement,
+    offer,
+    candidateBanned,
+  ] = await Promise.all([
+    db.query.placements.findFirst({
+      columns: { droppedAt: true, subDivisionId: true },
+      where: and(
+        eq(placements.windowId, input.windowId),
+        eq(placements.userId, input.replacedUserId),
+      ),
+    }),
+    db.query.playerReplacements.findFirst({
+      columns: { acceptedAt: true },
+      where: and(
+        eq(playerReplacements.windowId, input.windowId),
+        eq(playerReplacements.replacedUserId, input.replacedUserId),
+      ),
+    }),
+    // "Signed in once" is what a profile row means: it is written on the
+    // first sign-in's role sync.
+    db.query.profiles.findFirst({
+      columns: { userId: true },
+      where: eq(profiles.userId, input.candidateUserId),
+    }),
+    db.query.placements.findFirst({
+      columns: { id: true },
+      where: and(
+        eq(placements.windowId, input.windowId),
+        eq(placements.userId, input.candidateUserId),
+      ),
+    }),
+    db.query.playerReplacements.findFirst({
+      columns: { id: true },
+      where: and(
+        eq(playerReplacements.windowId, input.windowId),
+        eq(playerReplacements.replacementUserId, input.candidateUserId),
+      ),
+    }),
+    discordIdOfUser(input.candidateUserId).then(isBanned),
+  ]);
   return {
     replacedPlacement: replacedPlacement ?? null,
     existing: existing
@@ -201,18 +214,20 @@ export async function offerContext(input: {
     candidateExists: candidate !== undefined,
     candidatePlaced: candidatePlacement !== undefined,
     candidateHasOffer: offer !== undefined,
+    candidateBanned,
   };
 }
 
 // The people staff can offer a slot to: everyone who has signed in to the hub
-// (has a profile) and is neither placed in the window nor already offered a
-// slot in it. Registered-but-unplaced players are included; for them the
+// (has a profile), is not on the Banliste and is neither placed in the window
+// nor already offered a slot in it. Registered-but-unplaced players are included; for them the
 // acceptance overwrites the registration answers.
 export type ReplacementCandidate = Identity & { username: string | null };
 
 export async function replacementCandidates(
   windowId: string,
 ): Promise<ReplacementCandidate[]> {
+  const banned = await bannedUserIds();
   const rows = await db
     .select({
       userId: profiles.userId,
@@ -237,6 +252,7 @@ export async function replacementCandidates(
     )
     .where(and(isNull(placements.id), isNull(playerReplacements.id)));
   return rows
+    .filter((row) => !banned.has(row.userId))
     .map((row) => ({ ...identity(row), username: row.username }))
     .sort((a, b) => a.name.localeCompare(b.name, "de"));
 }

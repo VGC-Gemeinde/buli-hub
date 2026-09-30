@@ -183,6 +183,20 @@
       "when": 1790760950168,
       "tag": "20260930093550_season9_replacement_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790765063173,
+      "tag": "20260930104423_bans",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790765064118,
+      "tag": "20260930104424_bans_fk_rls",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import {
+  bans,
   disputes,
   divisions,
   matches,
@@ -234,10 +235,66 @@ export function buildSeedRegistrations(
   return specs;
 }
 
+// Discord ids the seed bans carry, so clearSeedData can find them again (bans
+// hang on a Discord id, not on the seed users' emails).
+const SEED_DISCORD_PREFIX = "4990000000";
+
+// The Banliste (docs/plans/banlist.md) in every state: a banned hub user, a
+// ban by Discord-ID on someone who never signed in, and a lifted ban as
+// history.
+async function seedBans(staffId: string): Promise<void> {
+  const bannedId = randomUUID();
+  const bannedDiscord = `${SEED_DISCORD_PREFIX}00000001`;
+  await insertSeedAuthUsers([
+    { id: bannedId, email: `${SEED_EMAIL_PREFIX}gebannt${SEED_EMAIL_DOMAIN}` },
+  ]);
+  // A Discord sign-in stores the id here; the seed users are email users.
+  await db.execute(
+    sql`update auth.users
+        set raw_user_meta_data = raw_user_meta_data || jsonb_build_object('provider_id', ${bannedDiscord}::text)
+        where id = ${bannedId}`,
+  );
+  await db.insert(profiles).values({
+    userId: bannedId,
+    displayName: "Gebannter Bernd",
+    username: "bernd_b",
+  });
+  const day = 86_400_000;
+  await db.insert(bans).values([
+    {
+      discordId: bannedDiscord,
+      discordName: "Gebannter Bernd",
+      reason: "Beleidigungen im Discord, zweimal verwarnt.",
+      bannedById: staffId,
+      bannedAt: new Date(Date.now() - 20 * day),
+    },
+    {
+      discordId: `${SEED_DISCORD_PREFIX}00000002`,
+      discordName: "Altmeister Alfred",
+      reason:
+        "Aus Saison 3: Playoffs nicht angetreten, danach nicht erreichbar.",
+      bannedById: staffId,
+      bannedAt: new Date(Date.now() - 60 * day),
+    },
+    {
+      discordId: `${SEED_DISCORD_PREFIX}00000003`,
+      discordName: "Ehemals Emil",
+      reason: "Account geteilt.",
+      bannedById: staffId,
+      bannedAt: new Date(Date.now() - 200 * day),
+      liftedAt: new Date(Date.now() - 90 * day),
+      liftedById: staffId,
+    },
+  ]);
+}
+
 // Removes all seeding/registration test data and the generated fake users
 // (windows first so the opened_by FK does not block deleting the users).
 export async function clearSeedData() {
   await db.execute(sql`delete from registration_windows`);
+  await db.execute(
+    sql`delete from bans where discord_id like ${`${SEED_DISCORD_PREFIX}%`}`,
+  );
   await db.execute(
     sql`delete from auth.users where email like ${`${SEED_EMAIL_PREFIX}%${SEED_EMAIL_DOMAIN}`}`,
   );
@@ -1000,6 +1057,7 @@ export async function generateSeedData(
     username: "orga",
     role: "staff",
   });
+  await seedBans(staffId);
 
   // A closed window opened by the staff member, then the registrations.
   const [window] = await db.execute<{ id: string }>(

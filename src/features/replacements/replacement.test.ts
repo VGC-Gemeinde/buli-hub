@@ -249,6 +249,7 @@ describe("offerBlock", () => {
     candidateExists: true,
     candidatePlaced: false,
     candidateHasOffer: false,
+    candidateBanned: false,
     entryRoundOffered: true,
   };
 
@@ -262,6 +263,7 @@ describe("offerBlock", () => {
     [{ existing: "accepted" as const }, "bereits ersetzt"],
     [{ existing: "pending" as const }, "bereits ein Angebot"],
     [{ candidateExists: false }, "noch nie"],
+    [{ candidateBanned: true }, "Banliste"],
     [{ candidatePlaced: true }, "bereits mit"],
     [{ candidateHasOffer: true }, "anderen Platz"],
     [{ entryRoundOffered: false }, "Spieltag"],

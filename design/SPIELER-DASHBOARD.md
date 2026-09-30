@@ -94,7 +94,9 @@ justify-between gap-6 flex-wrap`. Left column (`gap-3.5`):
    `text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground`
    **Nächstes Match · Spieltag {n}**.
 2. Matchup row (`flex items-center gap-4.5`):
-   - Me: `Avatar size-[46px]` — filled `bg-brand-blue text-white` — + column:
+   - Me: `Avatar size-[46px]` with the player's own picture (initials on
+     `bg-brand-blue text-white` only when there is none; a generic "Du"
+     placeholder confused players) + column:
      name `font-heading text-[28px] font-bold uppercase leading-[1.05]
      text-brand-blue dark:text-white` over `text-xs font-semibold uppercase
      tracking-[0.12em] text-muted-foreground` **Du**.

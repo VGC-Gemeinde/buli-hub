@@ -7,7 +7,7 @@ import { matchDisplayState, scoreFor } from "@/features/reporting/match-state";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
 import { cn } from "@/lib/utils";
-import { daysUntil, type PlayerMatch } from "../dashboard";
+import { daysUntil, type Identity, type PlayerMatch } from "../dashboard";
 import { PlayerAvatar } from "./player-avatar";
 import { StandingsPanel, type ZoneMap } from "./standings-panel";
 
@@ -112,14 +112,17 @@ function ProgressStrip({ current, total }: { current: number; total: number }) {
 function Hero({
   match,
   result,
-  meId,
+  me,
   today,
 }: {
   match: PlayerMatch | null;
   result: MatchResultLite | null;
-  meId: string;
+  // The player themself, with their own picture: players found a generic
+  // "Du" placeholder confusing and recognise themselves faster by their face.
+  me: Identity;
   today: string;
 }) {
+  const meId = me.userId;
   if (!match) {
     return (
       <section className="rounded-lg border px-5 py-5 sm:px-[30px]">
@@ -172,11 +175,7 @@ function Hero({
             : `Nächstes Match · Spieltag ${match.round}`,
         )}
         <div className="flex min-w-0 items-center gap-3 sm:gap-4.5">
-          <PlayerAvatar
-            identity={{ userId: meId, name: "Du", avatarUrl: null }}
-            size="size-[46px]"
-            filled
-          />
+          <PlayerAvatar identity={me} size="size-[46px]" filled />
           <span className="-skew-x-[10deg] px-1 font-bold font-heading text-brand-orange text-xl">
             VS
           </span>
@@ -520,7 +519,7 @@ export function InSeasonDashboard({
   divisionZones,
   divisionGroupLabels,
   defaultScope,
-  meId,
+  me,
   groupWithheld,
   divisionWithheld,
   today,
@@ -538,20 +537,22 @@ export function InSeasonDashboard({
   divisionZones?: ZoneMap;
   divisionGroupLabels?: Map<string, string>;
   defaultScope: "group" | "division";
-  meId: string;
+  // The signed-in player, as the hero shows them.
+  me: Identity;
   // Embargoed results that do not count in the tables yet
   // (docs/plans/standings-embargo.md).
   groupWithheld?: number;
   divisionWithheld?: number;
   today: string;
 }) {
+  const meId = me.userId;
   return (
     <>
       <ProgressStrip current={currentRound} total={totalRounds} />
       <Hero
         match={next}
         result={next ? (resultByMatchId.get(next.matchId) ?? null) : null}
-        meId={meId}
+        me={me}
         today={today}
       />
       <div className="mt-8 grid grid-cols-1 items-start gap-7 lg:grid-cols-2">

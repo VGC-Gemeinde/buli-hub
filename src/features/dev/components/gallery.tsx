@@ -2745,7 +2745,7 @@ export function Gallery() {
               demotions: 1,
             })}
             defaultScope="division"
-            meId="me"
+            me={SUMMARY_A}
             divisionWithheld={1}
             today={DASH_TODAY}
           />
@@ -2768,7 +2768,7 @@ export function Gallery() {
             divisionName="Division 1"
             divisionStandings={null}
             defaultScope="group"
-            meId="me"
+            me={SUMMARY_A}
             today={DASH_TODAY}
           />
         </Specimen>
@@ -2789,7 +2789,7 @@ export function Gallery() {
             divisionName="Division 1"
             divisionStandings={null}
             defaultScope="group"
-            meId="me"
+            me={SUMMARY_A}
             today={DASH_TODAY}
           />
         </Specimen>

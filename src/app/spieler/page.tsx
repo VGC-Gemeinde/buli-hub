@@ -361,7 +361,11 @@ export default async function SpielerPage() {
             divisionZones={divisionZones}
             divisionGroupLabels={divisionGroupLabels}
             defaultScope={defaultScope}
-            meId={current.userId}
+            me={{
+              userId: current.userId,
+              name: playerName(current.displayName, current.username),
+              avatarUrl: current.avatarUrl,
+            }}
             groupWithheld={groupWithheld}
             divisionWithheld={divisionWithheld}
             today={today}

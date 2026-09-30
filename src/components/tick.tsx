@@ -18,7 +18,10 @@ const sizeClasses: Record<TickSize, string> = {
 
 const colorClasses: Record<TickColor, string> = {
   orange: "bg-brand-orange",
-  neutral: "bg-border",
+  // The border token is 12% white in dark mode, next to nothing on the dark
+  // navy and lost entirely on `bg-muted` (8% white, the header's section
+  // row). A step lighter there, so an unselected tick still reads as one.
+  neutral: "bg-border dark:bg-white/30",
   navy: "bg-brand-blue dark:bg-white",
 };
 

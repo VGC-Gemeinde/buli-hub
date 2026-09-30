@@ -15,3 +15,16 @@ export function emphasisSurface(tone: EmphasisTone): string {
     ? "border-2 border-brand-orange bg-brand-orange/12"
     : "border-2 border-destructive bg-destructive/12";
 }
+
+// The two hover answers for things that react to a click, readable in light
+// and dark alike (a half-transparent orange border alone vanishes on white):
+//
+// `hoverCard`: a bordered card or row that is a link or a button (stat tiles,
+// match rows, pager steps). The border turns fully orange over a faint
+// orange wash.
+export const hoverCard =
+  "transition-colors hover:border-brand-orange hover:bg-brand-orange/[0.06]";
+
+// `hoverRow`: a row without a border of its own inside a card or list (the
+// Spielplan rows, picker options, sheet rows): the full muted background.
+export const hoverRow = "transition-colors hover:bg-muted";

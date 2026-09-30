@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { BackLink } from "@/components/back-link";
 import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -205,7 +205,6 @@ export function ReportForm({
   reporterId,
   staffOptions,
   backHref = "/spieler",
-  backLabel = "Zurück zur Übersicht",
 }: {
   matchId: string;
   round: number;
@@ -217,8 +216,8 @@ export function ReportForm({
   playerB: Identity;
   reporterId: string;
   staffOptions: Identity[];
+  // Where "Zurück" leads without a previous page in the hub.
   backHref?: string;
-  backLabel?: string;
 }) {
   const router = useRouter();
   const reporter = reporterId === playerA.userId ? playerA : playerB;
@@ -435,12 +434,7 @@ export function ReportForm({
 
   return (
     <>
-      <Link
-        href={backHref}
-        className="mb-4.5 inline-block font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
-      >
-        ← {backLabel}
-      </Link>
+      <BackLink fallbackHref={backHref} />
       <Eyebrow>{eyebrow}</Eyebrow>
       <h1 className="mt-2 mb-6.5 text-[38px] text-brand-blue leading-[1.1] dark:text-white">
         Ergebnis melden

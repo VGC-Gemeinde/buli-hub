@@ -3,7 +3,7 @@
 **Status: done** (2026-07-06) — drop flag on placements, `effectiveResult`
 override wired into the shared result projections (`groupResults`,
 `subDivisionResults`, `windowMatchOverview`), match-page banner + report
-guard, MotW exclusion + pick removal, Discord drop rule, staff Drops section
+guard, MotW exclusion + pick removal, Discord drop rule, staff drop controls
 with type-to-confirm dialog and un-drop. Verified via unit/integration tests
 and a seeded season with a dropped player (tables, row scores, match page,
 staff list, MotW picker).
@@ -51,7 +51,8 @@ call site of one pure, exhaustively tested override.
 
 **Out (deferred):**
 - Pre-season withdrawal (that is registration removal, a different feature).
-- Automatic re-seeding / roster refills after a drop.
+- Automatic re-seeding. Taking over a dropped player's slot is its own
+  feature: `player-replacement.md`.
 - Notifying the dropped player or opponents (Discord/DM).
 
 ## Data — three columns on `placements`
@@ -113,10 +114,11 @@ Each assembles view models from stored results and now maps them through
 
 ## Views
 
-- **Staff dashboard**: a "Drops" section — list of dropped players (name,
-  group, reason, date, "Drop aufheben") and a "Spieler droppen" dialog:
-  player select (placed, active players with group label), required reason
-  (staff-internal), `TypeToConfirm` on the player's name.
+- **Staff**: dropping happens per player on the Teilnehmer page
+  (`/staff/teilnehmer`, "Droppen") and in the profile staff panel, with the
+  "Spieler droppen" dialog: required reason (staff-internal),
+  `TypeToConfirm` on the player's name. Dropped players are a filter on the
+  Teilnehmer page (reason, "Drop aufheben") and a number on the overview.
 - **Public/player tables**: small "Drop" tag on the row.
 - **Match page**: the drop banner (all viewers).
 - **MotW manager**: drop-decided matches excluded from the picker lists.
@@ -126,7 +128,7 @@ Each assembles view models from stored results and now maps them through
 - Seed: drop one mid-table player in the running season (with reason), so
   tables, rows, match pages and the staff list all show the state.
 - Gallery: standings row with drop marker, match-page drop banner, the drop
-  dialog, staff drops list.
+  dialog, the Teilnehmer rows.
 
 ## Tests
 

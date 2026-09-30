@@ -182,8 +182,8 @@ back. Reveal state stays client-only — a courtesy tag, not security.
 One Spieltag at a time across the full page (container **1040px**, the
 sanctioned wide width, `DESIGN.md` §8.5), paged through the whole season. Which
 weeks are editable is a domain rule, not a view decision — see §5.6.
-Header: standard `SiteHeader` breadcrumb **Staff-Bereich / Match of the
-Week**. Page head: back link **← Staff-Bereich**, orange tick + `h1`
+Header: standard `SiteHeader` with the Staff-Bereich row (`NAVIGATION.md`).
+Page head (`StaffPage`, `STAFF-DASHBOARD.md` §2): orange tick + `h1`
 **Match of the Week** (30px), intro line 14px muted naming the two steps the
 workspace has: per week a Hauptmatch plus backups are nominated (all held like
 recordings), and one of them is confirmed as the Match of the Week, until when

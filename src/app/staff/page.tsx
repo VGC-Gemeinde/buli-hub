@@ -1,43 +1,31 @@
 import { headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { EmptyStateCard } from "@/components/empty-state-card";
-import { ActionLink } from "@/components/links";
-import { PlayerGrid, type RegisteredPlayer } from "@/components/player-grid";
+import type { ReactNode } from "react";
 import { SectionHeader } from "@/components/section-header";
-import { SiteHeader } from "@/components/site-header";
 import { Tick } from "@/components/tick";
-import { Button } from "@/components/ui/button";
-import { DiscordSeasonCard } from "@/features/discord-season/components/discord-season-card";
+import { DiscordSyncButton } from "@/features/discord-season/components/sync-button";
 import { seasonDiscordConfig } from "@/features/discord-season/config";
 import { getSyncState } from "@/features/discord-season/queries";
-import { cardView, needsAttention } from "@/features/discord-season/report";
-import { DropsSection } from "@/features/drops/components/drops-section";
-import { listDropCandidates, listDrops } from "@/features/drops/queries";
-import { MembershipList } from "@/features/membership/components/membership-list";
-import { MembershipWarningCard } from "@/features/membership/components/warning-card";
 import {
-  bucketMembership,
-  type RosterMembership,
-} from "@/features/membership/membership";
+  cardView,
+  needsAttention,
+  skipReasonLabel,
+} from "@/features/discord-season/report";
+import { listDrops } from "@/features/drops/queries";
+import { bucketMembership } from "@/features/membership/membership";
 import { registeredMembership } from "@/features/membership/queries";
 import { sweepGuildMemberships } from "@/features/membership/sweep";
-import { MotwTodoCard } from "@/features/motw/components/motw-todo-card";
 import { motwTodo } from "@/features/motw/motw";
 import { motwForWindow } from "@/features/motw/queries";
-import { StaleHoldsCard } from "@/features/recordings/components/stale-holds-card";
 import { staleHolds, staleHoldsSummary } from "@/features/recordings/holds";
 import { holdsForWindow } from "@/features/recordings/queries";
 import { listRegistrations } from "@/features/registration/queries";
-import { SaisonDashboard } from "@/features/reporting/components/saison-dashboard";
-import {
-  windowMatchOverview,
-  windowResolvedDisputes,
-} from "@/features/reporting/queries";
+import { windowMatchOverview } from "@/features/reporting/queries";
 import { bucketMatches } from "@/features/reporting/staff-dashboard";
 import { currentUser } from "@/features/roles/guard";
-import { type Role, roleAtLeast } from "@/features/roles/roles";
-import { PublishScheduleCard } from "@/features/schedule/components/publish-schedule-card";
+import { roleAtLeast } from "@/features/roles/roles";
+import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
+import { PublishScheduleDialog } from "@/features/schedule/components/publish-schedule-dialog";
 import { subDivisionRosters } from "@/features/schedule/queries";
 import { defaultDeadlines, spieltagCount } from "@/features/schedule/spieltage";
 import {
@@ -45,25 +33,24 @@ import {
   type MatchdayLite,
 } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
-import {
-  PreseasonTodoCard,
-  type ScheduleSetup,
-} from "@/features/staff/components/preseason-todo-card";
 import { SeasonCard } from "@/features/staff/components/registration-status";
+import { StaffPage } from "@/features/staff/components/staff-page";
+import { StatTile } from "@/features/staff/components/stat-tile";
+import { TodoList } from "@/features/staff/components/todo-list";
 import { latestWindow, windowSeasonPhase } from "@/features/staff/queries";
 import { seasonName } from "@/features/staff/registration-window";
-import { formatGermanDay, germanToday } from "@/lib/german-time";
-import { playerName } from "@/lib/player-name";
+import { staffTodos, type TodoFacts } from "@/features/staff/todos";
+import {
+  formatGermanDateTime,
+  formatGermanDay,
+  germanToday,
+} from "@/lib/german-time";
 
 function ddMM(dateStr: string): string {
-  return formatGermanDay(dateStr, {
-    day: "2-digit",
-    month: "2-digit",
-  });
+  return formatGermanDay(dateStr, { day: "2-digit", month: "2-digit" });
 }
 
-// The running-season header strip: identity, progress, and the entry points
-// that replace the pre-season Saison/Einteilung sections.
+// The running season beside the title: which season, which phase, how far.
 function SeasonStrip({
   season,
   label,
@@ -80,9 +67,9 @@ function SeasonStrip({
   const pct =
     totalRounds > 0 && currentRound ? (currentRound / totalRounds) * 100 : 0;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-6 rounded-lg border px-5.5 py-3.5">
-      <div className="flex items-center gap-3">
-        <span className="font-bold font-heading text-[22px] text-brand-blue uppercase leading-none dark:text-white">
+    <div className="flex flex-col gap-1.5 sm:items-end">
+      <div className="flex items-center gap-2.5">
+        <span className="font-bold font-heading text-[18px] text-brand-blue uppercase leading-none dark:text-white">
           {season}
         </span>
         <Tick size="s" />
@@ -90,79 +77,79 @@ function SeasonStrip({
           {label}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <span className="whitespace-nowrap font-semibold text-[13px] tabular-nums">
+      <div className="flex items-center gap-2.5">
+        <span className="whitespace-nowrap font-semibold text-[12.5px] tabular-nums">
           Spieltag {currentRound ?? "—"} von {totalRounds}
         </span>
-        <div className="h-1.5 w-32 max-w-full rounded-full bg-muted sm:w-40">
+        <div className="h-1.5 w-28 rounded-full bg-muted">
           <div
             className="h-1.5 rounded-full bg-brand-orange"
             style={{ width: `${pct}%` }}
           />
         </div>
         {week ? (
-          <span className="whitespace-nowrap text-[13px] text-muted-foreground tabular-nums">
+          <span className="whitespace-nowrap text-[12.5px] text-muted-foreground tabular-nums">
             {ddMM(week.startsOn)} – {ddMM(week.endsOn)}
           </span>
         ) : null}
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
-        >
-          <Link href="/spielplan">Spielplan</Link>
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
-        >
-          <Link href="/staff/motw">Match of the Week</Link>
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
-        >
-          <Link href="/staff/aufnahmen">Aufnahmen</Link>
-        </Button>
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="h-8 rounded-lg px-3.5 font-medium text-[13.5px]"
-        >
-          <Link href="/staff/seeding">Divisionen</Link>
-        </Button>
-      </div>
     </div>
   );
 }
 
-// Page heading shared by every phase of the Staff-Bereich. The usage stats
-// link is admin+ (docs/plans/usage-stats.md) and must appear in each layout
-// branch below, so it lives here rather than in one of them.
-function StaffHeading({ role }: { role: Role }) {
+// The dashboard's blocks under the season header: what needs doing, then
+// the week and the season as numbers.
+function Blocks({
+  todos,
+  week,
+  season,
+}: {
+  todos: ReactNode;
+  week?: { meta: string; tiles: ReactNode };
+  season: { tiles: ReactNode };
+}) {
   return (
-    <div className="mb-9 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-      <h1 className="text-[40px] text-brand-blue dark:text-white">
-        Staff-Bereich
-      </h1>
-      {roleAtLeast(role, "admin") ? (
-        <ActionLink href="/staff/nutzung" className="text-sm">
-          Nutzung
-        </ActionLink>
-      ) : null}
-    </div>
+    <>
+      <section className="flex flex-col gap-3">
+        <SectionHeader>Zu erledigen</SectionHeader>
+        {todos}
+      </section>
+      {/* The week and the season side by side on desktop, so the numbers
+          stay on the first screen even under a long todo list. */}
+      <div
+        className={
+          week
+            ? "grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-7"
+            : "grid grid-cols-1"
+        }
+      >
+        {week ? (
+          <section className="flex flex-col gap-3">
+            <SectionHeader meta={week.meta}>Diese Woche</SectionHeader>
+            <div className="grid grid-cols-2 gap-3">{week.tiles}</div>
+          </section>
+        ) : null}
+        <section className="flex flex-col gap-3">
+          <SectionHeader>Saison</SectionHeader>
+          <div
+            className={
+              week
+                ? "grid grid-cols-2 gap-3"
+                : "grid grid-cols-2 gap-3 sm:grid-cols-4"
+            }
+          >
+            {season.tiles}
+          </div>
+        </section>
+      </div>
+    </>
   );
 }
 
-export default async function StaffPage() {
+// The Staff-Bereich overview (docs/plans/staff-dashboard.md): concrete
+// problems as todos, everything normal as numbers, full lists on the pages
+// the staff tab bar leads to.
+export default async function StaffOverviewPage() {
   const current = await currentUser();
   if (!current || !roleAtLeast(current.role, "staff")) {
     redirect("/");
@@ -176,55 +163,46 @@ export default async function StaffPage() {
         registration: "not_started" as const,
       };
 
-  // Membership state of the registered roster, freshly swept (one Discord
-  // call, fail-open). Both layouts show the list, and the warning card up top
-  // fires whenever confirmed non-members are registered.
-  let membershipRoster: RosterMembership[] = [];
-  if (window) {
-    await sweepGuildMemberships(window.id);
-    membershipRoster = await registeredMembership(window.id);
-  }
-  const nonMemberCount = bucketMembership(membershipRoster).nonMembers.length;
-  const membershipListId = "discord-mitgliedschaft";
+  // Membership of the registered roster, freshly swept (one Discord call,
+  // fail-open). Dropped players are not on this roster.
+  const roster = window
+    ? await sweepGuildMemberships(window.id).then(() =>
+        registeredMembership(window.id),
+      )
+    : [];
+  const { nonMembers, unchecked } = bucketMembership(roster);
 
-  // Running season: the /staff page *is* the dashboard — staff lands on their
-  // work, no separate page. schedule_hidden gets the same dashboard (staff
-  // review the season exactly as it will run) plus the publish card on top.
+  const noTodos: Omit<TodoFacts, "phase"> = {
+    overdue: 0,
+    disputedMatchIds: [],
+    pendingFreeWins: 0,
+    staleRecordings: null,
+    motw: null,
+    publish: null,
+    discord: null,
+    nonMembers: nonMembers.length,
+    scheduleSetup: null,
+  };
+
+  // Running season: the schedule exists (published or still internal).
   if ((phase === "regular_season" || phase === "schedule_hidden") && window) {
     const today = germanToday();
-    const [
-      overview,
-      matchdays,
-      resolvedDisputes,
-      motwSelections,
-      holds,
-      drops,
-      dropCandidates,
-    ] = await Promise.all([
-      windowMatchOverview(window.id),
-      matchdaysForWindow(window.id),
-      windowResolvedDisputes(window.id),
-      motwForWindow(window.id),
-      holdsForWindow(window.id),
-      listDrops(window.id),
-      listDropCandidates(window.id),
-    ]);
+    const [overview, matchdays, motwSelections, holds, drops] =
+      await Promise.all([
+        windowMatchOverview(window.id),
+        matchdaysForWindow(window.id),
+        motwForWindow(window.id),
+        holdsForWindow(window.id),
+        listDrops(window.id),
+      ]);
     const week = currentMatchday(matchdays, today);
     const { overdue, thisWeek, pendingFreeWins, disputed } = bucketMatches({
       matches: overview,
       currentRound: week?.round ?? null,
       today,
     });
-    const todo = motwTodo({
-      currentRound: week?.round ?? null,
-      totalRounds: matchdays.length,
-      confirmedRounds: new Set(motwSelections.map((s) => s.round)),
-      candidateRounds: new Set(
-        holds.filter((h) => h.motwRole !== null).map((hold) => hold.round),
-      ),
-    });
-    // Recording holds whose Spieltag is over: a forgotten release is a
-    // result the community never sees (docs/plans/recording-holds.md).
+    const weekOpen = thisWeek.filter((match) => match.outcome === null);
+
     const outcomeById = new Map(overview.map((m) => [m.matchId, m.outcome]));
     const staleRecordings = staleHoldsSummary(
       staleHolds(
@@ -236,9 +214,8 @@ export default async function StaffPage() {
       ),
     );
 
-    // schedule_hidden: the publish todo, summarizing what goes live. The
-    // overview excludes byes, so its length is the real match count; a
-    // schedule always has at least one matchday.
+    // schedule_hidden: what the publish puts live. The overview excludes
+    // byes, so its length is the real match count.
     const sortedDays = [...matchdays].sort((a, b) => a.round - b.round);
     const publishFacts =
       phase === "schedule_hidden" && sortedDays.length > 0
@@ -251,86 +228,180 @@ export default async function StaffPage() {
           }
         : null;
 
-    // regular_season: the Discord card, only while the last sync says the
-    // server does not match the league (docs/plans/discord-season-setup.md).
-    // Read from the stored report — the page never talks to Discord.
-    const discordSyncState =
+    // The Discord sync, only while the stored report says the server does
+    // not match the league. The page never talks to Discord for it.
+    const syncState =
       phase === "regular_season" && seasonDiscordConfig() !== null
         ? await getSyncState(window.id)
         : undefined;
     const now = new Date();
-    const discordView =
-      discordSyncState !== undefined && needsAttention(discordSyncState, now)
-        ? cardView(discordSyncState, now)
+    const view =
+      syncState !== undefined && needsAttention(syncState, now)
+        ? cardView(syncState, now)
         : null;
+    const ranAt = (date: Date) =>
+      formatGermanDateTime(date, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
+    const todos = staffTodos({
+      ...noTodos,
+      phase,
+      overdue: overdue.length,
+      disputedMatchIds: disputed.map((match) => match.matchId),
+      pendingFreeWins: pendingFreeWins.length,
+      staleRecordings,
+      motw: motwTodo({
+        currentRound: week?.round ?? null,
+        totalRounds: matchdays.length,
+        confirmedRounds: new Set(motwSelections.map((s) => s.round)),
+        candidateRounds: new Set(
+          holds.filter((h) => h.motwRole !== null).map((hold) => hold.round),
+        ),
+      }),
+      publish: publishFacts,
+      discord:
+        view === null
+          ? null
+          : view.kind === "never"
+            ? { kind: "never" }
+            : view.kind === "stale"
+              ? { kind: "stale", ranAtText: ranAt(view.ranAt) }
+              : {
+                  kind: "attention",
+                  summary: `${view.groups.ready} von ${view.groups.total} Gruppen mit Rolle und Kanal · ${view.players.ready} von ${view.players.total} Spielern mit beiden Rollen · Letzter Abgleich: ${ranAt(view.ranAt)}`,
+                  lines: [
+                    ...(view.error ? [view.error] : []),
+                    ...view.skipped.map(
+                      (entry) =>
+                        `${entry.name}: ${skipReasonLabel(entry.reason)}`,
+                    ),
+                  ],
+                },
+    });
+
+    const reported = thisWeek.length - weekOpen.length;
+    const settledRounds = week ? week.round - 1 : matchdays.length;
     return (
-      <div className="flex flex-1 flex-col">
-        <SiteHeader />
-        <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 py-12">
-          <StaffHeading role={current.role} />
-          <div className="flex flex-col gap-4.5">
-            <SeasonStrip
-              season={seasonName(window.seasonNumber)}
-              label={
-                phase === "schedule_hidden"
-                  ? "Spielplan intern"
-                  : "Reguläre Saison"
-              }
-              currentRound={week?.round ?? null}
-              totalRounds={matchdays.length}
-              week={week}
-            />
-            {publishFacts ? <PublishScheduleCard facts={publishFacts} /> : null}
-            {discordView ? <DiscordSeasonCard view={discordView} /> : null}
-            {staleRecordings ? (
-              <StaleHoldsCard summary={staleRecordings} />
-            ) : null}
-            {todo ? <MotwTodoCard todo={todo} /> : null}
-            {nonMemberCount > 0 ? (
-              <MembershipWarningCard
-                count={nonMemberCount}
-                listId={membershipListId}
+      <StaffPage
+        title="Staff-Bereich"
+        action={
+          <SeasonStrip
+            season={seasonName(window.seasonNumber)}
+            label={
+              phase === "schedule_hidden"
+                ? "Spielplan intern"
+                : "Reguläre Saison"
+            }
+            currentRound={week?.round ?? null}
+            totalRounds={matchdays.length}
+            week={week}
+          />
+        }
+      >
+        <div className="flex flex-col gap-8">
+          <Blocks
+            todos={
+              <TodoList
+                todos={todos}
+                renderControl={(action) =>
+                  action.kind === "discord_sync" ? (
+                    <DiscordSyncButton />
+                  ) : action.kind === "publish_schedule" && publishFacts ? (
+                    <PublishScheduleDialog
+                      facts={publishFacts}
+                      triggerSize="sm"
+                    />
+                  ) : null
+                }
               />
-            ) : null}
-            <SaisonDashboard
-              overdue={overdue}
-              thisWeek={thisWeek}
-              pendingFreeWins={pendingFreeWins}
-              disputed={disputed}
-              resolvedDisputes={resolvedDisputes}
-              today={today}
-            />
-            <DropsSection drops={drops} candidates={dropCandidates} />
-            <MembershipList
-              roster={membershipRoster}
-              seasonName={seasonName(window.seasonNumber)}
-              canCancel={false}
-              id={membershipListId}
-            />
-          </div>
-        </main>
-      </div>
+            }
+            week={{
+              meta: week
+                ? `Spieltag ${week.round} · bis ${ddMM(week.endsOn)}`
+                : "Saison beendet",
+              tiles: (
+                <>
+                  <StatTile
+                    value={weekOpen.length}
+                    label="Offen"
+                    href="/staff/woche#spieltag"
+                  />
+                  <StatTile
+                    value={reported}
+                    sub={`von ${thisWeek.length}`}
+                    label="Gemeldet"
+                    href="/staff/woche#spieltag"
+                  />
+                  <StatTile
+                    value={overdue.length}
+                    label="Überfällig"
+                    href="/staff/woche#ueberfaellig"
+                    alert
+                  />
+                  <StatTile
+                    value={disputed.length}
+                    label="Angefochten"
+                    href="/staff/woche#angefochten"
+                    alert
+                  />
+                </>
+              ),
+            }}
+            season={{
+              tiles: (
+                <>
+                  <StatTile
+                    value={roster.length}
+                    label="Spieler"
+                    href="/staff/teilnehmer"
+                  />
+                  <StatTile
+                    value={drops.length}
+                    label="Drops"
+                    href="/staff/teilnehmer?filter=dropped"
+                  />
+                  <StatTile
+                    value={nonMembers.length}
+                    label="Nicht auf dem Server"
+                    href="/staff/teilnehmer?filter=not_on_server"
+                  />
+                  <StatTile
+                    value={motwSelections.length}
+                    sub={`von ${settledRounds}`}
+                    label="MotW bestätigt"
+                    href="/staff/motw"
+                  />
+                </>
+              ),
+            }}
+          />
+        </div>
+      </StaffPage>
     );
   }
 
-  // Pre-season: registration + seeding management.
+  // Pre-season: registration, seeding, schedule.
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
   const registrationUrl = `${protocol}://${host}/anmeldung`;
-  const players: RegisteredPlayer[] = window
-    ? (await listRegistrations(window.id)).map((row) => ({
-        id: row.id,
-        name: playerName(row.displayName, row.username),
-        avatarUrl: row.avatarUrl ?? undefined,
-      }))
-    : [];
+  const registrations = window ? await listRegistrations(window.id) : [];
 
-  let scheduleSetup: ScheduleSetup | null = null;
+  let scheduleSetup: {
+    seasonStart: string;
+    deadlines: string[];
+    groups: number;
+    matches: number;
+    largest: number;
+  } | null = null;
   if (phase === "seeded" && window) {
     const rosters = await subDivisionRosters(window.id);
-    const sizes = rosters.map((roster) => roster.userIds.length);
+    const sizes = rosters.map((r) => r.userIds.length);
     const count = spieltagCount(sizes);
     const seasonStart = germanToday();
     if (count > 0) {
@@ -344,60 +415,74 @@ export default async function StaffPage() {
     }
   }
 
+  const todos = staffTodos({
+    ...noTodos,
+    phase,
+    scheduleSetup: scheduleSetup
+      ? {
+          groups: scheduleSetup.groups,
+          rounds: scheduleSetup.deadlines.length,
+          matches: scheduleSetup.matches,
+        }
+      : null,
+  });
   return (
-    <div className="flex flex-1 flex-col">
-      <SiteHeader />
-      <main className="mx-auto w-full max-w-[1040px] flex-1 px-8 py-12">
-        <StaffHeading role={current.role} />
-        <div className="flex flex-col gap-10">
-          {phase === "registration_closed" || phase === "seeded" ? (
-            <PreseasonTodoCard phase={phase} scheduleSetup={scheduleSetup} />
-          ) : null}
-
-          {nonMemberCount > 0 ? (
-            <MembershipWarningCard
-              count={nonMemberCount}
-              listId={membershipListId}
-            />
-          ) : null}
-
-          <section className="flex flex-col gap-5">
-            <SectionHeader>Saison</SectionHeader>
-            <SeasonCard
-              state={state}
-              season={window ? seasonName(window.seasonNumber) : null}
-              registrationUrl={registrationUrl}
-              closesAt={window?.closesAt ?? null}
-            />
-          </section>
-
-          {state !== "not_started" ? (
-            <section className="flex flex-col gap-5">
-              <SectionHeader meta={`${players.length} gesamt`}>
-                Anmeldungen
-              </SectionHeader>
-              <PlayerGrid
-                players={players}
-                empty={
-                  <EmptyStateCard title="Noch keine Anmeldungen" informational>
-                    Sobald sich die ersten Spieler über den Anmeldelink
-                    registrieren, erscheinen sie hier.
-                  </EmptyStateCard>
+    <StaffPage title="Staff-Bereich">
+      <div className="flex flex-col gap-8">
+        <SeasonCard
+          state={state}
+          season={window ? seasonName(window.seasonNumber) : null}
+          registrationUrl={registrationUrl}
+          closesAt={window?.closesAt ?? null}
+        />
+        {window ? (
+          <Blocks
+            todos={
+              <TodoList
+                todos={todos}
+                renderControl={(action) =>
+                  action.kind === "create_schedule" && scheduleSetup ? (
+                    <CreateScheduleDialog
+                      seasonStart={scheduleSetup.seasonStart}
+                      defaultDeadlines={scheduleSetup.deadlines}
+                      largest={scheduleSetup.largest}
+                      triggerSize="sm"
+                    />
+                  ) : null
                 }
               />
-            </section>
-          ) : null}
-
-          {window ? (
-            <MembershipList
-              roster={membershipRoster}
-              seasonName={seasonName(window.seasonNumber)}
-              canCancel={phase === "registration_closed"}
-              id={membershipListId}
-            />
-          ) : null}
-        </div>
-      </main>
-    </div>
+            }
+            season={{
+              tiles: (
+                <>
+                  <StatTile
+                    value={registrations.length}
+                    label="Anmeldungen"
+                    href="/staff/teilnehmer"
+                  />
+                  <StatTile
+                    value={
+                      registrations.filter((r) => r.status === "new").length
+                    }
+                    label="Neu dabei"
+                    href="/staff/teilnehmer"
+                  />
+                  <StatTile
+                    value={nonMembers.length}
+                    label="Nicht auf dem Server"
+                    href="/staff/teilnehmer?filter=not_on_server"
+                  />
+                  <StatTile
+                    value={unchecked.length}
+                    label="Nicht geprüft"
+                    href="/staff/teilnehmer?filter=unchecked"
+                  />
+                </>
+              ),
+            }}
+          />
+        ) : null}
+      </div>
+    </StaffPage>
   );
 }

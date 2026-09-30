@@ -19,7 +19,11 @@ import { dismissRegistrationHint } from "../actions";
 // Regelwerk uses for the one rule players kept skimming past. Players ignored
 // the muted version, so this deliberately borrows the treatment reserved for
 // "this one is not optional", popping equally in light and dark.
-export function ProfileHint() {
+//
+// `compact` is the one-line form for the in-season dashboard, where every
+// line counts toward seeing the whole week at once
+// (docs/plans/player-dashboard-at-a-glance.md). Same surface, same words.
+export function ProfileHint({ compact = false }: { compact?: boolean }) {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) {
     return null;
@@ -28,6 +32,45 @@ export function ProfileHint() {
   function dismiss() {
     setDismissed(true);
     void dismissRegistrationHint();
+  }
+
+  if (compact) {
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-3 rounded-lg py-2.5 pr-3 pl-4",
+          emphasisSurface("orange"),
+        )}
+      >
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="flex shrink-0 items-center gap-2.5">
+            <Tick size="s" color="orange" />
+            <span className="font-semibold text-[12px] text-brand-orange uppercase tracking-[0.14em]">
+              Profil vervollständigen
+            </span>
+          </span>
+          <span className="min-w-0 text-[14px] text-foreground">
+            Optionale Angaben wie Social-Media-Handles und Herkunft.{" "}
+            <Link
+              href="/profil"
+              className="font-medium text-brand-blue underline dark:text-white"
+            >
+              Zum Profil
+            </Link>
+          </span>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Hinweis ausblenden"
+          onClick={dismiss}
+          className="size-7 shrink-0"
+        >
+          <X className="size-4" />
+        </Button>
+      </div>
+    );
   }
 
   return (

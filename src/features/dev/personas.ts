@@ -8,7 +8,8 @@ export type PersonaId =
   | "kein-avatar"
   | "langer-name"
   | "leer"
-  | "kein-server";
+  | "kein-server"
+  | "gesperrt";
 
 export type Persona = {
   id: PersonaId;
@@ -21,6 +22,10 @@ export type Persona = {
   // Pinned guild membership, same reasoning as role: null = never confirmed
   // (the fail-open state), false = confirmed non-member (gated everywhere).
   guildMember: boolean | null;
+  // On the Banliste (docs/plans/banlist.md): signing in makes sure an active
+  // ban on the persona's Discord id exists, so the blocked registration is
+  // one login away. Staff can lift it on /staff/banliste to see the rest.
+  banned?: boolean;
 };
 
 // Discord's public default avatar — a real, always-available image URL.
@@ -95,6 +100,22 @@ export const PERSONAS: readonly Persona[] = [
     },
     role: "player",
     guildMember: false,
+  },
+  {
+    id: "gesperrt",
+    label: "Gesperrt",
+    description: "Auf der Banliste — Anmeldung gesperrt, Rest offen",
+    userMetadata: {
+      avatar_url: AVATAR_URL,
+      picture: AVATAR_URL,
+      custom_claims: { global_name: "Gesperrter Gustav" },
+      full_name: "gustav_gesperrt",
+      name: "gustav_gesperrt",
+      provider_id: "100000000000000006",
+    },
+    role: "player",
+    guildMember: true,
+    banned: true,
   },
 ];
 

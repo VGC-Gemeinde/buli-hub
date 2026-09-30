@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js";
-import { eq, sql } from "drizzle-orm";
-import { profiles, registrations } from "@/db/schema";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { placements, profiles, registrations } from "@/db/schema";
 import {
   type DiscordIdentity,
   discordIdentityFromUser,
@@ -9,6 +9,10 @@ import { db } from "@/lib/db";
 import type { RosterMembership } from "./membership";
 
 // Registered roster of a window with membership state, for the staff overview.
+// Dropped players are left out: the membership duty is a condition of taking
+// part, and a dropped player no longer takes part, so a dropped player who
+// left the server is nothing for staff to clarify. Before the seeding there
+// are no placements and the left join keeps everyone.
 export async function registeredMembership(
   windowId: string,
 ): Promise<RosterMembership[]> {
@@ -23,7 +27,16 @@ export async function registeredMembership(
     })
     .from(registrations)
     .leftJoin(profiles, eq(profiles.userId, registrations.userId))
-    .where(eq(registrations.windowId, windowId));
+    .leftJoin(
+      placements,
+      and(
+        eq(placements.windowId, registrations.windowId),
+        eq(placements.userId, registrations.userId),
+      ),
+    )
+    .where(
+      and(eq(registrations.windowId, windowId), isNull(placements.droppedAt)),
+    );
 }
 
 // Registered players' auth identities for the membership sweep. Raw SQL

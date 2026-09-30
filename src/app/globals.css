@@ -152,6 +152,10 @@
   }
   html {
     @apply font-sans;
+    /* Always reserve the scrollbar's lane: otherwise a short page (no
+       scrollbar) is wider than a long one, and everything centred, the staff
+       tab bar first, jumps sideways between pages. */
+    scrollbar-gutter: stable;
   }
   h1,
   h2,

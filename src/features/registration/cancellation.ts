@@ -2,17 +2,18 @@ import type { SeasonPhase } from "@/features/staff/season-phase";
 
 /**
  * Why a staff cancel of a registration must be refused in this phase, or null
- * when it may proceed. Cancelling exists for the gap between Anmeldeschluss
- * and the finalized seeding — before it players withdraw themselves, after it
+ * when it may proceed. Cancelling works from the open window until the
+ * finalized seeding — while the window is open players can also withdraw
+ * themselves, but staff need the same power (a banned player, a registration
+ * that must go; docs/plans/banlist.md). From the finalized seeding onward
  * removal goes through the drop flow, which keeps the finalized structure
  * intact (finalizeSeeding stays one-way, see docs/plans/discord-membership.md).
  */
 export function cancellationBlocked(phase: SeasonPhase): string | null {
   switch (phase) {
     case "not_started":
-      return "Es gibt keine geschlossene Anmeldung, die storniert werden könnte.";
+      return "Es gibt keine Anmeldung, die storniert werden könnte.";
     case "registration_open":
-      return "Solange die Anmeldung offen ist, ziehen Spieler ihre Anmeldung selbst zurück. Stornieren ist erst nach Anmeldeschluss möglich.";
     case "registration_closed":
       return null;
     case "seeded":

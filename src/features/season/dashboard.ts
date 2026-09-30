@@ -63,6 +63,10 @@ export type PlayerMatch = {
   startsOn: string;
   endsOn: string;
   opponent: Identity | null;
+  // A match of the slot from before the player took it over as a replacement
+  // (docs/plans/player-replacement.md): decided by the drop, counted as their
+  // loss, never theirs to play.
+  inherited?: boolean;
 };
 
 export type MatchdayLite = { round: number; startsOn: string; endsOn: string };
@@ -102,7 +106,9 @@ export function splitPlayerMatches(
   const past: PlayerMatch[] = [];
   const active: PlayerMatch[] = [];
   for (const match of sorted) {
-    (match.endsOn < today ? past : active).push(match);
+    // An inherited match is decided before the player ever joined, so it is
+    // never the one to play next, even when its week is still running.
+    (match.inherited || match.endsOn < today ? past : active).push(match);
   }
   const [next = null, ...upcoming] = active;
   return { next, upcoming, past };
@@ -119,7 +125,10 @@ export function daysUntil(dateStr: string, today: string): number {
 // Assembles a player's schedule from raw sub-division matches: keeps only the
 // player's own matches, resolves the opponent identity (null = bye) via the
 // roster map, and attaches the matchday dates. Rounds without a matchday are
-// skipped (should not happen for a consistent schedule).
+// skipped (should not happen for a consistent schedule). For a replacement,
+// `predecessorIds` are the players whose slot they took over: those players'
+// remaining matches (the rounds before the entry) join the schedule marked as
+// inherited, so the replacement sees what their record starts with.
 export function buildPlayerMatches(input: {
   matches: readonly {
     id: string;
@@ -130,23 +139,29 @@ export function buildPlayerMatches(input: {
   matchdaysByRound: ReadonlyMap<number, { startsOn: string; endsOn: string }>;
   rosterById: ReadonlyMap<string, Identity>;
   userId: string;
+  predecessorIds?: readonly string[];
 }): PlayerMatch[] {
+  const predecessors = new Set(input.predecessorIds ?? []);
   const result: PlayerMatch[] = [];
   for (const match of input.matches) {
-    if (match.playerAId !== input.userId && match.playerBId !== input.userId) {
+    const owner = [input.userId, ...predecessors].find(
+      (id) => match.playerAId === id || match.playerBId === id,
+    );
+    if (owner === undefined) {
       continue;
     }
     const day = input.matchdaysByRound.get(match.round);
     if (!day) {
       continue;
     }
-    const opponentId = opponentOf(match, input.userId);
+    const opponentId = opponentOf(match, owner);
     result.push({
       matchId: match.id,
       round: match.round,
       startsOn: day.startsOn,
       endsOn: day.endsOn,
       opponent: opponentId ? (input.rosterById.get(opponentId) ?? null) : null,
+      ...(owner === input.userId ? {} : { inherited: true }),
     });
   }
   return result.sort((a, b) => a.round - b.round);

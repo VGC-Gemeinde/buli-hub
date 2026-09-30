@@ -1,7 +1,5 @@
 "use client";
 
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
@@ -21,7 +19,7 @@ const STATUS_PILLS: { value: SheetFilter["status"]; label: string }[] = [
   { value: "new", label: "Neu" },
 ];
 
-// Fixed three-row header stack: title row (breadcrumb · title · control
+// Fixed three-row header stack: title row (title · control
 // pill) → step bar → contextual row (sheet config / the rules panel's strip /
 // the finalized notice). Every row has one job.
 export function SeedingToolbar({
@@ -87,15 +85,8 @@ export function SeedingToolbar({
   return (
     <div className="shrink-0">
       {/* Title row */}
+      {/* No way back here: the staff navigation in the site header is it. */}
       <div className="flex items-center gap-4 px-7 pt-3.5 pb-2.5">
-        <Link
-          href="/staff"
-          className="flex items-center gap-1 font-medium text-[13px] text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft aria-hidden className="size-[13px]" />
-          Staff-Bereich
-        </Link>
-        <div className="h-[18px] w-px bg-border" />
         <div className="flex min-w-0 items-center gap-3">
           <Tick size="l" />
           <h1 className="whitespace-nowrap text-[28px] text-brand-blue leading-none dark:text-white">

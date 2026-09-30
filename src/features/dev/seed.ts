@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import {
+  bans,
   disputes,
   divisions,
   matches,
@@ -20,6 +21,7 @@ import type {
   Platform,
   PlayerStatus,
 } from "@/features/registration/registration";
+import { acceptOffer, createOffer } from "@/features/replacements/queries";
 import {
   markSchedulePublished,
   persistSchedule,
@@ -233,10 +235,66 @@ export function buildSeedRegistrations(
   return specs;
 }
 
+// Discord ids the seed bans carry, so clearSeedData can find them again (bans
+// hang on a Discord id, not on the seed users' emails).
+const SEED_DISCORD_PREFIX = "4990000000";
+
+// The Banliste (docs/plans/banlist.md) in every state: a banned hub user, a
+// ban by Discord-ID on someone who never signed in, and a lifted ban as
+// history.
+async function seedBans(staffId: string): Promise<void> {
+  const bannedId = randomUUID();
+  const bannedDiscord = `${SEED_DISCORD_PREFIX}00000001`;
+  await insertSeedAuthUsers([
+    { id: bannedId, email: `${SEED_EMAIL_PREFIX}gebannt${SEED_EMAIL_DOMAIN}` },
+  ]);
+  // A Discord sign-in stores the id here; the seed users are email users.
+  await db.execute(
+    sql`update auth.users
+        set raw_user_meta_data = raw_user_meta_data || jsonb_build_object('provider_id', ${bannedDiscord}::text)
+        where id = ${bannedId}`,
+  );
+  await db.insert(profiles).values({
+    userId: bannedId,
+    displayName: "Gebannter Bernd",
+    username: "bernd_b",
+  });
+  const day = 86_400_000;
+  await db.insert(bans).values([
+    {
+      discordId: bannedDiscord,
+      discordName: "Gebannter Bernd",
+      reason: "Beleidigungen im Discord, zweimal verwarnt.",
+      bannedById: staffId,
+      bannedAt: new Date(Date.now() - 20 * day),
+    },
+    {
+      discordId: `${SEED_DISCORD_PREFIX}00000002`,
+      discordName: "Altmeister Alfred",
+      reason:
+        "Aus Saison 3: Playoffs nicht angetreten, danach nicht erreichbar.",
+      bannedById: staffId,
+      bannedAt: new Date(Date.now() - 60 * day),
+    },
+    {
+      discordId: `${SEED_DISCORD_PREFIX}00000003`,
+      discordName: "Ehemals Emil",
+      reason: "Account geteilt.",
+      bannedById: staffId,
+      bannedAt: new Date(Date.now() - 200 * day),
+      liftedAt: new Date(Date.now() - 90 * day),
+      liftedById: staffId,
+    },
+  ]);
+}
+
 // Removes all seeding/registration test data and the generated fake users
 // (windows first so the opened_by FK does not block deleting the users).
 export async function clearSeedData() {
   await db.execute(sql`delete from registration_windows`);
+  await db.execute(
+    sql`delete from bans where discord_id like ${`${SEED_DISCORD_PREFIX}%`}`,
+  );
   await db.execute(
     sql`delete from auth.users where email like ${`${SEED_EMAIL_PREFIX}%${SEED_EMAIL_DOMAIN}`}`,
   );
@@ -761,6 +819,26 @@ async function seedDevResults(
     await seedStreamPhotos(photoFor);
   }
 
+  // Player replacements (docs/plans/player-replacement.md), clear of every
+  // player the MotW, the holds, the disputes and the plain drop already use.
+  const busy = new Set(
+    [
+      ...featured,
+      dropCandidate?.playerAId,
+      staleHold?.playerAId,
+      staleHold?.playerBId,
+      ...reportedNormal.slice(0, 2).flatMap((m) => [m.a, m.b]),
+    ].filter((id): id is string | null => id !== undefined),
+  );
+  await seedReplacements({
+    windowId,
+    staffId,
+    all,
+    busy,
+    currentRound,
+    totalRounds: days.length,
+  });
+
   // One open dispute (loser contests the result) and one already resolved, so
   // both the "Angefochten" worklist and the resolved history have content.
   if (reportedNormal[0]) {
@@ -784,6 +862,117 @@ async function seedDevResults(
       note: "Beide Replays geprüft, das gemeldete Ergebnis stimmt.",
     });
   }
+}
+
+// Two replacement states on top of the plain drop: a slot already taken over
+// from the running Spieltag on (the earlier rounds inherited as losses; the
+// replacement is a fresh seed user, so /dev/login-as shows their side), and a
+// dropped player whose offer to another fresh seed user is still open —
+// impersonate "Angefragt Ari" to see the acceptance card on /spieler.
+async function seedReplacements(input: {
+  windowId: string;
+  staffId: string;
+  all: { round: number; playerAId: string; playerBId: string | null }[];
+  busy: ReadonlySet<string | null>;
+  currentRound: number;
+  totalRounds: number;
+}): Promise<void> {
+  const free: string[] = [];
+  for (const match of input.all) {
+    for (const id of [match.playerAId, match.playerBId]) {
+      if (id && !input.busy.has(id) && !free.includes(id)) {
+        free.push(id);
+      }
+    }
+  }
+  // Two players who never meet, so the two slots stay independent.
+  const takenOver = free[0];
+  const offered = free.find(
+    (id) =>
+      id !== takenOver &&
+      !input.all.some(
+        (m) =>
+          (m.playerAId === takenOver && m.playerBId === id) ||
+          (m.playerAId === id && m.playerBId === takenOver),
+      ),
+  );
+  if (!takenOver || !offered) {
+    return;
+  }
+
+  const newcomers = [
+    { id: randomUUID(), displayName: "Nachrücker Nemo", username: "nemo_nach" },
+    { id: randomUUID(), displayName: "Angefragt Ari", username: "ari_vgc" },
+  ];
+  await insertSeedAuthUsers(
+    newcomers.map((user, i) => ({
+      id: user.id,
+      email: `${SEED_EMAIL_PREFIX}ersatz-${i}${SEED_EMAIL_DOMAIN}`,
+    })),
+  );
+  await db.insert(profiles).values(
+    newcomers.map((user) => ({
+      userId: user.id,
+      displayName: user.displayName,
+      username: user.username,
+      guildMember: true,
+      guildMemberCheckedAt: new Date(),
+    })),
+  );
+
+  const drop = (userId: string, reason: string) =>
+    db
+      .update(placements)
+      .set({
+        droppedAt: new Date(),
+        droppedById: input.staffId,
+        dropReason: reason,
+      })
+      .where(
+        and(
+          eq(placements.windowId, input.windowId),
+          eq(placements.userId, userId),
+        ),
+      );
+
+  // Taken over from the running Spieltag (at least 2, so something is
+  // inherited; at most the last one).
+  const entryRound = Math.min(
+    Math.max(input.currentRound, 2),
+    input.totalRounds,
+  );
+  await drop(takenOver, "Kein Bock mehr");
+  await createOffer({
+    windowId: input.windowId,
+    replacedUserId: takenOver,
+    replacementUserId: newcomers[0].id,
+    offeredById: input.staffId,
+    entryRound,
+  });
+  await acceptOffer({
+    registration: {
+      windowId: input.windowId,
+      userId: newcomers[0].id,
+      platform: "showdown",
+      status: "new",
+      participatedBefore: false,
+      veteran: null,
+      newPlayer: {
+        skillSelfRating: 3,
+        greatestAchievements: "Regionals Top 16",
+      },
+    },
+    entryRound,
+  });
+
+  await drop(offered, "Server verlassen");
+  await createOffer({
+    windowId: input.windowId,
+    replacedUserId: offered,
+    replacementUserId: newcomers[1].id,
+    offeredById: input.staffId,
+    entryRound: Math.min(input.currentRound, input.totalRounds),
+  });
 }
 
 export async function generateSeedData(
@@ -868,6 +1057,7 @@ export async function generateSeedData(
     username: "orga",
     role: "staff",
   });
+  await seedBans(staffId);
 
   // A closed window opened by the staff member, then the registrations.
   const [window] = await db.execute<{ id: string }>(

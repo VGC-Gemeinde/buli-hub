@@ -27,9 +27,3 @@ export async function currentSeason(): Promise<CurrentSeason> {
   });
   return { window, phase };
 }
-
-// True while the regular season is live — the public overview replaces the
-// landing page and signed-in users get the "Liga" nav entry (§3.3).
-export async function seasonIsRunning(): Promise<boolean> {
-  return (await currentSeason()).phase === "regular_season";
-}

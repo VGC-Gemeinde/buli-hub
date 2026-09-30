@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/back-link";
 import { ActionLink } from "@/components/links";
 import { SiteHeader } from "@/components/site-header";
 import { TeamSheetCards } from "@/features/teamsheets/components/team-sheet-cards";
@@ -39,8 +40,11 @@ export default async function PastePage({
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader breadcrumb="Teamsheet" />
+      <SiteHeader section="liga" />
       <main className="mx-auto w-full max-w-[1040px] flex-1 px-6 py-11 sm:px-8">
+        {/* A teamsheet is not a destination of the navigation; the way back
+            is here (docs/plans/site-navigation.md). */}
+        <BackLink fallbackHref="/" />
         <header className="mb-8">
           <h1 className="font-heading text-[34px] text-brand-blue leading-[1.05] dark:text-white">
             Team von {sheet.playerName}

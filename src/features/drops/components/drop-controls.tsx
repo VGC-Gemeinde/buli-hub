@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SectionHeader } from "@/components/section-header";
 import { TypeToConfirm } from "@/components/type-to-confirm";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,59 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlayerLink } from "@/features/player-profile/components/player-link";
-import { PlayerAvatar } from "@/features/season/components/player-avatar";
-import { formatGermanDateTime } from "@/lib/german-time";
+import {
+  OfferReplacementDialog,
+  type ReplacementOfferOptions,
+} from "@/features/replacements/components/offer-dialog";
+import { WithdrawOfferButton } from "@/features/replacements/components/replacement-status";
+import type { ReplacementRow } from "@/features/replacements/queries";
 import { dropPlayer, undropPlayer } from "../actions";
 import type { DropCandidate, DropRow } from "../queries";
-
-function ddMM(date: Date): string {
-  return formatGermanDateTime(date, {
-    day: "2-digit",
-    month: "2-digit",
-  });
-}
-
-// The staff dashboard's Drops section: the list of dropped players (with
-// un-drop) and the drop dialog. A drop never destroys data — it flips the
-// counting override — but it changes every table immediately, hence the
-// type-to-confirm.
-export function DropsSection({
-  drops,
-  candidates,
-}: {
-  drops: DropRow[];
-  candidates: DropCandidate[];
-}) {
-  return (
-    <section className="flex flex-col gap-4">
-      {/* The dialog trigger rides in `meta` (like the membership list's
-          refresh button) so the header keeps its full-width divider. */}
-      <SectionHeader
-        tickColor="navy"
-        meta={
-          <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            Alle Matches zählen als Freewin für die Gegner
-            <DropPlayerDialog candidates={candidates} />
-          </span>
-        }
-      >
-        Drops
-      </SectionHeader>
-      {drops.length === 0 ? (
-        <p className="rounded-lg border px-4 py-4 text-center text-muted-foreground text-sm">
-          Kein Spieler gedroppt.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {drops.map((drop) => (
-            <DropListRow key={drop.identity.userId} drop={drop} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
 
 // The un-drop control, shared by the dashboard list and the profile staff
 // panel. Nothing was destroyed by the drop, so no extra confirmation.
@@ -110,29 +64,35 @@ export function UndropButton({ userId }: { userId: string }) {
   );
 }
 
-function DropListRow({ drop }: { drop: DropRow }) {
+// What staff can still do about a drop: replace or un-drop it; with an open
+// offer, withdraw that; once replaced, nothing (the slot is taken).
+export function DropActions({
+  drop,
+  replacement,
+  offerOptions,
+  missedByRound,
+}: {
+  drop: Pick<DropRow, "identity" | "groupName">;
+  replacement: ReplacementRow | null;
+  offerOptions: ReplacementOfferOptions | null;
+  missedByRound?: Record<number, number>;
+}) {
+  if (replacement?.acceptedAt) {
+    return null;
+  }
+  if (replacement) {
+    return <WithdrawOfferButton replacedUserId={drop.identity.userId} />;
+  }
   return (
-    <div className="flex flex-col gap-2 rounded-lg border px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3.5">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <PlayerAvatar identity={drop.identity} size="size-[26px]" />
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate font-medium text-sm">
-            <PlayerLink
-              userId={drop.identity.userId}
-              name={drop.identity.name}
-            />
-            <span className="text-muted-foreground">
-              {" "}
-              · {drop.groupName} · seit {ddMM(drop.droppedAt)}
-            </span>
-          </span>
-          {drop.reason ? (
-            <span className="truncate text-[13px] text-muted-foreground">
-              "{drop.reason}"
-            </span>
-          ) : null}
-        </div>
-      </div>
+    <div className="flex flex-wrap items-center gap-2">
+      {offerOptions ? (
+        <OfferReplacementDialog
+          replaced={drop.identity}
+          groupName={drop.groupName}
+          options={offerOptions}
+          missedByRound={missedByRound}
+        />
+      ) : null}
       <UndropButton userId={drop.identity.userId} />
     </div>
   );
@@ -145,10 +105,14 @@ export function DropPlayerDialog({
   candidates = [],
   fixed,
   triggerSize = "default",
+  quiet = false,
 }: {
   candidates?: DropCandidate[];
   fixed?: DropCandidate;
   triggerSize?: "default" | "sm";
+  // A ghost "Droppen" for long lists where every row carries it (the
+  // Teilnehmer page); the full outline button elsewhere.
+  quiet?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -185,11 +149,12 @@ export function DropPlayerDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
         type="button"
-        variant="outline"
+        variant={quiet ? "ghost" : "outline"}
         size={triggerSize}
+        className={quiet ? "text-muted-foreground" : undefined}
         onClick={() => setOpen(true)}
       >
-        Spieler droppen
+        {quiet ? "Droppen" : "Spieler droppen"}
       </Button>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>

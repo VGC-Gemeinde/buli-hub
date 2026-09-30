@@ -23,10 +23,13 @@ export function CancelRegistrationDialog({
   seasonName,
   player,
   triggerSize = "default",
+  quiet = false,
 }: {
   seasonName: string;
   player: CancelCandidate;
   triggerSize?: "default" | "sm";
+  // A ghost "Stornieren" for long lists where every row carries it.
+  quiet?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -54,11 +57,12 @@ export function CancelRegistrationDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
         type="button"
-        variant="outline"
+        variant={quiet ? "ghost" : "outline"}
         size={triggerSize}
+        className={quiet ? "text-muted-foreground" : undefined}
         onClick={() => setOpen(true)}
       >
-        Anmeldung stornieren
+        {quiet ? "Stornieren" : "Anmeldung stornieren"}
       </Button>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
@@ -67,8 +71,8 @@ export function CancelRegistrationDialog({
             Die Anmeldung von {player.name} für {seasonName} wird endgültig
             gelöscht, ebenso die Regelwerk-Bestätigung und eine eventuelle
             Platzierung in der Einteilung. Das lässt sich nicht rückgängig
-            machen. Erneut anmelden kann sich der Spieler nur, wenn die
-            Anmeldung wieder geöffnet wird.
+            machen. Erneut anmelden kann sich der Spieler nur, solange die
+            Anmeldung offen ist.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">

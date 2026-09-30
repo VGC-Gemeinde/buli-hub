@@ -28,6 +28,9 @@ export type StandingsRow = {
   // 2:0 free wins for the opponents) with a small marker. Set by the view
   // assembly, not by computeStandings.
   dropped?: boolean;
+  // The row holds a dropped player's slot as their replacement: the tag's
+  // tooltip ("Ersatz für X ab Spieltag n"). Set by the view assembly.
+  replacement?: string;
 };
 
 export type ResultForStandings = {

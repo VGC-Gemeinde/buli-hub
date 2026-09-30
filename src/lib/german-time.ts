@@ -38,3 +38,12 @@ export function formatGermanDay(
     timeZone: "UTC",
   }).format(new Date(`${dateStr}T00:00:00Z`));
 }
+
+// A matchday's span as the schedule writes it: "14.–20. September", or
+// "28. September – 4. Oktober" across a month boundary.
+export function formatGermanDayRange(startsOn: string, endsOn: string): string {
+  const long = { day: "numeric", month: "long" } as const;
+  return startsOn.slice(0, 7) === endsOn.slice(0, 7)
+    ? `${Number(startsOn.slice(8, 10))}.–${formatGermanDay(endsOn, long)}`
+    : `${formatGermanDay(startsOn, long)} – ${formatGermanDay(endsOn, long)}`;
+}

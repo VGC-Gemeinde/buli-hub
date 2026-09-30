@@ -125,15 +125,17 @@ describe("cancelRegistration", () => {
     expect(await acceptedAt(windowId, bystander)).not.toBeNull();
   });
 
-  it("refuses while the registration window is open", async () => {
+  it("cancels while the registration window is still open", async () => {
+    // Staff need the power a player has to withdraw, e.g. before a ban
+    // (docs/plans/banlist.md).
     const windowId = await openWindow(new Date(Date.now() + WEEK_MS));
     await registerPlayers(windowId, [target]);
     signedInAs("staff");
 
     const result = await cancelRegistration({ userId: target });
 
-    expect(result.ok).toBe(false);
-    expect(await getRegistration(windowId, target)).not.toBeNull();
+    expect(result.ok).toBe(true);
+    expect(await getRegistration(windowId, target)).toBeNull();
   });
 
   it("refuses once the seeding is finalized and points to the drop flow", async () => {

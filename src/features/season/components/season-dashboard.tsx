@@ -3,12 +3,12 @@ import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
-import { RegelwerkCard } from "@/features/regelwerk/components/dashboard-card";
 import { matchDisplayState, scoreFor } from "@/features/reporting/match-state";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
+import { hoverRow } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
-import { daysUntil, type PlayerMatch } from "../dashboard";
+import { daysUntil, type Identity, type PlayerMatch } from "../dashboard";
 import { PlayerAvatar } from "./player-avatar";
 import { StandingsPanel, type ZoneMap } from "./standings-panel";
 
@@ -36,10 +36,34 @@ function month(dateStr: string): string {
 function formatDeadline(dateStr: string): string {
   return `${day(dateStr)}. ${month(dateStr)}`;
 }
-function weekRange(startsOn: string, endsOn: string): string {
-  return month(startsOn) === month(endsOn)
-    ? `${day(startsOn)}.–${day(endsOn)}. ${month(endsOn)}`
-    : `${day(startsOn)}. ${month(startsOn)} – ${day(endsOn)}. ${month(endsOn)}`;
+const SHORT_MONTHS = [
+  "Jan.",
+  "Feb.",
+  "März",
+  "Apr.",
+  "Mai",
+  "Juni",
+  "Juli",
+  "Aug.",
+  "Sep.",
+  "Okt.",
+  "Nov.",
+  "Dez.",
+];
+// "5.–11. Okt." / "28. Sep. – 4. Okt.": the Spielplan's week. The full month
+// names of `weekRange` crowd the opponent out of a column that shares the
+// row with the table beside it.
+function compactRange(startsOn: string, endsOn: string): string {
+  const m = (d: string) => SHORT_MONTHS[Number(d.slice(5, 7)) - 1] ?? "";
+  return m(startsOn) === m(endsOn)
+    ? `${day(startsOn)}.–${day(endsOn)}. ${m(endsOn)}`
+    : `${day(startsOn)}. ${m(startsOn)} – ${day(endsOn)}. ${m(endsOn)}`;
+}
+// "5.10.–11.10.", the phone-width week: a full month name does not fit beside
+// an opponent in a 360px row.
+function shortRange(startsOn: string, endsOn: string): string {
+  const short = (d: string) => `${day(d)}.${Number(d.slice(5, 7))}.`;
+  return `${short(startsOn)}–${short(endsOn)}`;
 }
 function deadlineHint(endsOn: string, today: string): string {
   const days = daysUntil(endsOn, today);
@@ -52,7 +76,7 @@ function deadlineHint(endsOn: string, today: string): string {
 // The season progress strip: one segment per Spieltag, current in orange.
 function ProgressStrip({ current, total }: { current: number; total: number }) {
   return (
-    <div className="mt-4.5 mb-8 flex items-center gap-3.5">
+    <div className="mt-4 mb-6 flex items-center gap-3.5">
       <div className="flex flex-1 gap-[5px]">
         {Array.from({ length: total }, (_, i) => i + 1).map((round) => (
           <div
@@ -89,17 +113,20 @@ function ProgressStrip({ current, total }: { current: number; total: number }) {
 function Hero({
   match,
   result,
-  meId,
+  me,
   today,
 }: {
   match: PlayerMatch | null;
   result: MatchResultLite | null;
-  meId: string;
+  // The player themself, with their own picture: players found a generic
+  // "Du" placeholder confusing and recognise themselves faster by their face.
+  me: Identity;
   today: string;
 }) {
+  const meId = me.userId;
   if (!match) {
     return (
-      <section className="rounded-lg border px-[30px] py-[26px]">
+      <section className="rounded-lg border px-5 py-5 sm:px-[30px]">
         <p className="text-muted-foreground">
           Deine Spiele sind gemeldet. Die reguläre Saison ist für dich
           abgeschlossen.
@@ -119,7 +146,7 @@ function Hero({
 
   if (!match.opponent) {
     return (
-      <section className="rounded-lg border px-[30px] py-[26px]">
+      <section className="rounded-lg border px-5 py-5 sm:px-[30px]">
         {label(`Spieltag ${match.round}`)}
         <p className="mt-3 font-bold font-heading text-[32px] text-brand-blue uppercase leading-none dark:text-white">
           Spielfrei
@@ -141,19 +168,15 @@ function Hero({
   const daysLeft = daysUntil(match.endsOn, today);
 
   return (
-    <section className="flex flex-col gap-5 rounded-lg border px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 sm:px-[30px] sm:py-[26px]">
-      <div className="flex min-w-0 flex-col gap-4.5">
+    <section className="flex flex-col gap-5 rounded-lg border px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 sm:px-[30px] sm:py-4">
+      <div className="flex min-w-0 flex-col gap-3.5">
         {label(
           reported
             ? `Ergebnis · Spieltag ${match.round}`
             : `Nächstes Match · Spieltag ${match.round}`,
         )}
         <div className="flex min-w-0 items-center gap-3 sm:gap-4.5">
-          <PlayerAvatar
-            identity={{ userId: meId, name: "Du", avatarUrl: null }}
-            size="size-[46px]"
-            filled
-          />
+          <PlayerAvatar identity={me} size="size-[46px]" filled />
           <span className="-skew-x-[10deg] px-1 font-bold font-heading text-brand-orange text-xl">
             VS
           </span>
@@ -262,7 +285,42 @@ function ReportedBadge({
   );
 }
 
-// One row of "Dein Spielplan".
+// "Dein Spielplan" in the same anatomy as the Tabelle beside it: one card, a
+// header row, rows at the table's row height, so both columns start on one
+// line and keep one rhythm (docs/plans/player-dashboard-at-a-glance.md). Row
+// states use the table's language too: a 6px rail on the left edge, orange for
+// the running Spieltag, red for an overdue one.
+function ScheduleTable({
+  matches,
+  resultByMatchId,
+  meId,
+  today,
+}: {
+  matches: PlayerMatch[];
+  resultByMatchId: Map<string, MatchResultLite>;
+  meId: string;
+  today: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border">
+      <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center border-b bg-muted/50 text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
+        <span className="py-2 pl-4 font-semibold">Spt.</span>
+        <span className="py-2 pl-2 font-semibold">Gegner</span>
+        <span className="py-2 pr-4 text-right font-semibold">Ergebnis</span>
+      </div>
+      {matches.map((match) => (
+        <ScheduleRow
+          key={match.matchId}
+          match={match}
+          result={resultByMatchId.get(match.matchId) ?? null}
+          meId={meId}
+          today={today}
+        />
+      ))}
+    </div>
+  );
+}
+
 function ScheduleRow({
   match,
   result,
@@ -287,69 +345,83 @@ function ScheduleRow({
   });
   const isBye = match.opponent === null;
   const pastBye = isBye && today > match.endsOn;
+  const rail =
+    state === "current"
+      ? "bg-brand-orange"
+      : state === "overdue"
+        ? "bg-destructive"
+        : null;
 
-  const chip =
-    "size-[34px] shrink-0 rounded-lg font-bold font-heading text-[17px]";
-  // flex-wrap: when the status side (chips, score, date range) does not fit
-  // next to the opponent name, it drops onto its own line instead of
-  // squeezing the name away — the name keeps a min-width floor.
-  const row = cn(
-    "flex min-h-[54px] flex-wrap items-center gap-x-3.5 gap-y-1 rounded-lg border py-2.5 pr-4 pl-2.5",
-    state === "current" && "border-brand-orange/45 bg-brand-orange/5",
-    state === "overdue" && "border-destructive/35 bg-destructive/5",
-    pastBye && "opacity-55",
-  );
-
-  const inner = (
-    <>
-      <div
+  return (
+    <div
+      className={cn(
+        // 42px + the 1px border: the height of a (dense) table row beside it.
+        "relative grid min-h-[43px] grid-cols-[44px_minmax(0,1fr)_auto] items-center border-b last:border-b-0",
+        state === "current" && "bg-brand-orange/6",
+        state === "overdue" && "bg-destructive/6",
+        match.inherited && "bg-muted/30",
+        !isBye && hoverRow,
+      )}
+    >
+      {/* The row links to the match via a stretched link underneath; the
+          opponent name links to their profile above it. Byes are not
+          clickable. */}
+      {isBye || !match.opponent ? null : (
+        <Link
+          href={`/match/${match.matchId}`}
+          aria-label={`Zum Match gegen ${match.opponent.name}`}
+          className="absolute inset-0"
+        />
+      )}
+      {rail ? (
+        <span className={cn("absolute inset-y-0 left-0 w-1.5", rail)} />
+      ) : null}
+      <span
         className={cn(
-          chip,
-          "flex items-center justify-center",
-          state === "current"
-            ? "bg-brand-orange text-white"
-            : "bg-muted text-muted-foreground",
+          "pl-4 font-semibold text-sm tabular-nums",
+          state === "current" ? "text-brand-orange" : "text-muted-foreground",
         )}
       >
         {match.round}
-      </div>
+      </span>
       {isBye ? (
-        <div className="flex min-w-36 flex-1 items-center gap-2.5">
-          <div className="size-7 shrink-0 rounded-full border border-dashed" />
-          <span className="font-medium text-muted-foreground">Spielfrei</span>
-        </div>
+        <span
+          className={cn(
+            "flex items-center gap-2.5 py-2 pl-2",
+            pastBye && "opacity-55",
+          )}
+        >
+          <span className="size-[26px] shrink-0 rounded-full border border-dashed" />
+          <span className="font-medium text-[14.5px] text-muted-foreground">
+            Spielfrei
+          </span>
+        </span>
       ) : match.opponent ? (
-        <div className="flex min-w-36 flex-1 items-center gap-2.5">
-          <PlayerAvatar identity={match.opponent} />
+        <span className="flex min-w-0 items-center gap-2.5 py-2 pl-2">
+          <PlayerAvatar identity={match.opponent} size="size-[26px]" />
           {/* `relative` lifts the profile link above the stretched match
               link. */}
           <PlayerLink
             userId={match.opponent.userId}
             name={match.opponent.name}
-            className="relative truncate font-semibold text-[15px]"
+            className={cn(
+              "relative truncate font-medium text-[14.5px]",
+              match.inherited && "text-muted-foreground",
+            )}
           />
-        </div>
-      ) : null}
-      <RowRight match={match} result={result} state={state} meId={meId} />
-    </>
-  );
-
-  // The row links to the match via a stretched link underneath; the opponent
-  // name links to their profile above it. Byes are not clickable.
-  return (
-    <div className={cn(row, "relative", !isBye && "hover:bg-muted/40")}>
-      {isBye || !match.opponent ? null : (
-        <Link
-          href={`/match/${match.matchId}`}
-          aria-label={`Zum Match gegen ${match.opponent.name}`}
-          className="absolute inset-0 rounded-lg"
-        />
+        </span>
+      ) : (
+        <span />
       )}
-      {inner}
+      <span className={cn("pr-4 pl-3", pastBye && "opacity-55")}>
+        <RowRight match={match} result={result} state={state} meId={meId} />
+      </span>
     </div>
   );
 }
 
+// The right cell of a Spielplan row: the result once it counts, otherwise
+// the week, flagged when it is this week or overdue.
 function RowRight({
   match,
   result,
@@ -361,28 +433,40 @@ function RowRight({
   state: ReturnType<typeof matchDisplayState>;
   meId: string;
 }) {
-  // Below sm every variant takes a full line of its own under the opponent —
-  // chips, score and date range never compete with the name. Wrapped lines
-  // align left (DESIGN.md §6); only the one-line layout from sm up is flush
-  // right via ml-auto.
   const range = (
-    <span className="text-[13px] text-muted-foreground">
-      {weekRange(match.startsOn, match.endsOn)}
+    <span className="whitespace-nowrap text-[13px] text-muted-foreground">
+      <span className="hidden sm:inline">
+        {compactRange(match.startsOn, match.endsOn)}
+      </span>
+      <span className="sm:hidden">
+        {shortRange(match.startsOn, match.endsOn)}
+      </span>
     </span>
   );
   if (state === "reported" && result) {
     const score = scoreFor(meId, result);
     return (
-      <div className="ml-auto flex w-full shrink-0 items-center gap-3 sm:w-auto">
+      <span className="flex items-center justify-end gap-2.5">
+        {match.inherited ? (
+          <span
+            title="Vor deinem Einstieg als Ersatz. Das Match zählt für deinen Platz als Niederlage."
+            className="whitespace-nowrap rounded-full border border-dashed px-2 py-[2px] font-semibold text-[11.5px] text-muted-foreground"
+          >
+            <span className="hidden sm:inline">Vor deinem Einstieg</span>
+            <span className="sm:hidden">Vor Einstieg</span>
+          </span>
+        ) : null}
         {result.disputed ? (
-          <span className="whitespace-nowrap rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
+          <span className="whitespace-nowrap rounded-full bg-destructive/10 px-2 py-[2px] font-semibold text-[11.5px] text-destructive">
             Angefochten
           </span>
         ) : null}
-        {score.label ? (
+        {/* The chip spells out the outcome; an inherited row says what it is
+            instead, its score is always the loss. */}
+        {score.label && !match.inherited ? (
           <span
             className={cn(
-              "whitespace-nowrap rounded-full px-2.5 py-[3px] font-semibold text-xs",
+              "hidden whitespace-nowrap rounded-full px-2 py-[2px] font-semibold text-[11.5px] sm:inline",
               score.label === "Sieg"
                 ? "bg-brand-orange/12 text-brand-blue dark:text-white"
                 : "bg-muted text-muted-foreground",
@@ -391,42 +475,34 @@ function RowRight({
             {score.label}
           </span>
         ) : null}
-        <span className="min-w-[34px] whitespace-nowrap text-right font-bold font-heading text-[19px] text-brand-blue tracking-[0.04em] dark:text-white">
+        <span className="min-w-[38px] whitespace-nowrap text-right font-bold font-heading text-[17px] text-brand-blue tracking-[0.04em] dark:text-white">
           {score.self} : {score.opponent}
         </span>
-      </div>
+      </span>
     );
   }
   if (state === "pending_free_win") {
     return (
-      <div className="ml-auto flex w-full sm:w-auto">
-        <span className="whitespace-nowrap rounded-full bg-brand-orange/12 px-2.5 py-[3px] font-semibold text-brand-blue text-xs dark:text-white">
+      <span className="flex justify-end">
+        <span className="whitespace-nowrap rounded-full bg-brand-orange/12 px-2 py-[2px] font-semibold text-[11.5px] text-brand-blue dark:text-white">
           Freewin · offen
         </span>
-      </div>
+      </span>
     );
   }
   if (state === "overdue") {
     return (
-      <div className="ml-auto flex w-full items-center gap-3 sm:w-auto">
-        <span className="whitespace-nowrap rounded-full bg-destructive/10 px-2.5 py-[3px] font-semibold text-destructive text-xs">
+      <span className="flex items-center justify-end gap-2.5">
+        <span className="whitespace-nowrap rounded-full bg-destructive/10 px-2 py-[2px] font-semibold text-[11.5px] text-destructive">
           Überfällig
         </span>
         {range}
-      </div>
+      </span>
     );
   }
-  if (state === "current") {
-    return (
-      <div className="ml-auto flex w-full items-center gap-3 sm:w-auto">
-        <span className="whitespace-nowrap font-semibold text-brand-orange text-xs uppercase tracking-[0.1em]">
-          Diese Woche
-        </span>
-        {range}
-      </div>
-    );
-  }
-  return <div className="ml-auto flex w-full sm:w-auto">{range}</div>;
+  // The running Spieltag is marked by the row itself (rail, tint, orange
+  // number); a label here would only push the opponent's name out.
+  return <span className="flex justify-end">{range}</span>;
 }
 
 // The full in-season dashboard: progress → hero → Spielplan + Tabelle.
@@ -444,11 +520,10 @@ export function InSeasonDashboard({
   divisionZones,
   divisionGroupLabels,
   defaultScope,
-  meId,
+  me,
   groupWithheld,
   divisionWithheld,
   today,
-  seasonNumber,
 }: {
   groupName: string;
   currentRound: number;
@@ -463,43 +538,38 @@ export function InSeasonDashboard({
   divisionZones?: ZoneMap;
   divisionGroupLabels?: Map<string, string>;
   defaultScope: "group" | "division";
-  meId: string;
+  // The signed-in player, as the hero shows them.
+  me: Identity;
   // Embargoed results that do not count in the tables yet
   // (docs/plans/standings-embargo.md).
   groupWithheld?: number;
   divisionWithheld?: number;
   today: string;
-  seasonNumber: number;
 }) {
+  const meId = me.userId;
   return (
     <>
       <ProgressStrip current={currentRound} total={totalRounds} />
       <Hero
         match={next}
         result={next ? (resultByMatchId.get(next.matchId) ?? null) : null}
-        meId={meId}
+        me={me}
         today={today}
       />
-      <div className="mt-10 grid grid-cols-1 items-start gap-7 lg:grid-cols-[1.25fr_1fr]">
+      <div className="mt-8 grid grid-cols-1 items-start gap-7 lg:grid-cols-2">
         <section className="flex flex-col gap-3">
           <SectionHeader meta={`${totalRounds} Spieltage`}>
             Dein Spielplan
           </SectionHeader>
-          <div className="flex flex-col gap-2">
-            {matches.map((match) => (
-              <ScheduleRow
-                key={match.matchId}
-                match={match}
-                result={resultByMatchId.get(match.matchId) ?? null}
-                meId={meId}
-                today={today}
-              />
-            ))}
-          </div>
+          <ScheduleTable
+            matches={matches}
+            resultByMatchId={resultByMatchId}
+            meId={meId}
+            today={today}
+          />
         </section>
 
         <section className="flex flex-col gap-3">
-          <SectionHeader meta={groupName}>Tabelle</SectionHeader>
           <StandingsPanel
             groupName={groupName}
             groupStandings={standings}
@@ -513,7 +583,6 @@ export function InSeasonDashboard({
             groupWithheld={groupWithheld}
             divisionWithheld={divisionWithheld}
           />
-          <RegelwerkCard seasonNumber={seasonNumber} />
         </section>
       </div>
     </>

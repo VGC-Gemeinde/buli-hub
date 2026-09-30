@@ -10,7 +10,12 @@ import {
   it,
   vi,
 } from "vitest";
-import { profiles, registrations, registrationWindows } from "@/db/schema";
+import {
+  placements,
+  profiles,
+  registrations,
+  registrationWindows,
+} from "@/db/schema";
 import { db } from "@/lib/db";
 
 // The sweep compares the registered roster against the guild members list in
@@ -167,5 +172,27 @@ describe("sweepGuildMemberships", () => {
       where: (table, { eq }) => eq(table.userId, staff),
     });
     expect(stored).toBeUndefined();
+  });
+});
+
+describe("registeredMembership", () => {
+  afterEach(async () => {
+    await db.delete(placements);
+  });
+
+  it("leaves dropped players out of the roster", async () => {
+    await db.insert(placements).values([
+      { windowId, userId: memberUser },
+      { windowId, userId: goneUser, droppedAt: new Date() },
+    ]);
+    fetchGuildMemberIdsMock.mockResolvedValue(new Set([snowflake[memberUser]]));
+
+    await sweepGuildMemberships(windowId);
+
+    const roster = await registeredMembership(windowId);
+    // Placed and active, and not yet placed at all: both still listed.
+    expect(roster.map((row) => row.userId).sort()).toEqual(
+      [memberUser, noDiscordUser].sort(),
+    );
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SectionHeader } from "@/components/section-header";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
 import type { StandingsRow } from "@/features/reporting/standings";
 import type { Zone } from "@/features/seeding/post-season";
@@ -60,19 +61,39 @@ export function StandingsTable({
   zones,
   groupLabels,
   withheld = 0,
+  dense = false,
+  footnote,
 }: {
   standings: StandingsRow[];
   meId: string;
   zones?: ZoneMap;
   groupLabels?: Map<string, string>;
+  // Tighter rows for the Spieler-Dashboard, where the table sits beside the
+  // Spielplan and both should fit the screen
+  // (docs/plans/player-dashboard-at-a-glance.md). The descendant selectors
+  // outrank the cells' own py-2.5.
+  dense?: boolean;
   // Results of this table that are under embargo and therefore not counted
   // yet (docs/plans/standings-embargo.md).
   withheld?: number;
+  // One muted line said with the legend (which table decides), so the
+  // explanation costs no extra row.
+  footnote?: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[400px] border-separate border-spacing-0 text-left [&_tr:last-child_td]:border-b-0">
+        <table
+          className={cn(
+            "w-full min-w-[400px] border-separate border-spacing-0 text-left [&_tr:last-child_td]:border-b-0",
+            // Fixed layout in dense mode: the score columns get their widths
+            // from the header, the name column takes the rest and truncates.
+            // In the automatic layout the longest name (plus its tags) sets
+            // the column, pushing Punkte out of a half-width column.
+            dense &&
+              "table-fixed [&_td]:py-2 [&_th]:py-2 [&_th:nth-child(3)]:w-[76px] [&_th:nth-child(4)]:w-[60px] [&_th:nth-child(5)]:w-[72px]",
+          )}
+        >
           <thead>
             <tr className="text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
               <th className="sticky left-0 z-20 w-[44px] border-b bg-background py-2.5 pr-1 pl-4 font-semibold before:absolute before:inset-0 before:bg-muted/50">
@@ -153,6 +174,14 @@ export function StandingsTable({
                           Drop
                         </span>
                       ) : null}
+                      {row.replacement ? (
+                        <span
+                          title={`${row.replacement}. Die Spieltage davor zählen für diesen Platz als Niederlage.`}
+                          className="shrink-0 rounded-full border border-brand-blue/30 bg-brand-blue/6 px-[7px] py-[2px] font-bold text-[10.5px] text-brand-blue uppercase tracking-[0.06em] dark:border-white/30 dark:text-white"
+                        >
+                          Ersatz
+                        </span>
+                      ) : null}
                       {me ? (
                         <span className="shrink-0 font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
                           Du
@@ -175,7 +204,7 @@ export function StandingsTable({
           </tbody>
         </table>
       </div>
-      <ZoneLegend zones={zones} />
+      <ZoneLegend zones={zones} footnote={footnote} />
       <WithheldNote count={withheld} />
     </div>
   );
@@ -200,9 +229,14 @@ function WithheldNote({ count }: { count: number }) {
 
 // Legend for the zones actually present. The two playoff bands are named
 // separately even though they share the amber swatch.
-function ZoneLegend({ zones }: { zones?: ZoneMap }) {
-  if (!zones) return null;
-  const present = new Set(zones.values());
+function ZoneLegend({
+  zones,
+  footnote,
+}: {
+  zones?: ZoneMap;
+  footnote?: string;
+}) {
+  const present = new Set(zones?.values() ?? []);
   const items: { show: boolean; bar: string; label: string }[] = [
     {
       show: present.has("champion"),
@@ -230,7 +264,7 @@ function ZoneLegend({ zones }: { zones?: ZoneMap }) {
       label: "Direkter Abstieg",
     },
   ].filter((i) => i.show);
-  if (items.length === 0) return null;
+  if (items.length === 0 && !footnote) return null;
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[12.5px] text-muted-foreground">
       {items.map((item) => (
@@ -239,14 +273,22 @@ function ZoneLegend({ zones }: { zones?: ZoneMap }) {
           {item.label}
         </span>
       ))}
+      {footnote ? <span>{footnote}</span> : null}
     </div>
   );
 }
 
-// The Tabelle section body. Post-season zones are shown on the division's
-// *relevant* table only: in `division` mode the division table carries them and
-// is the default view; in `sub_division` mode the group table carries them and no
-// division tab is shown. `divisionStandings === null` means sub-division mode.
+// The Tabelle section of the Spieler-Dashboard, header included: its first
+// row has to sit level with the Spielplan's beside it, so nothing stands
+// between header and table (docs/plans/player-dashboard-at-a-glance.md). In
+// division mode the group/division switch sits in the header's meta slot;
+// which table decides promotion and relegation is said below the table,
+// next to the zone legend it explains.
+//
+// Post-season zones are shown on the division's *relevant* table only: in
+// `division` mode the division table carries them and is the default view; in
+// `sub_division` mode the group table carries them and no division tab is
+// shown. `divisionStandings === null` means sub-division mode.
 export function StandingsPanel({
   groupName,
   groupStandings,
@@ -278,30 +320,36 @@ export function StandingsPanel({
   const showDivision = divisionMode && scope === "division";
 
   const context = !divisionMode
-    ? "Auf- und Abstieg wird innerhalb deiner Gruppe entschieden. Die markierten Plätze gelten."
+    ? "Auf- und Abstieg wird innerhalb deiner Gruppe entschieden."
     : showDivision
-      ? "Auf- und Abstieg wird über die Gesamttabelle der Division entschieden. Die markierten Plätze gelten."
-      : `Nur zur Orientierung. Auf- und Abstieg wird über die Gesamttabelle (${divisionName}) entschieden.`;
+      ? "Auf- und Abstieg wird über die Gesamttabelle der Division entschieden."
+      : `Nur zur Orientierung. Auf- und Abstieg entscheidet die Gesamttabelle (${divisionName}).`;
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[13px] text-muted-foreground">{context}</p>
-
-      {divisionMode ? (
-        <div className="flex gap-1 self-start rounded-full border bg-muted/40 p-[3px]">
-          <Segment
-            active={!showDivision}
-            onClick={() => setScope("group")}
-            label={groupName}
-          />
-          <Segment
-            active={showDivision}
-            onClick={() => setScope("division")}
-            label={divisionName}
-            relevant
-          />
-        </div>
-      ) : null}
+      <SectionHeader
+        meta={
+          divisionMode ? (
+            <span className="flex gap-0.5 rounded-full border bg-muted/40 p-[3px]">
+              <Segment
+                active={!showDivision}
+                onClick={() => setScope("group")}
+                label={groupName}
+              />
+              <Segment
+                active={showDivision}
+                onClick={() => setScope("division")}
+                label={divisionName}
+                relevant
+              />
+            </span>
+          ) : (
+            groupName
+          )
+        }
+      >
+        Tabelle
+      </SectionHeader>
 
       {showDivision ? (
         <StandingsTable
@@ -310,6 +358,8 @@ export function StandingsPanel({
           zones={divisionZones}
           groupLabels={divisionGroupLabels}
           withheld={divisionWithheld}
+          dense
+          footnote={context}
         />
       ) : (
         <StandingsTable
@@ -317,6 +367,8 @@ export function StandingsPanel({
           meId={meId}
           zones={groupZones}
           withheld={groupWithheld}
+          dense
+          footnote={context}
         />
       )}
     </div>
@@ -342,7 +394,9 @@ function Segment({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-[13px] uppercase tracking-[0.08em] transition-colors",
+        // Compact: it lives in the section header's meta slot and must not
+        // make that header taller than the Spielplan's beside it.
+        "flex h-7 items-center gap-1.5 rounded-full px-2.5 font-semibold text-[12px] uppercase tracking-[0.08em] transition-colors",
         active
           ? "bg-brand-orange text-white"
           : "text-muted-foreground hover:text-foreground",

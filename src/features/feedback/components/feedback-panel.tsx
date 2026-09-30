@@ -9,6 +9,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { hoverRow } from "@/lib/emphasis";
 import { ALLOWED_IMAGE_TYPES } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import { attachmentOutcome, MAX_ATTACHMENTS } from "../attachments";
@@ -199,7 +200,7 @@ export function FeedbackPanel({
               key={option.value}
               className={cn(
                 "flex cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition-colors",
-                "hover:bg-muted/60",
+                hoverRow,
                 "has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/6 has-data-[state=checked]:hover:bg-brand-orange/6",
               )}
             >

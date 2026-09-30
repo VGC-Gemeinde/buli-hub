@@ -29,53 +29,12 @@ stay as they are.
 
 ---
 
-## 1. Routing & phase (`staff/page.tsx`, `staff/saison/page.tsx`)
+## 1.–3. Place on `/staff`
 
-- `phase === "regular_season"`: `/staff` renders h1 **Staff-Bereich** followed
-  by the season strip (§2), stat tiles (§3) and the triage sections (§4–6).
-  The registration/player-grid/schedule sections from STAFF-BEREICH.md §2–4
-  no longer render in this phase — their entry points collapse into the
-  season strip's links.
-- Delete `/staff/saison` (redirect to `/staff` to keep old links alive).
-  `bucketMatches`, `windowMatchOverview`, `currentMatchday` move their
-  call site into `staff/page.tsx`.
-- Content column stays `max-w-[960px] px-8` (STAFF-BEREICH.md §2).
-
-## 2. Season strip
-
-One row replaces the old Saison/Einteilung sections while the season runs.
-Card `rounded-lg border px-5.5 py-3.5`, `flex items-center justify-between
-gap-6`, three clusters:
-
-1. **Identity**: `font-heading font-bold text-[22px] uppercase leading-none
-   text-brand-blue dark:text-white` **Saison 1** + status tick
-   `h-2 w-4 -skew-x-[18deg] bg-brand-orange` + `text-xs font-semibold
-   uppercase tracking-[0.12em] text-muted-foreground` **Reguläre Saison**.
-2. **Progress**: `text-[13px] font-semibold whitespace-nowrap` **Spieltag
-   {current} von {total}** + progress bar (`w-40 h-1.5 rounded-full
-   bg-[oklch(0.93_0.01_262)]`, fill `bg-brand-orange` at
-   `current/total`) + current week range `text-[13px] text-muted-foreground
-   whitespace-nowrap` — **{startsOn} – {endsOn}** (`de-DE`, `dd.MM.`).
-3. **Links**: `text-[13.5px] font-semibold text-brand-blue dark:text-white`
-   — **Divisionen** → `/staff/seeding`, **Spielplan** → schedule view. These
-   replace the buttons that lived in the "Einteilung & Spielplan" section.
-
-## 3. Stat tiles
-
-`grid grid-cols-3 gap-3 mt-4.5`. Tile `rounded-lg border px-4.5 py-3.5`:
-number `font-heading font-bold text-[32px] leading-none tabular-nums
-text-brand-blue dark:text-white`, label `mt-1 text-xs font-semibold uppercase
-tracking-[0.08em] text-muted-foreground`.
-
-- **Überfällig** — alert variant when `> 0`:
-  `border-destructive/40 bg-destructive/5`, label `text-destructive`.
-- **Offen diese Woche** — open matches of the current round only
-  (`outcome === null`), not all of them.
-- **Freewins offen**.
-- The current code's fourth tile (**Spieltag n/m**) moves into the season
-  strip (§2) — tiles are workload, not context.
-- All-zero state: numbers render `text-[oklch(0.72_0.02_262)]` (muted), no
-  alert variant. Tiles stay — they are the quiet confirmation.
+The overview, its season line and its stat tiles are described in
+`STAFF-DASHBOARD.md` §3. The worklists and the week's matches below (§4–6)
+live on the Woche page (`/staff/woche`, `STAFF-DASHBOARD.md` §4); the
+overview shows them as todos and numbers.
 
 ## 4. Match row (shared row pattern)
 
@@ -130,10 +89,10 @@ the row link to the match page.
 - Row link (pairing) still goes to the match page (§7 pending view) for the
   cases where staff wants full context or wants to reject.
 
-## 6. Section Diese Woche offen
+## 6. Section Spieltag
 
-- Header row `flex items-center justify-between`: section head **Diese Woche
-  offen** (count = open only) + text button `text-[13px] font-medium
+- Header row `flex items-center justify-between`: section head **Spieltag
+  {n}** (count = open only), a pager to the other Spieltage + text button `text-[13px] font-medium
   text-muted-foreground hover:text-brand-blue dark:hover:text-white` —
   **Alle anzeigen ({total})** / toggled: **Nur offene**. Default shows open
   matches only (the current component's `weekOpen` default — keep it).
@@ -230,23 +189,3 @@ component, receives the match. `DialogContent` width ~480px.
   (MATCH-REPORTING.md §11 applies throughout).
 - All counts/scores/deadlines `tabular-nums`.
 - Keep `data-comment-anchor` attributes if any land on these sections.
-
-## 10. Checklist
-
-1. `staff/page.tsx`: regular-season phase renders the dashboard inline;
-   season strip + stat tiles + sections (§1–6); old "Reguläre Saison" card
-   removed
-2. `staff/saison/page.tsx`: delete, redirect to `/staff` (§1)
-3. `saison-dashboard.tsx`: row pattern, day-count chips, reason line +
-   inline confirm on free-win rows, quick action on overdue rows, section
-   visibility rules, all-clear band, Disputes placeholder removed (§4–6)
-4. `queries.ts`: `StaffMatchRow` gains `freeWinReason`, reporter name,
-   `reportedAt` (§5)
-5. `staff-match-panel.tsx`: action-row layout, state-dependent rows,
-   Zurückweisen wording, single primary (§7); shared award dialog with
-   player-card picker (§8)
-6. `match/[matchId]/page.tsx`: staff back link → `/staff` (§7)
-7. Copy sweep: **Freigewinn → Freewin** in every user-facing string,
-   including the player-side reporting views
-8. Both modes verified (§9), `npx biome check --write .`,
-   `npx tsc --noEmit`, `npm test -- --run`

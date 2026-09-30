@@ -4,7 +4,7 @@ import {
   CancelRegistrationDialog,
 } from "./cancel-registration-dialog";
 
-// The staff panel on the public player profile between Anmeldeschluss and
+// The staff panel on the public player profile from the open window until the
 // finalized seeding — same anatomy as the drop panel that takes its place once
 // the player is placed in the running season. One action: cancel the
 // registration (type-to-confirm).

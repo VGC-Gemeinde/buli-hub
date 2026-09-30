@@ -2,7 +2,6 @@
 
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TypeToConfirm } from "@/components/type-to-confirm";
@@ -18,8 +17,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { matchesConfirmationPhrase } from "@/lib/confirm";
-import { emphasisSurface } from "@/lib/emphasis";
-import { cn } from "@/lib/utils";
 import { publishSchedule } from "../actions";
 import { PUBLISH_CONFIRMATION_PHRASE } from "../spieltage";
 
@@ -63,38 +60,6 @@ function Fact({
 // anatomy as the pre-season and MotW todo cards: the one step the season is
 // waiting for. The dashboard below is the review surface for the pairings;
 // the card stays compact and carries the terminal publish gate.
-export function PublishScheduleCard({ facts }: { facts: PublishFacts }) {
-  return (
-    <div
-      className={cn(
-        "flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg px-5 py-4",
-        emphasisSurface("orange"),
-      )}
-    >
-      <div className="flex flex-col gap-0.5">
-        <p className="font-semibold text-[14.5px]">Pairings veröffentlichen</p>
-        <p className="text-[13px] text-muted-foreground">
-          {facts.rounds} Spieltage · {facts.matches} Spiele. Der Spielplan ist
-          nur für das Staff sichtbar, die Spieler warten auf ihre Paarungen.
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          asChild
-          size="sm"
-          variant="outline"
-          className="border-brand-orange/50"
-        >
-          <Link href="/spielplan">Spielplan ansehen</Link>
-        </Button>
-        <PublishScheduleDialog facts={facts} triggerSize="sm" />
-      </div>
-    </div>
-  );
-}
-
-// The terminal publish gate: facts strip + type-to-confirm, then the season is
-// live for everyone. Mirrors the create dialog's pattern.
 export function PublishScheduleDialog({
   facts,
   triggerSize = "default",

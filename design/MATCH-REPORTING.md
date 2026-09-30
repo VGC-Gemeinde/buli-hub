@@ -26,12 +26,9 @@ escape-hatch link: it is the rare path and must not compete with the normal one.
 - Content column: `max-w-[760px] px-8 pt-9` — single column, narrower than the
   dashboard; a form wants one reading line. Bottom padding `pb-[140px]` so the
   sticky bar (§7) never covers the last section.
-- Header nav becomes a breadcrumb on this page: the Spieler-Dashboard link
-  (tick + label per SPIELER-DASHBOARD.md §1, but `text-muted-foreground
-  font-medium hover:text-brand-blue`) + `<span className="text-[13px]
-  text-border">/</span>` + current page `text-sm font-semibold text-brand-blue
-  dark:text-white` — **Ergebnis melden** / **Freigewinn melden** / **Ergebnis**
-  / **Freigewinn** depending on view.
+- Header: the standard one (`NAVIGATION.md`). The page marks the section the
+  viewer comes from: Spieler-Dashboard for a participant, Staff-Bereich for
+  staff who do not play the match, Liga for everyone else.
 - Above the page title: back link `← Zurück zur Übersicht`
   (`text-[13px] font-medium text-muted-foreground hover:text-brand-blue`,
   `mb-4.5`) → `/spieler`.
@@ -266,7 +263,7 @@ Shown to participants once a result exists; no sticky bar.
 
 ## 12. Checklist
 
-1. `site-header.tsx`: breadcrumb variant for `/match/[matchId]` (§1)
+1. `match/[matchId]/page.tsx`: header section by viewer (§1)
 2. `match/[matchId]/page.tsx`: shell, back link, eyebrow + h1 (§1–2)
 3. `report-form.tsx`: scoreboard (§3), platform cards (§4), name-pick game
    rows + always-visible Spiel 3 + inline replay validation (§5), video +

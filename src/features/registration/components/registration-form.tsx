@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { playerName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
-import { register } from "../actions";
+import { type RegisterResult, register } from "../actions";
 import {
   EMPTY_VETERAN_DRAFT,
   firstErrorField,
@@ -95,14 +95,23 @@ function focusTarget(id: string): HTMLElement | null {
   );
 }
 
+// The same questions serve a replacement taking over a dropped player's slot
+// (docs/plans/player-replacement.md): the page passes that server action as
+// `submit`, with its own button label and closing line.
 export function RegistrationForm({
   displayName,
   username,
   detectedReturning,
+  submit: submitAction = register,
+  submitLabel = "Anmeldung absenden",
+  footnote = "Du kannst dich bis zum Anmeldeschluss jederzeit wieder abmelden.",
 }: {
   displayName: string | null;
   username: string | null;
   detectedReturning: boolean;
+  submit?: (draft: RegistrationDraft) => Promise<RegisterResult>;
+  submitLabel?: string;
+  footnote?: string;
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState<RegistrationDraft>({
@@ -170,7 +179,7 @@ export function RegistrationForm({
     }
 
     setPending(true);
-    const result = await register(draft);
+    const result = await submitAction(draft);
     if (!result.ok) {
       setPending(false);
       setFormError(result.error);
@@ -451,12 +460,10 @@ export function RegistrationForm({
             disabled={pending}
             onClick={submit}
           >
-            {pending ? "Wird gesendet…" : "Anmeldung absenden"}
+            {pending ? "Wird gesendet…" : submitLabel}
           </Button>
         </div>
-        <p className="text-[13px] text-muted-foreground">
-          Du kannst dich bis zum Anmeldeschluss jederzeit wieder abmelden.
-        </p>
+        <p className="text-[13px] text-muted-foreground">{footnote}</p>
       </div>
     </div>
   );

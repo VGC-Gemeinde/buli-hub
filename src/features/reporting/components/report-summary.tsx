@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { BackLink } from "@/components/back-link";
 import { Tick } from "@/components/tick";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
@@ -48,20 +48,13 @@ function Face({
 function BackAndEyebrow({
   label,
   backHref,
-  backLabel,
 }: {
   label: string;
   backHref: string;
-  backLabel: string;
 }) {
   return (
     <>
-      <Link
-        href={backHref}
-        className="mb-4.5 inline-block font-medium text-[13px] text-muted-foreground hover:text-brand-blue dark:hover:text-white"
-      >
-        ← {backLabel}
-      </Link>
+      <BackLink fallbackHref={backHref} />
       <div className="flex items-center gap-2">
         <Tick size="s" />
         <span className="whitespace-nowrap font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
@@ -94,7 +87,6 @@ export function ReportSummary({
   groupName,
   disputed = false,
   backHref = "/spieler",
-  backLabel = "Zurück zur Übersicht",
   spoilerMode = "none",
 }: {
   result: StoredResult;
@@ -109,8 +101,8 @@ export function ReportSummary({
   // An open dispute flips the status chip Final → Angefochten (§4.4). Only
   // participants/staff ever see this — neutral observers are passed `false`.
   disputed?: boolean;
+  // Where "Zurück" leads without a previous page in the hub.
   backHref?: string;
-  backLabel?: string;
   spoilerMode?: SpoilerMode;
 }) {
   const [pageRevealed, setPageRevealed] = useState(false);
@@ -184,7 +176,6 @@ export function ReportSummary({
         <BackAndEyebrow
           label={`${covered ? "Ergebnis" : "Freewin"} · Spieltag ${round} · ${groupName}`}
           backHref={backHref}
-          backLabel={backLabel}
         />
         <div
           className={cn(
@@ -294,7 +285,6 @@ export function ReportSummary({
       <BackAndEyebrow
         label={`Ergebnis · Spieltag ${round} · ${groupName}`}
         backHref={backHref}
-        backLabel={backLabel}
       />
       <div
         className={cn(

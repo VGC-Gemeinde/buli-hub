@@ -4,23 +4,36 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
+import type { ReplacementOfferOptions } from "@/features/replacements/components/offer-dialog";
+import { ReplacementStatusLine } from "@/features/replacements/components/replacement-status";
+import type { ReplacementRow } from "@/features/replacements/queries";
 import { removeStreamPhotoFor } from "@/features/stream-photos/actions";
 import { STREAM_PHOTO } from "@/features/stream-photos/photo";
 import type { DropCandidate } from "../queries";
-import { DropPlayerDialog, UndropButton } from "./drops-section";
+import { DropActions, DropPlayerDialog } from "./drop-controls";
 
 // The staff panel on the public player profile — same anatomy as the match
 // page's staff panel (navy card, "Nur für Staff sichtbar"). One action: drop
 // the player (reason + type-to-confirm), or lift an existing drop.
 export function ProfileStaffPanel({
   player,
+  avatarUrl,
   dropped,
   dropReason,
+  replacement,
+  offerOptions,
+  missedByRound,
   streamPhotoUrl,
 }: {
   player: DropCandidate;
+  avatarUrl: string | null;
   dropped: boolean;
   dropReason: string | null;
+  // The replacement of this (dropped) player, offered or done, and what an
+  // offer can choose from (null outside the running season).
+  replacement: ReplacementRow | null;
+  offerOptions: ReplacementOfferOptions | null;
+  missedByRound?: Record<number, number>;
   // The picture the stream would use. Staff can look at it here and take it
   // down; that is the whole moderation story (docs/plans/stream-photos.md).
   streamPhotoUrl: string | null;
@@ -38,18 +51,39 @@ export function ProfileStaffPanel({
           Nur für Staff sichtbar
         </span>
       </div>
-      <div className="flex items-center justify-between gap-4 border-brand-blue/10 border-t py-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-brand-blue/10 border-t py-3.5">
         {dropped ? (
           <>
-            <div className="min-w-0">
+            <div className="flex min-w-0 flex-1 basis-[260px] flex-col gap-0.5">
               <p className="font-semibold text-sm">Gedroppt</p>
               <p className="truncate text-[13px] text-muted-foreground">
-                {dropReason
-                  ? `"${dropReason}" · Aufheben stellt alle Ergebnisse wieder her.`
-                  : "Aufheben stellt alle Ergebnisse wieder her."}
+                {dropReason ? `"${dropReason}"` : "Ohne Grund"}
+                {replacement
+                  ? null
+                  : " · Aufheben stellt alle Ergebnisse wieder her, ein Ersatz übernimmt den Platz."}
               </p>
+              {replacement ? (
+                <ReplacementStatusLine
+                  replacement={replacement.replacement}
+                  entryRound={replacement.entryRound}
+                  acceptedAt={replacement.acceptedAt}
+                  offeredAt={replacement.offeredAt}
+                />
+              ) : null}
             </div>
-            <UndropButton userId={player.userId} />
+            <DropActions
+              drop={{
+                identity: {
+                  userId: player.userId,
+                  name: player.name,
+                  avatarUrl,
+                },
+                groupName: player.groupName,
+              }}
+              replacement={replacement}
+              offerOptions={offerOptions}
+              missedByRound={missedByRound}
+            />
           </>
         ) : (
           <>

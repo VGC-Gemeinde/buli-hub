@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Platform } from "@/features/registration/registration";
+import { hoverRow } from "@/lib/emphasis";
 import { playerName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
 import { type SeedingPlayer, seedingCaveats } from "../placement";
@@ -332,7 +333,8 @@ export function PlayerRow({
   return (
     <div
       className={cn(
-        "grid h-[38px] items-center border-b border-border/60 pr-7 pl-5 hover:bg-muted/40",
+        "grid h-[38px] items-center border-b border-border/60 pr-7 pl-5",
+        hoverRow,
         SHEET_GRID,
         selected && "bg-brand-orange/5",
       )}

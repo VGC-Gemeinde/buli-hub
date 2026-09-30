@@ -13,16 +13,21 @@ import { MatchdayList, Switcher, weekRange } from "./public-league";
 // same spoiler behavior). Public and identical for every visitor; during
 // schedule_hidden it is the staff preview of exactly what will go live
 // (docs/plans/full-schedule-page.md).
+//
+// `embedded` is the staff view (`/staff/spielplan`): the page around it
+// (`StaffPage`) brings the title, so the schedule starts with its controls.
 export function FullSchedule({
   overview,
   meId,
   initialSpoilersOff,
   hiddenPreview,
+  embedded = false,
 }: {
   overview: PublicOverview;
   meId: string;
   initialSpoilersOff: boolean;
   hiddenPreview: boolean;
+  embedded?: boolean;
 }) {
   const [tier, setTier] = useState(overview.divisions[0]?.tier ?? 1);
   const [spoilersOff, setSpoilersOff] = useState(initialSpoilersOff);
@@ -31,15 +36,23 @@ export function FullSchedule({
   const matchdays = [...overview.matchdays].sort((a, b) => a.round - b.round);
 
   return (
-    <div className="mx-auto w-full max-w-[1040px] flex-1 px-6 pt-10 pb-16">
+    <div
+      className={
+        embedded ? "" : "mx-auto w-full max-w-[1040px] flex-1 px-6 pt-10 pb-16"
+      }
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-          <Tick size="l" />
-          <h1 className="text-[28px] text-brand-blue leading-[1.1] sm:text-[34px] dark:text-white">
-            Spielplan
-          </h1>
+          {embedded ? null : (
+            <>
+              <Tick size="l" />
+              <h1 className="text-[28px] text-brand-blue leading-[1.1] sm:text-[34px] dark:text-white">
+                Spielplan
+              </h1>
+            </>
+          )}
           <span className="whitespace-nowrap font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
-            · {overview.seasonName}
+            {embedded ? overview.seasonName : `· ${overview.seasonName}`}
           </span>
           {hiddenPreview ? (
             <span className="rounded-full border border-brand-orange/50 bg-brand-orange/10 px-2.5 py-0.5 font-semibold text-[11px] text-brand-orange uppercase tracking-[0.08em]">

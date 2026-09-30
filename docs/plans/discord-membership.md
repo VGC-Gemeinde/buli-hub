@@ -97,7 +97,10 @@ exists — the page sweeps and queries the roster once and feeds both the list
 and the warning card. It lists registered players
 who are confirmed non-members ("Nicht auf dem Server") or never checked
 ("Noch nicht geprüft") — two distinct buckets, because one is a fact and the
-other an admission. The header stamp is the oldest `guild_member_checked_at`
+other an admission. Dropped players are not on the roster
+(`registeredMembership` leaves out a dropped placement): membership is a
+condition of taking part, so a dropped player who left the server is nothing
+to clarify, and neither the list nor the warning card counts them. The header stamp is the oldest `guild_member_checked_at`
 on the roster: everyone confirmed was checked at least since then.
 
 Every load of `/staff` re-checks the whole roster (`sweepGuildMemberships`,

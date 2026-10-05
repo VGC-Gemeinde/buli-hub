@@ -54,6 +54,8 @@
   --color-zone-playoff: var(--zone-playoff);
   --color-zone-demote: var(--zone-demote);
   --color-zone-champion: var(--zone-champion);
+  --color-form-win: var(--form-win);
+  --color-form-loss: var(--form-loss);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -74,6 +76,13 @@
   --zone-playoff: oklch(0.78 0.13 78); /* Auf-/Abstiegs-Playoff — amber */
   --zone-demote: oklch(0.55 0.19 27); /* Abstieg direkt — red */
   --zone-champion: oklch(0.85 0.16 90); /* Meister-Playoff — yellow */
+
+  /* Form results (DESIGN.md §8.12): a match won or lost, as a small solid
+     cell with a white ✓/✗. Hues near the zone palette's green/red, deeper so
+     a white glyph reads on a 16px cell; the glyph, not the colour, carries
+     the meaning. Same values in both modes. */
+  --form-win: oklch(0.58 0.14 152);
+  --form-loss: oklch(0.57 0.2 27);
 
   --background: #ffffff; /* wooloo-white */
   --foreground: oklch(0.28 0.06 264); /* navy-tinted body text */

@@ -3,7 +3,7 @@
 // gallery shows exactly what the page computes. Spieltag 3 runs and covers
 // every row state: a covered result, a duel of two favourites, an own match
 // (always open), a recording hold, the Match of the Week before its VOD, a
-// bye, a drop, an overdue result and a future week.
+// bye, a drop, a double loss, an overdue result and a future week.
 
 import {
   favoriteCandidates,
@@ -128,7 +128,8 @@ const DIVISIONS: PublicDivision[] = [
           row("sam", 4, 0, 3, true),
         ],
         matches: [
-          m("f8", 1, "jonas", "greta", "greta"),
+          // A double loss (staff decision): an outlined ✗ in the form.
+          m("f8", 1, "jonas", "greta", null, { scoreA: 0, scoreB: 0 }),
           m("f9", 1, "sam", "ben", "ben"),
           m("f10", 2, "jonas", "sam", "jonas"),
           m("f11", 3, "jonas", "ben", null, withheld("motw", true)),

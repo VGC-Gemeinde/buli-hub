@@ -117,10 +117,10 @@ A table in the `StandingsTable` anatomy, count badge in the section header:
 - **Pl. and Bilanz** are the public table's (embargoed results excluded, from
   the table that decides the division: the Gesamttabelle in division mode),
   so they agree with what the overview shows once revealed.
-- **Form**: one cell per played round, oldest left: W (win), L (loss, incl.
-  walkover and drop loss; a double loss is an L too), a dash for an overdue
-  unreported match. W/L rather than German letters: the league's players
-  know it whatever language they speak. Byes, future rounds and embargoed results have no cell;
+- **Form**: one cell per played round, oldest left: ✓ (win), ✗ (loss, incl.
+  walkover and drop loss; a double loss is an outlined ✗), a dash for an
+  overdue unreported match. Glyphs rather than letters: they read the same in
+  every language. Byes, future rounds and embargoed results have no cell;
   the running Spieltag has one once it has a result. A replacement's form
   carries the rounds before the entry as the predecessor's matches, the same
   way the table counts the slot.
@@ -136,11 +136,12 @@ A table in the `StandingsTable` anatomy, count badge in the section header:
   numbers are open. This works here because every row hangs on exactly one
   match of the week; the standings tables elsewhere stay uncovered, where it
   would make no sense.
-- **Form cells**: 19px squares (16px on a phone), W solid navy (white in dark
-  mode), L muted fill, a double loss an outlined L ("Doppelniederlage" in the
-  tooltip), overdue a dashed outline with a dash.
-  Deliberately not green/red: those are the zone colours and would read as
-  zones.
+- **Form cells** (DESIGN.md §8.12): 19px squares (16px on a phone), a win
+  green with a white ✓, a loss red with a white ✗, a double loss outlined in
+  red ("Doppelniederlage" in the tooltip), overdue a dashed neutral outline
+  with a dash. Green and red are near the zone hues; that is acceptable here
+  because the Favoriten table has no zones, and the glyph carries the meaning
+  for anyone with a red-green deficiency.
 - **Phone**: the Gruppe and Pl. columns and the avatar fold away; a second
   line under the name reads "Division 1a · Platz 2".
 - **Dropped** favourites stay, with the existing Drop tag.

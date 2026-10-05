@@ -1,6 +1,6 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { Check, Star, X } from "lucide-react";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { SpoilerPill } from "@/features/spoilers/components/spoiler-score";
@@ -197,15 +197,16 @@ export function FavoritesTable({
 }
 
 const CELL =
-  "inline-flex size-4 shrink-0 items-center justify-center rounded-[3px] font-bold text-[9px] sm:size-[19px] sm:rounded-[4px] sm:text-[10.5px]";
+  "inline-flex size-4 shrink-0 items-center justify-center rounded-[3px] font-bold text-[9px] sm:size-[19px] sm:rounded-[4px] sm:text-[10.5px] [&_svg]:size-2.5 sm:[&_svg]:size-3";
 
-// W solid navy, L muted, a double loss an outlined L, an overdue result a
-// dashed outline. Not green/red on purpose: those are the zone colours and
-// would read as zones.
+// A win a green cell with a white ✓, a loss a red one with a white ✗, a
+// double loss an outlined ✗, an overdue result a dashed outline
+// (DESIGN.md §8.12). The glyph carries the meaning, so the colours never
+// have to; glyphs rather than letters read the same in every language.
 const CELL_STYLE: Record<FormCell["result"], string> = {
-  W: "bg-brand-blue text-white dark:bg-white dark:text-brand-blue",
-  L: "bg-muted text-muted-foreground ring-1 ring-border ring-inset",
-  double_loss: "text-muted-foreground ring-1 ring-border ring-inset",
+  W: "bg-form-win text-white",
+  L: "bg-form-loss text-white",
+  double_loss: "text-form-loss ring-[1.5px] ring-form-loss ring-inset",
   offen:
     "border border-dashed border-muted-foreground/40 text-muted-foreground",
 };
@@ -217,10 +218,10 @@ const CELL_LABEL: Record<FormCell["result"], string> = {
   offen: "noch kein Ergebnis",
 };
 
-const CELL_TEXT: Record<FormCell["result"], string> = {
-  W: "W",
-  L: "L",
-  double_loss: "L",
+const CELL_GLYPH: Record<FormCell["result"], React.ReactNode> = {
+  W: <Check aria-hidden strokeWidth={3.5} />,
+  L: <X aria-hidden strokeWidth={3.5} />,
+  double_loss: <X aria-hidden strokeWidth={3.5} />,
   offen: "–",
 };
 
@@ -253,7 +254,8 @@ export function FormStrip({
             title={`Spieltag ${cell.round}: ${CELL_LABEL[cell.result]}`}
             className={cn(CELL, CELL_STYLE[cell.result])}
           >
-            {CELL_TEXT[cell.result]}
+            {CELL_GLYPH[cell.result]}
+            <span className="sr-only">{CELL_LABEL[cell.result]}</span>
           </span>
         ),
       )}

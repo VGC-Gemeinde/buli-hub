@@ -14,9 +14,8 @@ import { predecessorsOf } from "@/features/replacements/replacement";
 import { rowScoreHidden } from "@/features/spoilers/spoilers";
 
 // W = win, L = loss (walkover and drop loss included), "double_loss" = both
-// lost (shown as an L too, outlined), "offen" = a past Spieltag still without
-// a result. W/L rather than German letters: the league's players know it
-// whatever language they speak.
+// lost, "offen" = a past Spieltag still without a result. The page draws them
+// as ✓ / ✗ cells (DESIGN.md §8.12).
 export type FormResult = "W" | "L" | "double_loss" | "offen";
 
 export type FormCell = {

@@ -23,6 +23,10 @@ import { BanList } from "@/features/bans/components/ban-list";
 import { BannedCard } from "@/features/bans/components/banned-card";
 import type { BanCandidate, BanRow } from "@/features/bans/queries";
 import { ImpersonationPicker } from "@/features/dev/components/impersonation-picker";
+import {
+  FAVORITES_GALLERY,
+  FAVORITES_GALLERY_EMPTY,
+} from "@/features/dev/favorites-fixture";
 import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
 import {
   GALLERY_CARDS,
@@ -33,6 +37,8 @@ import {
 } from "@/features/dev/teamsheets";
 import { DropBanner } from "@/features/drops/components/drop-banner";
 import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
+import { FavoriteButton } from "@/features/favorites/components/favorite-button";
+import { FavoritesView } from "@/features/favorites/components/favorites-view";
 import {
   FeedbackActions,
   FeedbackPanel,
@@ -2207,7 +2213,42 @@ export function Gallery() {
             overview={PUBLIC_OVERVIEW}
             meId="me"
             initialSpoilersOff={false}
+            favoriteIds={new Set([DASH_STANDINGS[1].userId])}
           />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Favoriten</h2>
+        <Specimen label="Seite (Spieltag 3 läuft: verdeckt · Duell · eigenes Match · REC · MotW vor VOD · spielfrei · Drop · überfällig; Stern entfernt, Suche fügt hinzu)">
+          <FavoritesView
+            data={FAVORITES_GALLERY}
+            meId="me"
+            initialSpoilersOff={false}
+            storedCount={6}
+          />
+        </Specimen>
+        <Specimen label="Noch keine Favoriten">
+          <FavoritesView
+            data={FAVORITES_GALLERY_EMPTY}
+            meId="me"
+            initialSpoilersOff={false}
+            storedCount={0}
+          />
+        </Specimen>
+        <Specimen label="Favoriten gespeichert, aber keiner spielt in dieser Saison">
+          <FavoritesView
+            data={FAVORITES_GALLERY_EMPTY}
+            meId="me"
+            initialSpoilersOff={false}
+            storedCount={3}
+          />
+        </Specimen>
+        <Specimen label="Profil-Button: kein Favorit · Favorit">
+          <div className="flex flex-wrap gap-4">
+            <FavoriteButton playerId="gallery-off" initialOn={false} />
+            <FavoriteButton playerId="gallery-on" initialOn />
+          </div>
         </Specimen>
       </section>
 

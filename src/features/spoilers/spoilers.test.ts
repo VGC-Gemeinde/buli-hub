@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { parseSpoilersOff, scoreHidden, spoilersOffCookie } from "./spoilers";
+import {
+  parseSpoilersOff,
+  rowScoreHidden,
+  scoreHidden,
+  spoilersOffCookie,
+} from "./spoilers";
 
 describe("scoreHidden", () => {
   it("covers a foreign reported result while protection is on", () => {
@@ -24,6 +29,45 @@ describe("scoreHidden", () => {
     expect(
       scoreHidden({ reported: false, isMine: false, spoilersOff: false }),
     ).toBe(false);
+  });
+});
+
+describe("rowScoreHidden", () => {
+  const plain = {
+    reported: true,
+    isMotw: false,
+    embargoed: false,
+    isMine: false,
+    spoilersOff: false,
+  };
+
+  it("follows scoreHidden for an ordinary row", () => {
+    expect(rowScoreHidden(plain)).toBe(true);
+    expect(rowScoreHidden({ ...plain, spoilersOff: true })).toBe(false);
+    expect(rowScoreHidden({ ...plain, isMine: true })).toBe(false);
+  });
+
+  it("keeps the Match of the Week covered with the switch off", () => {
+    expect(rowScoreHidden({ ...plain, isMotw: true, spoilersOff: true })).toBe(
+      true,
+    );
+  });
+
+  it("keeps an embargoed result covered, even for a participant", () => {
+    expect(
+      rowScoreHidden({
+        ...plain,
+        embargoed: true,
+        isMine: true,
+        spoilersOff: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("has nothing to cover without a result", () => {
+    expect(rowScoreHidden({ ...plain, reported: false, isMotw: true })).toBe(
+      false,
+    );
   });
 });
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SectionHeader } from "@/components/section-header";
+import { FavoriteStar } from "@/features/favorites/components/favorite-star";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
 import type { StandingsRow } from "@/features/reporting/standings";
 import type { Zone } from "@/features/seeding/post-season";
@@ -63,9 +64,13 @@ export function StandingsTable({
   withheld = 0,
   dense = false,
   footnote,
+  favoriteIds,
 }: {
   standings: StandingsRow[];
   meId: string;
+  // The viewer's favourites get a star before the name (docs/plans/
+  // favorites.md). Empty or absent for anonymous viewers.
+  favoriteIds?: ReadonlySet<string>;
   zones?: ZoneMap;
   groupLabels?: Map<string, string>;
   // Tighter rows for the Spieler-Dashboard, where the table sits beside the
@@ -153,6 +158,7 @@ export function StandingsTable({
                         size="size-[26px]"
                         filled={me}
                       />
+                      {favoriteIds?.has(row.userId) ? <FavoriteStar /> : null}
                       <PlayerLink
                         userId={row.userId}
                         name={row.name}
@@ -301,6 +307,7 @@ export function StandingsPanel({
   meId,
   groupWithheld = 0,
   divisionWithheld = 0,
+  favoriteIds,
 }: {
   groupName: string;
   groupStandings: StandingsRow[];
@@ -314,6 +321,7 @@ export function StandingsPanel({
   // Embargoed results per table, so the note matches the table on screen.
   groupWithheld?: number;
   divisionWithheld?: number;
+  favoriteIds?: ReadonlySet<string>;
 }) {
   const [scope, setScope] = useState<"group" | "division">(defaultScope);
   const divisionMode = divisionStandings !== null;
@@ -358,6 +366,7 @@ export function StandingsPanel({
           zones={divisionZones}
           groupLabels={divisionGroupLabels}
           withheld={divisionWithheld}
+          favoriteIds={favoriteIds}
           dense
           footnote={context}
         />
@@ -367,6 +376,7 @@ export function StandingsPanel({
           meId={meId}
           zones={groupZones}
           withheld={groupWithheld}
+          favoriteIds={favoriteIds}
           dense
           footnote={context}
         />

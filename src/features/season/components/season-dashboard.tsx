@@ -524,6 +524,7 @@ export function InSeasonDashboard({
   groupWithheld,
   divisionWithheld,
   today,
+  favoriteIds,
 }: {
   groupName: string;
   currentRound: number;
@@ -545,6 +546,8 @@ export function InSeasonDashboard({
   groupWithheld?: number;
   divisionWithheld?: number;
   today: string;
+  // Stars in the tables (docs/plans/favorites.md).
+  favoriteIds?: ReadonlySet<string>;
 }) {
   const meId = me.userId;
   return (
@@ -582,6 +585,7 @@ export function InSeasonDashboard({
             meId={meId}
             groupWithheld={groupWithheld}
             divisionWithheld={divisionWithheld}
+            favoriteIds={favoriteIds}
           />
         </section>
       </div>

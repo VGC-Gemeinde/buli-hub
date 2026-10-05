@@ -9,7 +9,8 @@ export type PersonaId =
   | "langer-name"
   | "leer"
   | "kein-server"
-  | "gesperrt";
+  | "gesperrt"
+  | "zuschauerin";
 
 export type Persona = {
   id: PersonaId;
@@ -26,6 +27,10 @@ export type Persona = {
   // ban on the persona's Discord id exists, so the blocked registration is
   // one login away. Staff can lift it on /staff/banliste to see the rest.
   banned?: boolean;
+  // Follows a handful of players of the running season (docs/plans/
+  // favorites.md): signing in gives the persona demo favourites if it has
+  // none, so /favoriten has something to show.
+  favorites?: boolean;
 };
 
 // Discord's public default avatar — a real, always-available image URL.
@@ -116,6 +121,23 @@ export const PERSONAS: readonly Persona[] = [
     role: "player",
     guildMember: true,
     banned: true,
+  },
+  {
+    id: "zuschauerin",
+    label: "Zuschauerin",
+    description:
+      "Spielt nicht mit, folgt aber Spielern: Favoriten mit Duell und Drop",
+    userMetadata: {
+      avatar_url: AVATAR_URL,
+      picture: AVATAR_URL,
+      custom_claims: { global_name: "Zoe Zuschauerin" },
+      full_name: "zoe_schaut_zu",
+      name: "zoe_schaut_zu",
+      provider_id: "100000000000000007",
+    },
+    role: "player",
+    guildMember: true,
+    favorites: true,
   },
 ];
 

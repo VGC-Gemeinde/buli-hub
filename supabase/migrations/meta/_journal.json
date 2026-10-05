@@ -197,6 +197,20 @@
       "when": 1790765064118,
       "tag": "20260930104424_bans_fk_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791149309209,
+      "tag": "20261004212829_favorites",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791149310114,
+      "tag": "20261004212830_favorites_fk_rls",
+      "breakpoints": true
     }
   ]
 }

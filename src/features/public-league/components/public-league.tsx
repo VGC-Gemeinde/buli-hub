@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
+import { FavoriteStar } from "@/features/favorites/components/favorite-star";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
@@ -11,7 +12,7 @@ import { StandingsTable } from "@/features/season/components/standings-panel";
 import type { MatchdayLite } from "@/features/season/dashboard";
 import { SpoilerScore } from "@/features/spoilers/components/spoiler-score";
 import { SpoilerSwitch } from "@/features/spoilers/components/spoiler-switch";
-import { scoreHidden } from "@/features/spoilers/spoilers";
+import { rowScoreHidden } from "@/features/spoilers/spoilers";
 import { hoverCard } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
 import type { PublicDivision, PublicMatch, PublicOverview } from "../queries";
@@ -84,10 +85,12 @@ export function PublicLeague({
   overview,
   meId,
   initialSpoilersOff,
+  favoriteIds,
 }: {
   overview: PublicOverview;
   meId: string;
   initialSpoilersOff: boolean;
+  favoriteIds: ReadonlySet<string>;
 }) {
   const [tier, setTier] = useState(overview.divisions[0]?.tier ?? 1);
   // The global spoiler preference: cookie-backed (the server rendered this
@@ -140,6 +143,7 @@ export function PublicLeague({
           totalRounds={overview.totalRounds}
           meId={meId}
           spoilersOff={spoilersOff}
+          favoriteIds={favoriteIds}
         />
       ) : null}
     </div>
@@ -153,6 +157,7 @@ function DivisionView({
   totalRounds,
   meId,
   spoilersOff,
+  favoriteIds,
 }: {
   division: PublicDivision;
   matchdays: MatchdayLite[];
@@ -160,6 +165,7 @@ function DivisionView({
   totalRounds: number;
   meId: string;
   spoilersOff: boolean;
+  favoriteIds: ReadonlySet<string>;
 }) {
   // Selection is either a sub-division id or "gesamt" (only offered when the
   // division has a merged Gesamttabelle, i.e. in division mode). Gesamt shows the
@@ -211,6 +217,7 @@ function DivisionView({
               zones={division.divisionZones ?? undefined}
               groupLabels={division.divisionGroupLabels ?? undefined}
               withheld={division.withheldResults}
+              favoriteIds={favoriteIds}
             />
           ) : group ? (
             <StandingsTable
@@ -218,6 +225,7 @@ function DivisionView({
               meId={meId}
               zones={group.zones ?? undefined}
               withheld={group.withheldResults}
+              favoriteIds={favoriteIds}
             />
           ) : null}
         </section>
@@ -242,6 +250,7 @@ function DivisionView({
                     matches={g.matches.filter((m) => m.round === round)}
                     meId={meId}
                     spoilersOff={spoilersOff}
+                    favoriteIds={favoriteIds}
                   />
                 </div>
               ))}
@@ -251,6 +260,7 @@ function DivisionView({
               matches={group.matches.filter((m) => m.round === round)}
               meId={meId}
               spoilersOff={spoilersOff}
+              favoriteIds={favoriteIds}
             />
           ) : null}
         </section>
@@ -262,7 +272,7 @@ function DivisionView({
 // Browsable version of the dashboard's progress strip: one clickable segment per
 // Spieltag. The current matchday keeps its orange marker; the selected round is
 // outlined so you can tell "viewing" from "live".
-function SpieltagTimeline({
+export function SpieltagTimeline({
   selected,
   total,
   current,
@@ -308,7 +318,7 @@ function SpieltagTimeline({
                     : isCurrent
                       ? "bg-brand-orange/45 group-hover:bg-brand-orange/70"
                       : current !== null && round < current
-                        ? "bg-brand-blue/30 group-hover:bg-brand-blue/50"
+                        ? "bg-brand-blue/30 group-hover:bg-brand-blue/50 dark:bg-white/35 dark:group-hover:bg-white/50"
                         : "bg-muted group-hover:bg-muted-foreground/30",
                 )}
               />
@@ -324,10 +334,12 @@ export function MatchdayList({
   matches,
   meId,
   spoilersOff,
+  favoriteIds,
 }: {
   matches: PublicMatch[];
   meId: string;
   spoilersOff: boolean;
+  favoriteIds: ReadonlySet<string>;
 }) {
   if (matches.length === 0) {
     return (
@@ -344,20 +356,30 @@ export function MatchdayList({
           match={match}
           meId={meId}
           spoilersOff={spoilersOff}
+          favoriteIds={favoriteIds}
         />
       ))}
     </div>
   );
 }
 
-function MatchRow({
+// One match row. The reveal state is the row's own unless the caller holds
+// it (`revealed` + `onReveal`): Favoriten couples it to the form cell, Platz
+// and Bilanz of the same match.
+export function MatchRow({
   match,
   meId,
   spoilersOff,
+  favoriteIds,
+  revealed: heldRevealed,
+  onReveal,
 }: {
   match: PublicMatch;
   meId: string;
   spoilersOff: boolean;
+  favoriteIds: ReadonlySet<string>;
+  revealed?: boolean;
+  onReveal?: () => void;
 }) {
   const mine = match.playerA.userId === meId || match.playerB?.userId === meId;
   // Foreign reported results are covered until revealed in place (or via the
@@ -366,11 +388,14 @@ function MatchRow({
   // and before the VOD there is nothing behind it for a withheld viewer. A
   // result under embargo for any reason (a recording hold too) is covered
   // the same way: the switch cannot open what is not public.
-  const hidden =
-    match.isMotw || match.embargo !== null
-      ? match.reported
-      : scoreHidden({ reported: match.reported, isMine: mine, spoilersOff });
-  const [revealed, setRevealed] = useState(false);
+  const hidden = rowScoreHidden({
+    reported: match.reported,
+    isMotw: match.isMotw,
+    embargoed: match.embargo !== null,
+    isMine: mine,
+    spoilersOff,
+  });
+  const [ownRevealed, setRevealed] = useState(false);
   // Turning protection back on clears per-row reveals — a fresh cover, no
   // half-revealed leftovers (design/SPOILER-SCHUTZ.md §2.1).
   useEffect(() => {
@@ -378,6 +403,7 @@ function MatchRow({
       setRevealed(false);
     }
   }, [spoilersOff]);
+  const revealed = heldRevealed ?? ownRevealed;
   const covered = hidden && !revealed;
   const className = cn(
     "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
@@ -388,6 +414,7 @@ function MatchRow({
     <>
       <Side
         identity={match.playerA}
+        favorite={favoriteIds.has(match.playerA.userId)}
         // Winner bolding on a covered row would leak the result; it returns
         // once the row is revealed (also on the MotW row).
         winner={!covered && match.winnerId === match.playerA.userId}
@@ -412,7 +439,7 @@ function MatchRow({
               covered={covered}
               motw={match.isMotw}
               embargo={match.embargo}
-              onReveal={() => setRevealed(true)}
+              onReveal={onReveal ?? (() => setRevealed(true))}
             />
           ) : (
             "offen"
@@ -422,6 +449,7 @@ function MatchRow({
       {match.playerB ? (
         <Side
           identity={match.playerB}
+          favorite={favoriteIds.has(match.playerB.userId)}
           winner={!covered && match.winnerId === match.playerB.userId}
           align="right"
         />
@@ -449,10 +477,12 @@ function MatchRow({
 
 function Side({
   identity,
+  favorite,
   winner,
   align,
 }: {
   identity: { userId: string; name: string; avatarUrl: string | null };
+  favorite: boolean;
   winner: boolean;
   align: "left" | "right";
 }) {
@@ -464,6 +494,7 @@ function Side({
       )}
     >
       <PlayerAvatar identity={identity} size="size-[22px]" />
+      {favorite ? <FavoriteStar /> : null}
       {/* `relative` lifts the profile link above the row's stretched match
           link. */}
       <PlayerLink

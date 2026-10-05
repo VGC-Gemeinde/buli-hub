@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { favoriteIds } from "@/features/favorites/queries";
 import { FullSchedule } from "@/features/public-league/components/full-schedule";
 import { publicLeagueOverview } from "@/features/public-league/queries";
 import { currentUser } from "@/features/roles/guard";
@@ -27,12 +28,13 @@ export default async function SpielplanPage() {
     notFound();
   }
 
-  const [overview, cookieStore] = await Promise.all([
+  const [overview, cookieStore, favorites] = await Promise.all([
     publicLeagueOverview(window.id, window.seasonNumber, germanToday(), {
       userId: current?.userId ?? null,
       isStaff,
     }),
     cookies(),
+    favoriteIds(current?.userId ?? null),
   ]);
   const spoilersOff = parseSpoilersOff(
     cookieStore.get(SPOILERS_OFF_COOKIE)?.value,
@@ -46,6 +48,7 @@ export default async function SpielplanPage() {
         meId={current?.userId ?? ""}
         initialSpoilersOff={spoilersOff}
         hiddenPreview={phase === "schedule_hidden"}
+        favoriteIds={favorites}
       />
     </div>
   );

@@ -16,18 +16,24 @@ import { MatchdayList, Switcher, weekRange } from "./public-league";
 //
 // `embedded` is the staff view (`/staff/spielplan`): the page around it
 // (`StaffPage`) brings the title, so the schedule starts with its controls.
+const NO_FAVORITES: ReadonlySet<string> = new Set();
+
 export function FullSchedule({
   overview,
   meId,
   initialSpoilersOff,
   hiddenPreview,
   embedded = false,
+  favoriteIds = NO_FAVORITES,
 }: {
   overview: PublicOverview;
   meId: string;
   initialSpoilersOff: boolean;
   hiddenPreview: boolean;
   embedded?: boolean;
+  // Stars before the viewer's favourites (docs/plans/favorites.md); the staff
+  // view goes without.
+  favoriteIds?: ReadonlySet<string>;
 }) {
   const [tier, setTier] = useState(overview.divisions[0]?.tier ?? 1);
   const [spoilersOff, setSpoilersOff] = useState(initialSpoilersOff);
@@ -91,6 +97,7 @@ export function FullSchedule({
               isCurrent={matchday.round === overview.currentRound}
               meId={meId}
               spoilersOff={spoilersOff}
+              favoriteIds={favoriteIds}
             />
           ))}
         </div>
@@ -112,12 +119,14 @@ function RoundSection({
   isCurrent,
   meId,
   spoilersOff,
+  favoriteIds,
 }: {
   division: PublicDivision;
   matchday: MatchdayLite;
   isCurrent: boolean;
   meId: string;
   spoilersOff: boolean;
+  favoriteIds: ReadonlySet<string>;
 }) {
   const groups = division.groups
     .map((group) => ({
@@ -159,6 +168,7 @@ function RoundSection({
                 matches={matches}
                 meId={meId}
                 spoilersOff={spoilersOff}
+                favoriteIds={favoriteIds}
               />
             </div>
           ))}

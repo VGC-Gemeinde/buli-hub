@@ -37,6 +37,7 @@ export function sectionRow(
               entries: [
                 { href: "/", label: "Übersicht" },
                 { href: "/spielplan", label: "Spielplan" },
+                { href: "/favoriten", label: "Favoriten" },
               ],
             },
           ]

@@ -16,13 +16,16 @@ const STATE_LABEL = {
   confirmed: "Bestätigt",
 } as const;
 
-// One pickable matchup. The whole row is the button — working through a
+// One pickable matchup. The whole row takes the click — working through a
 // Spieltag means scanning a long list, and hunting a small trailing button for
-// every row is the slow way to do that. The trailing label stays as the
-// visible affordance and lights up with the row; it names what the click does,
-// which depends on the week ("Als Hauptmatch" / "Als Backup" while candidates
-// are being collected, "Bestätigen" once the week is decided or too far along
-// to nominate).
+// every row is the slow way to do that. The trailing label is the real button
+// (keyboard, screen readers) and lights up with the row; it names what the
+// click does, which depends on the week ("Als Hauptmatch" / "Als Backup"
+// while candidates are being collected, "Bestätigen" once the week is decided
+// or too far along to nominate). The row itself is no button: it holds
+// controls of its own (the stream-photo thumbnail opens the picture and stops
+// its click), and a button inside a button is invalid HTML that breaks
+// hydration.
 //
 // A row that is already nominated or confirmed is inert and wears its state
 // instead: promoting and confirming happen in the Kandidaten panel above.
@@ -42,12 +45,12 @@ export function MotwOptionRow({
   onPick: () => void;
 }) {
   const picked = state !== null;
+  const pickable = !picked && !disabled;
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      disabled={disabled || picked}
-      aria-pressed={picked}
+    // biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut for the trailing button, which carries keyboard and screen-reader access
+    // biome-ignore lint/a11y/useKeyWithClickEvents: same, the button handles the keyboard
+    <div
+      onClick={pickable ? onPick : undefined}
       className={cn(
         "group grid w-full grid-cols-1 items-center gap-x-3 gap-y-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors",
         // The trailing column is fixed, not `auto`: markers appear on some rows
@@ -99,17 +102,26 @@ export function MotwOptionRow({
             {STATE_LABEL[state]}
           </span>
         ) : (
-          <span
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={`${actionLabel}: ${option.playerA.name} gegen ${option.playerB.name}`}
+            onClick={(event) => {
+              // The row would pick a second time.
+              event.stopPropagation();
+              onPick();
+            }}
             className={cn(
               "shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 font-medium text-[12.5px] transition-colors",
               "group-hover:border-brand-orange group-hover:bg-brand-orange group-hover:text-white",
+              "focus-visible:border-brand-orange focus-visible:bg-brand-orange focus-visible:text-white focus-visible:outline-none",
             )}
           >
             {pending ? "Einen Moment…" : actionLabel}
-          </span>
+          </button>
         )}
       </span>
-    </button>
+    </div>
   );
 }
 

@@ -311,6 +311,25 @@ export const bans = pgTable(
   ],
 );
 
+// Favoriten (docs/plans/favorites.md): the players a signed-in user follows
+// through the season. Private: only the user reads their own rows. Keyed on
+// the person, not a season slot, so a favourite outlives the season. Nobody
+// favourites themselves. FKs + RLS in a custom migration.
+export const favorites = pgTable(
+  "favorites",
+  {
+    userId: uuid("user_id").notNull(),
+    playerId: uuid("player_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.playerId] }),
+    check("favorites_not_self", sql`${table.userId} <> ${table.playerId}`),
+  ],
+);
+
 // Who is currently driving a season's seeding. Division seeding is a live staff
 // meeting (one person shares their screen, the group discusses); this soft lock
 // keeps everyone else in read-only until they explicitly take control. A stale

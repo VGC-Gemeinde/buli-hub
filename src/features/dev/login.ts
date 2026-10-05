@@ -5,6 +5,7 @@ import { discordIdentityFromUser } from "@/features/auth/identity";
 import { db } from "@/lib/db";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { ensurePersonaFavorites } from "./favorites-persona";
 import { getPersona, type Persona, personaToAdminPayload } from "./personas";
 
 export type DevLoginResult = { ok: true } | { ok: false; error: string };
@@ -158,5 +159,9 @@ async function pinPersonaProfile(email: string, persona: Persona) {
         reason: "Dev-Persona: gesperrt, um die gesperrte Anmeldung zu sehen.",
       })
       .onConflictDoNothing();
+  }
+
+  if (persona.favorites) {
+    await ensurePersonaFavorites(userId);
   }
 }

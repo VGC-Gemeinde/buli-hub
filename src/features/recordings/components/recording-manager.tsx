@@ -23,8 +23,12 @@ import { toggleAllDivisions } from "@/features/motw/motw";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { divisionName } from "@/features/seeding/seeding";
+import {
+  PagerLegendItem,
+  StaffWeekPager,
+} from "@/features/staff/components/staff-week-pager";
 import { StreamPhotoMark } from "@/features/stream-photos/components/stream-photo-mark";
-import { emphasisSurface, hoverCard } from "@/lib/emphasis";
+import { emphasisSurface } from "@/lib/emphasis";
 import { formatGermanDay } from "@/lib/german-time";
 import { cn } from "@/lib/utils";
 import { holdMatch, releaseHold } from "../actions";
@@ -356,9 +360,8 @@ function Picker({
   );
 }
 
-// The Spieltag strip, in the MotW pager's chip anatomy (round number over a
-// mark) so both staff workspaces page the same way. The mark counts the
-// week's holds; the ring is the running Spieltag.
+// The Spieltag strip: the shared staff pager, so both staff workspaces page
+// the same way. The mark counts the week's holds.
 function WeekPager({
   weeks,
   activeRound,
@@ -370,67 +373,40 @@ function WeekPager({
   currentRound: number | null;
   onSelect: (round: number) => void;
 }) {
+  const holds = new Map(
+    weeks.map((week) => [
+      week.round,
+      week.matches.filter((m) => m.held).length,
+    ]),
+  );
   return (
-    <div className="flex flex-col gap-2.5">
-      <div
-        className="-mx-1 overflow-x-auto px-1 py-1"
-        role="tablist"
-        aria-label="Spieltag wählen"
-      >
-        <div className="flex gap-1.5">
-          {weeks.map((week) => {
-            const holds = week.matches.filter((m) => m.held).length;
-            const active = week.round === activeRound;
-            const isCurrent = week.round === currentRound;
-            return (
-              <button
-                key={week.round}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                title={`Spieltag ${week.round}: ${
-                  holds === 0
-                    ? "keine Aufnahme markiert"
-                    : holds === 1
-                      ? "1 Aufnahme markiert"
-                      : `${holds} Aufnahmen markiert`
-                }${isCurrent ? " · aktueller Spieltag" : ""}`}
-                onClick={() => onSelect(week.round)}
-                className={cn(
-                  "flex w-[42px] shrink-0 flex-col items-center gap-1.5 rounded-lg border py-1.5 transition-colors",
-                  active
-                    ? "border-brand-blue bg-brand-blue text-white"
-                    : hoverCard,
-                  isCurrent && !active && "border-brand-orange/70",
-                  isCurrent &&
-                    active &&
-                    "ring-2 ring-brand-orange ring-offset-2 ring-offset-background",
-                )}
-              >
-                <span className="font-semibold text-[13px] leading-none tabular-nums">
-                  {week.round}
-                </span>
-                <HoldMark count={holds} active={active} />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11.5px] text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <HoldMark count={1} active={false} />
-          Aufnahmen markiert (Anzahl)
-        </span>
-        <span className="flex items-center gap-1.5">
-          <HoldMark count={0} active={false} />
-          Keine
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-[3px] border border-brand-orange" />
-          Aktueller Spieltag
-        </span>
-      </div>
-    </div>
+    <StaffWeekPager
+      rounds={weeks.map((week) => week.round)}
+      activeRound={activeRound}
+      currentRound={currentRound}
+      onSelect={onSelect}
+      mark={(round, active) => (
+        <HoldMark count={holds.get(round) ?? 0} active={active} />
+      )}
+      describe={(round) => {
+        const count = holds.get(round) ?? 0;
+        return count === 0
+          ? "keine Aufnahme markiert"
+          : count === 1
+            ? "1 Aufnahme markiert"
+            : `${count} Aufnahmen markiert`;
+      }}
+      legend={
+        <>
+          <PagerLegendItem mark={<HoldMark count={1} active={false} />}>
+            Aufnahmen markiert (Anzahl)
+          </PagerLegendItem>
+          <PagerLegendItem mark={<HoldMark count={0} active={false} />}>
+            Keine
+          </PagerLegendItem>
+        </>
+      }
+    />
   );
 }
 

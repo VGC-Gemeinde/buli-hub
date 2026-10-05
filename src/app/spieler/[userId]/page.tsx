@@ -9,6 +9,8 @@ import {
   droppedIdsForWindow,
   placementDropState,
 } from "@/features/drops/queries";
+import { FavoriteButton } from "@/features/favorites/components/favorite-button";
+import { favoriteIds } from "@/features/favorites/queries";
 import { motwForWindow } from "@/features/motw/queries";
 import { ProfileSpielplan } from "@/features/player-profile/components/profile-schedule";
 import { profileScheduleRows } from "@/features/player-profile/profile";
@@ -222,6 +224,10 @@ export default async function PlayerProfilePage({
         })()
       : null;
 
+  const favorited = current
+    ? (await favoriteIds(current.userId)).has(userId)
+    : false;
+
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader section="liga" />
@@ -229,12 +235,21 @@ export default async function PlayerProfilePage({
         {/* A profile is not a destination of the navigation; the way back
             is here (docs/plans/site-navigation.md). */}
         <BackLink fallbackHref="/" />
-        <ProfileHeader
-          displayName={identity.displayName}
-          username={identity.username}
-          avatarUrl={identity.avatarUrl}
-          roleLabel={roleLabel(identity.role)}
-        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <ProfileHeader
+              displayName={identity.displayName}
+              username={identity.username}
+              avatarUrl={identity.avatarUrl}
+              roleLabel={roleLabel(identity.role)}
+            />
+          </div>
+          {/* Favourites are private and per viewer; nobody favourites
+              themselves (docs/plans/favorites.md). */}
+          {current && current.userId !== userId ? (
+            <FavoriteButton playerId={userId} initialOn={favorited} />
+          ) : null}
+        </div>
 
         {season ? (
           <div className="mt-10 flex flex-col gap-8">

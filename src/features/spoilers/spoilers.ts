@@ -30,3 +30,19 @@ export function scoreHidden(input: {
 }): boolean {
   return input.reported && !input.isMine && !input.spoilersOff;
 }
+
+// Whether a public match row's result is covered, the full rule: the Match of
+// the Week and a result under embargo are covered whenever there is a result,
+// whatever the switch says (the switch cannot open what is not public, and
+// the MotW keeps its own protection); every other row follows `scoreHidden`.
+// Shared by the match rows and everything coupled to them (the Favoriten
+// form cell, Platz and Bilanz), so the two can never disagree.
+export function rowScoreHidden(input: {
+  reported: boolean;
+  isMotw: boolean;
+  embargoed: boolean;
+  isMine: boolean;
+  spoilersOff: boolean;
+}): boolean {
+  return input.isMotw || input.embargoed ? input.reported : scoreHidden(input);
+}

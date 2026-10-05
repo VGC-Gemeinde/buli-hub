@@ -5,10 +5,10 @@ const labels = (groups: ReturnType<typeof sectionRow>) =>
   groups?.map((group) => group.entries.map((entry) => entry.label)) ?? null;
 
 describe("sectionRow", () => {
-  it("gives the Liga its two pages while a season runs", () => {
+  it("gives the Liga its pages while a season runs, Favoriten for everyone", () => {
     expect(
       labels(sectionRow("liga", { phase: "regular_season", role: null })),
-    ).toEqual([["Übersicht", "Spielplan"]]);
+    ).toEqual([["Übersicht", "Spielplan", "Favoriten"]]);
     expect(
       sectionRow("liga", { phase: "schedule_hidden", role: "staff" }),
     ).toBeNull();
@@ -76,6 +76,10 @@ describe("activeHref", () => {
     expect(activeHref(liga, "/spielplan")).toBe("/spielplan");
     expect(activeHref(staff, "/spielplan")).toBeNull();
     expect(activeHref(staff, "/staff/spielplan")).toBe("/staff/spielplan");
+  });
+
+  it("marks Favoriten on its page", () => {
+    expect(activeHref(liga, "/favoriten")).toBe("/favoriten");
   });
 });
 

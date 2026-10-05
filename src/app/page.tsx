@@ -9,6 +9,7 @@ import {
   parseSignInErrorKind,
   SIGN_IN_ERROR_COPY,
 } from "@/features/auth/sign-in-error";
+import { favoriteIds } from "@/features/favorites/queries";
 import { PublicLeague } from "@/features/public-league/components/public-league";
 import { publicLeagueOverview } from "@/features/public-league/queries";
 import { currentUser } from "@/features/roles/guard";
@@ -38,6 +39,7 @@ export default async function Home({
       currentUser(),
       cookies(),
     ]);
+    const favorites = await favoriteIds(current?.userId ?? null);
     // The viewer decides whether an embargoed MotW result is included.
     const overview = await publicLeagueOverview(
       window.id,
@@ -58,6 +60,7 @@ export default async function Home({
           overview={overview}
           meId={current?.userId ?? ""}
           initialSpoilersOff={spoilersOff}
+          favoriteIds={favorites}
         />
       </div>
     );

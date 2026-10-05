@@ -274,3 +274,20 @@ border alone vanishes on white):
   in dialogs): the full `bg-muted` background.
 
 Something that is not clickable gets no hover at all.
+
+### 8.12 Form results — tokens in `globals.css`
+
+A player's form (Favoriten, `FormStrip`) is one small cell per match:
+
+| Result | Cell |
+|---|---|
+| Sieg | `bg-form-win` (`oklch(0.58 0.14 152)`), white ✓ |
+| Niederlage | `bg-form-loss` (`oklch(0.57 0.2 27)`), white ✗ |
+| Doppelniederlage | outlined in `form-loss`, ✗ in `form-loss` |
+| Noch kein Ergebnis | dashed neutral outline, "–" |
+
+Glyphs instead of letters: they read the same in every language. The glyph
+always carries the meaning, so the cells stay readable with a red-green
+deficiency; never use the colours alone (no bare dots). Green and red are
+close to the zone hues (§8.9), so form cells stay out of zoned tables, where
+a green cell next to a red rail would read as a zone.

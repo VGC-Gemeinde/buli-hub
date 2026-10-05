@@ -5,6 +5,7 @@ import { BannedCard } from "@/features/bans/components/banned-card";
 import { isBanned } from "@/features/bans/queries";
 import { markDropped } from "@/features/drops/drops";
 import { droppedIdsForWindow } from "@/features/drops/queries";
+import { favoriteIds } from "@/features/favorites/queries";
 import { MembershipBlockedCard } from "@/features/membership/components/blocked-card";
 import { SeasonGates } from "@/features/membership/components/season-gates";
 import { isConfirmedNonMember } from "@/features/membership/membership";
@@ -168,6 +169,7 @@ export default async function SpielerPage() {
       motwSelections,
       holds,
       replacements,
+      favorites,
     ] = await Promise.all([
       divisionGroups(placement.divisionId),
       matchdaysForWindow(window.id),
@@ -177,6 +179,7 @@ export default async function SpielerPage() {
       motwForWindow(window.id),
       holdsForWindow(window.id),
       replacementsForWindow(window.id),
+      favoriteIds(current.userId),
     ]);
     const accepted = replacements.filter((r) => r.acceptedAt !== null);
     const notes = replacementNotes(accepted);
@@ -369,6 +372,7 @@ export default async function SpielerPage() {
             groupWithheld={groupWithheld}
             divisionWithheld={divisionWithheld}
             today={today}
+            favoriteIds={favorites}
           />
         </main>
       </div>

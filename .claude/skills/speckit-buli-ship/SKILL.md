@@ -1,0 +1,1 @@
+../../../.specify/extensions/buli/.specify-dev/agent-commands/claude/speckit-buli-ship/SKILL.md

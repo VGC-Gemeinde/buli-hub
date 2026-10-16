@@ -56,6 +56,24 @@
   --color-zone-champion: var(--zone-champion);
   --color-form-win: var(--form-win);
   --color-form-loss: var(--form-loss);
+  --color-type-normal: var(--type-normal);
+  --color-type-fire: var(--type-fire);
+  --color-type-water: var(--type-water);
+  --color-type-grass: var(--type-grass);
+  --color-type-electric: var(--type-electric);
+  --color-type-ice: var(--type-ice);
+  --color-type-fighting: var(--type-fighting);
+  --color-type-poison: var(--type-poison);
+  --color-type-ground: var(--type-ground);
+  --color-type-flying: var(--type-flying);
+  --color-type-psychic: var(--type-psychic);
+  --color-type-bug: var(--type-bug);
+  --color-type-rock: var(--type-rock);
+  --color-type-ghost: var(--type-ghost);
+  --color-type-dragon: var(--type-dragon);
+  --color-type-dark: var(--type-dark);
+  --color-type-steel: var(--type-steel);
+  --color-type-fairy: var(--type-fairy);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -83,6 +101,28 @@
      the meaning. Same values in both modes. */
   --form-win: oklch(0.58 0.14 152);
   --form-loss: oklch(0.57 0.2 27);
+
+  /* Type palette (DESIGN.md §8.13): the circle colours of the type icons in
+     public/type-icons/ (partywhale/pokemon-type-icons, MIT), so an icon and
+     anything tinted in its type agree. Game colours, same in both modes. */
+  --type-normal: #828282;
+  --type-fire: #e4613e;
+  --type-water: #3a9de2;
+  --type-grass: #439837;
+  --type-electric: #dfbc28;
+  --type-ice: #47c8c8;
+  --type-fighting: #e49021;
+  --type-poison: #9354cb;
+  --type-ground: #a4733c;
+  --type-flying: #74aad0;
+  --type-psychic: #e96c8c;
+  --type-bug: #9f9f28;
+  --type-rock: #a9a481;
+  --type-ghost: #6f4570;
+  --type-dragon: #576fbc;
+  --type-dark: #4f4747;
+  --type-steel: #77b2cb;
+  --type-fairy: #e18ce1;
 
   --background: #ffffff; /* wooloo-white */
   --foreground: oklch(0.28 0.06 264); /* navy-tinted body text */

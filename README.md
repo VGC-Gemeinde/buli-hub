@@ -98,10 +98,16 @@ anything else. Components stay simple and there are no end-to-end tests.
 
 ## More documentation
 
-- `CLAUDE.md` covers the architecture, conventions and how work is planned. It
-  was written for AI-assisted development, but it's also the quickest way for a
+- `CLAUDE.md` is the architecture map, commands and environments. It was
+  written for AI-assisted development, but it's also the quickest way for a
   person to get oriented.
+- `.specify/memory/constitution.md` holds the rules every change follows and
+  how a feature is built: features go through
+  [GitHub Spec Kit](https://speckit.org/) (spec, mockups, plan, tasks,
+  implementation), with three approvals by the maintainer along the way.
 - `docs/deployment.md` is the infrastructure runbook: environments, deploys,
   cloning production, backups.
-- `docs/plans/` has one document per feature explaining what it does and why.
-- `docs/decisions/` holds decisions that cut across features.
+- `specs/` has one directory per feature built with Spec Kit: what it does,
+  why, its mockups and how it was built.
+- `docs/plans/` and `docs/decisions/` are legacy: the plans and cross-feature
+  decisions of everything built before Spec Kit, kept as history.

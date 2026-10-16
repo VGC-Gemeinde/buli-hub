@@ -1,0 +1,23 @@
+installed:
+- buli
+settings:
+  auto_execute_hooks: true
+hooks:
+  before_plan:
+  - extension: buli
+    command: speckit.buli.mockups
+    enabled: true
+    optional: false
+    priority: 10
+    prompt: Execute speckit.buli.mockups?
+    description: Mockups and Gate 1 before implementation planning
+    condition: null
+  after_converge:
+  - extension: buli
+    command: speckit.buli.ship
+    enabled: true
+    optional: false
+    priority: 10
+    prompt: Execute speckit.buli.ship?
+    description: Definition of Done and Gate 3 once converge finds no gaps
+    condition: null

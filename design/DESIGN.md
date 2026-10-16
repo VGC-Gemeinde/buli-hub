@@ -291,3 +291,37 @@ always carries the meaning, so the cells stay readable with a red-green
 deficiency; never use the colours alone (no bare dots). Green and red are
 close to the zone hues (§8.9), so form cells stay out of zoned tables, where
 a green cell next to a red rail would read as a zone.
+
+### 8.13 Type palette — tokens in `globals.css`
+
+The 18 Pokémon types (`--type-normal` … `--type-fairy`, also as `bg-type-*`)
+are the circle colours of the type icons in `public/type-icons/`
+(`partywhale/pokemon-type-icons`, MIT, licence beside the files), so an icon
+and anything tinted in its type agree. Game colours, the same in both modes.
+They tint only what belongs to one type (the move card: border at 55 %, fill
+at 13 % over `--card`); text stays on the theme tokens. Never use them for
+anything that is not a type.
+
+### 8.14 Short label, definition behind it — `<InfoLabel>` (`src/components/info-label.tsx`)
+
+A label that needs a longer definition stays short ("Nutzung", "Siegquote")
+and carries the definition behind it: dotted underline, a navy box (popover
+colours in dark) on hover, keyboard focus and tap. CSS only, no client JS.
+Inside a control that is already focusable (a sortable column head) use
+`<InfoTooltip>` and put `group/info` on the control. Definitions explain the
+hub's own counting, never game knowledge competitive players have
+(constitution, Principle V).
+
+### 8.15 Ranking table (stats)
+
+`src/features/pokemon-stats/components/ranking-table.tsx`: a real table in a
+`rounded-[10px] border` card that scrolls sideways inside the card when it
+does not fit (a phone); no column is dropped or folded. Rank and icon stay
+pinned at the left edge (rank and name where there is no icon) with a
+hairline where the pinned part ends on a phone; pinned cells sit on
+`bg-background` with the hover tint as an overlay. Column heads are the sort
+controls (orange arrow on the active one, a second click reverses). The sort
+key carries the weight: semibold value plus a 5px bar in `--chart-1`, scaled
+to the largest entry shown; secondary values (a win rate) are plain numbers
+without colour. A control that exists for only some views (a per-category
+filter) keeps its slot on every view, so switching never moves the table.

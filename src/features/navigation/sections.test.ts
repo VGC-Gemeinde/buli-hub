@@ -15,7 +15,14 @@ describe("sectionRow", () => {
         }),
       ),
     ).toEqual([
-      ["Übersicht", "Playoffs", "Relegation", "Spielplan", "Favoriten"],
+      [
+        "Übersicht",
+        "Playoffs",
+        "Relegation",
+        "Spielplan",
+        "Favoriten",
+        "Statistiken",
+      ],
     ]);
     expect(
       labels(
@@ -25,13 +32,15 @@ describe("sectionRow", () => {
           published: { playoffs: false, relegation: true },
         }),
       ),
-    ).toEqual([["Übersicht", "Relegation", "Spielplan", "Favoriten"]]);
+    ).toEqual([
+      ["Übersicht", "Relegation", "Spielplan", "Favoriten", "Statistiken"],
+    ]);
   });
 
-  it("gives the Liga its pages while a season runs, Favoriten for everyone", () => {
+  it("gives the Liga its pages while a season runs, Favoriten and Statistiken for everyone", () => {
     expect(
       labels(sectionRow("liga", { phase: "regular_season", role: null })),
-    ).toEqual([["Übersicht", "Spielplan", "Favoriten"]]);
+    ).toEqual([["Übersicht", "Spielplan", "Favoriten", "Statistiken"]]);
     expect(
       sectionRow("liga", { phase: "schedule_hidden", role: "staff" }),
     ).toBeNull();
@@ -109,6 +118,13 @@ describe("activeHref", () => {
 
   it("marks Favoriten on its page", () => {
     expect(activeHref(liga, "/favoriten")).toBe("/favoriten");
+  });
+
+  it("marks Statistiken on every stats page, details included", () => {
+    expect(activeHref(liga, "/statistiken/pokemon")).toBe("/statistiken");
+    expect(activeHref(liga, "/statistiken/attacken/fakeout")).toBe(
+      "/statistiken",
+    );
   });
 });
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DateTimePicker } from "@/components/date-picker";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { FieldError } from "@/components/field-error";
+import { InfoLabel } from "@/components/info-label";
 import { ActionLink, InlineLink } from "@/components/links";
 import { PlayerGrid, type RegisteredPlayer } from "@/components/player-grid";
 import { SectionHeader } from "@/components/section-header";
@@ -28,6 +29,14 @@ import {
   FAVORITES_GALLERY_EMPTY,
 } from "@/features/dev/favorites-fixture";
 import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
+import {
+  STATS_COLUMNS,
+  STATS_ITEM_ROWS,
+  STATS_MOVE_CARDS,
+  STATS_MOVE_ROWS,
+  STATS_POKEMON_ROWS,
+  STATS_TYPES,
+} from "@/features/dev/pokemon-stats-fixture";
 import {
   GALLERY_CARDS,
   GALLERY_ICONS_A,
@@ -75,6 +84,14 @@ import {
 import { afterSeasonSchedule } from "@/features/playoffs/dashboard";
 import { resolveRelegationPlayoffs } from "@/features/playoffs/progression";
 import { publicCards } from "@/features/playoffs/public-view";
+import { MoveCardView } from "@/features/pokemon-stats/components/move-card-view";
+import { RankingTable } from "@/features/pokemon-stats/components/ranking-table";
+import { StatsFilters } from "@/features/pokemon-stats/components/stats-filters";
+import { TypeIcon } from "@/features/pokemon-stats/components/stats-icon";
+import {
+  NoSheetsYet,
+  NothingSelected,
+} from "@/features/pokemon-stats/components/stats-shell";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { FullSchedule } from "@/features/public-league/components/full-schedule";
@@ -2618,6 +2635,116 @@ export function Gallery() {
           <div className="flex flex-wrap gap-4">
             <FavoriteButton playerId="gallery-off" initialOn={false} />
             <FavoriteButton playerId="gallery-on" initialOn />
+          </div>
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Statistiken</h2>
+        <Specimen label="InfoLabel: kurzes Label, Definition bei Hover, Fokus oder Tippen">
+          <div className="flex gap-8 font-semibold text-[11.5px] text-muted-foreground uppercase tracking-[0.12em]">
+            <InfoLabel label="Nutzung">
+              Anteil der Teams, die dieses Pokémon mitgebracht haben.
+            </InfoLabel>
+            <InfoLabel label="Siegquote" align="right">
+              Anteil der gewonnenen Matches der Teams, die es mitgebracht haben.
+            </InfoLabel>
+          </div>
+        </Specimen>
+        <Specimen label="Rangliste Pokémon (Mega X/Y/Z, unbekanntes Sprite, keine Siegquote)">
+          <RankingTable
+            rows={STATS_POKEMON_ROWS}
+            columns={STATS_COLUMNS}
+            nameLabel="Pokémon"
+            withIcon
+          />
+        </Specimen>
+        <Specimen label="Rangliste Items (fremder Mega-Stein, Kein Item, <0,1 %)">
+          <RankingTable
+            rows={STATS_ITEM_ROWS}
+            columns={STATS_COLUMNS}
+            nameLabel="Items"
+            withIcon
+          />
+        </Specimen>
+        <Specimen label="Rangliste Attacken (Typ-Icon, unbekannte Attacke)">
+          <RankingTable
+            rows={STATS_MOVE_ROWS}
+            columns={STATS_COLUMNS}
+            nameLabel="Attacken"
+            withIcon
+          />
+        </Specimen>
+        <Specimen label="Filter: nichts gesetzt (Zurücksetzen reserviert, unsichtbar) · gesetzt · Nachsaison begonnen">
+          <div className="flex flex-col gap-4">
+            <StatsFilters
+              phase={null}
+              selects={[
+                {
+                  id: "g1-div",
+                  label: "Division",
+                  value: "",
+                  set: false,
+                  options: [{ value: "", label: "Alle Divisionen", href: "#" }],
+                },
+                {
+                  id: "g1-week",
+                  label: "Spieltag",
+                  value: "",
+                  set: false,
+                  options: [{ value: "", label: "Alle Spieltage", href: "#" }],
+                },
+              ]}
+              reset={{ href: "#", visible: false }}
+            />
+            <StatsFilters
+              phase={[
+                { label: "Alle", href: "#", active: false },
+                { label: "Reguläre Saison", href: "#", active: false },
+                { label: "Nachsaison", href: "#", active: true },
+              ]}
+              selects={[
+                {
+                  id: "g2-div",
+                  label: "Division",
+                  value: "2",
+                  set: true,
+                  options: [{ value: "2", label: "Division 2", href: "#" }],
+                },
+                {
+                  id: "g2-week",
+                  label: "Spieltag",
+                  value: "",
+                  set: false,
+                  options: [{ value: "", label: "Alle Wochen", href: "#" }],
+                },
+              ]}
+              reset={{ href: "#", visible: true }}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Attacken-Karte: verschiedene Typen, Status-Attacke, trifft immer">
+          <div className="flex flex-wrap gap-4">
+            {STATS_MOVE_CARDS.map((card) => (
+              <MoveCardView key={card.name} card={card} />
+            ))}
+          </div>
+        </Specimen>
+        <Specimen label="Typ-Icons (partywhale/pokemon-type-icons, MIT)">
+          <div className="flex flex-wrap gap-3">
+            {STATS_TYPES.map((type) => (
+              <TypeIcon key={type} type={type} />
+            ))}
+          </div>
+        </Specimen>
+        <Specimen label="Leere Zustände">
+          <div className="flex flex-col gap-4">
+            <NoSheetsYet />
+            <NothingSelected
+              title="Keine Teams in dieser Auswahl"
+              body="Division 4 · Spieltag 6 · noch kein Match gemeldet."
+              resetHref="#"
+            />
           </div>
         </Specimen>
       </section>

@@ -49,6 +49,7 @@ export function sectionRow(
                   : []),
                 { href: "/spielplan", label: "Spielplan" },
                 { href: "/favoriten", label: "Favoriten" },
+                { href: "/statistiken", label: "Statistiken" },
               ],
             },
           ]

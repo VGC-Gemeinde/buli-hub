@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "buli": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:19467d4fa9ab6812c79486c84933dbd6a258e39cde70e23876412c929a4bcea7",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "speckit.buli.mockups",
+          "speckit.buli.ship"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-10-16T07:07:30.787461+00:00"
+    }
+  }
+}

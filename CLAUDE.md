@@ -1,12 +1,18 @@
 # Buli Hub — Project Context
 
-AI-assisted development context file. Read this before making any technical decisions or writing code.
+AI-assisted development context file: the architecture map, commands and environments. The rules every change follows are the constitution, imported below.
 
 ## What this project is
 
 Buli Hub is the tournament platform for the **VGC Bundesliga**, an online league run by the VGC Gemeinde (the largest German-speaking VGC / Pokémon community). Users are players and admins/organizers. Community coordination happens on Discord; the web UI is the primary interface.
 
-**All domain decisions (league structure, match formats, rules, data model) are made during feature planning — never in this file.** This file covers the technical base only.
+**All domain decisions (league structure, match formats, rules, data model) are made in a feature's spec (`specs/`), never in this file.** This file covers the technical base and the map of what exists.
+
+## Rules
+
+@.specify/memory/constitution.md
+
+The constitution (`.specify/memory/constitution.md`) holds every rule a change follows: architecture principles, testing, look and UX, copy, German time, spoiler protection, the feature process with its gates, and the Definition of Done. It applies to every change, also to bug fixes outside the Spec Kit flow. It is amended only through `/speckit-constitution` with the maintainer's approval; this file must not contradict it.
 
 ## Architecture (pinned — do not change without discussion)
 
@@ -42,37 +48,45 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
 - **Three environments** — local (Supabase CLI), **staging** (`buli-hub-staging` on Cloud Run + its own Supabase project, deployed from `dev`), and production (deployed from `main`). Staging exists to meet production-shaped data and rehearse migrations before production does; its database is refreshed on demand from production, never automatically. Full runbook: `docs/deployment.md` §7.
 - **CI/CD** — `.github/workflows/ci.yml`: every push/PR runs Biome, typecheck, the full test suite against a Supabase CLI stack, and a production build. Pushes to `main` **and** `dev` then build the image, apply migrations (`drizzle-kit migrate`) and deploy — the same job, with `environment:` selecting `PROD` or `STAGING`, so the two cannot drift. Every `main` commit ships to production. `.github/workflows/staging-refresh.yml` clones production into staging, manual trigger only. One-time infrastructure setup lives in `docs/deployment.md`.
 
-## Architectural principles
+The feature paragraphs above are the **living map** of the hub: each says what exists now and where its record lives. A feature that ships adds or updates its paragraph and points it at its spec (`specs/NNN-…/`); a paragraph that still points at `docs/plans/` describes a feature built before Spec Kit.
 
-- **All business logic lives in the web app / database layer.** Discord integration is a thin output channel: it posts and notifies, it never decides.
-- **Domain logic is pure functions.** Any rule or computation logic must be written as pure TypeScript functions, separated from database access, so it is exhaustively unit-testable.
-- **Keep UI components dumb.** Logic belongs in tested functions and server actions; components only display. This is the explicit tradeoff that made cutting E2E tests safe.
-- **Schema is code.** The Drizzle schema and committed SQL migrations are the source of truth for the data model. Any schema change goes through generate → review SQL → migrate.
-- **Boring, well-documented tools over clever ones — this is a lesson learned, not a preference.** A previous iteration of this project failed on obscure tooling: AI assistance produced confidently wrong code for niche tools, and time went into fighting the toolchain instead of building features. The stack was chosen for AI-assisted development: one language end-to-end, types flowing DB → API → UI, everything visible in the repo, massive training/community representation for every tool. Do not introduce niche or exciting libraries without explicit discussion.
-- **Feature-first folder structure.** Code is organized by feature (vertical slice), not by layer:
+## Code layout
 
-  ```
-  src/
-    features/
-      <feature-name>/   # components, actions, logic, tests for this feature
-      ...
-    lib/                # genuinely shared: db client, discord.ts, auth helpers
-    db/
-      schema.ts         # Drizzle schema stays central (tables cross features)
-    app/                # Next.js routes — thin wrappers importing from features/
-  scripts/              # maintenance entry points, run via `node scripts/<x>.ts`
-  ```
+Code is organized by feature (vertical slice), not by layer:
 
-  `scripts/` holds orchestration only (spawning `pg_dump`, `psql`, `drizzle-kit`). Anything with logic worth testing lives under `src/features/` as a pure function and is imported from there — Node 24 runs TypeScript directly, so scripts need no build step and no extra dependency. Node does not resolve the `@/` alias or extension-less imports on its own, so a script that imports feature code which in turn imports `@/lib/db` or `@/db/schema` runs with `--import ./scripts/load-env.mjs --import ./scripts/src-alias.register.mjs` (`.env` loaded before any module evaluates, plus a 30-line resolve hook; see `usage:backfill` in `package.json`). A script's own `process.loadEnvFile` is too late for modules with import-time env guards such as `src/lib/db.ts`. Import-free pure modules, like the clone helpers, need nothing.
+```
+src/
+  features/
+    <feature-name>/   # components, actions, logic, tests for this feature
+    ...
+  lib/                # genuinely shared: db client, discord.ts, auth helpers
+  db/
+    schema.ts         # Drizzle schema stays central (tables cross features)
+  app/                # Next.js routes — thin wrappers importing from features/
+scripts/              # maintenance entry points, run via `node scripts/<x>.ts`
+```
 
-## Testing strategy (pinned)
+`scripts/` holds orchestration only (spawning `pg_dump`, `psql`, `drizzle-kit`). Anything with logic worth testing lives under `src/features/` as a pure function and is imported from there — Node 24 runs TypeScript directly, so scripts need no build step and no extra dependency. Node does not resolve the `@/` alias or extension-less imports on its own, so a script that imports feature code which in turn imports `@/lib/db` or `@/db/schema` runs with `--import ./scripts/load-env.mjs --import ./scripts/src-alias.register.mjs` (`.env` loaded before any module evaluates, plus a 30-line resolve hook; see `usage:backfill` in `package.json`). A script's own `process.loadEnvFile` is too late for modules with import-time env guards such as `src/lib/db.ts`. Import-free pure modules, like the clone helpers, need nothing.
 
-- **Vitest unit tests** — the priority. Cover all domain logic (the pure functions). Correctness of computed results is critical to community trust; test exhaustively.
-- **Vitest integration tests against real local Postgres** — run against the Supabase CLI stack. Test RLS policies, constraints, and multi-step flows. Clean state per test file via `supabase db reset` or truncation; shared seed helpers provide fixtures.
-- **The suite refuses to run against a non-local `DATABASE_URL`** (`src/test/local-database.ts`, enforced from `src/test/setup.ts`). The integration tests delete and truncate on startup against whatever that variable points at, so a pasted production string would destroy live data — this is the only thing standing in the way. Override deliberately with `ALLOW_NONLOCAL_TEST_DATABASE=true`.
-- **A test run wipes a `db:clone-prod` fixture**, for the same reason. Re-clone afterwards.
-- **No E2E tests** — deliberate decision. Do not add Playwright or similar.
-- Do not test: UI snapshots, styling, shadcn internals.
+## Documentation layout
+
+Why there are both `specs/` and `docs/plans/`: features were planned in hand-written plans until 2026-10-16; since then they go through GitHub Spec Kit, which keeps one directory per feature. The old plans were not migrated, because code comments link them and they remain the best record of how the existing behavior came to be.
+
+- **`specs/NNN-feature/`**: one directory per feature since Spec Kit (`spec.md`, `mockups/`, `plan.md`, `research.md`, `tasks.md`, …). Frozen when the feature ships; history, not a living document.
+- **`docs/plans/`**: **legacy.** Plans of every feature built before Spec Kit. Read as history; nothing new is added. A plan whose content a later spec supersedes carries a backlink note at its top.
+- **`docs/decisions/`**: **legacy.** Cross-feature decisions from before Spec Kit; the rules from them now live in the constitution. New cross-feature decisions are constitution amendments.
+- **`design/<FEATURE>.md`**: **legacy** design hand-offs from the time a designer polished features after a first build (`NAVIGATION.md` and `STAFF-DASHBOARD.md` included; the code they shaped is the current anatomy). Feature design now happens in the spec's mockups. `design/go-live/*.dc.html` and `design/REGELWERK.reference.html` are records of what was handed off.
+- **Living documents**: this file, the constitution, `design/DESIGN.md` (the design system; a new cross-feature anatomy is added here) and `docs/deployment.md` (the runbook).
+
+Precedence when documents disagree: code and tests, then the newest spec, then older specs and legacy documents.
+
+## Spec Kit
+
+- **CLI pinned** to `specify-cli` 1.1.3: `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.1.3` (needs `uv`). Upgrades are deliberate: bump the tag here, run `specify init --here --force --integration claude`, review the diff.
+- **Generated, do not edit:** `.claude/skills/speckit-*` and `.specify/templates/*.md`, `.specify/scripts/`. An upgrade overwrites them.
+- **Our customizations** survive upgrades: the constitution, the template overrides in `.specify/templates/overrides/` (spec with a UX & Mockups section, plan with the pinned stack and our sections, tasks with mandatory tests and the Definition of Done), and the project extension `buli` (source in `.specify/extensions-src/buli/`, reinstall after editing with `specify extension add --dev .specify/extensions-src/buli --force`). It adds `/speckit-buli-mockups` as a mandatory hook before `/speckit-plan` and `/speckit-buli-ship` as a mandatory hook after `/speckit-converge`.
+- **No git extension:** Spec Kit creates no branches and makes no commits; work stays on `dev`.
+- The flow, its three maintainer gates and when it applies: constitution, Development Workflow.
 
 ## Commands
 
@@ -107,7 +121,10 @@ Workflow: edit `schema.ts` → `generate` → review generated SQL → `migrate`
 npm test                   # Vitest in watch mode
 npm test -- --run          # single run (CI style)
 ```
-Integration tests require the local Supabase stack to be running.
+Integration tests require the local Supabase stack to be running; shared seed helpers provide fixtures, and each test file starts from a clean state via truncation.
+
+- **The suite refuses to run against a non-local `DATABASE_URL`** (`src/test/local-database.ts`, enforced from `src/test/setup.ts`). The integration tests delete and truncate on startup against whatever that variable points at, so a pasted production string would destroy live data — this is the only thing standing in the way. Override deliberately with `ALLOW_NONLOCAL_TEST_DATABASE=true`.
+- **A test run wipes the local database**, including a `db:clone-prod` fixture and whatever the maintainer is testing by hand. Ask before running the suite while they might be; re-clone afterwards.
 
 ### Code quality
 ```bash
@@ -122,36 +139,30 @@ npm run build && npm start # production build, verify locally
 npx drizzle-kit migrate    # against prod DB URL when deploying schema changes
 ```
 
-## Working method (pinned)
+## Git workflow
 
-- **Features are vertical slices.** A feature is the complete cross-section needed to realize a piece of functionality: view + server actions/routes + schema changes/migration + Discord calls + tests. A backend route alone is not a feature. Work is planned, implemented, and committed as whole slices.
-- **Commits only after maintainer approval.** Present the finished, verified work first; commit (or amend) only when the maintainer explicitly approves. This applies to every commit, including small fixups.
-- **One commit per feature on main.** This is a forcing function for scope discipline: if a feature doesn't fit a reviewable commit, it's too big — split it into smaller features. Migrations ship in the same commit as the code using them, so a revert takes both. Escape hatch: commit freely on a feature branch, squash-merge to main.
+- **Commits only after the maintainer's explicit approval**, including small fixups. One commit per feature on `dev`, migrations included, so a revert takes both.
 - **`dev` is where work happens; `main` is the release branch.** Default to `dev` — commit there freely, push as often as you like, and every push deploys to staging. Production only ever changes by promoting `dev` into `main`, always through a pull request. **Direct pushes to `main` are rejected server-side** by the `main-protection` ruleset: a PR is required, the `checks` job must pass, only squash merges are allowed, and there are no bypass actors, so it applies to admins too. `.githooks/pre-push` refuses the same push locally with a more useful message; enable it once per clone with `git config core.hooksPath .githooks`. Because the ruleset is authoritative, `--no-verify` will not get past it: an emergency means disabling the ruleset in Settings → Rules, pushing, and re-enabling it.
 
   ```bash
   # work
   git checkout dev && …                      # commit freely; each push → staging
   # promote, once staging looks right
-  gh pr create --base main --head dev --title "<feature>"
+  gh pr create --base main --head dev --title "<features>"
   gh pr merge --squash --delete-branch=false  # one commit on main → production
   # REQUIRED afterwards, see below
   git checkout dev && git fetch origin && git reset --hard origin/main && git push --force-with-lease
   ```
 
-  **The reset is not optional.** A squash-merge puts one new commit on `main` while `dev` keeps the originals — same tree, divergent history. Skip the reset and the *next* promotion takes the old merge base, replays commits already on `main`, and conflicts. Resetting `dev` onto `main` after every promotion keeps them a single line. (Merge commits would avoid the reset but put every intermediate commit on `main`, breaking one-commit-per-feature.)
+  **The reset is not optional.** A squash-merge puts one new commit on `main` while `dev` keeps the originals — same tree, divergent history. Skip the reset and the *next* promotion takes the old merge base, replays commits already on `main`, and conflicts. Resetting `dev` onto `main` after every promotion keeps them a single line. (Merge commits would avoid the reset but put every intermediate commit on `main`, breaking one commit per promotion.)
 
   Corollaries: never let work exist only on `dev` for long — it is promoted or discarded. A production hotfix that cannot wait for `dev` goes on a branch off `main` and straight into a PR to `main`, then `dev` is reset onto it.
   - **Staging is not a substitute for the local loop.** Push to `dev` when something genuinely needs a real deployment — hosted Supabase, the Discord OAuth round-trip, Cloud Run behaviour, a migration meeting production-sized data. For everything else the local stack with `npm run db:clone-prod` is more realistic *and* faster than waiting for a deploy.
-- **Plan before implementing — always.** Every feature starts with a written plan (`docs/plans/<feature>.md` or `features/<name>/PLAN.md`): scope (in/out), schema changes, affected routes/views, Discord touchpoints, test cases, open questions. The plan is approved before implementation starts. Plan size scales with feature size — three bullet points is a valid plan for a tiny feature.
-- **Documentation describes the present, not the journey.** Plans, decision docs, and code comments must make sense to a reader with zero conversation or revision history. When a spec changes, rewrite the affected text as if the current design had always been the design — no correction notes, no "previously X, now Y". History lives in git; reasoning that is still relevant to the current state belongs in `docs/decisions/`.
-- **Session independence: if knowledge only exists in a chat, it doesn't exist.** Any AI session must be able to start fresh from repo state alone. A feature is only complete when: code is committed, its plan is marked done, and CLAUDE.md is updated if anything structural changed. Cross-feature decisions and their reasoning go into `docs/decisions/`.
-- **Design happens in two passes.** A feature's first implementation carries a *rudimentary but intentional* design: functional and laid out, built with the design-system tokens (`design/DESIGN.md`) so it is on-brand and coherent — a viewer should not read it as a throwaway placeholder — but deliberately not polished. That working feature is what the maintainer takes to the designer, who returns a polished design as a hand-off doc at `design/<FEATURE>.md` (companion to `DESIGN.md`). A later **design pass** implements the hand-off and changes **views only** — domain logic, queries and tests stay as-is. So the arc is: functional build → designer hand-off → design pass. Do not wait for a hand-off to build; do not ship bare, unstyled controls either. The design passes are made for desktop views first. You still need to optimize for mobile your self.
-- **The `/dev` tooling tracks the UI.** `/dev` offers test-persona logins, impersonation of any real user, and a component-state gallery at `/dev/ui`. A feature that adds components with visual states extends the gallery (`src/features/dev/components/gallery.tsx`); a feature that adds user-specific data or new auth-metadata shapes extends the personas (`src/features/dev/personas.ts`). This is part of a feature's definition of done.
-  - The gate is `devToolsEnabled()` (`src/features/dev/enabled.ts`): always on in `npm run dev`; outside development it needs `ENABLE_DEV_TOOLS=true` **and** an unlock cookie set via `/dev/unlock?token=<DEV_TOOLS_TOKEN>`. Pages are gated once in `src/app/dev/layout.tsx`; route handlers are not covered by layouts and must call `devToolsEnabled()` themselves. **Neither variable is ever set on the production Cloud Run service** — together they allow signing in as any user.
-- **Quotes: straight `"` only.** Opening and closing are both the plain ASCII `"`, exactly as in English. The typographically correct German pair `„…"` is not used anywhere: it is right in a textbook and nobody actually writes it, and having two quote glyphs invited a third (`“`) to creep in as a stray closer. This covers everything we author, not just league voice: UI copy, Discord messages, code comments, CSS comments, `docs/`, `design/*.md` and this file. Exempt for the same reason as the em-dash rule: the designer's `design/go-live/*.dc.html` and `design/REGELWERK.reference.html`, which are records of what was handed off. Watch the one hazard when writing a quote inside a JS/TS string or JSX attribute delimited by `"` — switch that delimiter to `'`, do not escape. The app-wide sweep was done on 2026-08-07, so a new `„` or `“` is a regression.
-- **Copy: no em-dashes.** Every string a user reads is written in plain, natural German without `—`. That means the web UI (headings, body copy, hints, empty states, button labels, error messages, `title` tooltips) **and the Discord messages** the bot posts (`src/features/discord-posts/messages.ts`) — the results channel and MotW/VOD announcements are league voice just as much as a page is. Split the sentence with a full stop, or use a comma or colon, whichever a person would actually write. "Der Spieltag ist vorbei. Nachtragen ist noch möglich." not "Der Spieltag ist vorbei — nachtragen ist noch möglich." For a separator inside one line, the codebase's middle dot (`·`) is the house choice. Four things this does *not* cover: `—` as the empty-value placeholder in a cell or chip (an established glyph, see the `playerName()` fallback and `ddMM`); code comments, which keep the existing em-dash-heavy style; `/dev` tooling copy (`src/app/dev`, `src/features/dev` labels and personas), which is not league voice; and the designer's `design/go-live/*.dc.html` reference artifacts, which are a record of what was handed off rather than our own docs. A design hand-off `.md` that *quotes* UI copy is covered, so a later design pass cannot reintroduce a `—` from it. Applies to every feature, including copy carried over from a design hand-off; the app-wide sweep was done on 2026-08-05, so a new `—` in copy is a regression.
-- **Don't be a yes-sayer.** The maintainer explicitly wants pushback: critically evaluate suggestions, call out wrong or suboptimal decisions, and ask for justification when a decision seems doubtful. Challenge first, then implement.
+  - **One PR per promotion**, even when `dev` holds several features; its squash commit message lists the features it contains.
+
+## `/dev` tooling
+
+`/dev` offers test-persona logins, impersonation of any real user, and a component-state gallery at `/dev/ui` (`src/features/dev/components/gallery.tsx`, personas in `src/features/dev/personas.ts`); when a feature must extend them is in the constitution. The gate is `devToolsEnabled()` (`src/features/dev/enabled.ts`): always on in `npm run dev`; outside development it needs `ENABLE_DEV_TOOLS=true` **and** an unlock cookie set via `/dev/unlock?token=<DEV_TOOLS_TOKEN>`. Pages are gated once in `src/app/dev/layout.tsx`; route handlers are not covered by layouts and must call `devToolsEnabled()` themselves. **Neither variable is ever set on the production Cloud Run service** — together they allow signing in as any user.
 
 ## The development loop
 
@@ -170,4 +181,4 @@ Common commands should be wrapped as npm scripts (`db:generate`, `db:migrate`, `
 
 - None currently.
 
-Domain-level open questions are intentionally not tracked here — they belong to feature plans (`docs/plans/`).
+Domain-level open questions are intentionally not tracked here; they belong to a feature's spec (`specs/`).

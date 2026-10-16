@@ -11,11 +11,14 @@ import { MotwBadge } from "./motw-badge";
 // Server-renderable; the spoiler reveal lives inline in ReportSummary.
 export function MotwMatchBanner({
   round,
+  weekName = `Spieltag ${round}`,
   youtubeUrl,
   notPublic = false,
   photoHint = false,
 }: {
   round: number;
+  // "Spieltag 3", or "Woche 1" after the regular season.
+  weekName?: string;
   youtubeUrl: string | null;
   notPublic?: boolean;
   // A participant of this match who has no stream photo yet. One line, no
@@ -26,7 +29,7 @@ export function MotwMatchBanner({
     <div className="mb-7 flex flex-wrap items-center gap-x-3.5 gap-y-2.5 rounded-xl border border-brand-orange/40 bg-brand-orange/5 px-4 py-3">
       <MotwBadge label="full" />
       <span className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.08em]">
-        Spieltag {round}
+        {weekName}
       </span>
       {notPublic ? (
         <span className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-brand-orange/60 px-2.5 py-[3px] font-semibold text-[11px] text-brand-orange uppercase tracking-[0.08em]">

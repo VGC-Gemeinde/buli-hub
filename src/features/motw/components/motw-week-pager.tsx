@@ -39,6 +39,8 @@ export function MotwWeekPager({
       onSelect={onSelect}
       mark={(round) => <Mark state={stateOf(round)} />}
       describe={(round) => MARK_LABEL[stateOf(round)]}
+      name={(round) => byRound.get(round)?.name ?? `Spieltag ${round}`}
+      chip={(round) => byRound.get(round)?.chip ?? String(round)}
       legend={
         <>
           <PagerLegendItem mark={<Mark state="vod" />}>

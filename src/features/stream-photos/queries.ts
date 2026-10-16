@@ -7,6 +7,7 @@ import {
   recordingHolds,
   subDivisions,
 } from "@/db/schema";
+import { regularPlayerAId } from "@/features/season/regular-match";
 import { db } from "@/lib/db";
 
 // Reads and writes for the stream photo. The picture itself lives in
@@ -81,7 +82,7 @@ export async function streamPlayersOfWindow(
   windowId: string,
 ): Promise<Set<string>> {
   const rows = await db
-    .select({ a: matches.playerAId, b: matches.playerBId })
+    .select({ a: regularPlayerAId, b: matches.playerBId })
     .from(matches)
     .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
     .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))

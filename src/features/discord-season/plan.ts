@@ -11,6 +11,7 @@ import {
   groupChannelName,
   groupRoleAllowOverwrite,
   groupRoleName,
+  STAGE_ROOM_NAMES,
 } from "./naming";
 import type { SkipReason } from "./report";
 
@@ -18,7 +19,17 @@ import type { SkipReason } from "./report";
 // and what Discord currently holds, what has to change. The converge
 // (`converge.ts`) executes the answer; nothing here talks to anything.
 
-export type ResourceKind = "group_role" | "group_channel";
+export type ResourceKind =
+  | "group_role"
+  | "group_channel"
+  | "playoff_role"
+  | "playoff_channel"
+  | "relegation_role"
+  | "relegation_channel";
+
+// A stage after the regular season with a room of its own
+// (docs/plans/relegation-and-playoffs.md).
+export type StageRoom = "playoff" | "relegation";
 
 export type SeasonGroup = {
   subDivisionId: string;
@@ -26,64 +37,111 @@ export type SeasonGroup = {
   position: number;
 };
 
-// An active placed player (not dropped, in a sub-division).
+// An active placed player (not dropped, in a sub-division), and the stage
+// rooms they belong in: those where they have a match.
 export type SeasonPlayer = {
   userId: string;
   name: string;
   discordId: string | null;
   subDivisionId: string;
+  stages?: readonly StageRoom[];
 };
 
 export type TrackedResource = {
-  subDivisionId: string;
+  // Null for a stage room's role and channel.
+  subDivisionId: string | null;
   kind: ResourceKind;
   discordId: string;
 };
 
-// Per group: the role and channel either exist on Discord (tracked id that
+// A room: a role and the private channel it sees. A group's room is keyed by
+// its sub-division id, a stage's by the stage.
+export type SeasonRoom = {
+  key: string;
+  roleName: string;
+  channelName: string;
+};
+
+export function groupRoom(group: SeasonGroup): SeasonRoom {
+  return {
+    key: group.subDivisionId,
+    roleName: groupRoleName(group.tier, group.position),
+    channelName: groupChannelName(group.tier, group.position),
+  };
+}
+
+// How the report names a stage's room.
+export const STAGE_ROOM_LABEL: Record<StageRoom, string> = {
+  playoff: "Playoffs",
+  relegation: "Relegation",
+};
+
+export function stageRoom(stage: StageRoom): SeasonRoom {
+  return {
+    key: stage,
+    roleName: STAGE_ROOM_NAMES[stage].role,
+    channelName: STAGE_ROOM_NAMES[stage].channel,
+  };
+}
+
+export function isStageKey(key: string): key is StageRoom {
+  return key === "playoff" || key === "relegation";
+}
+
+// The tracked kinds of a room's role and channel.
+export function roomKinds(key: string): {
+  role: ResourceKind;
+  channel: ResourceKind;
+} {
+  if (isStageKey(key)) {
+    return { role: `${key}_role`, channel: `${key}_channel` };
+  }
+  return { role: "group_role", channel: "group_channel" };
+}
+
+// Per room: the role and channel either exist on Discord (tracked id that
 // is still live) or must be created — including tracked ids whose object
 // disappeared, which the converge then replaces in the table.
 export type ResourceState =
   | { status: "exists"; id: string }
   | { status: "create"; name: string };
 
-export type GroupResourcePlan = {
-  subDivisionId: string;
+export type RoomResourcePlan = {
+  key: string;
   role: ResourceState;
   channel: ResourceState;
 };
 
-export function planGroupResources(input: {
-  groups: readonly SeasonGroup[];
+export function planRoomResources(input: {
+  rooms: readonly SeasonRoom[];
   tracked: readonly TrackedResource[];
   // Ids that exist on Discord right now.
   liveRoleIds: ReadonlySet<string>;
   liveChannelIds: ReadonlySet<string>;
-}): GroupResourcePlan[] {
-  const trackedId = (subDivisionId: string, kind: ResourceKind) =>
+}): RoomResourcePlan[] {
+  const trackedId = (key: string, kind: ResourceKind) =>
     input.tracked.find(
-      (row) => row.subDivisionId === subDivisionId && row.kind === kind,
+      (row) =>
+        row.kind === kind &&
+        (row.subDivisionId === null
+          ? row.kind.startsWith(key)
+          : row.subDivisionId === key),
     )?.discordId ?? null;
 
-  return input.groups.map((group) => {
-    const roleId = trackedId(group.subDivisionId, "group_role");
-    const channelId = trackedId(group.subDivisionId, "group_channel");
+  return input.rooms.map((room) => {
+    const kinds = roomKinds(room.key);
+    const roleId = trackedId(room.key, kinds.role);
+    const channelId = trackedId(room.key, kinds.channel);
     return {
-      subDivisionId: group.subDivisionId,
+      key: room.key,
       role:
         roleId !== null && input.liveRoleIds.has(roleId)
           ? { status: "exists", id: roleId }
-          : {
-              status: "create",
-              name: groupRoleName(group.tier, group.position),
-            },
+          : { status: "create", name: room.roleName },
       channel:
         channelId !== null && input.liveChannelIds.has(channelId)
           ? { status: "exists", id: channelId }
-          : {
-              status: "create",
-              name: groupChannelName(group.tier, group.position),
-            },
+          : { status: "create", name: room.channelName },
     };
   });
 }
@@ -138,7 +196,8 @@ export type MemberRolePlan = {
 export function planMemberRoles(input: {
   players: readonly SeasonPlayer[];
   buliRoleId: string;
-  // Live group role per sub-division; absent when the role does not exist.
+  // Live role per room: per sub-division, and per stage once published;
+  // absent when the role does not exist.
   groupRoleIds: ReadonlyMap<string, string>;
   members: readonly GuildMemberRoles[];
 }): MemberRolePlan {
@@ -166,6 +225,12 @@ export function planMemberRoles(input: {
     const wanted = new Set<string>([input.buliRoleId]);
     if (groupRoleId !== null) {
       wanted.add(groupRoleId);
+    }
+    for (const stage of player.stages ?? []) {
+      const stageRoleId = input.groupRoleIds.get(stage);
+      if (stageRoleId !== undefined) {
+        wanted.add(stageRoleId);
+      }
     }
     desired.set(player.discordId, wanted);
     const held = new Set(member.roles);

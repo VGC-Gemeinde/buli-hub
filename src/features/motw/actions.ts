@@ -12,8 +12,14 @@ import {
 import { getMatchResult } from "@/features/reporting/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import {
+  WITHHELD_SOURCE_RELEASE_ERROR,
+  withheldSourceOf,
+} from "@/features/schedule/outcome-guard";
+import { resultLockError } from "@/features/schedule/queries";
+import { relegationPlayoffsSides } from "@/features/schedule/relegation-playoffs-setup";
 import { currentMatchday } from "@/features/season/dashboard";
-import { matchdaysForWindow } from "@/features/season/queries";
+import { allMatchdaysForWindow } from "@/features/season/queries";
 import { latestWindow } from "@/features/staff/queries";
 import { germanToday } from "@/lib/german-time";
 import { type MotwRole, selectableRounds, youtubeUrlSchema } from "./motw";
@@ -33,6 +39,7 @@ function revalidate(matchId: string | null, playerIds: (string | null)[] = []) {
   revalidatePath("/");
   revalidatePath("/spielplan");
   revalidatePath("/staff/spielplan");
+  revalidatePath("/staff/relegation-playoffs");
   revalidatePath("/staff");
   revalidatePath("/staff/motw");
   revalidatePath("/staff/aufnahmen");
@@ -61,17 +68,41 @@ async function featurableMatch(matchId: string) {
   if (!context) {
     return "Match nicht gefunden";
   }
+  // A candidacy or confirmation withholds a result; a regular one is final
+  // once the regular season is closed.
+  const lockError = await resultLockError(matchId);
+  if (lockError) {
+    return lockError;
+  }
   if (context.isBye) {
     return "Ein Spielfrei kann nicht Match of the Week sein";
   }
   const droppedIds = await droppedIdsForWindow(context.windowId);
   if (
-    droppedIds.has(context.playerAId) ||
+    (context.playerAId !== null && droppedIds.has(context.playerAId)) ||
     (context.playerBId !== null && droppedIds.has(context.playerBId))
   ) {
     return "Ein Match mit einem gedroppten Spieler kann nicht Match of the Week sein";
   }
   return context;
+}
+
+// A Relegation or playoff candidate remembers who could play each side when
+// it was nominated, so the workspace can say when that changed
+// (docs/plans/relegation-and-playoffs.md). Regular and tiebreaker matches
+// always carry their players and need no snapshot.
+async function nominatedSidesOf(
+  matchId: string,
+  context: { windowId: string; stage: string },
+): Promise<{ a: string[]; b: string[] } | null> {
+  if (context.stage !== "relegation" && context.stage !== "playoff") {
+    return null;
+  }
+  const { matches } = await relegationPlayoffsSides(context.windowId);
+  const match = matches.find((m) => m.matchId === matchId);
+  return match
+    ? { a: [...match.a.candidates], b: [...match.b.candidates] }
+    : null;
 }
 
 // The rounds currently open for confirming: the running Spieltag and every
@@ -81,7 +112,7 @@ async function openRounds(
   windowId: string,
   selections: readonly { round: number }[],
 ): Promise<Set<number>> {
-  const matchdays = await matchdaysForWindow(windowId);
+  const matchdays = await allMatchdaysForWindow(windowId);
   const today = germanToday();
   const current = currentMatchday(matchdays, today)?.round ?? null;
   return selectableRounds(
@@ -110,7 +141,7 @@ export async function nominateMotwCandidate(input: {
   }
   const [result, matchdays] = await Promise.all([
     getMatchResult(input.matchId),
-    matchdaysForWindow(context.windowId),
+    allMatchdaysForWindow(context.windowId),
   ]);
   const currentRound = currentMatchday(matchdays, germanToday())?.round ?? null;
   if (result !== null) {
@@ -141,6 +172,7 @@ export async function nominateMotwCandidate(input: {
     round: context.round,
     staffId: gate.staffId,
     role: input.role,
+    nominatedSides: await nominatedSidesOf(input.matchId, context),
   });
   revalidate(input.matchId, [context.playerAId, context.playerBId]);
   // Nothing is posted for an open match; kept so the mirror converges even in
@@ -158,6 +190,10 @@ export async function dropMotwCandidate(input: {
   const gate = await staffGate();
   if (!gate.ok) {
     return gate;
+  }
+  const lockError = await resultLockError(input.matchId);
+  if (lockError) {
+    return { ok: false, error: lockError };
   }
   const cleared = await clearMotwRole(input.matchId);
   if (!cleared) {
@@ -187,6 +223,16 @@ export async function confirmMotw(input: {
   const context = await featurableMatch(input.matchId);
   if (typeof context === "string") {
     return { ok: false, error: context };
+  }
+  // Who plays a Relegation or playoff match is settled with the
+  // publication; before that it cannot be played, so it cannot be the
+  // Match of the Week either.
+  if (context.playerAId === null || context.playerBId === null) {
+    return {
+      ok: false,
+      error:
+        "Wer dieses Match spielt, steht erst mit der Veröffentlichung fest. Bis dahin lässt es sich nur als Kandidat wählen.",
+    };
   }
   const selections = await motwForWindow(context.windowId);
   const rounds = await openRounds(context.windowId, selections);
@@ -229,12 +275,20 @@ export async function revokeMotw(input: {
   if (!window) {
     return { ok: false, error: "Keine laufende Saison" };
   }
-  const rounds = await openRounds(window.id, await motwForWindow(window.id));
+  const selections = await motwForWindow(window.id);
+  const rounds = await openRounds(window.id, selections);
   if (!rounds.has(input.round)) {
     return {
       ok: false,
       error: "Vergangene Spieltage lassen sich nicht mehr ändern",
     };
+  }
+  // Revoking holds the match back again, which a final regular result no
+  // longer allows.
+  const selected = selections.find((s) => s.round === input.round);
+  const lockError = selected ? await resultLockError(selected.matchId) : null;
+  if (lockError) {
+    return { ok: false, error: lockError };
   }
   const matchId = await deleteMotw(window.id, input.round);
   revalidate(matchId);
@@ -295,6 +349,16 @@ export async function saveMotwYoutubeUrl(input: {
       };
     }
     url = parsed.data;
+  }
+  // The VOD releases the result; a result that builds on a withheld one is
+  // released after it (docs/plans/relegation-and-playoffs.md).
+  if (url !== null) {
+    const selection = (await motwForWindow(window.id)).find(
+      (s) => s.round === input.round,
+    );
+    if (selection && (await withheldSourceOf(selection.matchId))) {
+      return { ok: false, error: WITHHELD_SOURCE_RELEASE_ERROR };
+    }
   }
   const matchId = await setMotwYoutubeUrl({
     windowId: window.id,

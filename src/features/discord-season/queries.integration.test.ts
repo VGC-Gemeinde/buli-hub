@@ -102,6 +102,7 @@ describe("listPlacedPlayers", () => {
       name: "Alice",
       discordId: "100000000000000001",
       subDivisionId: sd1a,
+      stages: [],
     });
     // No Discord id in the metadata → null, the plan skips them by name.
     expect(players.find((p) => p.userId === bob)).toEqual({
@@ -109,6 +110,7 @@ describe("listPlacedPlayers", () => {
       name: "bob",
       discordId: null,
       subDivisionId: sd1b,
+      stages: [],
     });
   });
 });
@@ -184,5 +186,28 @@ describe("sync state", () => {
       sql`update discord_season_sync_state set report = '{"bogus": true}'::jsonb where window_id = ${windowId}`,
     );
     expect(await getSyncState(windowId)).toBeNull();
+  });
+});
+
+describe("stage rooms", () => {
+  it("records a stage room's resources once per season and kind", async () => {
+    await recordResource({
+      windowId,
+      subDivisionId: null,
+      kind: "playoff_role",
+      discordId: "p-1",
+    });
+    await recordResource({
+      windowId,
+      subDivisionId: null,
+      kind: "playoff_role",
+      discordId: "p-2",
+    });
+    const rows = (await trackedResources(windowId)).filter(
+      (row) => row.kind === "playoff_role",
+    );
+    expect(rows).toEqual([
+      { subDivisionId: null, kind: "playoff_role", discordId: "p-2" },
+    ]);
   });
 });

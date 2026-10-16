@@ -5,6 +5,9 @@ import type {
 } from "@/features/public-league/queries";
 import { canHold } from "@/features/recordings/holds";
 import type { Identity, MatchdayLite } from "@/features/season/dashboard";
+import { weekNames } from "@/features/season/week-names";
+
+export { weekNames } from "@/features/season/week-names";
 
 // Pure domain logic for the Match of the Week (never translated): the staff
 // todo derivation, YouTube-URL validation, the candidate model of a week
@@ -47,6 +50,8 @@ export const youtubeUrlSchema = z
 // anything.
 export type MotwTodo = {
   round: number;
+  // "Spieltag 7", "Woche 1".
+  name: string;
   kind: "confirm" | "nominate";
   urgency: "warning" | "urgent";
 } | null;
@@ -58,8 +63,12 @@ export function motwTodo(input: {
   confirmedRounds: ReadonlySet<number>;
   // Rounds with at least one nominated candidate.
   candidateRounds: ReadonlySet<number>;
+  // A round's name; "Spieltag n" unless the round is a week after the
+  // regular season.
+  weekName?: (round: number) => string;
 }): MotwTodo {
   const { currentRound, totalRounds, confirmedRounds, candidateRounds } = input;
+  const name = input.weekName ?? ((round: number) => `Spieltag ${round}`);
 
   // The latest finished week whose candidates were never confirmed. Without a
   // running round every round counts as finished (`weekState`).
@@ -74,7 +83,12 @@ export function motwTodo(input: {
     }
   }
   if (unconfirmed !== null) {
-    return { round: unconfirmed, kind: "confirm", urgency: "urgent" };
+    return {
+      round: unconfirmed,
+      name: name(unconfirmed),
+      kind: "confirm",
+      urgency: "urgent",
+    };
   }
 
   if (currentRound === null) {
@@ -83,11 +97,21 @@ export function motwTodo(input: {
   const open = (round: number) =>
     !candidateRounds.has(round) && !confirmedRounds.has(round);
   if (open(currentRound)) {
-    return { round: currentRound, kind: "nominate", urgency: "urgent" };
+    return {
+      round: currentRound,
+      name: name(currentRound),
+      kind: "nominate",
+      urgency: "urgent",
+    };
   }
   const next = currentRound + 1;
   if (next <= totalRounds && open(next)) {
-    return { round: next, kind: "nominate", urgency: "warning" };
+    return {
+      round: next,
+      name: name(next),
+      kind: "nominate",
+      urgency: "warning",
+    };
   }
   return null;
 }
@@ -193,7 +217,12 @@ export function initialMotwRound(input: {
 // division (the Gesamttabelle in division mode, the group table otherwise).
 export type MotwBlockData = {
   match: PublicMatch;
+  // "Spieltag 3", or "Woche 1" after the regular season.
+  weekName: string;
+  // "Division 1a", or the stage ("Relegation · Division 1 und 2").
   groupName: string;
+  // The Playoff final: the billboard turns into its final variant.
+  final: boolean;
   youtubeUrl: string | null;
   rankA: number | null;
   rankB: number | null;
@@ -256,7 +285,9 @@ export function findMotw(
         table.find((row) => row.userId === userId)?.rank ?? null;
       return {
         match,
+        weekName: `Spieltag ${selection.round}`,
         groupName: group.name,
+        final: false,
         youtubeUrl: selection.youtubeUrl,
         rankA: rankOf(match.playerA.userId),
         rankB: rankOf(match.playerB.userId),
@@ -289,17 +320,62 @@ export type MotwPlayer = Identity & {
   dropped: boolean;
 };
 
-// One pickable match of a Spieltag, as the picker lists it. Byes and
+// A side of a Relegation or playoff match whose player is not settled yet
+// (docs/plans/relegation-and-playoffs.md): what the side is ("Division 2a ·
+// Platz 7", "Sieger HF 1") and everyone who could hold it right now.
+export type MotwOpenSide = {
+  open: true;
+  label: string;
+  candidates: MotwPlayer[];
+};
+
+export type MotwSideData = MotwPlayer | MotwOpenSide;
+
+export function isOpenSide(side: MotwSideData): side is MotwOpenSide {
+  return "open" in side;
+}
+
+// "Alice", or "Alice oder Bob" for an open side; the side's label when
+// nobody can be named yet.
+export function sideName(side: MotwSideData): string {
+  if (!isOpenSide(side)) {
+    return side.name;
+  }
+  return side.candidates.length > 0
+    ? side.candidates.map((player) => player.name).join(" oder ")
+    : side.label;
+}
+
+// The ids a side stands for: its player, or its candidates.
+export function sideIds(side: MotwSideData): string[] {
+  return isOpenSide(side)
+    ? side.candidates.map((player) => player.userId)
+    : [side.userId];
+}
+
+// Both sides have their player. Only a settled match can be played, so only
+// a settled match can be confirmed or opened as a match page.
+export function isSettled(option: {
+  playerA: MotwSideData;
+  playerB: MotwSideData;
+}): boolean {
+  return !isOpenSide(option.playerA) && !isOpenSide(option.playerB);
+}
+
+// One pickable match of a week, as the picker lists it. Byes and
 // drop-decided matches never become options — neither can be featured.
 export type MotwOption = {
   matchId: string;
   round: number;
-  // Division tier for the picker's filter; `groupName` is the sub-division
-  // ("Division 1a") the row itself shows.
+  // Division tier for the picker's filter; `groupName` is what the row shows:
+  // the sub-division ("Division 1a"), or the stage of a Relegation or playoff
+  // match ("Relegation · Division 1 und 2", "Playoffs · Halbfinale").
   tier: number;
   groupName: string;
-  playerA: MotwPlayer;
-  playerB: MotwPlayer;
+  // A Relegation or playoff match may have open sides until its pairings are
+  // published; it can be nominated then, but not confirmed.
+  playerA: MotwSideData;
+  playerB: MotwSideData;
   // Already reported. Staff see everything, and a week can be picked while it
   // runs, so the picker marks which matchups are already played.
   reported: boolean;
@@ -318,6 +394,9 @@ export type MotwRole = "primary" | "backup";
 export type MotwCandidate = {
   option: MotwOption;
   role: MotwRole;
+  // The line-up at nomination when it differs from the current one ("Alice
+  // gegen Bob oder Cem"); null when nothing moved or for a regular match.
+  changedFrom: string | null;
 };
 
 // One Spieltag in the workspace: everything pickable, what is nominated, and
@@ -326,6 +405,10 @@ export type MotwCandidate = {
 // dropped afterwards) — the view falls back to a bare link.
 export type MotwWeek = {
   round: number;
+  // "Spieltag 7", or "Woche 1" for a week after the regular season; `chip`
+  // is the pager's short form ("7", "W1").
+  name: string;
+  chip: string;
   state: MotwWeekState;
   startsOn: string;
   endsOn: string;
@@ -350,9 +433,14 @@ export type MotwWeek = {
 export type Recordability = "yes" | "no" | "unknown";
 
 export function recordability(candidate: MotwOption): Recordability {
-  const players = [candidate.playerA, candidate.playerB];
+  const sides = [candidate.playerA, candidate.playerB];
+  const players = sides.filter((side) => !isOpenSide(side)) as MotwPlayer[];
   if (players.some((player) => player.hasCaptureCard)) {
     return "yes";
+  }
+  // Who plays an open side is not settled, so neither is the answer.
+  if (players.length < sides.length) {
+    return "unknown";
   }
   return players.some((player) => !player.profileEdited) ? "unknown" : "no";
 }
@@ -390,8 +478,12 @@ export type MotwSortMode = "division" | "rank";
 const UNRANKED = Number.MAX_SAFE_INTEGER;
 
 function combinedRank(candidate: MotwOption): number {
-  const { rank: a } = candidate.playerA;
-  const { rank: b } = candidate.playerB;
+  const { playerA, playerB } = candidate;
+  if (isOpenSide(playerA) || isOpenSide(playerB)) {
+    return UNRANKED;
+  }
+  const { rank: a } = playerA;
+  const { rank: b } = playerB;
   return a === null || b === null ? UNRANKED : a + b;
 }
 
@@ -420,7 +512,33 @@ export type NominatedHold = {
   matchId: string;
   round: number;
   motwRole: MotwRole | null;
+  nominatedSides?: { a: string[]; b: string[] } | null;
 };
+
+// The line-up a Relegation or playoff candidate was nominated with, when it
+// is no longer the current one: "Alice gegen Bob oder Cem". Null when nothing
+// moved, or for a candidate without a snapshot (a regular match).
+export function lineUpChange(
+  option: MotwOption,
+  nominated: { a: readonly string[]; b: readonly string[] } | null,
+  nameOf: (userId: string) => string,
+): string | null {
+  if (nominated === null) {
+    return null;
+  }
+  const same = (before: readonly string[], now: readonly string[]) =>
+    before.length === now.length &&
+    [...before].sort().join() === [...now].sort().join();
+  if (
+    same(nominated.a, sideIds(option.playerA)) &&
+    same(nominated.b, sideIds(option.playerB))
+  ) {
+    return null;
+  }
+  const names = (ids: readonly string[]) =>
+    ids.length > 0 ? ids.map(nameOf).join(" oder ") : "offen";
+  return `${names(nominated.a)} gegen ${names(nominated.b)}`;
+}
 
 // Whether a match may be nominated. A candidate is a recording, so the rule is
 // the recording rule (`canHold`): only an unreported match of the running or a
@@ -450,6 +568,7 @@ export function weekCandidates(
   options: readonly MotwOption[],
   holds: readonly NominatedHold[],
   round: number,
+  nameOf: (userId: string) => string = (userId) => userId,
 ): MotwCandidate[] {
   const byMatch = new Map(options.map((option) => [option.matchId, option]));
   const candidates: MotwCandidate[] = [];
@@ -459,7 +578,11 @@ export function weekCandidates(
     }
     const option = byMatch.get(hold.matchId);
     if (option) {
-      candidates.push({ option, role: hold.motwRole });
+      candidates.push({
+        option,
+        role: hold.motwRole,
+        changedFrom: lineUpChange(option, hold.nominatedSides ?? null, nameOf),
+      });
     }
   }
   return candidates.sort(
@@ -472,7 +595,8 @@ export function weekCandidates(
 // without a matchday row cannot exist (the schedule defines them), so the
 // matchdays are the spine.
 export function buildMotwWeeks(input: {
-  matchdays: readonly MatchdayLite[];
+  matchdays: readonly (MatchdayLite & { regular?: boolean })[];
+  nameOf?: (userId: string) => string;
   currentRound: number | null;
   selections: readonly {
     round: number;
@@ -494,6 +618,7 @@ export function buildMotwWeeks(input: {
 
   const confirmedRounds = new Set(input.selections.map((s) => s.round));
   const totalRounds = input.matchdays.length;
+  const names = weekNames(input.matchdays);
 
   return [...input.matchdays]
     .sort((a, b) => a.round - b.round)
@@ -501,13 +626,24 @@ export function buildMotwWeeks(input: {
       const options = byRound.get(matchday.round) ?? [];
       const selection =
         input.selections.find((s) => s.round === matchday.round) ?? null;
+      const name = names.get(matchday.round) ?? {
+        name: `Spieltag ${matchday.round}`,
+        chip: String(matchday.round),
+      };
       return {
         round: matchday.round,
+        name: name.name,
+        chip: name.chip,
         state: weekState(matchday.round, input.currentRound),
         startsOn: matchday.startsOn,
         endsOn: matchday.endsOn,
         options,
-        candidates: weekCandidates(options, input.holds, matchday.round),
+        candidates: weekCandidates(
+          options,
+          input.holds,
+          matchday.round,
+          input.nameOf,
+        ),
         selection,
         selectedMatch:
           options.find((o) => o.matchId === selection?.matchId) ?? null,
@@ -519,4 +655,43 @@ export function buildMotwWeeks(input: {
         }),
       };
     });
+}
+
+// The pickable Relegation and playoff matches of the weeks after the regular
+// season (docs/plans/relegation-and-playoffs.md). A side is a player once the
+// match carries one; before the pairings are published it is open, with
+// whoever holds its seat right now, so staff can plan a week whose line-up
+// may still move.
+export function relegationPlayoffsOptions(input: {
+  matches: readonly {
+    matchId: string;
+    tier: number;
+    round: number;
+    title: string;
+    a: { label: string | null; candidates: readonly string[] };
+    b: { label: string | null; candidates: readonly string[] };
+  }[];
+  toPlayer: (userId: string) => MotwPlayer;
+  reported: ReadonlySet<string>;
+}): MotwOption[] {
+  const side = (s: {
+    label: string | null;
+    candidates: readonly string[];
+  }): MotwSideData =>
+    s.label === null && s.candidates.length === 1
+      ? input.toPlayer(s.candidates[0])
+      : {
+          open: true,
+          label: s.label ?? "",
+          candidates: s.candidates.map(input.toPlayer),
+        };
+  return input.matches.map((match) => ({
+    matchId: match.matchId,
+    round: match.round,
+    tier: match.tier,
+    groupName: match.title,
+    playerA: side(match.a),
+    playerB: side(match.b),
+    reported: input.reported.has(match.matchId),
+  }));
 }

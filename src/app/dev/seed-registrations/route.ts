@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import { devToolsEnabled } from "@/features/dev/enabled";
 import {
   DEV_SEASON_SHAPE,
+  generateAfterSeasonSeed,
   generateEvenRunningSeason,
   generateLadderSeason,
+  generateLateRegularSeasonSeed,
   generateSeedData,
 } from "@/features/dev/seed";
 import { currentUser } from "@/features/roles/guard";
@@ -24,6 +26,12 @@ import { currentUser } from "@/features/roles/guard";
 //   table appears on the Spieler-Dashboard (ignores count).
 // - &ladder=division|sub_division is a 3-division running season with the persona
 //   in a fully-zoned middle division, decided by the Gesamt- or Gruppentabelle.
+// - &after_season=1 is a season after its last Spieltag: every regular match
+//   played, the schedule for Relegation und Playoffs created, not published;
+//   the persona leads a Division 1 group. &ties=1 adds shared places at zone
+//   boundaries: two tiebreakers and a staff order.
+// - &late_season=1 is a season in its second-to-last Spieltag, the schedule
+//   for Relegation und Playoffs not created yet.
 export async function GET(request: Request) {
   if (!(await devToolsEnabled())) {
     return new Response("Not found", { status: 404 });
@@ -36,6 +44,18 @@ export async function GET(request: Request) {
   if (ladder === "division" || ladder === "sub_division") {
     await generateLadderSeason(ladder, current?.userId);
     redirect("/spieler");
+  }
+
+  if (params.get("after_season") === "1") {
+    await generateAfterSeasonSeed(current?.userId, {
+      ties: params.get("ties") === "1",
+    });
+    redirect("/staff/relegation-playoffs");
+  }
+
+  if (params.get("late_season") === "1") {
+    await generateLateRegularSeasonSeed(current?.userId);
+    redirect("/staff/relegation-playoffs");
   }
 
   if (params.get("even") === "1") {

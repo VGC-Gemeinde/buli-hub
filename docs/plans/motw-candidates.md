@@ -26,7 +26,10 @@ This feature builds that flow into the hub:
 - every candidate's result is withheld exactly like a recording, from the
   moment it is nominated;
 - the billboard keeps advertising **the last confirmed MotW** while the new
-  week runs, because the new one is not decided yet;
+  week runs, because the new one is not decided yet; after the regular
+  season that can be a Relegation or playoff match, and the Playoff final
+  shows as the billboard's final variant
+  (`docs/plans/relegation-and-playoffs.md`);
 - a staff member **confirms** on `/staff/motw` which candidate was the Match
   of the Week; from that moment it is the MotW in the established sense
   (billboard, permanent orange pill, VOD field, "· Match of the Week" on the

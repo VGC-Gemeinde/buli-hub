@@ -15,7 +15,7 @@ import { listDrops } from "@/features/drops/queries";
 import { bucketMembership } from "@/features/membership/membership";
 import { registeredMembership } from "@/features/membership/queries";
 import { sweepGuildMemberships } from "@/features/membership/sweep";
-import { motwTodo } from "@/features/motw/motw";
+import { motwTodo, weekNames } from "@/features/motw/motw";
 import { motwForWindow } from "@/features/motw/queries";
 import { staleHolds, staleHoldsSummary } from "@/features/recordings/holds";
 import { holdsForWindow } from "@/features/recordings/queries";
@@ -24,15 +24,27 @@ import { windowMatchOverview } from "@/features/reporting/queries";
 import { bucketMatches } from "@/features/reporting/staff-dashboard";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { CreateRelegationPlayoffsDialog } from "@/features/schedule/components/create-relegation-playoffs-dialog";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
 import { PublishScheduleDialog } from "@/features/schedule/components/publish-schedule-dialog";
 import { subDivisionRosters } from "@/features/schedule/queries";
+import { relegationPlayoffsSetupDue } from "@/features/schedule/relegation-playoffs";
+import {
+  relegationPlayoffsSetup,
+  relegationPlayoffsSides,
+  relegationPlayoffsState,
+  seasonCompletionState,
+} from "@/features/schedule/relegation-playoffs-setup";
+import { sidesChanged } from "@/features/schedule/relegation-playoffs-sides";
 import { defaultDeadlines, spieltagCount } from "@/features/schedule/spieltage";
 import {
   currentMatchday,
   type MatchdayLite,
 } from "@/features/season/dashboard";
-import { matchdaysForWindow } from "@/features/season/queries";
+import {
+  allMatchdaysForWindow,
+  matchdaysForWindow,
+} from "@/features/season/queries";
 import { SeasonCard } from "@/features/staff/components/registration-status";
 import { StaffPage } from "@/features/staff/components/staff-page";
 import { StatTile } from "@/features/staff/components/stat-tile";
@@ -54,18 +66,16 @@ function ddMM(dateStr: string): string {
 function SeasonStrip({
   season,
   label,
-  currentRound,
-  totalRounds,
+  progress,
   week,
 }: {
   season: string;
   label: string;
-  currentRound: number | null;
-  totalRounds: number;
+  // "Spieltag 3 von 7", "Woche 1 von 2" and how far along; null once the
+  // season is complete.
+  progress: { text: string; share: number } | null;
   week: MatchdayLite | null;
 }) {
-  const pct =
-    totalRounds > 0 && currentRound ? (currentRound / totalRounds) * 100 : 0;
   return (
     <div className="flex flex-col gap-1.5 sm:items-end">
       <div className="flex items-center gap-2.5">
@@ -77,28 +87,28 @@ function SeasonStrip({
           {label}
         </span>
       </div>
-      <div className="flex items-center gap-2.5">
-        <span className="whitespace-nowrap font-semibold text-[12.5px] tabular-nums">
-          Spieltag {currentRound ?? "—"} von {totalRounds}
-        </span>
-        <div className="h-1.5 w-28 rounded-full bg-muted">
-          <div
-            className="h-1.5 rounded-full bg-brand-orange"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        {week ? (
-          <span className="whitespace-nowrap text-[12.5px] text-muted-foreground tabular-nums">
-            {ddMM(week.startsOn)} – {ddMM(week.endsOn)}
+      {progress ? (
+        <div className="flex items-center gap-2.5">
+          <span className="whitespace-nowrap font-semibold text-[12.5px] tabular-nums">
+            {progress.text}
           </span>
-        ) : null}
-      </div>
+          <div className="h-1.5 w-28 rounded-full bg-muted">
+            <div
+              className="h-1.5 rounded-full bg-brand-orange"
+              style={{ width: `${progress.share * 100}%` }}
+            />
+          </div>
+          {week ? (
+            <span className="whitespace-nowrap text-[12.5px] text-muted-foreground tabular-nums">
+              {ddMM(week.startsOn)} – {ddMM(week.endsOn)}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-// The dashboard's blocks under the season header: what needs doing, then
-// the week and the season as numbers.
 function Blocks({
   todos,
   week,
@@ -182,20 +192,37 @@ export default async function StaffOverviewPage() {
     discord: null,
     nonMembers: nonMembers.length,
     scheduleSetup: null,
+    relegationPlayoffsSetup: null,
+    motwLineUpChanged: null,
+    relegationPlayoffsPublish: null,
+    tieOrdersOpen: 0,
+    seasonCompletable: false,
   };
 
   // Running season: the schedule exists (published or still internal).
   if ((phase === "regular_season" || phase === "schedule_hidden") && window) {
     const today = germanToday();
-    const [overview, matchdays, motwSelections, holds, drops] =
+    const [overview, matchdays, allWeeks, motwSelections, holds, drops] =
       await Promise.all([
         windowMatchOverview(window.id),
         matchdaysForWindow(window.id),
+        allMatchdaysForWindow(window.id),
         motwForWindow(window.id),
         holdsForWindow(window.id),
         listDrops(window.id),
       ]);
     const week = currentMatchday(matchdays, today);
+    // The Match of the Week and the recordings run on through the weeks of
+    // Relegation und Playoffs, so they count every week.
+    const anyWeekDay = currentMatchday(allWeeks, today);
+    const anyWeek = anyWeekDay?.round ?? null;
+    // The running week after the regular season, from 1.
+    const afterWeeks = allWeeks.length - matchdays.length;
+    const afterWeek =
+      week === null && anyWeek !== null && anyWeek > matchdays.length
+        ? anyWeek - matchdays.length
+        : null;
+    const names = weekNames(allWeeks);
     const { overdue, thisWeek, pendingFreeWins, disputed } = bucketMatches({
       matches: overview,
       currentRound: week?.round ?? null,
@@ -210,9 +237,58 @@ export default async function StaffOverviewPage() {
           ...hold,
           reported: (outcomeById.get(hold.matchId) ?? null) !== null,
         })),
-        week?.round ?? null,
+        anyWeek,
       ),
     );
+
+    // After the last Spieltag: publishing Relegation und Playoffs, and then
+    // the staff orders it leaves to decide.
+    let relegationPlayoffsPublish: TodoFacts["relegationPlayoffsPublish"] =
+      null;
+    let tieOrdersOpen = 0;
+    if (phase === "regular_season" && week === null) {
+      const after = await relegationPlayoffsState(window.id);
+      if (after.kind === "created") {
+        if (after.blockers !== null) {
+          relegationPlayoffsPublish = { openPoints: after.blockers.length };
+        }
+        tieOrdersOpen = after.staffOrders.filter((tie) => !tie.decided).length;
+      }
+    }
+    const completion =
+      phase === "regular_season" && week === null
+        ? await seasonCompletionState(window.id)
+        : null;
+    const seasonDone = completion?.completed ?? false;
+    const seasonCompletable =
+      completion !== null &&
+      !completion.completed &&
+      completion.blockers.length === 0;
+
+    // Relegation or playoff candidates whose line-up moved since nomination.
+    const snapshots = holds.filter(
+      (hold) => hold.motwRole !== null && hold.nominatedSides !== null,
+    );
+    let motwLineUpChanged: TodoFacts["motwLineUpChanged"] = null;
+    if (snapshots.length > 0) {
+      const { matches: sides } = await relegationPlayoffsSides(window.id);
+      const changed = snapshots.filter((hold) => {
+        const current = sides.find((m) => m.matchId === hold.matchId);
+        return (
+          current !== undefined &&
+          hold.nominatedSides !== null &&
+          sidesChanged(hold.nominatedSides, current)
+        );
+      });
+      if (changed.length > 0) {
+        const round = Math.min(...changed.map((hold) => hold.round));
+        motwLineUpChanged = {
+          count: changed.length,
+          round,
+          name: names.get(round)?.name ?? `Spieltag ${round}`,
+        };
+      }
+    }
 
     // schedule_hidden: what the publish puts live. The overview excludes
     // byes, so its length is the real match count.
@@ -226,6 +302,17 @@ export default async function StaffOverviewPage() {
             firstDeadline: sortedDays[0].endsOn,
             lastDeadline: sortedDays[sortedDays.length - 1].endsOn,
           }
+        : null;
+
+    // From the second-to-last Spieltag on: the Relegation und Playoffs
+    // schedule, while it is still to create.
+    const afterSetup =
+      phase === "regular_season" &&
+      relegationPlayoffsSetupDue({
+        currentRound: week?.round ?? null,
+        totalRounds: matchdays.length,
+      })
+        ? await relegationPlayoffsSetup(window.id)
         : null;
 
     // The Discord sync, only while the stored report says the server does
@@ -255,15 +342,31 @@ export default async function StaffOverviewPage() {
       disputedMatchIds: disputed.map((match) => match.matchId),
       pendingFreeWins: pendingFreeWins.length,
       staleRecordings,
-      motw: motwTodo({
-        currentRound: week?.round ?? null,
-        totalRounds: matchdays.length,
-        confirmedRounds: new Set(motwSelections.map((s) => s.round)),
-        candidateRounds: new Set(
-          holds.filter((h) => h.motwRole !== null).map((hold) => hold.round),
-        ),
-      }),
+      motwLineUpChanged,
+      relegationPlayoffsPublish,
+      tieOrdersOpen,
+      seasonCompletable,
+      // A completed season has no Match of the Week left to pick.
+      motw: seasonDone
+        ? null
+        : motwTodo({
+            currentRound: anyWeek,
+            totalRounds: allWeeks.length,
+            weekName: (round) => names.get(round)?.name ?? `Spieltag ${round}`,
+            confirmedRounds: new Set(motwSelections.map((s) => s.round)),
+            candidateRounds: new Set(
+              holds
+                .filter((h) => h.motwRole !== null)
+                .map((hold) => hold.round),
+            ),
+          }),
       publish: publishFacts,
+      relegationPlayoffsSetup: afterSetup
+        ? {
+            weeks: afterSetup.weekContents.length,
+            matches: afterSetup.relegationMatches + afterSetup.playoffMatches,
+          }
+        : null,
       discord:
         view === null
           ? null
@@ -295,11 +398,29 @@ export default async function StaffOverviewPage() {
             label={
               phase === "schedule_hidden"
                 ? "Spielplan intern"
-                : "Reguläre Saison"
+                : seasonDone
+                  ? "Saison abgeschlossen"
+                  : afterWeek !== null
+                    ? "Relegation und Playoffs"
+                    : "Reguläre Saison"
             }
-            currentRound={week?.round ?? null}
-            totalRounds={matchdays.length}
-            week={week}
+            progress={
+              seasonDone
+                ? null
+                : afterWeek !== null
+                  ? {
+                      text: `Woche ${afterWeek} von ${afterWeeks}`,
+                      share: afterWeek / afterWeeks,
+                    }
+                  : {
+                      text: `Spieltag ${week?.round ?? "—"} von ${matchdays.length}`,
+                      share:
+                        week && matchdays.length > 0
+                          ? week.round / matchdays.length
+                          : 0,
+                    }
+            }
+            week={week ?? (afterWeek !== null ? anyWeekDay : null)}
           />
         }
       >
@@ -314,6 +435,12 @@ export default async function StaffOverviewPage() {
                   ) : action.kind === "publish_schedule" && publishFacts ? (
                     <PublishScheduleDialog
                       facts={publishFacts}
+                      triggerSize="sm"
+                    />
+                  ) : action.kind === "create_relegation_playoffs_schedule" &&
+                    afterSetup ? (
+                    <CreateRelegationPlayoffsDialog
+                      {...afterSetup}
                       triggerSize="sm"
                     />
                   ) : null

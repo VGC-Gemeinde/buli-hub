@@ -107,6 +107,10 @@ New pages, the lists that leave the dashboard:
 - **Spielplan** (`/staff/spielplan`): the public schedule component in the
   staff shell. The public `/spielplan` stays for everyone; a staff tab never
   leads out of the Staff-Bereich.
+- **Relegation und Playoffs** (`/staff/relegation-playoffs`, while the
+  season runs): creating their schedule, publishing, the staff orders and
+  completing the season, with the four steps on top
+  (`docs/plans/relegation-and-playoffs.md`).
 
 Existing pages keep their content: Match of the Week, Aufnahmen, Divisionen
 (seeding), Banliste, Nutzung. The seeding workspace keeps its 1520px, but

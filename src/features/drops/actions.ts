@@ -12,11 +12,27 @@ import { clearMotwRole, holdsForWindow } from "@/features/recordings/queries";
 import { replacementStateOf } from "@/features/replacements/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { outcomeChangeRefusal } from "@/features/schedule/outcome-guard";
+import {
+  REGULAR_SEASON_CLOSED_ERROR,
+  regularSeasonClosed,
+  SEASON_COMPLETED_ERROR,
+  seasonCompleted,
+} from "@/features/schedule/queries";
+import { syncSeats } from "@/features/schedule/relegation-playoffs-setup";
 import { currentMatchday } from "@/features/season/dashboard";
-import { matchdaysForWindow } from "@/features/season/queries";
+import { allMatchdaysForWindow } from "@/features/season/queries";
 import { latestWindow } from "@/features/staff/queries";
 import { germanToday } from "@/lib/german-time";
-import { clearDropped, placementDropState, setDropped } from "./queries";
+import {
+  clearDropped,
+  clearLateDropped,
+  lateDroppedIdsForWindow,
+  openLateMatchesOf,
+  placementDropState,
+  setDropped,
+  setLateDropped,
+} from "./queries";
 
 export type DropActionResult = { ok: true } | { ok: false; error: string };
 
@@ -53,6 +69,11 @@ export async function dropPlayer(input: {
   if (!window) {
     return { ok: false, error: "Keine laufende Saison" };
   }
+  // A drop rewrites the regular season's results, which are final once
+  // Relegation und Playoffs are published.
+  if (window.regularSeasonClosedAt !== null) {
+    return { ok: false, error: REGULAR_SEASON_CLOSED_ERROR };
+  }
   const placement = await placementDropState(window.id, input.userId);
   if (!placement) {
     return { ok: false, error: "Spieler ist in dieser Saison nicht platziert" };
@@ -75,7 +96,7 @@ export async function dropPlayer(input: {
   // A scheduled Match of the Week featuring the player is no longer playable
   // — remove the confirmation (and its VOD announcement, if any). Settled past
   // weeks are history and stay.
-  const matchdays = await matchdaysForWindow(window.id);
+  const matchdays = await allMatchdaysForWindow(window.id);
   const today = germanToday();
   const openRounds = selectableRounds(
     currentMatchday(matchdays, today)?.round ?? null,
@@ -129,6 +150,11 @@ export async function undropPlayer(input: {
   if (!window) {
     return { ok: false, error: "Keine laufende Saison" };
   }
+  // A drop rewrites the regular season's results, which are final once
+  // Relegation und Playoffs are published.
+  if (window.regularSeasonClosedAt !== null) {
+    return { ok: false, error: REGULAR_SEASON_CLOSED_ERROR };
+  }
   const placement = await placementDropState(window.id, input.userId);
   if (!placement?.droppedAt) {
     return { ok: false, error: "Spieler ist nicht gedroppt" };
@@ -151,6 +177,84 @@ export async function undropPlayer(input: {
     };
   }
   await clearDropped(window.id, input.userId);
+  revalidate();
+  return { ok: true };
+}
+
+// A drop after the regular season (docs/plans/relegation-and-playoffs.md):
+// the player's tiebreaker, Relegation and playoff matches without a result
+// count for the opponent; played ones and the regular table stay. Only for a
+// player with such an open match.
+export async function lateDropPlayer(input: {
+  userId: string;
+  reason: string;
+}): Promise<DropActionResult> {
+  const gate = await staffGate();
+  if (!gate.ok) {
+    return gate;
+  }
+  const window = await latestWindow();
+  if (!window || !(await regularSeasonClosed(window.id))) {
+    return {
+      ok: false,
+      error: "Erst nach dem Veröffentlichen von Relegation und Playoffs",
+    };
+  }
+  if (await seasonCompleted(window.id)) {
+    return { ok: false, error: SEASON_COMPLETED_ERROR };
+  }
+  const reason = input.reason.trim();
+  if (reason === "") {
+    return { ok: false, error: "Bitte einen Grund angeben" };
+  }
+  if ((await lateDroppedIdsForWindow(window.id)).has(input.userId)) {
+    return { ok: false, error: "Spieler ist bereits gedroppt" };
+  }
+  if ((await openLateMatchesOf(window.id, input.userId)).length === 0) {
+    return {
+      ok: false,
+      error:
+        "Der Spieler hat kein offenes Match in Tiebreaker, Relegation oder Playoffs",
+    };
+  }
+  await setLateDropped({
+    windowId: window.id,
+    userId: input.userId,
+    staffId: gate.staffId,
+    reason,
+  });
+  await syncSeats(window.id);
+  revalidate();
+  return { ok: true };
+}
+
+// Takes a late drop back: the matches it decided are open again, unless a
+// match building on one of them already has a result.
+export async function undoLateDrop(input: {
+  userId: string;
+}): Promise<DropActionResult> {
+  const gate = await staffGate();
+  if (!gate.ok) {
+    return gate;
+  }
+  const window = await latestWindow();
+  if (!window) {
+    return { ok: false, error: "Keine laufende Saison" };
+  }
+  if (await seasonCompleted(window.id)) {
+    return { ok: false, error: SEASON_COMPLETED_ERROR };
+  }
+  if (!(await lateDroppedIdsForWindow(window.id)).has(input.userId)) {
+    return { ok: false, error: "Spieler ist nicht gedroppt" };
+  }
+  for (const matchId of await openLateMatchesOf(window.id, input.userId)) {
+    const refusal = await outcomeChangeRefusal(matchId, "any");
+    if (refusal) {
+      return { ok: false, error: refusal };
+    }
+  }
+  await clearLateDropped(window.id, input.userId);
+  await syncSeats(window.id);
   revalidate();
   return { ok: true };
 }

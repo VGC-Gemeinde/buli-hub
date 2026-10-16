@@ -1,3 +1,5 @@
+import { and, eq, sql } from "drizzle-orm";
+import { matches } from "@/db/schema";
 import { markDropped } from "@/features/drops/drops";
 import { droppedIdsForWindow } from "@/features/drops/queries";
 import {
@@ -15,7 +17,9 @@ import {
 import { scoreFor } from "@/features/reporting/match-state";
 import {
   divisionGroups,
+  getMatchForReport,
   type MatchResultLite,
+  resultsWithGames,
   subDivisionResults,
 } from "@/features/reporting/queries";
 import type { MatchOutcome } from "@/features/reporting/report";
@@ -48,6 +52,7 @@ import {
   withoutEmbargoed,
 } from "@/features/spoilers/embargo";
 import { seasonName } from "@/features/staff/registration-window";
+import { db } from "@/lib/db";
 import { PLAYER_NAME_FALLBACK } from "@/lib/player-name";
 
 export type ZoneByUser = Map<string, Zone>;
@@ -190,7 +195,10 @@ export async function publicLeagueOverview(
   // Week, so it carries last week's while the new week runs unconfirmed
   // (docs/plans/motw-candidates.md).
   const featured = billboardSelection(motwSelections, currentRound);
-  const motw = featured ? findMotw(divisions, featured, currentRound) : null;
+  const motw = featured
+    ? (findMotw(divisions, featured, currentRound) ??
+      (await lateMotw(featured, embargoes, viewer)))
+    : null;
 
   return {
     seasonName: seasonName(seasonNumber),
@@ -199,6 +207,60 @@ export async function publicLeagueOverview(
     matchdays,
     divisions,
     motw,
+  };
+}
+
+// The billboard's match when it is not a regular one: a tiebreaker,
+// Relegation or playoff match confirmed as Match of the Week
+// (docs/plans/relegation-and-playoffs.md). The final turns the billboard
+// into its final variant.
+async function lateMotw(
+  selection: { matchId: string; youtubeUrl: string | null },
+  embargoes: EmbargoSources,
+  viewer: OverviewViewer,
+): Promise<MotwBlockData | null> {
+  const match = await getMatchForReport(selection.matchId);
+  if (!match || match.stage === "regular" || match.playerB === null) {
+    return null;
+  }
+  const result =
+    (await resultsWithGames([match.matchId])).get(match.matchId) ?? null;
+  const [last] =
+    match.stage === "playoff"
+      ? await db
+          .select({ round: sql<number>`max(${matches.round})::int` })
+          .from(matches)
+          .where(
+            and(
+              eq(matches.windowId, match.windowId),
+              eq(matches.stage, "playoff"),
+            ),
+          )
+      : [];
+  return {
+    match: toPublicMatch({
+      match: {
+        id: match.matchId,
+        round: match.round,
+        playerAId: match.playerA.userId,
+      },
+      result: result
+        ? { ...result, matchId: match.matchId, disputed: false }
+        : null,
+      playerA: match.playerA,
+      playerB: match.playerB,
+      motw: selection,
+      held: embargoes.heldIds.has(match.matchId),
+      viewer,
+    }),
+    weekName: match.weekName,
+    groupName: match.groupName,
+    final: last !== undefined && last.round === match.round,
+    youtubeUrl: selection.youtubeUrl,
+    rankA: null,
+    rankB: null,
+    // A confirmed week is over by the time the billboard features it.
+    isCurrentRound: false,
   };
 }
 

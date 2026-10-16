@@ -25,17 +25,28 @@ export function sectionRow(
     // `/anmeldung` has something to show this player: the registration is
     // open, or they are registered for the latest season.
     registrationRelevant?: boolean;
+    // Once Relegation und Playoffs are published: which of the two the
+    // season has (docs/plans/relegation-and-playoffs.md).
+    published?: { playoffs: boolean; relegation: boolean };
   },
 ): NavGroup[] | null {
   switch (section) {
     case "liga":
-      // The Liga section itself only exists while a season runs.
+      // The Liga section itself only exists while a season runs. After the
+      // regular season, Playoffs and Relegation are what runs, so they come
+      // right after the overview.
       return context.phase === "regular_season"
         ? [
             {
               key: "liga",
               entries: [
                 { href: "/", label: "Übersicht" },
+                ...(context.published?.playoffs
+                  ? [{ href: "/playoffs", label: "Playoffs" }]
+                  : []),
+                ...(context.published?.relegation
+                  ? [{ href: "/relegation", label: "Relegation" }]
+                  : []),
                 { href: "/spielplan", label: "Spielplan" },
                 { href: "/favoriten", label: "Favoriten" },
               ],

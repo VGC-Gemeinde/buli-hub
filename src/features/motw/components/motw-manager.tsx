@@ -21,6 +21,7 @@ import {
 import {
   canNominate,
   defaultDivisionFilter,
+  isSettled,
   type MotwOption,
   type MotwRole,
   type MotwSortMode,
@@ -168,7 +169,7 @@ function WeekPanel({
         <div className="flex min-w-0 items-center gap-2.5">
           <Tick size="m" color={week.state === "past" ? "neutral" : "orange"} />
           <h2 className="font-bold font-heading text-[24px] text-brand-blue uppercase tracking-[0.03em] dark:text-white">
-            Spieltag {week.round}
+            {week.name}
           </h2>
           <span
             className={cn(
@@ -209,7 +210,7 @@ function WeekPanel({
           )}
         >
           {week.state === "past"
-            ? "Dieser Spieltag ist vorbei. Bitte bestätigen, welches Match das Match of the Week war. Bis dahin wird weiter das Match der Vorwoche beworben."
+            ? `${week.name} ist vorbei. Bitte bestätigen, welches Match das Match of the Week war. Bis dahin wird weiter das Match der Vorwoche beworben.`
             : "Noch nicht bestätigt. Beworben wird weiter das Match of the Week der Vorwoche, bis hier eins bestätigt ist."}
         </p>
       ) : (
@@ -222,10 +223,10 @@ function WeekPanel({
           )}
         >
           {week.state === "current"
-            ? "Der aktuelle Spieltag läuft noch ohne Kandidaten für das Match of the Week."
+            ? `${week.name} läuft noch ohne Kandidaten für das Match of the Week.`
             : week.state === "past"
-              ? "Dieser Spieltag ist vorbei und blieb ohne Match of the Week. Nachtragen ist noch möglich."
-              : "Für diesen Spieltag ist noch kein Kandidat gewählt."}
+              ? `${week.name} ist vorbei und blieb ohne Match of the Week. Nachtragen ist noch möglich.`
+              : `Für ${week.name} ist noch kein Kandidat gewählt.`}
         </p>
       )}
 
@@ -238,6 +239,7 @@ function WeekPanel({
           onConfirm={confirm}
           onPromote={(matchId) => nominate(matchId, "primary")}
           onDrop={drop}
+          onAcknowledge={(matchId, role) => nominate(matchId, role)}
           onAdd={() => setPicking((v) => !v)}
           addOpen={picking}
         />
@@ -513,7 +515,7 @@ function Picker({
       {shown.length === 0 ? (
         <p className="rounded-lg border px-4 py-3 text-[13px] text-muted-foreground">
           {week.options.length === 0
-            ? "Für diesen Spieltag liegen keine wählbaren Paarungen vor."
+            ? `Für ${week.name} liegen keine wählbaren Paarungen vor.`
             : selectedTiers.size === 0
               ? "Keine Division ausgewählt."
               : "Kein Match passt zu den gewählten Filtern."}
@@ -536,7 +538,10 @@ function Picker({
                     : "Bestätigen"
                 }
                 pending={pendingId === option.matchId}
-                disabled={pendingId !== null}
+                // An open line-up cannot be confirmed, only nominated.
+                disabled={
+                  pendingId !== null || (!nominating && !isSettled(option))
+                }
                 onPick={() =>
                   nominating
                     ? onNominate(

@@ -2,7 +2,7 @@ import { devToolsEnabled } from "@/features/dev/enabled";
 import { reportDevResults } from "@/features/dev/seed";
 import { resultChannels } from "@/features/discord-posts/channels";
 
-// Dev-only: reports up to `count` (default 5, max 20) open matches of the
+// Dev-only: reports up to `count` (default 5, max 1000) open matches of the
 // latest season like real player reports, including the Discord result-post
 // sync — the manual test path for the result channels.
 // /dev/report-results?count=5
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   }
 
   const raw = Number(new URL(request.url).searchParams.get("count") ?? "5");
-  const count = Math.min(Math.max(Number.isFinite(raw) ? raw : 5, 1), 20);
+  const count = Math.min(Math.max(Number.isFinite(raw) ? raw : 5, 1), 1000);
   const reported = await reportDevResults(count);
 
   const discord = resultChannels()

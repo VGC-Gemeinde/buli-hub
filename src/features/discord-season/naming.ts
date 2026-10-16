@@ -18,6 +18,13 @@ export function groupChannelName(tier: number, position: number): string {
   return `💬-div-${subDivisionShortName(tier, position)}-chat-💬`;
 }
 
+// The roles and chat channels of the stages after the regular season
+// (docs/plans/relegation-and-playoffs.md).
+export const STAGE_ROOM_NAMES = {
+  playoff: { role: "Playoffs", channel: "💬-playoffs-chat-💬" },
+  relegation: { role: "Relegation", channel: "💬-relegation-chat-💬" },
+} as const;
+
 // Discord permission bit for View Channel (1 << 10), as the decimal string
 // the API uses for bitfields.
 export const VIEW_CHANNEL = BigInt(1024);

@@ -12,6 +12,10 @@ import {
 } from "@/features/registration/registration";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import {
+  REGULAR_SEASON_CLOSED_ERROR,
+  regularSeasonClosed,
+} from "@/features/schedule/queries";
 import { matchdaysForWindow } from "@/features/season/queries";
 import { currentSeason } from "@/features/season/season-status";
 import { germanToday } from "@/lib/german-time";
@@ -49,6 +53,17 @@ async function runningWindow() {
   return window && phase === "regular_season" ? window : null;
 }
 
+// Offering and taking over a slot move regular matches onto someone else,
+// which a closed regular season no longer allows. Withdrawing an open offer
+// stays possible: it is what clears the way to publishing.
+async function closedRegularSeason(
+  windowId: string,
+): Promise<ReplacementActionResult | null> {
+  return (await regularSeasonClosed(windowId))
+    ? { ok: false, error: REGULAR_SEASON_CLOSED_ERROR }
+    : null;
+}
+
 // Staff offer a dropped player's slot to someone who has signed in to the hub,
 // with the entry round (running or next matchday). Nothing changes until the
 // offered user accepts.
@@ -64,6 +79,10 @@ export async function offerReplacement(input: {
   const window = await runningWindow();
   if (!window) {
     return { ok: false, error: "Keine laufende Saison" };
+  }
+  const closed = await closedRegularSeason(window.id);
+  if (closed) {
+    return closed;
   }
   const [context, matchdays] = await Promise.all([
     offerContext({
@@ -131,6 +150,10 @@ export async function acceptReplacement(
   const window = await runningWindow();
   if (!window) {
     return { ok: false, error: "Keine laufende Saison" };
+  }
+  const closed = await closedRegularSeason(window.id);
+  if (closed) {
+    return closed;
   }
   const offer = await pendingOfferFor(window.id, current.userId);
   if (!offer) {

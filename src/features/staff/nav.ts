@@ -1,8 +1,8 @@
 // The Staff-Bereich row of the site navigation (docs/plans/staff-dashboard.md,
 // docs/plans/site-navigation.md), grouped by what an entry is about. The week (this
 // Spieltag's matches and recordings), the season (who plays, how it is
-// divided, its schedule and Match of the Week), the hub (what outlives a
-// season). Entries that mean nothing in the current phase stay out, so the
+// divided, its schedule, Relegation und Playoffs and Match of the Week), the
+// hub (what outlives a season). Entries that mean nothing in the current phase stay out, so the
 // bar only ever offers pages that have something to show.
 
 import { type Role, roleAtLeast } from "@/features/roles/roles";
@@ -42,10 +42,18 @@ export function staffNav(input: {
           : []),
         ...(seedable ? [{ href: "/staff/seeding", label: "Divisionen" }] : []),
         ...(scheduled
+          ? [{ href: "/staff/spielplan", label: "Spielplan" }]
+          : []),
+        ...(phase === "regular_season"
           ? [
-              { href: "/staff/spielplan", label: "Spielplan" },
-              { href: "/staff/motw", label: "Match of the Week" },
+              {
+                href: "/staff/relegation-playoffs",
+                label: "Relegation und Playoffs",
+              },
             ]
+          : []),
+        ...(scheduled
+          ? [{ href: "/staff/motw", label: "Match of the Week" }]
           : []),
       ],
     },

@@ -1,5 +1,12 @@
-import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
-import { divisions, placements, profiles, subDivisions } from "@/db/schema";
+import { and, asc, eq, isNotNull, isNull, ne, or } from "drizzle-orm";
+import {
+  divisions,
+  matches,
+  matchResults,
+  placements,
+  profiles,
+  subDivisions,
+} from "@/db/schema";
 import type { Identity } from "@/features/season/dashboard";
 import { subDivisionName } from "@/features/seeding/seeding";
 import { db } from "@/lib/db";
@@ -160,4 +167,74 @@ export async function listDropCandidates(
         a.groupName.localeCompare(b.groupName, "de") ||
         a.name.localeCompare(b.name, "de"),
     );
+}
+
+// Players dropped after the regular season (docs/plans/relegation-and-playoffs.md).
+export async function lateDroppedIdsForWindow(
+  windowId: string,
+): Promise<Set<string>> {
+  const rows = await db
+    .select({ userId: placements.userId })
+    .from(placements)
+    .where(
+      and(
+        eq(placements.windowId, windowId),
+        isNotNull(placements.lateDroppedAt),
+      ),
+    );
+  return new Set(rows.map((row) => row.userId));
+}
+
+export async function setLateDropped(input: {
+  windowId: string;
+  userId: string;
+  staffId: string;
+  reason: string;
+}): Promise<void> {
+  await db
+    .update(placements)
+    .set({
+      lateDroppedAt: new Date(),
+      lateDroppedById: input.staffId,
+      lateDropReason: input.reason,
+    })
+    .where(
+      and(
+        eq(placements.windowId, input.windowId),
+        eq(placements.userId, input.userId),
+      ),
+    );
+}
+
+export async function clearLateDropped(
+  windowId: string,
+  userId: string,
+): Promise<void> {
+  await db
+    .update(placements)
+    .set({ lateDroppedAt: null, lateDroppedById: null, lateDropReason: null })
+    .where(
+      and(eq(placements.windowId, windowId), eq(placements.userId, userId)),
+    );
+}
+
+// A player's tiebreaker, Relegation and playoff matches without a result:
+// what a late drop decides.
+export async function openLateMatchesOf(
+  windowId: string,
+  userId: string,
+): Promise<string[]> {
+  const rows = await db
+    .select({ id: matches.id })
+    .from(matches)
+    .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
+    .where(
+      and(
+        eq(matches.windowId, windowId),
+        ne(matches.stage, "regular"),
+        isNull(matchResults.matchId),
+        or(eq(matches.playerAId, userId), eq(matches.playerBId, userId)),
+      ),
+    );
+  return rows.map((row) => row.id);
 }

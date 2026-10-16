@@ -68,12 +68,14 @@ beforeAll(async () => {
     .insert(matches)
     .values([
       ...[1, 2, 3, 4].map((round) => ({
+        windowId,
         subDivisionId: subDivision.id,
         round,
         playerAId: alice,
         playerBId: bob,
       })),
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 2,
         playerAId: carol,

@@ -2,7 +2,11 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { DropBanner } from "@/features/drops/components/drop-banner";
-import { droppedIdsForSubDivision } from "@/features/drops/queries";
+import { LateDropPanel } from "@/features/drops/components/late-drop-panel";
+import {
+  droppedIdsForWindow,
+  lateDroppedIdsForWindow,
+} from "@/features/drops/queries";
 import { SeasonGates } from "@/features/membership/components/season-gates";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
 import { motwByMatchId } from "@/features/motw/queries";
@@ -25,7 +29,11 @@ import {
 import type { EditorSheet } from "@/features/reporting/result-draft";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
-import { matchSchedulePublished } from "@/features/schedule/queries";
+import { withheldSourceOf } from "@/features/schedule/outcome-guard";
+import {
+  matchSchedulePublished,
+  resultLockError,
+} from "@/features/schedule/queries";
 import { resultEmbargo } from "@/features/spoilers/embargo";
 import {
   parseSpoilersOff,
@@ -86,8 +94,23 @@ export default async function MatchReportPage({
   if (!isStaff && !(await matchSchedulePublished(matchId))) {
     notFound();
   }
+  // A line-up that comes from a withheld result would give that result away:
+  // until it is released the page exists for the two players and staff only
+  // (docs/plans/relegation-and-playoffs.md).
+  if (
+    !privileged &&
+    match.stage !== "regular" &&
+    (await withheldSourceOf(matchId))
+  ) {
+    notFound();
+  }
 
   const result = await getMatchResult(matchId);
+  // Once Relegation und Playoffs are published, a regular match's result is
+  // final: no report form, no dispute, no staff tools, just the note
+  // (docs/plans/relegation-and-playoffs.md).
+  const lockError = await resultLockError(matchId);
+  const locked = lockError !== null;
   // Match of the Week and recording hold: a banner for everyone. Under
   // embargo (MotW before the VOD, held for a recording) the result is
   // withheld from neutral viewers entirely (it never reaches the page); the
@@ -111,9 +134,19 @@ export default async function MatchReportPage({
     (await cookies()).get(SPOILERS_OFF_COOKIE)?.value,
   );
   // Drop-decided matches: banner for everyone, no reporting.
-  const droppedIds = await droppedIdsForSubDivision(match.subDivisionId);
-  const aDropped = droppedIds.has(match.playerA.userId);
-  const bDropped = droppedIds.has(match.playerB.userId);
+  // After the regular season a late drop decides an open match the same way
+  // (docs/plans/relegation-and-playoffs.md).
+  const [droppedIds, lateDroppedIds] = await Promise.all([
+    droppedIdsForWindow(match.windowId),
+    match.stage === "regular"
+      ? new Set<string>()
+      : lateDroppedIdsForWindow(match.windowId),
+  ]);
+  const lateDecides = result === null;
+  const dropped = (userId: string) =>
+    droppedIds.has(userId) || (lateDecides && lateDroppedIds.has(userId));
+  const aDropped = dropped(match.playerA.userId);
+  const bDropped = dropped(match.playerB.userId);
   const isDropDecided = aDropped || bDropped;
   // A pending (unconfirmed) free win is not public — neutral observers see the
   // match as still open until it is confirmed.
@@ -180,6 +213,7 @@ export default async function MatchReportPage({
       viewerId={current?.userId ?? null}
       privileged={privileged}
       round={match.round}
+      weekName={match.weekName}
       groupName={match.groupName}
       disputed={dispute !== null}
       backHref={backHref}
@@ -195,6 +229,7 @@ export default async function MatchReportPage({
         {motw ? (
           <MotwMatchBanner
             round={motw.round}
+            weekName={match.weekName}
             youtubeUrl={motw.youtubeUrl}
             notPublic={embargo?.access === "preview" && result !== null}
             photoHint={photoHint}
@@ -203,6 +238,7 @@ export default async function MatchReportPage({
           // One banner per match: the MotW's covers a held featured match.
           <RecordingBanner
             round={match.round}
+            weekName={match.weekName}
             notPublic={embargo?.access === "preview" && result !== null}
             photoHint={photoHint}
           />
@@ -263,6 +299,10 @@ export default async function MatchReportPage({
               entschieden hat.
             </p>
           </div>
+        ) : locked && privileged ? (
+          <p className="mt-10 border-t pt-5 text-[13.5px] text-muted-foreground">
+            {lockError}
+          </p>
         ) : result && isParticipant ? (
           <div className="mt-10 border-t pt-5">
             <p className="mb-3 text-[13.5px] text-muted-foreground">
@@ -276,10 +316,11 @@ export default async function MatchReportPage({
         {!shownResult ? (
           // A drop-decided match is not reportable — the banner explains the
           // counted outcome; participants get no form.
-          isParticipant && current && !isDropDecided ? (
+          isParticipant && current && !isDropDecided && !locked ? (
             <ReportForm
               matchId={match.matchId}
               round={match.round}
+              weekName={match.weekName}
               groupName={match.groupName}
               deadline={match.deadline}
               proofRequired={match.proofRequired}
@@ -291,6 +332,7 @@ export default async function MatchReportPage({
           ) : (
             <PublicMatchView
               round={match.round}
+              weekName={match.weekName}
               groupName={match.groupName}
               seasonLabel={seasonLabel}
               playerA={match.playerA}
@@ -309,10 +351,19 @@ export default async function MatchReportPage({
           )
         ) : null}
 
-        {isStaff ? (
+        {isStaff && match.stage !== "regular" && !locked ? (
+          <LateDropPanel
+            players={[match.playerA, match.playerB]}
+            lateDroppedIds={[...lateDroppedIds]}
+            open={result === null}
+          />
+        ) : null}
+
+        {isStaff && !locked ? (
           <StaffMatchPanel
             matchId={match.matchId}
             round={match.round}
+            weekName={match.weekName}
             groupName={match.groupName}
             playerA={match.playerA}
             playerB={match.playerB}

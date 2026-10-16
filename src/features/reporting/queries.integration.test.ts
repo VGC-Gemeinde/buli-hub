@@ -93,8 +93,8 @@ beforeAll(async () => {
   const inserted = await db
     .insert(matches)
     .values([
-      { subDivisionId, round: 1, playerAId: alice, playerBId: bob },
-      { subDivisionId, round: 1, playerAId: carol, playerBId: null },
+      { windowId, subDivisionId, round: 1, playerAId: alice, playerBId: bob },
+      { windowId, subDivisionId, round: 1, playerAId: carol, playerBId: null },
     ])
     .returning({ id: matches.id, playerBId: matches.playerBId });
   matchAB = inserted.find((m) => m.playerBId !== null)?.id ?? "";
@@ -200,7 +200,13 @@ describe("saveResult + getMatchResult", () => {
     await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     const normal = {
       outcome: "normal" as const,
@@ -250,7 +256,13 @@ describe("saveResult + getMatchResult", () => {
     await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     await saveResult(
       m.id,
@@ -314,7 +326,13 @@ describe("saveResult + getMatchResult", () => {
     await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     await saveResult(
       m.id,
@@ -358,7 +376,13 @@ describe("staff dashboard queries", () => {
   it("upsertStaffResult awards a free win (confirmed) then reopen clears it", async () => {
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
 
     await upsertStaffResult({
@@ -381,7 +405,13 @@ describe("staff dashboard queries", () => {
   it("upsertStaffResult over an existing result records corrected_by + clears games", async () => {
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     await saveResult(
       m.id,
@@ -415,7 +445,13 @@ describe("staff dashboard queries", () => {
   it("confirmFreeWin sets the confirmation on a pending free win", async () => {
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     await saveResult(
       m.id,
@@ -442,7 +478,13 @@ describe("disputes", () => {
   it("open → visible in overview + match; second open rejected; resolve clears it", async () => {
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     await saveResult(
       m.id,
@@ -498,7 +540,13 @@ describe("disputes", () => {
   it("replace: result rewritten and dispute closed as corrected", async () => {
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     await saveResult(
       m.id,
@@ -554,7 +602,13 @@ describe("disputes", () => {
   it("confirm: upholding a pending free win confirms it", async () => {
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     await saveResult(
       m.id,
@@ -589,7 +643,13 @@ describe("disputes", () => {
   it("delete: resetting the result closes the dispute too", async () => {
     const [m] = await db
       .insert(matches)
-      .values({ subDivisionId, round: 1, playerAId: alice, playerBId: bob })
+      .values({
+        windowId,
+        subDivisionId,
+        round: 1,
+        playerAId: alice,
+        playerBId: bob,
+      })
       .returning({ id: matches.id });
     await saveResult(
       m.id,
@@ -667,8 +727,20 @@ describe("divisionGroups", () => {
     const [matchX, matchY] = await db
       .insert(matches)
       .values([
-        { subDivisionId: groupX.id, round: 1, playerAId: x1, playerBId: x2 },
-        { subDivisionId: groupY.id, round: 1, playerAId: y1, playerBId: y2 },
+        {
+          windowId,
+          subDivisionId: groupX.id,
+          round: 1,
+          playerAId: x1,
+          playerBId: x2,
+        },
+        {
+          windowId,
+          subDivisionId: groupY.id,
+          round: 1,
+          playerAId: y1,
+          playerBId: y2,
+        },
       ])
       .returning({ id: matches.id });
     const decided = (matchId: string, winner: string, loser: string) =>

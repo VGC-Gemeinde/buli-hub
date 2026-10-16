@@ -3,11 +3,14 @@
 import { Check } from "lucide-react";
 import { hoverCard } from "@/lib/emphasis";
 import { cn } from "@/lib/utils";
-import { type MotwOption, recordability } from "../motw";
+import { type MotwOption, recordability, sideName } from "../motw";
 import { MotwSide } from "./motw-player";
 
-function shortGroup(groupName: string): string {
-  return groupName.replace("Division ", "Div ");
+// The row's first column: "Div 1a", or a stage over its round or boundary
+// ("Playoffs" / "Halbfinale", "Relegation" / "Div 1 und 2"), so a long title
+// wraps into the column instead of running into the avatar beside it.
+function groupLines(groupName: string): string[] {
+  return groupName.replaceAll("Division ", "Div ").split(" · ");
 }
 
 const STATE_LABEL = {
@@ -56,7 +59,7 @@ export function MotwOptionRow({
         // The trailing column is fixed, not `auto`: markers appear on some rows
         // only, and a width that depends on them would shift the avatar columns
         // from row to row.
-        "sm:grid-cols-[60px_1fr_auto_1fr_236px] sm:py-2",
+        "sm:grid-cols-[88px_1fr_auto_1fr_280px] sm:py-2",
         state === "confirmed" &&
           "border-brand-orange/55 bg-brand-orange/[0.07]",
         (state === "primary" || state === "backup") &&
@@ -67,8 +70,12 @@ export function MotwOptionRow({
       )}
     >
       <span className="flex items-center gap-2 sm:block">
-        <span className="whitespace-nowrap font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.06em]">
-          {shortGroup(option.groupName)}
+        <span className="flex flex-wrap gap-x-1.5 font-semibold text-[11px] text-muted-foreground uppercase leading-tight tracking-[0.06em] sm:flex-col">
+          {groupLines(option.groupName).map((line) => (
+            <span key={line} className="whitespace-nowrap">
+              {line}
+            </span>
+          ))}
         </span>
         {/* The marker rides along with the group label on mobile, where the
             trailing column has collapsed. */}
@@ -105,7 +112,7 @@ export function MotwOptionRow({
           <button
             type="button"
             disabled={disabled}
-            aria-label={`${actionLabel}: ${option.playerA.name} gegen ${option.playerB.name}`}
+            aria-label={`${actionLabel}: ${sideName(option.playerA)} gegen ${sideName(option.playerB)}`}
             onClick={(event) => {
               // The row would pick a second time.
               event.stopPropagation();

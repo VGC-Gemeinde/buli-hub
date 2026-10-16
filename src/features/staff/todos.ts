@@ -17,7 +17,8 @@ export type TodoAction =
   | { kind: "link"; href: string; label: string }
   | { kind: "discord_sync" }
   | { kind: "publish_schedule" }
-  | { kind: "create_schedule" };
+  | { kind: "create_schedule" }
+  | { kind: "create_relegation_playoffs_schedule" };
 
 export type Todo = {
   id: string;
@@ -55,6 +56,20 @@ export type TodoFacts = {
   nonMembers: number;
   // seeded: the schedule that can be created, null when none computes.
   scheduleSetup: { groups: number; rounds: number; matches: number } | null;
+  // regular_season, from the second-to-last Spieltag on: the Relegation und
+  // Playoffs schedule still to create (docs/plans/relegation-and-playoffs.md).
+  relegationPlayoffsSetup: { weeks: number; matches: number } | null;
+  // Relegation or playoff candidates whose line-up moved since they were
+  // nominated; the first affected week for the link.
+  motwLineUpChanged: { count: number; round: number; name: string } | null;
+  // After the last Spieltag, while Relegation und Playoffs are created but
+  // not published: how many points still block publishing.
+  relegationPlayoffsPublish: { openPoints: number } | null;
+  // After publishing: shared places of three or more still without a staff
+  // order.
+  tieOrdersOpen: number;
+  // After the final: everything is decided, the season can be completed.
+  seasonCompletable: boolean;
 };
 
 export function staffTodos(facts: TodoFacts): Todo[] {
@@ -108,6 +123,66 @@ export function staffTodos(facts: TodoFacts): Todo[] {
     });
   }
 
+  if (facts.relegationPlayoffsSetup) {
+    const { weeks, matches } = facts.relegationPlayoffsSetup;
+    todos.push({
+      id: "relegation-playoffs-schedule",
+      tone: "due",
+      title: "Spielplan für Relegation und Playoffs erstellen",
+      detail: `${weeks} ${weeks === 1 ? "Woche" : "Wochen"} · ${matches} Matches. Ab dann lassen sich die Wochen beim Match of the Week planen. Spieler sehen nichts davon bis zur Veröffentlichung.`,
+      action: { kind: "create_relegation_playoffs_schedule" },
+    });
+  }
+  if (facts.relegationPlayoffsPublish) {
+    const { openPoints } = facts.relegationPlayoffsPublish;
+    todos.push({
+      id: "relegation-playoffs-publish",
+      tone: "due",
+      title: "Relegation und Playoffs veröffentlichen",
+      detail:
+        openPoints === 0
+          ? "Alles geklärt. Danach sind die Ergebnisse der regulären Saison endgültig."
+          : openPoints === 1
+            ? "Ein Punkt ist noch offen, bevor veröffentlicht werden kann."
+            : `${openPoints} Punkte sind noch offen, bevor veröffentlicht werden kann.`,
+      action: {
+        kind: "link",
+        href: "/staff/relegation-playoffs",
+        label: "Zur Veröffentlichung",
+      },
+    });
+  }
+  if (facts.seasonCompletable) {
+    todos.push({
+      id: "complete-season",
+      tone: "due",
+      title: "Saison abschließen",
+      detail:
+        "Alles ist entschieden. Mit dem Abschluss werden die Ergebnisse endgültig und Auf- und Abstieg festgeschrieben.",
+      action: {
+        kind: "link",
+        href: "/staff/relegation-playoffs",
+        label: "Abschließen",
+      },
+    });
+  }
+  if (facts.tieOrdersOpen > 0) {
+    todos.push({
+      id: "tie-orders",
+      tone: "due",
+      title:
+        facts.tieOrdersOpen === 1
+          ? "Reihenfolge für einen Gleichstand festlegen"
+          : `Reihenfolge für ${facts.tieOrdersOpen} Gleichstände festlegen`,
+      detail:
+        "Drei oder mehr Spieler teilen sich einen Platz an einer Zonengrenze. Die Matches, die an diesen Plätzen hängen, warten auf die Reihenfolge.",
+      action: {
+        kind: "link",
+        href: "/staff/relegation-playoffs",
+        label: "Festlegen",
+      },
+    });
+  }
   if (facts.overdue > 0) {
     todos.push({
       id: "overdue",
@@ -169,24 +244,42 @@ export function staffTodos(facts: TodoFacts): Todo[] {
     });
   }
   if (facts.motw) {
-    const { round, kind, urgency } = facts.motw;
+    const { round, name, kind, urgency } = facts.motw;
     todos.push({
       id: "motw",
       tone: urgency === "urgent" ? "urgent" : "due",
       title:
         kind === "confirm"
-          ? `Match of the Week für Spieltag ${round} bestätigen`
-          : `Kandidaten für Spieltag ${round} wählen`,
+          ? `Match of the Week für ${name} bestätigen`
+          : `Kandidaten für ${name} wählen`,
       detail:
         kind === "confirm"
-          ? "Der Spieltag ist vorbei und die Kandidaten sind noch nicht entschieden. Solange wird weiter das Match der Vorwoche beworben."
+          ? `${name} ist vorbei und die Kandidaten sind noch nicht entschieden. Solange wird weiter das Match der Vorwoche beworben.`
           : urgency === "urgent"
-            ? "Der aktuelle Spieltag läuft noch ohne Kandidaten für das Match of the Week."
-            : "Der nächste Spieltag hat noch keine Kandidaten für das Match of the Week.",
+            ? `${name} läuft noch ohne Kandidaten für das Match of the Week.`
+            : `${name} steht als Nächstes an und hat noch keine Kandidaten für das Match of the Week.`,
       action: {
         kind: "link",
         href: `/staff/motw?spieltag=${round}`,
         label: kind === "confirm" ? "Jetzt bestätigen" : "Jetzt wählen",
+      },
+    });
+  }
+  if (facts.motwLineUpChanged) {
+    const { count, round, name } = facts.motwLineUpChanged;
+    todos.push({
+      id: "motw-line-up",
+      tone: "due",
+      title:
+        count === 1
+          ? `Besetzung eines MotW-Kandidaten in ${name} hat sich geändert`
+          : `Besetzung von ${count} MotW-Kandidaten hat sich geändert`,
+      detail:
+        "Eine Ergebniskorrektur hat verschoben, wer das Match spielt. Prüfen, ob es Kandidat bleiben soll.",
+      action: {
+        kind: "link",
+        href: `/staff/motw?spieltag=${round}`,
+        label: "Prüfen",
       },
     });
   }

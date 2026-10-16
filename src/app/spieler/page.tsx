@@ -10,6 +10,13 @@ import { MembershipBlockedCard } from "@/features/membership/components/blocked-
 import { SeasonGates } from "@/features/membership/components/season-gates";
 import { isConfirmedNonMember } from "@/features/membership/membership";
 import { motwForWindow } from "@/features/motw/queries";
+import { AfterSeasonHero } from "@/features/playoffs/components/after-season-hero";
+import {
+  afterSeasonSchedule,
+  dashboardHero,
+} from "@/features/playoffs/dashboard";
+import { currentAfterSeasonWeek } from "@/features/playoffs/public-view";
+import { publicRelegationPlayoffs } from "@/features/playoffs/queries";
 import { getProfile } from "@/features/profile/queries";
 import { holdsForWindow } from "@/features/recordings/queries";
 import { ProfileHint } from "@/features/registration/components/profile-hint";
@@ -48,7 +55,9 @@ import {
   divisionStandings,
 } from "@/features/reporting/standings";
 import { currentUser } from "@/features/roles/guard";
+import { roleAtLeast } from "@/features/roles/roles";
 import { hasSchedule } from "@/features/schedule/queries";
+import { seasonCompletionState } from "@/features/schedule/relegation-playoffs-setup";
 import { ParticipantList } from "@/features/season/components/participant-list";
 import {
   ComingSoonPanel,
@@ -312,6 +321,41 @@ export default async function SpielerPage() {
     const currentRound =
       currentMatchday(matchdays, today)?.round ?? totalRounds;
     const groupName = subDivisionName(placement.tier, placement.position);
+    // After the regular season: the next match of Relegation und Playoffs,
+    // or the season outcome (docs/plans/relegation-and-playoffs.md).
+    const [afterSeason, completion] = await Promise.all([
+      publicRelegationPlayoffs(window.id, {
+        userId: current.userId,
+        isStaff: roleAtLeast(current.role, "staff"),
+      }),
+      seasonCompletionState(window.id),
+    ]);
+    const myOutcome = completion?.result.players.find(
+      (player) => player.userId === current.userId,
+    );
+    const afterHero = afterSeason
+      ? dashboardHero({
+          meId: current.userId,
+          tier: placement.tier,
+          cards: afterSeason.cards,
+          tiebreakers: afterSeason.tiebreakers,
+          outcome: myOutcome
+            ? {
+                outcome: myOutcome.outcome,
+                champion: completion?.result.champion === current.userId,
+              }
+            : null,
+        })
+      : null;
+    const afterSchedule = afterSeason
+      ? afterSeasonSchedule({
+          meId: current.userId,
+          cards: afterSeason.cards,
+          tiebreakers: afterSeason.tiebreakers,
+          weeks: afterSeason.weeks,
+          today,
+        })
+      : null;
 
     return (
       <div className="flex flex-1 flex-col">
@@ -373,6 +417,31 @@ export default async function SpielerPage() {
             divisionWithheld={divisionWithheld}
             today={today}
             favoriteIds={favorites}
+            afterSeason={afterSchedule}
+            afterWeeks={
+              afterSeason && afterSeason.weeks.length > 0
+                ? {
+                    count: afterSeason.weeks.length,
+                    current: currentAfterSeasonWeek(afterSeason.weeks, today),
+                    begun: afterSeason.weeks.filter(
+                      (week) => week.startsOn <= today,
+                    ).length,
+                  }
+                : undefined
+            }
+            hero={
+              afterHero ? (
+                <AfterSeasonHero
+                  hero={afterHero}
+                  me={{
+                    userId: current.userId,
+                    name: playerName(current.displayName, current.username),
+                    avatarUrl: current.avatarUrl,
+                  }}
+                  season={seasonName(window.seasonNumber)}
+                />
+              ) : undefined
+            }
           />
         </main>
       </div>

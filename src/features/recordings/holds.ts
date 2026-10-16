@@ -1,5 +1,6 @@
 import type { MotwRole } from "@/features/motw/motw";
 import type { Identity, MatchdayLite } from "@/features/season/dashboard";
+import { weekNames } from "@/features/season/week-names";
 
 // A player as the recording workspace shows them: identity plus the picture
 // the stream would use (docs/plans/stream-photos.md), so staff can see at a
@@ -96,6 +97,10 @@ export type HeldMatch = RecordingMatch & { stale: boolean };
 // not appear, they cannot be marked (`canHold`).
 export type RecordingWeek = {
   round: number;
+  // "Spieltag 7", or "Woche 1" after the regular season; `chip` is the
+  // pager's short form ("7", "W1").
+  name: string;
+  chip: string;
   state: "current" | "future";
   startsOn: string;
   endsOn: string;
@@ -125,7 +130,7 @@ export function buildHeldMatches(
 }
 
 export function buildRecordingWeeks(input: {
-  matchdays: readonly MatchdayLite[];
+  matchdays: readonly (MatchdayLite & { regular?: boolean })[];
   currentRound: number | null;
   matches: readonly RecordingMatch[];
 }): RecordingWeek[] {
@@ -133,11 +138,14 @@ export function buildRecordingWeeks(input: {
   if (currentRound === null) {
     return [];
   }
+  const names = weekNames(input.matchdays);
   return [...input.matchdays]
     .filter((day) => day.round >= currentRound)
     .sort((a, b) => a.round - b.round)
     .map((day) => ({
       round: day.round,
+      name: names.get(day.round)?.name ?? `Spieltag ${day.round}`,
+      chip: names.get(day.round)?.chip ?? String(day.round),
       state: day.round === currentRound ? "current" : "future",
       startsOn: day.startsOn,
       endsOn: day.endsOn,

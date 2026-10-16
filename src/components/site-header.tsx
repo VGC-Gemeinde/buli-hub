@@ -9,6 +9,7 @@ import { type Section, sectionRow } from "@/features/navigation/sections";
 import { getRegistration } from "@/features/registration/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { publishedStages } from "@/features/schedule/queries";
 import { currentSeason } from "@/features/season/season-status";
 import { cn } from "@/lib/utils";
 
@@ -39,12 +40,17 @@ export async function SiteHeader({
         (window !== null &&
           (await getRegistration(window.id, current.userId)) !== null)
       : false;
+  const published =
+    current !== null && section === "liga" && window !== null
+      ? await publishedStages(window.id)
+      : null;
   const row =
     current !== null && section
       ? sectionRow(section, {
           phase,
           role: isStaff ? current.role : null,
           registrationRelevant,
+          published: published ?? undefined,
         })
       : null;
 

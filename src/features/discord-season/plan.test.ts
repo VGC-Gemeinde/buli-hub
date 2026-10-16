@@ -1,28 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { VIEW_CHANNEL } from "./naming";
 import {
+  groupRoom,
   missingOverwrites,
-  planGroupResources,
   planMemberRoles,
+  planRoomResources,
   type SeasonGroup,
   type SeasonPlayer,
+  stageRoom,
 } from "./plan";
 
 const G1A: SeasonGroup = { subDivisionId: "sd-1a", tier: 1, position: 0 };
 const G1B: SeasonGroup = { subDivisionId: "sd-1b", tier: 1, position: 1 };
 
-describe("planGroupResources", () => {
+describe("planRoomResources", () => {
   it("creates role and channel for an untracked group", () => {
     expect(
-      planGroupResources({
-        groups: [G1A],
+      planRoomResources({
+        rooms: [groupRoom(G1A)],
         tracked: [],
         liveRoleIds: new Set(),
         liveChannelIds: new Set(),
       }),
     ).toEqual([
       {
-        subDivisionId: "sd-1a",
+        key: "sd-1a",
         role: { status: "create", name: "Division 1a" },
         channel: { status: "create", name: "💬-div-1a-chat-💬" },
       },
@@ -31,8 +33,8 @@ describe("planGroupResources", () => {
 
   it("keeps tracked resources that are still live", () => {
     expect(
-      planGroupResources({
-        groups: [G1A],
+      planRoomResources({
+        rooms: [groupRoom(G1A)],
         tracked: [
           { subDivisionId: "sd-1a", kind: "group_role", discordId: "r1" },
           { subDivisionId: "sd-1a", kind: "group_channel", discordId: "c1" },
@@ -42,7 +44,7 @@ describe("planGroupResources", () => {
       }),
     ).toEqual([
       {
-        subDivisionId: "sd-1a",
+        key: "sd-1a",
         role: { status: "exists", id: "r1" },
         channel: { status: "exists", id: "c1" },
       },
@@ -50,8 +52,8 @@ describe("planGroupResources", () => {
   });
 
   it("recreates a tracked resource whose Discord object is gone", () => {
-    const [plan] = planGroupResources({
-      groups: [G1A],
+    const [plan] = planRoomResources({
+      rooms: [groupRoom(G1A)],
       tracked: [
         { subDivisionId: "sd-1a", kind: "group_role", discordId: "r1" },
         { subDivisionId: "sd-1a", kind: "group_channel", discordId: "c1" },
@@ -67,16 +69,69 @@ describe("planGroupResources", () => {
   });
 
   it("plans every group independently, in order", () => {
-    const plans = planGroupResources({
-      groups: [G1A, G1B],
+    const plans = planRoomResources({
+      rooms: [groupRoom(G1A), groupRoom(G1B)],
       tracked: [
         { subDivisionId: "sd-1b", kind: "group_role", discordId: "r2" },
       ],
       liveRoleIds: new Set(["r2"]),
       liveChannelIds: new Set(),
     });
-    expect(plans.map((p) => p.subDivisionId)).toEqual(["sd-1a", "sd-1b"]);
+    expect(plans.map((p) => p.key)).toEqual(["sd-1a", "sd-1b"]);
     expect(plans[1].role).toEqual({ status: "exists", id: "r2" });
+  });
+});
+
+describe("stage rooms", () => {
+  it("creates the Playoffs room and keeps a tracked Relegation room", () => {
+    expect(
+      planRoomResources({
+        rooms: [stageRoom("playoff"), stageRoom("relegation")],
+        tracked: [
+          { subDivisionId: null, kind: "relegation_role", discordId: "rr" },
+          { subDivisionId: null, kind: "relegation_channel", discordId: "rc" },
+          // A group's role never stands in for a stage's.
+          { subDivisionId: "sd-1a", kind: "group_role", discordId: "g" },
+        ],
+        liveRoleIds: new Set(["rr", "g"]),
+        liveChannelIds: new Set(["rc"]),
+      }),
+    ).toEqual([
+      {
+        key: "playoff",
+        role: { status: "create", name: "Playoffs" },
+        channel: { status: "create", name: "💬-playoffs-chat-💬" },
+      },
+      {
+        key: "relegation",
+        role: { status: "exists", id: "rr" },
+        channel: { status: "exists", id: "rc" },
+      },
+    ]);
+  });
+
+  it("gives a player the role of every stage they have a match in", () => {
+    const plan = planMemberRoles({
+      players: [
+        {
+          userId: "u",
+          name: "U",
+          discordId: "d",
+          subDivisionId: "sd-1a",
+          stages: ["relegation"],
+        },
+      ],
+      buliRoleId: "buli",
+      groupRoleIds: new Map([
+        ["sd-1a", "g"],
+        ["relegation", "rel"],
+        ["playoff", "po"],
+      ]),
+      members: [{ id: "d", roles: ["po"] }],
+    });
+    expect(plan.players[0].add.sort()).toEqual(["buli", "g", "rel"]);
+    // A stage role the player has no match in comes off.
+    expect(plan.removes).toEqual([{ discordId: "d", roleId: "po" }]);
   });
 });
 

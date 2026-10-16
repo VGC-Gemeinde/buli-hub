@@ -12,14 +12,14 @@ Der Hub bleibt die einzige Quelle der Wahrheit; der Stream liest nur. Keine Schr
 
 **In:**
 
-- `GET /api/stream/matches`: die aktuelle Saison (`latestWindow`) und alle Matches mit normalem Ergebnis (Best-of-3, `outcome = normal`, Spiele in `match_games`, beide Teamsheets in `team_sheets`). Freilose, Free Wins und Double Losses fehlen: sie haben keine Spiele und keine Teamsheets, im Stream gibt es nichts zu zeigen.
+- `GET /api/stream/matches`: die aktuelle Saison (`latestWindow`) und alle Matches mit normalem Ergebnis (Best-of-3, `outcome = normal`, Spiele in `match_games`, beide Teamsheets in `team_sheets`), reguläre wie Tiebreaker, Relegation und Playoffs (`docs/plans/relegation-and-playoffs.md`). Freilose, Free Wins und Double Losses fehlen: sie haben keine Spiele und keine Teamsheets, im Stream gibt es nichts zu zeigen.
 - `GET /api/stream/matches/[matchId]`: ein Match aus dieser Liste mit Teamsheets und Avataren. 404 für alles andere (falsche Saison, ohne normales Ergebnis, unbekannt).
 - Auth: `Authorization: Bearer <STREAM_API_SECRET>` über `authorizeBearer` in `src/lib/bearer.ts` (vorher `authorizeJob` in `jobs.ts`; die Funktion war schon generisch, die Job-Route nutzt sie weiter). Eigenes Secret, nicht `JOBS_SECRET`, damit beide Aufrufer getrennt rotieren. 503 ohne Secret, 401 bei falschem.
 - Kein Spoilerschutz, kein Embargo (MotW, Aufnahmen): Der Aufrufer ist der Stream, der das Match zeigt; die Route ist nicht öffentlich und nicht vom Browser erreichbar (kein CORS). Das steht als Kommentar an der Route. Beide Embargo-Gründe stehen aber als Flag im Payload (`motw`, `recording`), damit der Stream seine eigenen Aufnahmen markieren kann (`docs/plans/recording-holds.md`).
 
 **Out:**
 
-- Tabellen, Spielplan, Playoffs. Kommen als weitere Routen unter `/api/stream/`, sobald der Stream ein Overlay dafür hat.
+- Tabellen, Spielplan, das Bracket als Ganzes. Kommen als weitere Routen unter `/api/stream/`, sobald der Stream ein Overlay dafür hat.
 - Offene Matches (Live-Cast). Der Stream nutzt dafür seine eigene Quelle.
 - Saison-Auswahl. `latestWindow` reicht; ein `?season=` kommt bei Bedarf.
 - Ratenbegrenzung. Ein Aufrufer, ein Secret, Aufrufe nur durch Operator-Aktionen.
@@ -32,8 +32,11 @@ GET /api/stream/matches
   season: { number: 2, name: "Saison 2" },
   matches: [{
     id, round: 3,
-    division: { tier: 1, name: "Division 1" },
-    group: { name: "Division 1a", shortName: "1a" },
+    stage: "regular" | "tiebreaker" | "relegation" | "playoff",
+    weekName: "Spieltag 3",            // nach der Saison "Woche 1"
+    roundLabel: "Spieltag 3",          // nach der Saison die Stufe: "Relegation", "Playoffs · Halbfinale", "Tiebreaker"
+    division: { tier: 1, name: "Division 1" },   // Relegation: die obere Division, Playoffs: 1
+    group: { name: "Division 1a", shortName: "1a" },  // Relegation "Division 1 und 2" / "1/2", Playoffs "Playoffs" / "PO", Tiebreaker die entschiedene Tabelle
     playerA: { id, name }, playerB: { id, name },
     games: ["a", "b", "a"],            // Sieger je Spiel in Spielreihenfolge
     platform: "showdown" | "cartridge",
@@ -52,7 +55,7 @@ GET /api/stream/matches/<id>
 }
 ```
 
-`record` ist die Bilanz, die der Spieler **in dieses Match mitbringt**: die Saisonbilanz ohne dieses Match und ohne jedes andere gerade zurückgehaltene Ergebnis (`windowPlayerForm` mit Ausschlussmenge, also dieselbe Rechnung wie die Tabelle). Nur das Detail trägt sie: die Liste ist der Match-Picker und bräuchte sonst pro Aufruf eine Tabellenberechnung. Ein Spieler ohne Tabellenzeile, also ohne Platzierung in dieser Saison, liest 0:0.
+`record` ist die Bilanz, die der Spieler **in dieses Match mitbringt**: die Saisonbilanz ohne dieses Match und ohne jedes andere gerade zurückgehaltene Ergebnis (`windowPlayerForm` mit Ausschlussmenge, also dieselbe Rechnung wie die Tabelle). Nach der regulären Saison läuft sie weiter: dazu jedes Tiebreaker-, Relegations- und Playoff-Match des Spielers aus einer früheren Woche mit gezähltem Ergebnis (eine Doppelniederlage ist für beide eine Niederlage), ohne zurückgehaltene (`recordAfterSeason`). Nur das Detail trägt sie: die Liste ist der Match-Picker und bräuchte sonst pro Aufruf eine Tabellenberechnung. Ein Spieler ohne Tabellenzeile, also ohne Platzierung in dieser Saison, liest 0:0.
 
 Der Grund für den Ausschluss ist das Overlay, nicht die API: ein Stream deckt ein Match Spiel für Spiel auf, und eine Bilanz, die dieses Match schon mitzählt, verrät den Ausgang vor dem ersten Spiel. Dasselbe gilt für die übrigen zurückgehaltenen Matches der Woche, deren Ergebnisse dasselbe Publikum noch nicht kennt. Der Ausgang dieses Matches steht in `games`, das Stream-Backend addiert ihn, sobald es das Match ausgespielt hat.
 

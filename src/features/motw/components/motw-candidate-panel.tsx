@@ -4,7 +4,7 @@ import { Check, Star } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { MotwCandidate } from "../motw";
+import { isSettled, type MotwCandidate } from "../motw";
 import { RowMarker } from "./motw-option-row";
 import { MotwSide } from "./motw-player";
 
@@ -30,6 +30,7 @@ export function MotwCandidatePanel({
   onConfirm,
   onPromote,
   onDrop,
+  onAcknowledge,
   onAdd,
   addOpen,
 }: {
@@ -40,6 +41,9 @@ export function MotwCandidatePanel({
   onConfirm: (matchId: string) => void;
   onPromote: (matchId: string) => void;
   onDrop: (matchId: string) => void;
+  // Re-nominates in the same role, taking the current line-up as the new
+  // snapshot (after "Besetzung geändert").
+  onAcknowledge: (matchId: string, role: MotwCandidate["role"]) => void;
   onAdd: () => void;
   addOpen: boolean;
 }) {
@@ -81,6 +85,9 @@ export function MotwCandidatePanel({
             onConfirm={() => onConfirm(candidate.option.matchId)}
             onPromote={() => onPromote(candidate.option.matchId)}
             onDrop={() => onDrop(candidate.option.matchId)}
+            onAcknowledge={() =>
+              onAcknowledge(candidate.option.matchId, candidate.role)
+            }
           />
         ))}
       </div>
@@ -110,6 +117,7 @@ function CandidateCard({
   onConfirm,
   onPromote,
   onDrop,
+  onAcknowledge,
 }: {
   candidate: MotwCandidate;
   editable: boolean;
@@ -119,9 +127,11 @@ function CandidateCard({
   onConfirm: () => void;
   onPromote: () => void;
   onDrop: () => void;
+  onAcknowledge: () => void;
 }) {
   const { option, role } = candidate;
   const primary = role === "primary";
+  const settled = isSettled(option);
 
   return (
     <div
@@ -140,14 +150,38 @@ function CandidateCard({
         </span>
         <RowMarker option={option} />
         {/* Wrapped lines align left (DESIGN.md §6): below sm the link takes its
-            own left-aligned line, flush right only on the sm+ one-liner. */}
-        <Link
-          href={`/match/${option.matchId}`}
-          className="w-full font-medium text-[13px] text-muted-foreground transition-colors hover:text-brand-blue sm:ml-auto sm:w-auto dark:hover:text-white"
-        >
-          Zum Match →
-        </Link>
+            own left-aligned line, flush right only on the sm+ one-liner. A
+            match whose line-up is still open has no match page yet. */}
+        {settled ? (
+          <Link
+            href={`/match/${option.matchId}`}
+            className="w-full font-medium text-[13px] text-muted-foreground transition-colors hover:text-brand-blue sm:ml-auto sm:w-auto dark:hover:text-white"
+          >
+            Zum Match →
+          </Link>
+        ) : null}
       </div>
+
+      {candidate.changedFrom ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-3 py-2 text-[13px]">
+          <span>
+            <span className="font-semibold">Besetzung geändert.</span> Bei der
+            Nominierung: {candidate.changedFrom}
+          </span>
+          {editable ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="sm:ml-auto"
+              disabled={disabled}
+              onClick={onAcknowledge}
+            >
+              Neue Besetzung übernehmen
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Capped and centred like the confirmed panel: at full card width the
           avatars strand themselves at the edges and the matchup stops reading
@@ -162,16 +196,18 @@ function CandidateCard({
 
       {editable && !confirmed ? (
         <div className="flex flex-wrap gap-2 border-t pt-3">
-          <Button
-            type="button"
-            size="sm"
-            disabled={disabled}
-            title="Dieses Match als Match of the Week des Spieltags bestätigen"
-            onClick={onConfirm}
-          >
-            <Check aria-hidden />
-            {pending ? "Wird bestätigt…" : "Bestätigen"}
-          </Button>
+          {settled ? (
+            <Button
+              type="button"
+              size="sm"
+              disabled={disabled}
+              title="Dieses Match als Match of the Week der Woche bestätigen"
+              onClick={onConfirm}
+            >
+              <Check aria-hidden />
+              {pending ? "Wird bestätigt…" : "Bestätigen"}
+            </Button>
+          ) : null}
           {primary ? null : (
             <Button
               type="button"

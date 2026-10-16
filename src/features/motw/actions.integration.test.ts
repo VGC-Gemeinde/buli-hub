@@ -91,6 +91,7 @@ beforeAll(async () => {
     .insert(matches)
     .values(
       [1, 2, 3, 4].map((round) => ({
+        windowId,
         subDivisionId: subDivision.id,
         round,
         playerAId: alice,
@@ -106,6 +107,7 @@ beforeAll(async () => {
   const [second] = await db
     .insert(matches)
     .values({
+      windowId,
       subDivisionId: subDivision.id,
       round: 2,
       playerAId: carol,

@@ -30,6 +30,7 @@ type ActionState = "none" | "pending" | "reported";
 export function StaffMatchPanel({
   matchId,
   round,
+  weekName,
   groupName,
   playerA,
   playerB,
@@ -46,6 +47,8 @@ export function StaffMatchPanel({
 }: {
   matchId: string;
   round: number;
+  // "Spieltag 3", or "Woche 1" after the regular season.
+  weekName?: string;
   groupName: string;
   playerA: Identity;
   playerB: Identity;
@@ -98,6 +101,7 @@ export function StaffMatchPanel({
     <AwardFreewinDialog
       matchId={matchId}
       round={round}
+      weekName={weekName}
       groupName={groupName}
       playerA={playerA}
       playerB={playerB}

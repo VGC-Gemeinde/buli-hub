@@ -66,18 +66,21 @@ beforeAll(async () => {
     .insert(matches)
     .values([
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 1,
         playerAId: alice,
         playerBId: bob,
       },
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 2,
         playerAId: alice,
         playerBId: bob,
       },
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 1,
         playerAId: carol,
@@ -181,12 +184,14 @@ beforeAll(async () => {
     .insert(matches)
     .values([
       {
+        windowId,
         subDivisionId: subs2[0].id,
         round: 1,
         playerAId: dave,
         playerBId: erin,
       },
       {
+        windowId,
         subDivisionId: subs2[1].id,
         round: 1,
         playerAId: frank,
@@ -241,6 +246,7 @@ describe("matchSelectionContext", () => {
     expect(await matchSelectionContext(matchR2)).toEqual({
       windowId,
       round: 2,
+      stage: "regular",
       playerAId: alice,
       playerBId: bob,
       isBye: false,

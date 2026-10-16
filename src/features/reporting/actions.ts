@@ -2,11 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { syncResultPost } from "@/features/discord-posts/sync";
-import { droppedIdsForSubDivision } from "@/features/drops/queries";
+import {
+  droppedIdsForWindow,
+  lateDroppedIdsForWindow,
+} from "@/features/drops/queries";
 import { membershipBlock } from "@/features/membership/membership";
 import { regelwerkBlock } from "@/features/regelwerk/guard";
 import { currentUser } from "@/features/roles/guard";
-import { matchSchedulePublished } from "@/features/schedule/queries";
+import {
+  afterResultChange,
+  withheldSourceReportRefusal,
+} from "@/features/schedule/outcome-guard";
+import {
+  matchSchedulePublished,
+  resultLockError,
+} from "@/features/schedule/queries";
 import {
   getMatchForReport,
   getMatchResult,
@@ -42,6 +52,10 @@ export async function reportMatch(input: {
     return blocked;
   }
 
+  const lockError = await resultLockError(input.matchId);
+  if (lockError) {
+    return { ok: false, error: lockError };
+  }
   const match = await getMatchForReport(input.matchId);
   if (!match) {
     return { ok: false, error: "Match nicht gefunden" };
@@ -67,7 +81,7 @@ export async function reportMatch(input: {
     return { ok: false, error: "Das Ergebnis wurde bereits gemeldet" };
   }
   // A drop decides the match — there is nothing left to report.
-  const droppedIds = await droppedIdsForSubDivision(match.subDivisionId);
+  const droppedIds = await droppedIdsForWindow(match.windowId);
   if (
     droppedIds.has(match.playerA.userId) ||
     droppedIds.has(match.playerB.userId)
@@ -76,6 +90,25 @@ export async function reportMatch(input: {
       ok: false,
       error: "Das Match wurde durch einen Drop entschieden",
     };
+  }
+  // After the regular season a late drop decides an open match too, and a
+  // line-up that comes from a withheld result cannot be reported yet
+  // (docs/plans/relegation-and-playoffs.md).
+  if (match.stage !== "regular") {
+    const lateDroppedIds = await lateDroppedIdsForWindow(match.windowId);
+    if (
+      lateDroppedIds.has(match.playerA.userId) ||
+      lateDroppedIds.has(match.playerB.userId)
+    ) {
+      return {
+        ok: false,
+        error: "Das Match wurde durch einen Drop entschieden",
+      };
+    }
+    const withheldSource = await withheldSourceReportRefusal(input.matchId);
+    if (withheldSource) {
+      return { ok: false, error: withheldSource };
+    }
   }
 
   const staffIds = new Set(
@@ -119,6 +152,8 @@ export async function reportMatch(input: {
     canonical.sheets,
     current.userId,
   );
+  // A tiebreaker's result seats its winner (docs/plans/relegation-and-playoffs.md).
+  await afterResultChange(input.matchId);
   revalidatePath("/spieler");
   revalidatePath(`/match/${input.matchId}`);
   // Best-effort Discord mirror (a pending free win converges to "no post").

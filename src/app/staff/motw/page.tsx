@@ -5,6 +5,7 @@ import {
   initialMotwRound,
   type MotwOption,
   type MotwPlayer,
+  relegationPlayoffsOptions,
 } from "@/features/motw/motw";
 import {
   motwForWindow,
@@ -13,19 +14,25 @@ import {
   windowPlayerForm,
 } from "@/features/motw/queries";
 import { holdsForWindow } from "@/features/recordings/queries";
-import { windowMatchOverview } from "@/features/reporting/queries";
+import {
+  reportedMatchIds,
+  windowMatchOverview,
+} from "@/features/reporting/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { relegationPlayoffsSides } from "@/features/schedule/relegation-playoffs-setup";
 import { currentMatchday, type Identity } from "@/features/season/dashboard";
-import { matchdaysForWindow } from "@/features/season/queries";
+import { allMatchdaysForWindow } from "@/features/season/queries";
 import { StaffPage } from "@/features/staff/components/staff-page";
 import { latestWindow } from "@/features/staff/queries";
 import { streamPhotoUrl } from "@/features/stream-photos/photo";
 import { streamPhotoPathsFor } from "@/features/stream-photos/queries";
 import { germanToday } from "@/lib/german-time";
+import { PLAYER_NAME_FALLBACK } from "@/lib/player-name";
 
-// Staff workspace for the Match of the Week: one Spieltag at a time, paged
-// across the whole season. Candidates (Hauptmatch + backups) are nominated for
+// Staff workspace for the Match of the Week: one week at a time, paged
+// across the whole season, the weeks of Relegation und Playoffs included
+// (docs/plans/relegation-and-playoffs.md). Candidates (Hauptmatch + backups) are nominated for
 // the current and every later Spieltag, and one of them is confirmed as the
 // Match of the Week (docs/plans/motw-candidates.md); a settled past week keeps
 // its confirmation and only its VOD link stays editable.
@@ -43,7 +50,7 @@ export default async function StaffMotwPage({
   if (!window) {
     redirect("/staff");
   }
-  const matchdays = await matchdaysForWindow(window.id);
+  const matchdays = await allMatchdaysForWindow(window.id);
   // No schedule → no running season → nothing to nominate.
   if (matchdays.length === 0) {
     redirect("/staff");
@@ -51,18 +58,37 @@ export default async function StaffMotwPage({
 
   const today = germanToday();
   const currentRound = currentMatchday(matchdays, today)?.round ?? null;
-  const [selections, holds, overview, form, flags] = await Promise.all([
+  const [selections, holds, overview, form, flags, after] = await Promise.all([
     motwForWindow(window.id),
     holdsForWindow(window.id),
     windowMatchOverview(window.id),
     windowPlayerForm(window.id),
     profileFlags(),
+    relegationPlayoffsSides(window.id),
   ]);
   const photos = await streamPhotoPathsFor([
-    ...new Set(
-      overview.flatMap((match) => [match.playerA.userId, match.playerB.userId]),
-    ),
+    ...new Set([
+      ...overview.flatMap((match) => [
+        match.playerA.userId,
+        match.playerB.userId,
+      ]),
+      ...after.matches.flatMap((match) => [
+        ...match.a.candidates,
+        ...match.b.candidates,
+      ]),
+    ]),
   ]);
+  const identities = new Map<string, Identity>(after.identities);
+  for (const match of overview) {
+    identities.set(match.playerA.userId, match.playerA);
+    identities.set(match.playerB.userId, match.playerB);
+  }
+  const identityOf = (userId: string): Identity =>
+    identities.get(userId) ?? {
+      userId,
+      name: PLAYER_NAME_FALLBACK,
+      avatarUrl: null,
+    };
 
   const toPlayer = (identity: Identity): MotwPlayer => {
     const record: PlayerForm | undefined = form.get(identity.userId);
@@ -81,17 +107,26 @@ export default async function StaffMotwPage({
   };
 
   // Drop-decided matches cannot be featured — they never become options.
-  const options: MotwOption[] = overview
-    .filter((match) => !match.decidedByDrop)
-    .map((match) => ({
-      matchId: match.matchId,
-      round: match.round,
-      tier: match.tier,
-      groupName: match.groupName,
-      playerA: toPlayer(match.playerA),
-      playerB: toPlayer(match.playerB),
-      reported: match.outcome !== null,
-    }));
+  const options: MotwOption[] = [
+    ...overview
+      .filter((match) => !match.decidedByDrop)
+      .map((match) => ({
+        matchId: match.matchId,
+        round: match.round,
+        tier: match.tier,
+        groupName: match.groupName,
+        playerA: toPlayer(match.playerA),
+        playerB: toPlayer(match.playerB),
+        reported: match.outcome !== null,
+      })),
+    ...relegationPlayoffsOptions({
+      matches: after.matches,
+      toPlayer: (userId) => toPlayer(identityOf(userId)),
+      reported: await reportedMatchIds(
+        after.matches.map((match) => match.matchId),
+      ),
+    }),
+  ];
 
   const weeks = buildMotwWeeks({
     matchdays,
@@ -99,6 +134,7 @@ export default async function StaffMotwPage({
     selections,
     options,
     holds,
+    nameOf: (userId) => identityOf(userId).name,
   });
 
   const requested = Number((await searchParams).spieltag);
@@ -117,7 +153,7 @@ export default async function StaffMotwPage({
   return (
     <StaffPage
       title="Match of the Week"
-      intro="Ein Match pro Spieltag, ligaweit über alle Divisionen. Pro Woche werden ein Hauptmatch und beliebig viele Backups gewählt, alle werden wie Aufnahmen zurückgehalten. Welches davon das Match of the Week war, wird hier bestätigt. Bis dahin bewirbt die Startseite weiter das Match der Vorwoche. Ein vergangener Spieltag lässt sich nachtragen, solange er nichts Bestätigtes hat. Danach bleibt nur der VOD-Link änderbar."
+      intro="Ein Match pro Woche, ligaweit über alle Divisionen. Pro Woche werden ein Hauptmatch und beliebig viele Backups gewählt, alle werden wie Aufnahmen zurückgehalten. Welches davon das Match of the Week war, wird hier bestätigt. Bis dahin bewirbt die Startseite weiter das Match der Vorwoche. Ein vergangener Spieltag lässt sich nachtragen, solange er nichts Bestätigtes hat. Danach bleibt nur der VOD-Link änderbar."
     >
       <MotwManager
         weeks={weeks}

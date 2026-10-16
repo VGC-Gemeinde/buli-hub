@@ -6,6 +6,12 @@ import { membershipBlock } from "@/features/membership/membership";
 import { regelwerkBlock } from "@/features/regelwerk/guard";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import {
+  afterResultChange,
+  countedOutcome,
+  outcomeChangeRefusal,
+} from "@/features/schedule/outcome-guard";
+import { resultLockError } from "@/features/schedule/queries";
 import type { Identity } from "@/features/season/dashboard";
 import {
   type DisputeDecision,
@@ -56,6 +62,10 @@ export async function openDispute(input: {
     return blocked;
   }
 
+  const lockError = await resultLockError(input.matchId);
+  if (lockError) {
+    return { ok: false, error: lockError };
+  }
   const match = await getMatchForReport(input.matchId);
   if (!match || !match.playerB) {
     return { ok: false, error: "Match nicht gefunden" };
@@ -108,6 +118,10 @@ export async function decideDispute(input: {
   if (!decision.success) {
     return { ok: false, error: "Ungültige Entscheidung" };
   }
+  const lockError = await resultLockError(input.matchId);
+  if (lockError) {
+    return { ok: false, error: lockError };
+  }
   if (!(await matchOpenDispute(input.matchId))) {
     return { ok: false, error: "Keine offene Anfechtung" };
   }
@@ -149,6 +163,27 @@ export async function decideDispute(input: {
     }
     change.sheets = canonical.sheets;
   }
+  // The outcome the decision leads to, for the Relegation und Playoffs
+  // guard: a decision that changes how such a match ends is refused once a
+  // match building on it has a result.
+  const next =
+    change.kind === "keep"
+      ? null
+      : change.kind === "delete"
+        ? ({ kind: "none" } as const)
+        : change.kind === "confirm"
+          ? countedOutcome({ ...result, confirmedAt: new Date() })
+          : countedOutcome({
+              outcome: change.result.outcome,
+              winnerId: change.result.winnerId,
+              confirmedAt: new Date(),
+            });
+  if (next) {
+    const refusal = await outcomeChangeRefusal(input.matchId, next);
+    if (refusal) {
+      return { ok: false, error: refusal };
+    }
+  }
   await persistDecision({
     matchId: input.matchId,
     resolution,
@@ -156,6 +191,7 @@ export async function decideDispute(input: {
     resolvedById: current.userId,
     change,
   });
+  await afterResultChange(input.matchId);
   revalidate(input.matchId);
   // A decision can change the public result, so the Discord post has to follow
   // (best-effort — syncResultPost never throws).

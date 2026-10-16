@@ -36,6 +36,7 @@ import {
   SEED_SHEET_B,
 } from "@/features/dev/teamsheets";
 import { DropBanner } from "@/features/drops/components/drop-banner";
+import { LateDropPanel } from "@/features/drops/components/late-drop-panel";
 import { ProfileStaffPanel } from "@/features/drops/components/profile-staff-panel";
 import { FavoriteButton } from "@/features/favorites/components/favorite-button";
 import { FavoritesView } from "@/features/favorites/components/favorites-view";
@@ -44,23 +45,36 @@ import {
   FeedbackPanel,
 } from "@/features/feedback/components/feedback-panel";
 import { canSend, type FeedbackKind } from "@/features/feedback/feedback";
+import { finalTable } from "@/features/final-table/places";
 import { MembershipBlockedCard } from "@/features/membership/components/blocked-card";
 import { MembershipGateBody } from "@/features/membership/components/gate-dialog";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import { MotwManager } from "@/features/motw/components/motw-manager";
 import { MotwMatchBanner } from "@/features/motw/components/motw-match-banner";
-import type {
-  MotwBlockData,
-  MotwCandidate,
-  MotwOption,
-  MotwPlayer,
-  MotwRole,
-  MotwWeek,
+import {
+  type MotwBlockData,
+  type MotwCandidate,
+  type MotwOption,
+  type MotwPlayer,
+  type MotwRole,
+  type MotwWeek,
+  relegationPlayoffsOptions,
 } from "@/features/motw/motw";
 import { SectionNav } from "@/features/navigation/components/section-nav";
 import { sectionRow } from "@/features/navigation/sections";
 import { ProfileSpielplan } from "@/features/player-profile/components/profile-schedule";
 import type { ProfileScheduleRow } from "@/features/player-profile/profile";
+import { AfterSeasonHero } from "@/features/playoffs/components/after-season-hero";
+import {
+  PlayoffsBoard,
+  RelegationBoard,
+  RelegationPlayoffsOverviewBlock,
+  StaffRelegationPlayoffs,
+  TiebreakerList,
+} from "@/features/playoffs/components/relegation-playoffs-public";
+import { afterSeasonSchedule } from "@/features/playoffs/dashboard";
+import { resolveRelegationPlayoffs } from "@/features/playoffs/progression";
+import { publicCards } from "@/features/playoffs/public-view";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { SaveIndicator } from "@/features/profile/components/settings-form";
 import { FullSchedule } from "@/features/public-league/components/full-schedule";
@@ -128,7 +142,17 @@ import type {
   StoredResult,
 } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
+import { CompleteSeasonPanel } from "@/features/schedule/components/complete-season-panel";
+import { CreateRelegationPlayoffsDialog } from "@/features/schedule/components/create-relegation-playoffs-dialog";
 import { CreateScheduleDialog } from "@/features/schedule/components/create-schedule-dialog";
+import { RelegationPlayoffsPreviewView } from "@/features/schedule/components/relegation-playoffs-preview";
+import {
+  PublishPanel,
+  StaffOrders,
+} from "@/features/schedule/components/relegation-playoffs-staff";
+import { StaffSteps } from "@/features/schedule/components/relegation-playoffs-steps";
+import { relegationPlayoffsPreview } from "@/features/schedule/relegation-playoffs-preview";
+import { publishBlockers } from "@/features/schedule/relegation-playoffs-publish";
 import { defaultDeadlines } from "@/features/schedule/spieltage";
 import { ParticipantList } from "@/features/season/components/participant-list";
 import {
@@ -137,7 +161,7 @@ import {
   SeasonMessagePanel,
 } from "@/features/season/components/pre-season";
 import { InSeasonDashboard } from "@/features/season/components/season-dashboard";
-import type { PlayerMatch } from "@/features/season/dashboard";
+import type { Identity, PlayerMatch } from "@/features/season/dashboard";
 import { ControlPill } from "@/features/seeding/components/control-bar";
 import { FinalizeDialog } from "@/features/seeding/components/finalize-dialog";
 import { PostSeasonPanel } from "@/features/seeding/components/post-season-panel";
@@ -252,6 +276,69 @@ const DASH_RESULTS_REPLACEMENT = new Map<string, MatchResultLite>([
 ]);
 const SUMMARY_A = { userId: "me", name: "Testerino", avatarUrl: AVATAR_URL };
 const SUMMARY_B = { userId: "opp", name: "Falinks", avatarUrl: null };
+// The dashboard's Spielplan after the regular season: a won tiebreaker, the
+// running semi-final and the final a win leads to.
+const DASH_AFTER_SEASON = afterSeasonSchedule({
+  meId: SUMMARY_A.userId,
+  today: "2026-07-22",
+  weeks: [
+    { startsOn: "2026-07-20", endsOn: "2026-07-26" },
+    { startsOn: "2026-07-27", endsOn: "2026-08-02" },
+  ],
+  tiebreakers: [
+    {
+      matchId: "tb",
+      tableName: "Division 1",
+      placeLabel: "Platz 4",
+      a: SUMMARY_A,
+      b: { userId: "Ole", name: "Ole", avatarUrl: null },
+      state: "played",
+      scoreA: 2,
+      scoreB: 1,
+      winner: "a",
+      doubleLoss: false,
+      mine: true,
+    },
+  ],
+  cards: [
+    {
+      matchId: "hf",
+      stage: "playoff",
+      tier: 1,
+      week: 1,
+      position: 0,
+      label: "HF 1",
+      a: { kind: "player", identity: SUMMARY_B, note: null },
+      b: { kind: "player", identity: SUMMARY_A, note: null },
+      state: "open",
+      scoreA: null,
+      scoreB: null,
+      winner: null,
+      doubleLoss: false,
+      mine: true,
+      fromA: null,
+      fromB: "tb",
+    },
+    {
+      matchId: "f",
+      stage: "playoff",
+      tier: 1,
+      week: 2,
+      position: 0,
+      label: "Finale",
+      a: { kind: "placeholder", label: "Sieger HF 1", candidates: [] },
+      b: { kind: "placeholder", label: "Sieger HF 2", candidates: [] },
+      state: "waiting",
+      scoreA: null,
+      scoreB: null,
+      winner: null,
+      doubleLoss: false,
+      mine: false,
+      fromA: "hf",
+      fromB: "hf2",
+    },
+  ],
+});
 const SUMMARY_RESULT: StoredResult = {
   outcome: "normal",
   winnerId: "me",
@@ -995,7 +1082,9 @@ const MOTW_MATCH: PublicMatch = {
 };
 const MOTW_WITH_VOD: MotwBlockData = {
   match: MOTW_MATCH,
+  weekName: "Spieltag 3",
   groupName: "Division 1a",
+  final: false,
   youtubeUrl: "https://www.youtube.com/watch?v=vgc-bundesliga",
   rankA: 1,
   rankB: 4,
@@ -1032,10 +1121,37 @@ const MOTW_OPEN: MotwBlockData = {
     scoreB: null,
     winnerId: null,
   },
+  weekName: "Spieltag 3",
   groupName: "Division 1a",
+  final: false,
   youtubeUrl: null,
   rankA: 1,
   rankB: 4,
+};
+// The billboard after the regular season: a Relegation match, and the final
+// in its variant (before the VOD, and with the VOD and the champion).
+const MOTW_RELEGATION: MotwBlockData = {
+  ...MOTW_WITH_VOD,
+  weekName: "Woche 1",
+  groupName: "Relegation · Division 1 und 2",
+  rankA: null,
+  rankB: null,
+  isCurrentRound: false,
+};
+const MOTW_FINAL_WITHHELD: MotwBlockData = {
+  ...MOTW_WITHHELD,
+  weekName: "Woche 2",
+  groupName: "Playoffs · Finale",
+  final: true,
+  rankA: null,
+  rankB: null,
+  isCurrentRound: false,
+};
+const MOTW_FINAL: MotwBlockData = {
+  ...MOTW_RELEGATION,
+  weekName: "Woche 2",
+  groupName: "Playoffs · Finale",
+  final: true,
 };
 
 // A stand-in stream photo for the gallery: an inline SVG in the overlay's
@@ -1116,6 +1232,8 @@ const RECORDING_HELD: HeldMatch[] = [
 const RECORDING_WEEKS: RecordingWeek[] = [
   {
     round: 3,
+    name: "Spieltag 3",
+    chip: "3",
     state: "current",
     startsOn: "2026-09-21",
     endsOn: "2026-09-27",
@@ -1135,6 +1253,8 @@ const RECORDING_WEEKS: RecordingWeek[] = [
   },
   {
     round: 4,
+    name: "Spieltag 4",
+    chip: "4",
     state: "future",
     startsOn: "2026-09-28",
     endsOn: "2026-10-04",
@@ -1242,7 +1362,7 @@ function motwCandidate(
   index: number,
   role: MotwRole,
 ): MotwCandidate {
-  return { option: motwOptions(round)[index], role };
+  return { option: motwOptions(round)[index], role, changedFrom: null };
 }
 
 // Every week state the workspace has: a missed past week (still backfillable),
@@ -1250,9 +1370,37 @@ function motwCandidate(
 // never confirmed (the state that holds the billboard back), the running week
 // confirmed but without a VOD, a future week with a Hauptkandidat, and an
 // untouched future week.
+// The first week after the regular season before the pairings are published:
+// sides open with whoever holds their seat right now, the bracket's later
+// sides as their origin.
+const RELEGATION_PLAYOFF_OPTIONS: MotwOption[] = relegationPlayoffsOptions({
+  matches: [
+    {
+      matchId: "rp-1",
+      tier: 1,
+      round: 7,
+      title: "Relegation · Division 1 und 2",
+      a: { label: "Division 1a · Platz 8", candidates: ["Pawmi"] },
+      b: { label: "Division 2b · Platz 1", candidates: ["Luca", "Maushold"] },
+    },
+    {
+      matchId: "rp-2",
+      tier: 1,
+      round: 7,
+      title: "Playoffs · Halbfinale",
+      a: { label: "Division 1a · Platz 1", candidates: ["Wooloo"] },
+      b: { label: "Division 1b · Platz 2", candidates: ["Nico"] },
+    },
+  ],
+  toPlayer: (name) => motwPlayer(name, 1, 3, 1, name !== "Nico"),
+  reported: new Set(),
+});
+
 const MOTW_WEEKS: MotwWeek[] = [
   {
     round: 1,
+    name: "Spieltag 1",
+    chip: "1",
     state: "past",
     startsOn: "2026-01-05",
     endsOn: "2026-01-11",
@@ -1264,6 +1412,8 @@ const MOTW_WEEKS: MotwWeek[] = [
   },
   {
     round: 2,
+    name: "Spieltag 2",
+    chip: "2",
     state: "past",
     startsOn: "2026-01-12",
     endsOn: "2026-01-18",
@@ -1275,6 +1425,8 @@ const MOTW_WEEKS: MotwWeek[] = [
   },
   {
     round: 3,
+    name: "Spieltag 3",
+    chip: "3",
     state: "past",
     startsOn: "2026-01-19",
     endsOn: "2026-01-25",
@@ -1286,6 +1438,8 @@ const MOTW_WEEKS: MotwWeek[] = [
   },
   {
     round: 4,
+    name: "Spieltag 4",
+    chip: "4",
     state: "current",
     startsOn: "2026-01-26",
     endsOn: "2026-02-01",
@@ -1297,6 +1451,8 @@ const MOTW_WEEKS: MotwWeek[] = [
   },
   {
     round: 5,
+    name: "Spieltag 5",
+    chip: "5",
     state: "future",
     startsOn: "2026-02-02",
     endsOn: "2026-02-08",
@@ -1308,11 +1464,32 @@ const MOTW_WEEKS: MotwWeek[] = [
   },
   {
     round: 6,
+    name: "Spieltag 6",
+    chip: "6",
     state: "future",
     startsOn: "2026-02-09",
     endsOn: "2026-02-15",
     options: motwOptions(6),
     candidates: [],
+    selection: null,
+    selectedMatch: null,
+    editable: true,
+  },
+  {
+    round: 7,
+    name: "Woche 1",
+    chip: "W1",
+    state: "future",
+    startsOn: "2026-02-16",
+    endsOn: "2026-02-22",
+    options: RELEGATION_PLAYOFF_OPTIONS,
+    candidates: [
+      {
+        option: RELEGATION_PLAYOFF_OPTIONS[0],
+        role: "primary",
+        changedFrom: "Wooloo gegen Luca oder Finn",
+      },
+    ],
     selection: null,
     selectedMatch: null,
     editable: true,
@@ -1606,6 +1783,179 @@ function FeedbackSpecimen({
     </DialogWidth>
   );
 }
+
+// Relegation und Playoffs before publishing, built with the real pure
+// functions: Division 1 in two groups (two title seats and one relegation
+// seat each, with a three-way tie at the title boundary in 1a), Division 2 in
+// two groups (one relegation seat each, a two-way tie at it in 2b), and a
+// Division 1 decided by its Gesamttabelle with six title seats (byes).
+const PREVIEW_NAMES = [
+  "Arda",
+  "Bea",
+  "Cem",
+  "Dana",
+  "Emil",
+  "Fee",
+  "Gil",
+  "Hanna",
+  "Ilyas",
+  "Jule",
+  "Kai",
+  "Lotte",
+  "Mio",
+  "Nele",
+  "Ole",
+  "Pia",
+  "Quentin",
+  "Ronja",
+];
+const previewIdentities = new Map(
+  PREVIEW_NAMES.map((name) => [
+    name,
+    { userId: name, name, avatarUrl: null } satisfies Identity,
+  ]),
+);
+const NO_ZONES = {
+  champion: 0,
+  promotions: 0,
+  promotionPlayoff: 0,
+  demotionPlayoff: 0,
+  demotions: 0,
+};
+function previewTable(
+  tier: number,
+  position: number | null,
+  names: string[],
+  ranks: number[],
+  counts: Partial<typeof NO_ZONES>,
+) {
+  return finalTable({
+    tier,
+    subDivisionId: position === null ? null : `${tier}-${position}`,
+    groupPosition: position,
+    groupLot: position === null ? null : position / 10,
+    rows: names.map((userId, i) => ({
+      userId,
+      rank: ranks[i],
+      dropped: false,
+      lot: i / 10,
+    })),
+    counts: { ...NO_ZONES, ...counts },
+  });
+}
+const PREVIEW_WEEKS = [
+  { startsOn: "2026-11-09", endsOn: "2026-11-15" },
+  { startsOn: "2026-11-16", endsOn: "2026-11-22" },
+  { startsOn: "2026-11-23", endsOn: "2026-11-29" },
+];
+const groupsPreview = relegationPlayoffsPreview({
+  tablesByTier: new Map([
+    [
+      1,
+      [
+        previewTable(1, 0, ["Arda", "Bea", "Cem", "Dana"], [1, 2, 2, 2], {
+          champion: 2,
+          demotionPlayoff: 1,
+        }),
+        previewTable(1, 1, ["Emil", "Fee", "Gil", "Hanna"], [1, 2, 3, 4], {
+          champion: 2,
+          demotionPlayoff: 1,
+        }),
+      ],
+    ],
+    [
+      2,
+      [
+        previewTable(2, 0, ["Ilyas", "Jule", "Kai", "Lotte"], [1, 2, 3, 4], {
+          promotionPlayoff: 1,
+        }),
+        previewTable(2, 1, ["Mio", "Nele", "Ole", "Pia"], [1, 1, 3, 4], {
+          promotionPlayoff: 1,
+        }),
+      ],
+    ],
+  ]),
+  matchdays: PREVIEW_WEEKS.slice(0, 2),
+});
+const byesPreview = relegationPlayoffsPreview({
+  tablesByTier: new Map([
+    [
+      1,
+      [
+        previewTable(
+          1,
+          null,
+          ["Arda", "Bea", "Cem", "Dana", "Emil", "Fee", "Gil", "Hanna"],
+          [1, 2, 3, 4, 5, 6, 7, 8],
+          { champion: 6 },
+        ),
+      ],
+    ],
+  ]),
+  matchdays: PREVIEW_WEEKS,
+});
+
+// The public pages of Relegation und Playoffs, built with the real pure
+// functions from the preview fixture above: one semi-final played, the
+// final waiting, one relegation pairing played, the viewer in another.
+const PUBLIC_CARDS = (() => {
+  const preview = groupsPreview;
+  const stored = [
+    ...preview.relegation.flatMap((boundary) => boundary.matches),
+    ...(Array.isArray(preview.playoffs)
+      ? preview.playoffs.flatMap((round) => round.matches)
+      : []),
+  ].map((match, i) => ({
+    matchId: `pub-${i}`,
+    stage: match.stage,
+    tier: match.tier,
+    position: match.position,
+    round: 10 + match.week - 1,
+    playerAId: null,
+    playerBId: null,
+    result:
+      i === 0 || i === 2
+        ? {
+            outcome: "free_win" as const,
+            winnerId: i === 0 ? "Ilyas" : "Arda",
+            confirmedAt: new Date(0),
+          }
+        : null,
+  }));
+  const resolved = resolveRelegationPlayoffs({
+    preview,
+    matches: stored,
+    firstRound: 10,
+    droppedIds: new Set(),
+    lateDroppedIds: new Set(),
+  });
+  return publicCards({
+    resolved,
+    results: new Map(
+      stored.flatMap((match) =>
+        match.result ? [[match.matchId, { ...match.result, games: [] }]] : [],
+      ),
+    ),
+    withheld: new Set(),
+    tiebreakerOf: new Map(),
+    identities: previewIdentities,
+    viewer: { userId: "Mio", isStaff: false },
+  });
+})();
+const PUBLIC_WEEKS = [
+  {
+    name: "Woche 1",
+    startsOn: "2026-11-16",
+    endsOn: "2026-11-22",
+    content: "Relegation · Halbfinale",
+  },
+  {
+    name: "Woche 2",
+    startsOn: "2026-11-23",
+    endsOn: "2026-11-29",
+    content: "Finale",
+  },
+];
 
 function Specimen({
   label,
@@ -2219,6 +2569,26 @@ export function Gallery() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Liga-Übersicht nach der regulären Saison</h2>
+        <Specimen label="Woche 1 läuft: Zeitleiste mit Spieltagen und Wochen, Relegation und Halbfinale der Division 1 (Spoiler-Schutz an)">
+          <PublicLeague
+            overview={{ ...PUBLIC_OVERVIEW, currentRound: null }}
+            meId="me"
+            initialSpoilersOff={false}
+            favoriteIds={new Set()}
+            afterSeason={{
+              cards: PUBLIC_CARDS,
+              tiebreakers: [],
+              tiebreakerTiers: new Map(),
+              weeks: PUBLIC_WEEKS,
+              completed: false,
+            }}
+            afterSeasonWeek={{ current: 1, show: 1, begun: 1 }}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Favoriten</h2>
         <Specimen label="Seite (Spieltag 3 läuft: verdeckt · Duell · eigenes Match · REC · MotW vor VOD · spielfrei · Drop · überfällig; Stern entfernt, Suche fügt hinzu)">
           <FavoritesView
@@ -2470,6 +2840,11 @@ export function Gallery() {
         <Specimen label="Billboard — Vorwoche, die noch beworben wird, solange die laufende Woche nicht bestätigt ist">
           <MotwBlock motw={MOTW_CARRIED} />
         </Specimen>
+        <Specimen label="MotW-Block nach der regulären Saison: Relegation · Finale vor dem VOD · Finale mit VOD (aufdecken zeigt den Meister)">
+          <MotwBlock motw={MOTW_RELEGATION} season="Saison 9" />
+          <MotwBlock motw={MOTW_FINAL_WITHHELD} season="Saison 9" />
+          <MotwBlock motw={MOTW_FINAL} season="Saison 9" />
+        </Specimen>
         <Specimen label="Staff-Workspace — aktuelle Woche bestätigt, VOD fehlt, ein Backup bleibt zurückgehalten (Aktionen ohne Staff-Login wirkungslos)">
           <MotwManager weeks={MOTW_WEEKS} currentRound={4} initialRound={4} />
         </Specimen>
@@ -2487,6 +2862,9 @@ export function Gallery() {
         </Specimen>
         <Specimen label="Staff-Workspace — vergangener Spieltag ohne alles (nachträglich bestätigbar)">
           <MotwManager weeks={MOTW_WEEKS} currentRound={4} initialRound={1} />
+        </Specimen>
+        <Specimen label="Staff-Workspace — Woche 1 nach der Saison, unveröffentlicht: offene Seiten, Hauptmatch mit geänderter Besetzung, nicht bestätigbar">
+          <MotwManager weeks={MOTW_WEEKS} currentRound={4} initialRound={7} />
         </Specimen>
         <Specimen label="Match-Seite: Banner (ohne VOD · ohne VOD, Ergebnis noch nicht öffentlich · mit VOD)">
           <div className="flex flex-col">
@@ -2601,6 +2979,224 @@ export function Gallery() {
             seasonStart="2026-07-01"
             defaultDeadlines={defaultDeadlines("2026-07-01", 7)}
             largest={8}
+          />
+        </Specimen>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Spielplan: Relegation und Playoffs</h2>
+        <Specimen label="Dialog (Wochen nach dem letzten Spieltag)">
+          <CreateRelegationPlayoffsDialog
+            lastSpieltagEnd="2026-11-08"
+            defaultDeadlines={defaultDeadlines("2026-11-08", 3)}
+            weekContents={[
+              "Relegation · Viertelfinale",
+              "Halbfinale",
+              "Finale",
+            ]}
+            relegationMatches={6}
+            playoffMatches={7}
+          />
+        </Specimen>
+        <Specimen label="Vorschau, Gruppenmodus: Gleichstand ab drei an der Playoff-Grenze (Kandidaten), Tiebreaker an der Relegationsgrenze, Gruppentrennung">
+          <RelegationPlayoffsPreviewView
+            preview={groupsPreview}
+            identities={previewIdentities}
+          />
+        </Specimen>
+        <Specimen label="Öffentlich /playoffs: ein Halbfinale gespielt (Spoiler-Schutz an), Finale wartet">
+          <PlayoffsBoard
+            cards={PUBLIC_CARDS}
+            season="Saison 9"
+            weeks={PUBLIC_WEEKS}
+            initialSpoilersOff={false}
+          />
+        </Specimen>
+        <Specimen label="Öffentlich /relegation: eine Paarung gespielt (aufgedeckt), eine mit dem Betrachter, ein Sitz wartet auf einen Gleichstand">
+          <RelegationBoard
+            cards={PUBLIC_CARDS}
+            boundaries={[{ tier: 1, name: "Division 1 und 2" }]}
+            season="Saison 9"
+            weeks={PUBLIC_WEEKS}
+            initialSpoilersOff
+          />
+        </Specimen>
+        <Specimen label="Staff-Seite Relegation und Playoffs: Schritte (vor dem Erstellen · nach dem Veröffentlichen · abgeschlossen)">
+          <div className="flex flex-col gap-3">
+            <StaffSteps current={0} />
+            <StaffSteps current={2} />
+            <StaffSteps current={4} />
+          </div>
+        </Specimen>
+        <Specimen label="Staff-Seite nach dem Veröffentlichen: Relegation und Bracket mit Ergebnissen">
+          <StaffRelegationPlayoffs
+            cards={PUBLIC_CARDS}
+            tiebreakers={[]}
+            boundaries={[{ tier: 1, name: "Division 1 und 2" }]}
+            spoilersOff
+          />
+        </Specimen>
+        <Specimen label="Liga-Übersicht: Block unter dem MotW (laufende Runde)">
+          <RelegationPlayoffsOverviewBlock
+            cards={PUBLIC_CARDS}
+            spoilersOff={false}
+          />
+        </Specimen>
+        <Specimen label="Liga-Übersicht, Divisionsansicht: Tiebreaker (offen · gespielt, verdeckt)">
+          <TiebreakerList
+            spoilersOff={false}
+            tiebreakers={[
+              {
+                matchId: "tb-1",
+                tableName: "Division 2b",
+                placeLabel: "Platz 1",
+                a: { userId: "Mio", name: "Mio", avatarUrl: null },
+                b: { userId: "Nele", name: "Nele", avatarUrl: null },
+                state: "open",
+                scoreA: null,
+                scoreB: null,
+                winner: null,
+                doubleLoss: false,
+                mine: false,
+              },
+              {
+                matchId: "tb-2",
+                tableName: "Division 3a",
+                placeLabel: "Platz 7",
+                a: { userId: "Ole", name: "Ole", avatarUrl: null },
+                b: { userId: "Pia", name: "Pia", avatarUrl: null },
+                state: "played",
+                scoreA: 2,
+                scoreB: 1,
+                winner: "a",
+                doubleLoss: false,
+                mine: false,
+              },
+            ]}
+          />
+        </Specimen>
+        <Specimen label="Spieler-Dashboard: Hero (Relegation offen · Gegner steht noch nicht fest · Aufstieg · Meister)">
+          <div className="flex flex-col">
+            <AfterSeasonHero
+              season="Saison 9"
+              me={{ userId: "Mio", name: "Mio", avatarUrl: null }}
+              hero={{
+                kind: "match",
+                matchId: "x",
+                stage: "Relegation",
+                opponent: {
+                  kind: "player",
+                  identity: { userId: "Hanna", name: "Hanna", avatarUrl: null },
+                },
+                stakes: {
+                  win: "Aufstieg in Division 1",
+                  loss: "Klassenerhalt in Division 2",
+                },
+              }}
+            />
+            <AfterSeasonHero
+              season="Saison 9"
+              me={{ userId: "Bea", name: "Bea", avatarUrl: null }}
+              hero={{
+                kind: "match",
+                matchId: "y",
+                stage: "Playoffs · Finale",
+                opponent: { kind: "open", label: "Sieger HF 2" },
+                stakes: { win: "Meister", loss: "Ausgeschieden" },
+              }}
+            />
+            <AfterSeasonHero
+              season="Saison 9"
+              me={{ userId: "Mio", name: "Mio", avatarUrl: null }}
+              hero={{
+                kind: "outcome",
+                outcome: "promoted",
+                champion: false,
+                nextTier: 1,
+              }}
+            />
+            <AfterSeasonHero
+              season="Saison 9"
+              me={{ userId: "Arda", name: "Arda", avatarUrl: null }}
+              hero={{
+                kind: "outcome",
+                outcome: "stays",
+                champion: true,
+                nextTier: 1,
+              }}
+            />
+          </div>
+        </Specimen>
+        <Specimen label="Veröffentlichen: noch offene Punkte (Knopf gesperrt)">
+          <PublishPanel
+            blockers={publishBlockers({
+              scheduleCreated: true,
+              lastSpieltagOver: true,
+              unreported: 2,
+              openDisputes: 0,
+              pendingFreeWins: 1,
+              heldRegular: 1,
+              motwWithoutVod: 0,
+              openReplacementOffers: 0,
+            })}
+            counts={{ relegation: 6, playoffs: 8, tiebreakers: 1 }}
+          />
+        </Specimen>
+        <Specimen label="Veröffentlichen: alles geklärt">
+          <PublishPanel
+            blockers={[]}
+            counts={{ relegation: 6, playoffs: 8, tiebreakers: 0 }}
+          />
+        </Specimen>
+        <Specimen label="Match-Seite (Staff), Relegation: Drop nach der regulären Saison, ein Spieler gedroppt">
+          <LateDropPanel
+            players={[
+              { userId: "Quentin", name: "Quentin", avatarUrl: null },
+              { userId: "Marlon", name: "Marlon", avatarUrl: null },
+            ]}
+            lateDroppedIds={["Marlon"]}
+            open
+          />
+        </Specimen>
+        <Specimen label="Saison abschließen: noch offen · bereit · abgeschlossen">
+          <div className="flex flex-col gap-4">
+            <CompleteSeasonPanel
+              blockers={[
+                "2 Ausgänge stehen noch nicht fest",
+                "1 Ergebnis wird noch zurückgehalten",
+              ]}
+              completed={false}
+            />
+            <CompleteSeasonPanel blockers={[]} completed={false} />
+            <CompleteSeasonPanel blockers={[]} completed />
+          </div>
+        </Specimen>
+        <Specimen label="Nach dem Veröffentlichen: Reihenfolge für einen Gleichstand von drei">
+          <StaffOrders
+            ties={[
+              {
+                tieKey: "gallery-tie",
+                tableName: "Division 1a",
+                players: ["Bea", "Cem", "Dana"].map((name) => ({
+                  userId: name,
+                  name,
+                  avatarUrl: null,
+                })),
+                placeLabels: [
+                  "Platz 2 · Playoffs",
+                  "Platz 3 · Kein Auf- oder Abstieg",
+                  "Platz 4 · Relegation",
+                ],
+                reason: "",
+                decided: false,
+              },
+            ]}
+          />
+        </Specimen>
+        <Specimen label="Vorschau, Gesamttabelle mit sechs Playoff-Plätzen (Freilose für 1 und 2)">
+          <RelegationPlayoffsPreviewView
+            preview={byesPreview}
+            identities={previewIdentities}
           />
         </Specimen>
       </section>
@@ -2810,6 +3406,23 @@ export function Gallery() {
             defaultScope="group"
             me={SUMMARY_A}
             today={DASH_TODAY}
+          />
+        </Specimen>
+        <Specimen label="Nach der regulären Saison: Tiebreaker gewonnen, Halbfinale läuft, Finale wenn gewonnen">
+          <InSeasonDashboard
+            groupName="Division 1a"
+            currentRound={4}
+            totalRounds={4}
+            next={null}
+            matches={DASH_MATCHES}
+            resultByMatchId={DASH_RESULTS}
+            standings={DASH_STANDINGS}
+            divisionName="Division 1"
+            divisionStandings={null}
+            defaultScope="group"
+            me={SUMMARY_A}
+            today="2026-07-22"
+            afterSeason={DASH_AFTER_SEASON}
           />
         </Specimen>
         <Specimen label="Vorsaison: keine Saison">

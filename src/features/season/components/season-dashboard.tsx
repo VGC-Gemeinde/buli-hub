@@ -1,8 +1,13 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
 import { Button } from "@/components/ui/button";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
+import type {
+  AfterSeasonRow,
+  AfterSeasonSchedule,
+} from "@/features/playoffs/dashboard";
 import { matchDisplayState, scoreFor } from "@/features/reporting/match-state";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
@@ -74,36 +79,77 @@ function deadlineHint(endsOn: string, today: string): string {
 }
 
 // The season progress strip: one segment per Spieltag, current in orange.
-function ProgressStrip({ current, total }: { current: number; total: number }) {
+// Once the weeks after the regular season are published they follow as a
+// second group, `afterCurrent` the running one of them.
+function ProgressStrip({
+  current,
+  total,
+  after,
+}: {
+  current: number;
+  total: number;
+  after?: { count: number; current: number | null; begun: number };
+}) {
+  // Played weeks are navy in light mode, but navy on the dark background
+  // scored 1.02:1 — invisible, and fainter than the not-yet-played track
+  // (1.51:1), inverting the hierarchy. White at 35% restores it, following
+  // the same light-navy/dark-white pattern as `Tick`'s navy variant.
+  const tone = (state: "past" | "current" | "future") =>
+    state === "past"
+      ? "bg-brand-blue/30 dark:bg-white/35"
+      : state === "current"
+        ? "bg-brand-orange"
+        : "bg-muted dark:bg-white/12";
+  const segments = (
+    count: number,
+    state: (n: number) => Parameters<typeof tone>[0],
+  ) =>
+    Array.from({ length: count }, (_, i) => i + 1).map((n) => (
+      <div
+        key={n}
+        className={cn("h-1.5 flex-1 rounded-[3px]", tone(state(n)))}
+      />
+    ));
   return (
     <div className="mt-4 mb-6 flex items-center gap-3.5">
-      <div className="flex flex-1 gap-[5px]">
-        {Array.from({ length: total }, (_, i) => i + 1).map((round) => (
+      {after ? (
+        <div className="flex flex-1 gap-3">
+          <div className="flex gap-[5px]" style={{ flex: total }}>
+            {segments(total, () => "past")}
+          </div>
           <div
-            key={round}
-            className={cn(
-              "h-1.5 flex-1 rounded-[3px]",
-              // Played weeks are navy in light mode, but navy on the dark
-              // background scored 1.02:1 — invisible, and fainter than the
-              // not-yet-played track (1.51:1), inverting the hierarchy. White at
-              // 35% restores it, following the same light-navy/dark-white pattern
-              // as `Tick`'s navy variant.
-              round < current
-                ? "bg-brand-blue/30 dark:bg-white/35"
-                : round === current
-                  ? "bg-brand-orange"
-                  : "bg-muted dark:bg-white/12",
+            className="flex gap-[5px]"
+            style={{ flex: Math.max(after.count, Math.ceil(total / 3)) }}
+          >
+            {segments(after.count, (week) =>
+              week === after.current
+                ? "current"
+                : (
+                      after.current !== null
+                        ? week < after.current
+                        : week <= after.begun
+                    )
+                  ? "past"
+                  : "future",
             )}
-          />
-        ))}
-      </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-1 gap-[5px]">
+          {segments(total, (round) =>
+            round < current ? "past" : round === current ? "current" : "future",
+          )}
+        </div>
+      )}
       {/* 12px/0.04em, not 13px/0.1em: the caption shares this row with the bar
           (`flex-1`), so every pixel it takes is a pixel the bar loses. Montserrat
           is wider than the Barlow Condensed this was tuned for and the caption
           grew to 149px, visibly cutting the bar short. These values put it back
           at ~126px — the width the layout was designed around. */}
       <span className="whitespace-nowrap font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.04em]">
-        Spieltag {current} von {total}
+        {after && (after.current ?? after.begun) > 0
+          ? `Woche ${after.current ?? after.begun} von ${after.count}`
+          : `Spieltag ${after ? total : current} von ${total}`}
       </span>
     </div>
   );
@@ -295,11 +341,13 @@ function ScheduleTable({
   resultByMatchId,
   meId,
   today,
+  afterSeason,
 }: {
   matches: PlayerMatch[];
   resultByMatchId: Map<string, MatchResultLite>;
   meId: string;
   today: string;
+  afterSeason?: AfterSeasonSchedule | null;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border">
@@ -317,6 +365,139 @@ function ScheduleTable({
           today={today}
         />
       ))}
+      {afterSeason ? (
+        <>
+          <div className="flex h-8 items-center border-b bg-muted px-4 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
+            {afterSeason.title}
+          </div>
+          {afterSeason.rows.map((row) => (
+            <AfterSeasonScheduleRow
+              key={row.matchId ?? `ahead-${row.week}`}
+              row={row}
+            />
+          ))}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+// A row after the regular season: "W1" for the week, the stage under the
+// opponent, a round the player reaches only by winning muted.
+function AfterSeasonScheduleRow({ row }: { row: AfterSeasonRow }) {
+  const { status } = row;
+  const current = status.kind === "open" && status.current;
+  const overdue = status.kind === "open" && status.overdue;
+  const ahead = status.kind === "ahead";
+  const range =
+    row.startsOn && row.endsOn ? (
+      <span className="whitespace-nowrap text-[13px] text-muted-foreground">
+        <span className="hidden sm:inline">
+          {compactRange(row.startsOn, row.endsOn)}
+        </span>
+        <span className="sm:hidden">
+          {shortRange(row.startsOn, row.endsOn)}
+        </span>
+      </span>
+    ) : null;
+  return (
+    <div
+      className={cn(
+        "relative grid min-h-[43px] grid-cols-[44px_minmax(0,1fr)_auto] items-center border-b last:border-b-0",
+        current && "bg-brand-orange/6",
+        overdue && "bg-destructive/6",
+        row.matchId !== null && hoverRow,
+      )}
+    >
+      {row.matchId !== null ? (
+        <Link
+          href={`/match/${row.matchId}`}
+          aria-label={`Zum Match: ${row.stage}`}
+          className="absolute inset-0"
+        />
+      ) : null}
+      {current || overdue ? (
+        <span
+          className={cn(
+            "absolute inset-y-0 left-0 w-1.5",
+            overdue ? "bg-destructive" : "bg-brand-orange",
+          )}
+        />
+      ) : null}
+      <span
+        className={cn(
+          "pl-4 font-semibold text-sm tabular-nums",
+          current ? "text-brand-orange" : "text-muted-foreground",
+        )}
+      >
+        W{row.week}
+      </span>
+      <span
+        className={cn(
+          "flex min-w-0 items-center gap-2.5 py-1.5 pl-2",
+          ahead && "opacity-55",
+        )}
+      >
+        {row.opponent.kind === "player" ? (
+          <PlayerAvatar identity={row.opponent.identity} size="size-[26px]" />
+        ) : (
+          <span className="size-[26px] shrink-0 rounded-full border border-dashed" />
+        )}
+        <span className="flex min-w-0 flex-col">
+          {row.opponent.kind === "player" ? (
+            <PlayerLink
+              userId={row.opponent.identity.userId}
+              name={row.opponent.identity.name}
+              className="relative truncate font-medium text-[14.5px]"
+            />
+          ) : (
+            <span className="truncate font-medium text-[14.5px] text-muted-foreground">
+              {row.opponent.kind === "open"
+                ? row.opponent.label
+                : "Kein Gegner"}
+            </span>
+          )}
+          <span className="truncate text-[11.5px] text-muted-foreground">
+            {row.stage}
+          </span>
+        </span>
+      </span>
+      <span className="pr-4 pl-3">
+        {status.kind === "result" ? (
+          <span className="flex items-center justify-end gap-2.5">
+            <span
+              className={cn(
+                "hidden whitespace-nowrap rounded-full px-2 py-[2px] font-semibold text-[11.5px] sm:inline",
+                status.label === "Sieg"
+                  ? "bg-brand-orange/12 text-brand-blue dark:text-white"
+                  : "bg-muted text-muted-foreground",
+              )}
+            >
+              {status.label}
+            </span>
+            <span className="min-w-[38px] whitespace-nowrap text-right font-bold font-heading text-[17px] text-brand-blue tracking-[0.04em] dark:text-white">
+              {status.self} : {status.opponent}
+            </span>
+          </span>
+        ) : status.kind === "decided" ? (
+          <span className="flex justify-end">
+            <span className="whitespace-nowrap rounded-full bg-muted px-2 py-[2px] font-semibold text-[11.5px] text-muted-foreground">
+              {status.label}
+            </span>
+          </span>
+        ) : overdue ? (
+          <span className="flex items-center justify-end gap-2.5">
+            <span className="whitespace-nowrap rounded-full bg-destructive/10 px-2 py-[2px] font-semibold text-[11.5px] text-destructive">
+              Überfällig
+            </span>
+            {range}
+          </span>
+        ) : (
+          <span className={cn("flex justify-end", ahead && "opacity-55")}>
+            {range}
+          </span>
+        )}
+      </span>
     </div>
   );
 }
@@ -525,6 +706,9 @@ export function InSeasonDashboard({
   divisionWithheld,
   today,
   favoriteIds,
+  hero,
+  afterSeason,
+  afterWeeks,
 }: {
   groupName: string;
   currentRound: number;
@@ -548,17 +732,30 @@ export function InSeasonDashboard({
   today: string;
   // Stars in the tables (docs/plans/favorites.md).
   favoriteIds?: ReadonlySet<string>;
+  // After the regular season the hero is the next match of Relegation und
+  // Playoffs or the season outcome (docs/plans/relegation-and-playoffs.md).
+  hero?: ReactNode;
+  // The player's matches after the regular season, below the Spieltage.
+  afterSeason?: AfterSeasonSchedule | null;
+  // The weeks after the regular season, for the progress strip.
+  afterWeeks?: { count: number; current: number | null; begun: number };
 }) {
   const meId = me.userId;
   return (
     <>
-      <ProgressStrip current={currentRound} total={totalRounds} />
-      <Hero
-        match={next}
-        result={next ? (resultByMatchId.get(next.matchId) ?? null) : null}
-        me={me}
-        today={today}
+      <ProgressStrip
+        current={currentRound}
+        total={totalRounds}
+        after={afterWeeks}
       />
+      {hero ?? (
+        <Hero
+          match={next}
+          result={next ? (resultByMatchId.get(next.matchId) ?? null) : null}
+          me={me}
+          today={today}
+        />
+      )}
       <div className="mt-8 grid grid-cols-1 items-start gap-7 lg:grid-cols-2">
         <section className="flex flex-col gap-3">
           <SectionHeader meta={`${totalRounds} Spieltage`}>
@@ -569,6 +766,7 @@ export function InSeasonDashboard({
             resultByMatchId={resultByMatchId}
             meId={meId}
             today={today}
+            afterSeason={afterSeason}
           />
         </section>
 

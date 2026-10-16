@@ -5,6 +5,29 @@ const labels = (groups: ReturnType<typeof sectionRow>) =>
   groups?.map((group) => group.entries.map((entry) => entry.label)) ?? null;
 
 describe("sectionRow", () => {
+  it("adds Playoffs and Relegation once they are published", () => {
+    expect(
+      labels(
+        sectionRow("liga", {
+          phase: "regular_season",
+          role: null,
+          published: { playoffs: true, relegation: true },
+        }),
+      ),
+    ).toEqual([
+      ["Übersicht", "Playoffs", "Relegation", "Spielplan", "Favoriten"],
+    ]);
+    expect(
+      labels(
+        sectionRow("liga", {
+          phase: "regular_season",
+          role: null,
+          published: { playoffs: false, relegation: true },
+        }),
+      ),
+    ).toEqual([["Übersicht", "Relegation", "Spielplan", "Favoriten"]]);
+  });
+
   it("gives the Liga its pages while a season runs, Favoriten for everyone", () => {
     expect(
       labels(sectionRow("liga", { phase: "regular_season", role: null })),
@@ -37,7 +60,13 @@ describe("sectionRow", () => {
     ).toEqual([
       ["Übersicht"],
       ["Woche", "Aufnahmen"],
-      ["Teilnehmer", "Divisionen", "Spielplan", "Match of the Week"],
+      [
+        "Teilnehmer",
+        "Divisionen",
+        "Spielplan",
+        "Relegation und Playoffs",
+        "Match of the Week",
+      ],
       ["Banliste", "Nutzung"],
     ]);
     expect(

@@ -12,6 +12,7 @@ import {
   check,
   customType,
   date,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -109,6 +110,17 @@ export const registrationWindows = pgTable("registration_windows", {
   schedulePublishedAt: timestamp("schedule_published_at", {
     withTimezone: true,
   }),
+  // When staff published Relegation und Playoffs, which is the moment the
+  // regular season's results became final (docs/plans/relegation-and-playoffs.md):
+  // from here on nothing about a regular match changes, enforced by the
+  // actions and by a trigger in the custom migration. Null while the regular
+  // season is still open.
+  regularSeasonClosedAt: timestamp("regular_season_closed_at", {
+    withTimezone: true,
+  }),
+  // When staff completed the season after the final: every result is final
+  // and each player's outcome is written onto their placement.
+  seasonCompletedAt: timestamp("season_completed_at", { withTimezone: true }),
 });
 
 export const platformEnum = pgEnum("platform", ["showdown", "cartridge"]);
@@ -142,6 +154,14 @@ export const registrations = pgTable(
   },
   (table) => [unique().on(table.windowId, table.userId)],
 );
+
+// A player's season outcome, written when staff complete the season
+// (docs/plans/relegation-and-playoffs.md).
+export const seasonOutcomeEnum = pgEnum("season_outcome", [
+  "promoted",
+  "stays",
+  "demoted",
+]);
 
 // Division seeding for a season (anchored to its registration window). One
 // seeding per window; holds the season-wide sub-division size and the finalize
@@ -220,6 +240,10 @@ export const subDivisions = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     divisionId: uuid("division_id").notNull(),
     position: integer("position").notNull(),
+    // The group's lot (docs/plans/relegation-and-playoffs.md): orders equally
+    // good relegation and playoff seats of different groups. Drawn by Postgres
+    // on insert, never shown, never redrawn.
+    lotNumber: doublePrecision("lot_number").notNull().default(sql`random()`),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -244,6 +268,22 @@ export const placements = pgTable(
     droppedAt: timestamp("dropped_at", { withTimezone: true }),
     droppedById: uuid("dropped_by_id"),
     dropReason: text("drop_reason"),
+    // A drop after the regular season (docs/plans/relegation-and-playoffs.md):
+    // the player's tiebreaker, Relegation and playoff matches without a
+    // result count for the opponent, played ones stay, and the regular table
+    // does not change. Separate from `dropped_at`, which every table reads
+    // and which would move the player to the bottom.
+    lateDroppedAt: timestamp("late_dropped_at", { withTimezone: true }),
+    lateDroppedById: uuid("late_dropped_by_id"),
+    lateDropReason: text("late_drop_reason"),
+    // Written when the season is completed: where the player plays next
+    // season, and whether they won the title. Null before.
+    seasonOutcome: seasonOutcomeEnum("season_outcome"),
+    champion: boolean("champion").notNull().default(false),
+    // The player's lot (docs/plans/relegation-and-playoffs.md): orders players
+    // of equal rank inside a table where no tiebreaker is played. Drawn by
+    // Postgres on insert, never shown, never redrawn.
+    lotNumber: doublePrecision("lot_number").notNull().default(sql`random()`),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -353,6 +393,9 @@ export const seedingLocks = pgTable("seeding_locks", {
 // dialog), and starts follow from the previous deadline. The presence of these
 // rows marks the season as running (no status column). FKs + RLS in a custom
 // migration (server-only, like the other staff tables).
+//
+// `regular` is false for the weeks of Relegation und Playoffs, which follow
+// the last Spieltag as further rounds (docs/plans/relegation-and-playoffs.md).
 export const matchdays = pgTable(
   "matchdays",
   {
@@ -361,6 +404,7 @@ export const matchdays = pgTable(
     round: integer("round").notNull(),
     startsOn: date("starts_on").notNull(),
     endsOn: date("ends_on").notNull(),
+    regular: boolean("regular").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -368,20 +412,90 @@ export const matchdays = pgTable(
   (table) => [unique().on(table.windowId, table.round)],
 );
 
-// One match in a sub-division's single round-robin: two players on one matchday
-// (`round`), or a bye when `player_b_id` is null. Its date is the matchday for
-// the same window + round. Result columns arrive with the reporting feature.
-// FKs + RLS in a custom migration.
-export const matches = pgTable("matches", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  subDivisionId: uuid("sub_division_id").notNull(),
-  round: integer("round").notNull(),
-  playerAId: uuid("player_a_id").notNull(),
-  playerBId: uuid("player_b_id"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+// What a match is part of: the regular round-robin, a tiebreaker for a shared
+// place, the Relegation, or the Division-1 Playoffs
+// (docs/plans/relegation-and-playoffs.md).
+export const matchStageEnum = pgEnum("match_stage", [
+  "regular",
+  "tiebreaker",
+  "relegation",
+  "playoff",
+]);
+
+// One match: two players on one matchday (`round`), or a bye when
+// `player_b_id` is null. Its date is the matchday for the same window + round.
+// Results live in `match_results`. FKs + RLS in a custom migration.
+//
+// A regular match belongs to a sub-division's single round-robin and always
+// has its players. A relegation or playoff match exists from the moment its
+// schedule is created, before anyone knows who plays it: it carries its place
+// (`tier` = the upper division of a relegation boundary, 1 for the playoffs;
+// `position` = its index at that boundary or in its round) and its players
+// stay null until the pairings are published. Who it is played by follows
+// purely from that place and the standings, so nothing about it is stored.
+// Only regular matches have a sub-division, which keeps them out of every
+// standings query.
+export const matches = pgTable(
+  "matches",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    windowId: uuid("window_id").notNull(),
+    stage: matchStageEnum("stage").notNull().default("regular"),
+    subDivisionId: uuid("sub_division_id"),
+    tier: integer("tier"),
+    position: integer("position"),
+    // A tiebreaker's shared place: the `BoundaryTie` key
+    // ("group:<id>:<first index>", "division:<tier>:<first index>").
+    tieKey: text("tie_key"),
+    round: integer("round").notNull(),
+    playerAId: uuid("player_a_id"),
+    playerBId: uuid("player_b_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      "matches_regular_shape",
+      sql`(${table.stage} = 'regular') = (${table.subDivisionId} is not null) and (${table.stage} <> 'regular' or ${table.playerAId} is not null)`,
+    ),
+    check(
+      "matches_placed_shape",
+      sql`${table.stage} = 'regular' or (${table.tier} is not null and ${table.position} is not null)`,
+    ),
+    check(
+      "matches_tiebreaker_shape",
+      sql`(${table.stage} = 'tiebreaker') = (${table.tieKey} is not null)`,
+    ),
+    uniqueIndex("matches_place_uq")
+      .on(table.windowId, table.stage, table.tier, table.round, table.position)
+      .where(sql`${table.stage} in ('relegation', 'playoff')`),
+    uniqueIndex("matches_tie_key_uq")
+      .on(table.windowId, table.tieKey)
+      .where(sql`${table.tieKey} is not null`),
+    index("matches_window_idx").on(table.windowId),
+  ],
+);
+
+// The order staff set for a shared place of three or more players across a
+// zone boundary, after an off-hub tiebreaker tournament
+// (docs/plans/relegation-and-playoffs.md). Keyed by the `BoundaryTie` key;
+// `order` lists the tied players best first. Changeable until a match that
+// builds on it has a result. FKs + RLS in a custom migration.
+export const tieOrders = pgTable(
+  "tie_orders",
+  {
+    windowId: uuid("window_id").notNull(),
+    tieKey: text("tie_key").notNull(),
+    order: jsonb("order").$type<string[]>().notNull(),
+    reason: text("reason").notNull(),
+    decidedById: uuid("decided_by_id"),
+    decidedAt: timestamp("decided_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.windowId, table.tieKey] })],
+);
 
 // The kind of result recorded for a match. Drives which columns are meaningful
 // and how standings count it. "normal" = a best-of-3 was played (winner from the
@@ -544,6 +658,15 @@ export const recordingHolds = pgTable(
     round: integer("round").notNull(),
     heldById: uuid("held_by_id").notNull(),
     motwRole: motwRoleEnum("motw_role"),
+    // A Relegation or playoff candidate: who could play it when it was
+    // nominated, per side (one id once a side is settled, the candidates
+    // while it is open), so the workspace can say when that changed
+    // (docs/plans/relegation-and-playoffs.md). Null for regular matches,
+    // whose players never change.
+    nominatedSides: jsonb("nominated_sides").$type<{
+      a: string[];
+      b: string[];
+    }>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -586,30 +709,46 @@ export const discordPosts = pgTable(
   (table) => [unique().on(table.kind, table.matchId)],
 );
 
-// What the hub created on Discord for a sub-division of a season: its group
-// role or its private group channel (docs/plans/discord-season-setup.md).
+// What the hub created on Discord for a season: a sub-division's group role
+// or private group channel (docs/plans/discord-season-setup.md), or the role
+// and chat channel of the Playoffs or the Relegation
+// (docs/plans/relegation-and-playoffs.md).
 export const discordSeasonResourceKindEnum = pgEnum(
   "discord_season_resource_kind",
-  ["group_role", "group_channel"],
+  [
+    "group_role",
+    "group_channel",
+    "playoff_role",
+    "playoff_channel",
+    "relegation_role",
+    "relegation_channel",
+  ],
 );
 
 // Roles and channels the season setup created on Discord, tracked by id so
 // the post-season cleanup can delete them regardless of renames. One row per
-// sub-division and kind; a row is replaced when the sync recreates a resource
-// whose Discord object disappeared. FKs + RLS in a custom migration.
+// sub-division and kind for the groups, one per season and kind for the
+// Playoffs and Relegation ones (`sub_division_id` null); a row is replaced
+// when the sync recreates a resource whose Discord object disappeared. FKs +
+// RLS in a custom migration.
 export const discordSeasonResources = pgTable(
   "discord_season_resources",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     windowId: uuid("window_id").notNull(),
-    subDivisionId: uuid("sub_division_id").notNull(),
+    subDivisionId: uuid("sub_division_id"),
     kind: discordSeasonResourceKindEnum("kind").notNull(),
     discordId: text("discord_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [unique().on(table.subDivisionId, table.kind)],
+  (table) => [
+    unique().on(table.subDivisionId, table.kind),
+    uniqueIndex("discord_season_resources_window_kind_uq")
+      .on(table.windowId, table.kind)
+      .where(sql`${table.subDivisionId} is null`),
+  ],
 );
 
 // The last Discord season sync per window: when it ran and what it found

@@ -101,6 +101,14 @@ effect as on the overview and the profile).
   Spieltag."
 - Earlier rounds of a replaced favourite still show here: those matches were
   scheduled for them (`player-replacement.md`), only the table row moved.
+- **After the regular season** (`docs/plans/relegation-and-playoffs.md`) the
+  timeline gets the weeks of Relegation und Playoffs as a second group, as
+  on the overview, and opens on the running one. Such a week lists the
+  tiebreakers, Relegation pairings and Playoff matches a favourite plays
+  (`favoritesAfterSeasonWeek`) as compact cards under micro labels
+  ("Relegation · Division 2 und 3"), with the pages' spoiler protection;
+  empty: "Keiner deiner Favoriten spielt in dieser Woche." The table below
+  stays the regular season's.
 
 ### Block "Deine Spieler"
 

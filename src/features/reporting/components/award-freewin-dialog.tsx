@@ -25,6 +25,7 @@ import { awardFreeWin } from "../staff-actions";
 export function AwardFreewinDialog({
   matchId,
   round,
+  weekName = `Spieltag ${round}`,
   groupName,
   playerA,
   playerB,
@@ -34,6 +35,8 @@ export function AwardFreewinDialog({
 }: {
   matchId: string;
   round: number;
+  // "Spieltag 3", or "Woche 1" after the regular season.
+  weekName?: string;
   groupName: string;
   playerA: Identity;
   playerB: Identity;
@@ -84,8 +87,8 @@ export function AwardFreewinDialog({
         <DialogHeader>
           <DialogTitle>Freewin vergeben</DialogTitle>
           <DialogDescription>
-            {playerA.name} vs. {playerB.name} · Spieltag {round} · {groupName}.
-            Wird sofort gewertet und überschreibt ein bestehendes Ergebnis.
+            {playerA.name} vs. {playerB.name} · {weekName} · {groupName}. Wird
+            sofort gewertet und überschreibt ein bestehendes Ergebnis.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">

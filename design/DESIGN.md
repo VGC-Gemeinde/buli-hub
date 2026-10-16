@@ -307,8 +307,12 @@ anything that is not a type.
 A label that needs a longer definition stays short ("Nutzung", "Siegquote")
 and carries the definition behind it: dotted underline, a navy box (popover
 colours in dark) on hover, keyboard focus and tap. CSS only, no client JS.
-Inside a control that is already focusable (a sortable column head) use
-`<InfoTooltip>` and put `group/info` on the control. Definitions explain the
+A control that acts on click (a sortable column head, a filter chip) uses
+`<HoverHint>` (`src/components/hover-hint.tsx`, Radix Tooltip) instead: drawn
+in a portal, so a scrolling table cannot clip it, and closed by the click, so
+it does not stay open after sorting. It opens on hover and keyboard focus
+only; on a phone the tap acts, and the definitions stay reachable through the
+`<InfoLabel>`s on the detail pages. Definitions explain the
 hub's own counting, never game knowledge competitive players have
 (constitution, Principle V).
 

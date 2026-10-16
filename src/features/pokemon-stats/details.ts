@@ -76,11 +76,9 @@ function usage(appearances: { sheet: CountedSheet }[], basis: number): Usage {
   let wins = 0;
   let rated = 0;
   for (const { sheet } of appearances) {
-    if (sheet.result !== null) {
-      rated++;
-      if (sheet.result === "won") {
-        wins++;
-      }
+    rated++;
+    if (sheet.result === "won") {
+      wins++;
     }
   }
   return {

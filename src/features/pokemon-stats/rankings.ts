@@ -146,11 +146,9 @@ export function ranking(
         rated: 0,
       };
       entry.count++;
-      if (sheet.result !== null) {
-        entry.rated++;
-        if (sheet.result === "won") {
-          entry.wins++;
-        }
+      entry.rated++;
+      if (sheet.result === "won") {
+        entry.wins++;
       }
       tally.set(appearance.id, entry);
     }

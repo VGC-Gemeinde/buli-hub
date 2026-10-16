@@ -207,24 +207,22 @@ describe("countedSheets", () => {
       new Set([
         ids.plain,
         ids.motwReleased,
-        ids.dropped,
         ids.replacement,
         ids.tiebreaker,
         ids.relegation,
       ]),
     );
-    expect(sheets).toHaveLength(12);
+    expect(sheets).toHaveLength(10);
   });
 
-  it("knows who won a rated match, and rates no match a drop decided", async () => {
+  it("knows who won, and leaves out a match a drop decided", async () => {
     const sheets = await countedSheets(windowId);
     const of = (key: string, player: string) =>
       sheets.find((s) => s.matchId === ids[key] && s.playerId === player);
     expect(of("plain", alice)?.result).toBe("won");
     expect(of("plain", bob)?.result).toBe("lost");
-    expect(of("dropped", carol)?.result).toBeNull();
-    expect(of("dropped", bob)?.result).toBeNull();
-    expect(of("dropped", carol)?.mons).toHaveLength(6);
+    expect(of("dropped", carol)).toBeUndefined();
+    expect(of("dropped", bob)).toBeUndefined();
   });
 
   it("gives phase, week and the player's own division", async () => {

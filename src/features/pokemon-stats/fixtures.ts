@@ -85,7 +85,7 @@ export function counted(
     phase: "regular",
     round: 1,
     tier: 1,
-    result: null,
+    result: "lost",
     ...over,
     mons,
   };

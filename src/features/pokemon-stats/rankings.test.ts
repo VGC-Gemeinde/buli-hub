@@ -48,7 +48,7 @@ const sheets = [
   counted(team(zard, incin), { result: "won" }),
   counted(team(zard, incin), { result: "lost" }),
   counted(team(zardSpecs, torkoal), { result: "won", tier: 2 }),
-  counted(team(incinStone), { result: null }),
+  counted(team(incinStone), { result: "lost" }),
 ];
 
 const byId = (entries: RankingEntry[]) =>
@@ -107,9 +107,9 @@ describe("pokemonRanking", () => {
 });
 
 describe("win rates", () => {
-  it("counts wins over rated appearances; an unrated match counts for usage only", () => {
+  it("counts wins over the entry's matches, every counted match rated", () => {
     const e = byId(ranking(sheets, "pokemon", opts()).entries);
-    expect(e.incineroar).toMatchObject({ count: 3, wins: 1, rated: 2 });
+    expect(e.incineroar).toMatchObject({ count: 3, wins: 1, rated: 3 });
     expect(e.charizard).toMatchObject({ wins: 1, rated: 1 });
   });
 
@@ -127,7 +127,7 @@ describe("win rates", () => {
     const e = byId(ranking(sheets, "moves", opts()).entries);
     // Two Protect users on each of the first three sheets.
     expect(e.protect.count).toBeGreaterThanOrEqual(6);
-    expect(e.fakeout).toMatchObject({ count: 3, wins: 1, rated: 2 });
+    expect(e.fakeout).toMatchObject({ count: 3, wins: 1, rated: 3 });
   });
 });
 
@@ -140,7 +140,7 @@ describe("itemRanking", () => {
       count: 1,
       share: 1 / 24,
       name: "Charizardite X",
-      rated: 0,
+      rated: 1,
     });
     expect(result.slots).toBe(24);
   });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { InfoTooltip } from "@/components/info-label";
+import { HoverHint } from "@/components/hover-hint";
 import { cn } from "@/lib/utils";
 import type { SortKey } from "../filter";
 import type { Icon } from "../view";
@@ -39,13 +39,13 @@ function SortHead({
   column: SortColumn;
   align: "left" | "right";
 }) {
-  return (
+  const link = (
     <Link
       href={column.href}
       scroll={false}
       aria-label={`Nach ${column.label} sortieren`}
       className={cn(
-        "group/info relative inline-flex items-center gap-1 rounded-[3px] outline-offset-2 transition-colors hover:text-brand-blue dark:hover:text-white",
+        "inline-flex items-center gap-1 rounded-[3px] outline-offset-2 transition-colors hover:text-brand-blue dark:hover:text-white",
         column.active && "text-brand-blue dark:text-white",
       )}
     >
@@ -63,10 +63,19 @@ function SortHead({
       >
         {column.active === "desc" ? "↓" : column.active === "asc" ? "↑" : ""}
       </span>
-      {column.definition ? (
-        <InfoTooltip align={align}>{column.definition}</InfoTooltip>
-      ) : null}
     </Link>
+  );
+  // In a portal, so the scrolling table cannot clip it, and closed by the
+  // click that sorts.
+  return column.definition ? (
+    <HoverHint
+      hint={column.definition}
+      align={align === "right" ? "end" : "start"}
+    >
+      {link}
+    </HoverHint>
+  ) : (
+    link
   );
 }
 

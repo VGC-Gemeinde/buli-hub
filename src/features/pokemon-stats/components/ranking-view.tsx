@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { InfoTooltip } from "@/components/info-label";
+import { HoverHint } from "@/components/hover-hint";
 import { cn } from "@/lib/utils";
 import type { Category, RankingOptions, SortKey } from "../filter";
 import { statsHref } from "../filter";
@@ -24,13 +24,16 @@ import {
 // per-category filter, the table, "Alle N anzeigen".
 
 const DEFINITIONS = {
-  usePokemon: "Anteil der Teams, die dieses Pokémon mitgebracht haben.",
-  useSlot: "Anteil aller mitgebrachten Pokémon, die es tragen.",
-  win: "Anteil der gewonnenen Matches der Teams, die es mitgebracht haben. Freilose, Doppelniederlagen und Drops zählen nicht.",
-  matches: "Gewertete Matches, auf denen die Siegquote beruht.",
+  usePokemon:
+    "Anteil der Teams, die dieses Pokémon mitgebracht haben. Gezählt werden nur gewertete Matches: Freilose, Doppelniederlagen und Drops zählen nicht.",
+  useSlot:
+    "Anteil aller mitgebrachten Pokémon, die es tragen. Gezählt werden nur gewertete Matches.",
+  win: "Anteil der gewonnenen Matches der Teams, die es mitgebracht haben.",
+  matches: "Gewertete Matches, auf denen Nutzung und Siegquote beruhen.",
   // Items, abilities and moves count per carrying Pokémon (FR-017): two
   // Protect users in one match are two.
-  carriers: "Pokémon in gewerteten Matches, auf denen die Siegquote beruht.",
+  carriers:
+    "Pokémon in gewerteten Matches, auf denen Nutzung und Siegquote beruhen.",
   stones:
     "Rechnet Mega-Steine heraus, die ihr eigenes Mega trägt. Ein Stein auf einem anderen Pokémon bleibt drin.",
 };
@@ -89,17 +92,18 @@ function SlotFilter({
   if (category === "items") {
     return (
       <div className={slot}>
-        <Link
-          href={href({ hideOwnStones: !options.hideOwnStones })}
-          scroll={false}
-          aria-pressed={options.hideOwnStones}
-          className={cn(chip(options.hideOwnStones), "group/info relative")}
-        >
-          <span className="cursor-help underline decoration-dotted underline-offset-[3px]">
-            Ohne Mega-Steine
-          </span>
-          <InfoTooltip align="right">{DEFINITIONS.stones}</InfoTooltip>
-        </Link>
+        <HoverHint hint={DEFINITIONS.stones} align="end">
+          <Link
+            href={href({ hideOwnStones: !options.hideOwnStones })}
+            scroll={false}
+            aria-pressed={options.hideOwnStones}
+            className={chip(options.hideOwnStones)}
+          >
+            <span className="cursor-help underline decoration-dotted underline-offset-[3px]">
+              Ohne Mega-Steine
+            </span>
+          </Link>
+        </HoverHint>
       </div>
     );
   }
@@ -216,6 +220,17 @@ export function RankingView({
               {formatCount(result.sheets)}
             </b>{" "}
             Teams
+          </span>
+          <span aria-hidden className="opacity-60">
+            ·
+          </span>
+          <span>
+            <b className="font-semibold text-foreground tabular-nums">
+              {formatCount(
+                new Set(load.sheets.map((sheet) => sheet.matchId)).size,
+              )}
+            </b>{" "}
+            Matches
           </span>
           <span aria-hidden className="opacity-60">
             ·

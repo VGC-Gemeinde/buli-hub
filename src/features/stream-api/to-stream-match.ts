@@ -1,3 +1,4 @@
+import { roundName } from "@/features/playoffs/bracket";
 import type { Platform } from "@/features/reporting/report";
 import {
   divisionName,
@@ -27,10 +28,35 @@ export type StreamRecords = { a: StreamRecord; b: StreamRecord };
 /** A player without a standings row yet, and what the list entry passes. */
 export const NO_RECORD: StreamRecord = { wins: 0, losses: 0 };
 
+export type StreamStage = "regular" | "tiebreaker" | "relegation" | "playoff";
+
 export type StreamMatch = {
   id: string;
   round: number;
+  /**
+   * What part of the season the match belongs to
+   * (../../../docs/plans/relegation-and-playoffs.md). `regular` for the
+   * Spieltage, the others after them.
+   */
+  stage: StreamStage;
+  /** "Spieltag 3", or "Woche 1" for a week after the regular season. */
+  weekName: string;
+  /**
+   * What the match is called where the stream names its round: the week
+   * name for a regular match, the stage otherwise ("Relegation",
+   * "Playoffs · Halbfinale", "Tiebreaker").
+   */
+  roundLabel: string;
+  /**
+   * The division the match counts for; for a Relegation match the upper
+   * one, for the Playoffs Division 1.
+   */
   division: { tier: number; name: string };
+  /**
+   * The group of a regular match; for the others what stands in its place:
+   * the boundary of a Relegation match ("Division 1 und 2"), "Playoffs", the
+   * table a tiebreaker decides.
+   */
   group: { name: string; shortName: string };
   playerA: StreamPlayer;
   playerB: StreamPlayer;
@@ -75,8 +101,11 @@ export type ProfileRow = {
 export type MatchInput = {
   id: string;
   round: number;
+  stage: StreamStage;
+  weekName: string;
+  roundLabel: string;
   tier: number;
-  position: number;
+  group: { name: string; shortName: string };
   playerAId: string;
   playerBId: string;
   playerA: ProfileRow | null;
@@ -121,11 +150,11 @@ export function toStreamMatchDetail(
   return {
     id: input.id,
     round: input.round,
+    stage: input.stage,
+    weekName: input.weekName,
+    roundLabel: input.roundLabel,
     division: { tier: input.tier, name: divisionName(input.tier) },
-    group: {
-      name: subDivisionName(input.tier, input.position),
-      shortName: subDivisionShortName(input.tier, input.position),
-    },
+    group: input.group,
     playerA: {
       id: input.playerAId,
       name: playerName(input.playerA?.displayName, input.playerA?.username),
@@ -165,4 +194,100 @@ export function toStreamMatch(input: MatchInput): StreamMatch | null {
     playerA: { id: playerA.id, name: playerA.name },
     playerB: { id: playerB.id, name: playerB.name },
   };
+}
+
+/**
+ * How the stream names a match: its week, its round label and what stands
+ * in its group's place. Pure; the queries hand in the season's shape.
+ */
+export function streamNaming(input: {
+  stage: StreamStage;
+  round: number;
+  // The match's division (a Relegation match's upper one).
+  tier: number;
+  // Regular: the match's group; tiebreaker: the table's group, null for a
+  // division table. Unused otherwise.
+  groupPosition: number | null;
+  // The number of regular Spieltage: later rounds are weeks after them.
+  regularRounds: number;
+  // The Playoffs' rounds, ascending.
+  playoffRounds: readonly number[];
+}): {
+  weekName: string;
+  roundLabel: string;
+  group: { name: string; shortName: string };
+} {
+  const weekName =
+    input.stage === "regular"
+      ? `Spieltag ${input.round}`
+      : `Woche ${input.round - input.regularRounds}`;
+  const table =
+    input.groupPosition === null
+      ? { name: divisionName(input.tier), shortName: String(input.tier) }
+      : {
+          name: subDivisionName(input.tier, input.groupPosition),
+          shortName: subDivisionShortName(input.tier, input.groupPosition),
+        };
+  switch (input.stage) {
+    case "regular":
+      return { weekName, roundLabel: weekName, group: table };
+    case "tiebreaker":
+      return { weekName, roundLabel: "Tiebreaker", group: table };
+    case "relegation":
+      return {
+        weekName,
+        roundLabel: "Relegation",
+        group: {
+          name: `Division ${input.tier} und ${input.tier + 1}`,
+          shortName: `${input.tier}/${input.tier + 1}`,
+        },
+      };
+    case "playoff": {
+      const total = input.playoffRounds.length;
+      const index = input.playoffRounds.indexOf(input.round) + 1;
+      return {
+        weekName,
+        roundLabel: `Playoffs · ${roundName(total, index)}`,
+        group: { name: "Playoffs", shortName: "PO" },
+      };
+    }
+  }
+}
+
+/**
+ * A record carried on past the regular season: the regular tally plus every
+ * tiebreaker, Relegation and playoff match the player finished before this
+ * one, minus the results still withheld. A double loss is a loss for both.
+ * Pure.
+ */
+export function recordAfterSeason(input: {
+  userId: string;
+  regular: StreamRecord;
+  // The season's matches after the regular season with a counted result.
+  earlier: readonly {
+    matchId: string;
+    round: number;
+    playerAId: string;
+    playerBId: string;
+    winnerId: string | null;
+  }[];
+  beforeRound: number;
+  excluded: ReadonlySet<string>;
+}): StreamRecord {
+  let { wins, losses } = input.regular;
+  for (const match of input.earlier) {
+    if (
+      match.round >= input.beforeRound ||
+      input.excluded.has(match.matchId) ||
+      (match.playerAId !== input.userId && match.playerBId !== input.userId)
+    ) {
+      continue;
+    }
+    if (match.winnerId === input.userId) {
+      wins++;
+    } else {
+      losses++;
+    }
+  }
+  return { wins, losses };
 }

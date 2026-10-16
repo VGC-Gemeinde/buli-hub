@@ -61,6 +61,22 @@ export function effectiveMovement(division: DivisionForValidation): {
   };
 }
 
+// The effective relegation and title-playoff seats of a division: per
+// division in `division` mode, per group times the group count otherwise.
+export function effectiveSeats(division: DivisionForValidation): {
+  promotionPlayoff: number;
+  demotionPlayoff: number;
+  champion: number;
+} {
+  const factor =
+    division.relevantTable === "division" ? 1 : division.groupSizes.length;
+  return {
+    promotionPlayoff: division.promotionPlayoffSlots * factor,
+    demotionPlayoff: division.demotionPlayoffSlots * factor,
+    champion: division.championshipPlayoffSlots * factor,
+  };
+}
+
 // The zones occupy per group (`sub_division`) or per division (`division`).
 function zoneSpan(division: DivisionForValidation): number {
   return (
@@ -98,7 +114,10 @@ export type PostSeasonIssue =
   // no demotion path.
   | { kind: "missing_demotion_path"; tier: number }
   // championship playoff set on a division that is not the top tier.
-  | { kind: "championship_not_top"; tier: number };
+  | { kind: "championship_not_top"; tier: number }
+  // the Relegation between t and t+1 cannot be paired one to one: the
+  // demotion seats of t differ in number from the promotion seats of t+1.
+  | { kind: "relegation_unbalanced"; upperTier: number; lowerTier: number };
 
 // Validates a whole window's post-season config. Divisions may be given in any
 // order; they are sorted by tier (1 = top) internally. Returns every issue found
@@ -175,6 +194,18 @@ export function validatePostSeason(
     ) {
       issues.push({
         kind: "balance",
+        upperTier: upper.tier,
+        lowerTier: lower.tier,
+      });
+    }
+    // Relegation is one Bo3 per pairing (docs/plans/relegation-and-playoffs.md),
+    // so its seats must balance like the guaranteed movement does.
+    if (
+      effectiveSeats(upper).demotionPlayoff !==
+      effectiveSeats(lower).promotionPlayoff
+    ) {
+      issues.push({
+        kind: "relegation_unbalanced",
         upperTier: upper.tier,
         lowerTier: lower.tier,
       });

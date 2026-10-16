@@ -7,6 +7,7 @@ import {
   profiles,
   subDivisions,
 } from "@/db/schema";
+import { regularPlayerAId } from "@/features/season/regular-match";
 import { db } from "@/lib/db";
 import { playerName } from "@/lib/player-name";
 import type { Identity, MatchdayLite } from "./dashboard";
@@ -84,7 +85,7 @@ export async function subDivisionMatches(
     .select({
       id: matches.id,
       round: matches.round,
-      playerAId: matches.playerAId,
+      playerAId: regularPlayerAId,
       playerBId: matches.playerBId,
     })
     .from(matches)
@@ -92,7 +93,10 @@ export async function subDivisionMatches(
     .orderBy(asc(matches.round));
 }
 
-// The season's Spieltag calendar, ordered by round.
+// The season's Spieltag calendar, ordered by round: the regular Spieltage
+// only. Every "Spieltag n von m", the season's progress and the replacement
+// entry rounds count these; the weeks of Relegation und Playoffs that follow
+// are `allMatchdaysForWindow`.
 export async function matchdaysForWindow(
   windowId: string,
 ): Promise<MatchdayLite[]> {
@@ -101,6 +105,23 @@ export async function matchdaysForWindow(
       round: matchdays.round,
       startsOn: matchdays.startsOn,
       endsOn: matchdays.endsOn,
+    })
+    .from(matchdays)
+    .where(and(eq(matchdays.windowId, windowId), eq(matchdays.regular, true)))
+    .orderBy(asc(matchdays.round));
+}
+
+// Every week of the season, ordered by round: the regular Spieltage and the
+// weeks of Relegation und Playoffs after them (`regular` false).
+export async function allMatchdaysForWindow(
+  windowId: string,
+): Promise<(MatchdayLite & { regular: boolean })[]> {
+  return db
+    .select({
+      round: matchdays.round,
+      startsOn: matchdays.startsOn,
+      endsOn: matchdays.endsOn,
+      regular: matchdays.regular,
     })
     .from(matchdays)
     .where(eq(matchdays.windowId, windowId))

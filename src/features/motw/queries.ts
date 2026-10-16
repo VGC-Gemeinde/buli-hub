@@ -1,11 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
-import {
-  divisions,
-  matches,
-  motwSelections,
-  profiles,
-  subDivisions,
-} from "@/db/schema";
+import { matches, motwSelections, profiles } from "@/db/schema";
 import { droppedIdsForWindow } from "@/features/drops/queries";
 import { divisionGroups } from "@/features/reporting/queries";
 import {
@@ -52,33 +46,32 @@ export async function motwByMatchId(
 
 // A match's season anchor for the selection action: which window/round it
 // belongs to, its participants, and whether it is a bye (unselectable). Null
-// for an unknown id.
+// for an unknown id. A Relegation or playoff match has no players until its
+// pairings are published (docs/plans/relegation-and-playoffs.md), so the
+// players may be null; it is never a bye.
 export async function matchSelectionContext(matchId: string): Promise<{
   windowId: string;
   round: number;
-  playerAId: string;
+  stage: "regular" | "tiebreaker" | "relegation" | "playoff";
+  playerAId: string | null;
   playerBId: string | null;
   isBye: boolean;
 } | null> {
   const [row] = await db
     .select({
-      windowId: divisions.windowId,
+      windowId: matches.windowId,
       round: matches.round,
+      stage: matches.stage,
       playerAId: matches.playerAId,
       playerBId: matches.playerBId,
     })
     .from(matches)
-    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
-    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
     .where(eq(matches.id, matchId))
     .limit(1);
   return row
     ? {
-        windowId: row.windowId,
-        round: row.round,
-        playerAId: row.playerAId,
-        playerBId: row.playerBId,
-        isBye: row.playerBId === null,
+        ...row,
+        isBye: row.stage === "regular" && row.playerBId === null,
       }
     : null;
 }

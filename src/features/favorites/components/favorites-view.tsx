@@ -4,6 +4,8 @@ import { useMemo, useState, useTransition } from "react";
 import { EmptyStateCard } from "@/components/empty-state-card";
 import { SectionHeader } from "@/components/section-header";
 import { Tick } from "@/components/tick";
+import { DivisionWeekMatches } from "@/features/playoffs/components/relegation-playoffs-public";
+import { favoritesAfterSeasonWeek } from "@/features/playoffs/public-view";
 import {
   MatchRow,
   SpieltagTimeline,
@@ -32,7 +34,16 @@ export function FavoritesView({
   storedCount: number;
 }) {
   const [spoilersOff, setSpoilersOff] = useState(initialSpoilersOff);
-  const [round, setRound] = useState(data.currentRound ?? 1);
+  // One index over every week: the Spieltage, then the weeks after the
+  // regular season.
+  const after = data.afterSeason;
+  const afterWeeks = after?.weeks ?? [];
+  const [round, setRound] = useState(
+    after && afterWeeks.length > 0
+      ? data.totalRounds + (data.afterSeasonWeek?.show ?? 1)
+      : (data.currentRound ?? 1),
+  );
+  const afterWeek = round > data.totalRounds ? round - data.totalRounds : null;
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
   const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set());
   const [shown, setShown] = useState({
@@ -60,7 +71,10 @@ export function FavoritesView({
     [shown.players, removed],
   );
   const week = favoritesWeek(shown.groups, round);
-  const matchday = data.matchdays.find((m) => m.round === round) ?? null;
+  const matchday =
+    afterWeek !== null
+      ? (afterWeeks[afterWeek - 1] ?? null)
+      : (data.matchdays.find((m) => m.round === round) ?? null);
 
   function reveal(matchId: string) {
     setRevealed((previous) => new Set(previous).add(matchId));
@@ -166,11 +180,35 @@ export function FavoritesView({
             <SpieltagTimeline
               selected={round}
               total={data.totalRounds}
-              current={data.currentRound}
+              current={
+                data.afterSeasonWeek?.current
+                  ? data.totalRounds + data.afterSeasonWeek.current
+                  : data.currentRound
+              }
               matchday={matchday}
               onSelect={setRound}
+              afterSeason={
+                after && afterWeeks.length > 0
+                  ? {
+                      count: afterWeeks.length,
+                      begun: data.afterSeasonWeek?.begun ?? 0,
+                    }
+                  : undefined
+              }
             />
-            {week.length === 0 ? (
+            {after && afterWeek !== null ? (
+              <DivisionWeekMatches
+                sections={favoritesAfterSeasonWeek({
+                  cards: after.cards,
+                  tiebreakers: after.tiebreakers,
+                  favoriteIds: active,
+                  week: afterWeek,
+                })}
+                cards={after.cards}
+                spoilersOff={spoilersOff}
+                empty="Keiner deiner Favoriten spielt in dieser Woche."
+              />
+            ) : week.length === 0 ? (
               <p className="text-[13px] text-muted-foreground">
                 Keiner deiner Favoriten spielt an diesem Spieltag.
               </p>

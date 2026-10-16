@@ -35,22 +35,26 @@ describe("staffNav", () => {
   });
 
   it("offers the week and the whole season once a schedule exists", () => {
-    for (const phase of ["schedule_hidden", "regular_season"] as const) {
-      expect(labels(phase)).toEqual([
-        { scope: "overview", labels: ["Übersicht"] },
-        { scope: "week", labels: ["Woche", "Aufnahmen"] },
-        {
-          scope: "season",
-          labels: [
-            "Teilnehmer",
-            "Divisionen",
-            "Spielplan",
-            "Match of the Week",
-          ],
-        },
-        { scope: "hub", labels: ["Banliste"] },
-      ]);
-    }
+    const season = (late: string[]) => [
+      { scope: "overview", labels: ["Übersicht"] },
+      { scope: "week", labels: ["Woche", "Aufnahmen"] },
+      {
+        scope: "season",
+        labels: [
+          "Teilnehmer",
+          "Divisionen",
+          "Spielplan",
+          ...late,
+          "Match of the Week",
+        ],
+      },
+      { scope: "hub", labels: ["Banliste"] },
+    ];
+    expect(labels("schedule_hidden")).toEqual(season([]));
+    // Relegation und Playoffs only once the schedule is public.
+    expect(labels("regular_season")).toEqual(
+      season(["Relegation und Playoffs"]),
+    );
   });
 
   it("shows the usage stats to admins only", () => {

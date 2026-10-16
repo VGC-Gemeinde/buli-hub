@@ -197,6 +197,7 @@ function StickyBar({
 export function ReportForm({
   matchId,
   round,
+  weekName = `Spieltag ${round}`,
   groupName,
   deadline,
   proofRequired,
@@ -208,6 +209,8 @@ export function ReportForm({
 }: {
   matchId: string;
   round: number;
+  // "Spieltag 3", or "Woche 1" after the regular season.
+  weekName?: string;
   groupName: string;
   deadline: string | null;
   // Top-X divisions: Showdown replays / cartridge video are mandatory.
@@ -338,8 +341,8 @@ export function ReportForm({
 
   const eyebrow =
     view === "free_win"
-      ? `Spieltag ${round} · ${groupName} · vs. ${opponent.name}`
-      : `Spieltag ${round} · ${groupName}${deadline ? ` · Deadline ${formatDeadline(deadline)}` : ""}`;
+      ? `${weekName} · ${groupName} · vs. ${opponent.name}`
+      : `${weekName} · ${groupName}${deadline ? ` · Deadline ${formatDeadline(deadline)}` : ""}`;
 
   if (view === "free_win") {
     return (

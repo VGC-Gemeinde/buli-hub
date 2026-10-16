@@ -12,8 +12,13 @@ const noPreview = (url: string): string => `<${url}>`;
 export type MatchOutcome = "normal" | "free_win" | "double_loss";
 
 export type ResultMessageInput = {
-  groupName: string; // "Division 1a"
+  // "Division 1a"; for a match after the regular season its stage
+  // ("Relegation · Division 1 und 2", "Playoffs · Halbfinale").
+  groupName: string;
   round: number;
+  // A tiebreaker, Relegation or playoff match has no Spieltag: its header is
+  // the stage alone (docs/plans/relegation-and-playoffs.md).
+  regular?: boolean;
   playerAName: string;
   playerBName: string;
   outcome: MatchOutcome;
@@ -51,7 +56,10 @@ function scoreLine(input: ResultMessageInput): string {
 }
 
 export function resultMessage(input: ResultMessageInput): string {
-  const header = `VGC Bundesliga · ${input.groupName} · Spieltag ${input.round}`;
+  const header =
+    input.regular === false
+      ? `VGC Bundesliga · ${input.groupName}`
+      : `VGC Bundesliga · ${input.groupName} · Spieltag ${input.round}`;
   const blocks: string[] = [
     `__**${input.isMotw ? `${header} · Match of the Week` : header}**__`,
     scoreLine(input),
@@ -89,13 +97,15 @@ export function resultMessage(input: ResultMessageInput): string {
 
 export function motwVodMessage(input: {
   round: number;
+  // "Spieltag 7", or "Woche 1" after the regular season.
+  weekName?: string;
   playerAName: string;
   playerBName: string;
   youtubeUrl: string;
   matchUrl: string | null;
 }): string {
   const blocks: string[] = [
-    `__**VGC Bundesliga · Match of the Week · Spieltag ${input.round}**__`,
+    `__**VGC Bundesliga · Match of the Week · ${input.weekName ?? `Spieltag ${input.round}`}**__`,
     // The YouTube URL stays unwrapped on purpose: its embed preview is the
     // announcement. The result is never part of this message.
     `**${input.playerAName}** vs. **${input.playerBName}**: das VOD ist da!\n${input.youtubeUrl}`,

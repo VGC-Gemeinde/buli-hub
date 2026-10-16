@@ -84,6 +84,7 @@ export function ReportSummary({
   viewerId,
   privileged,
   round,
+  weekName = `Spieltag ${round}`,
   groupName,
   disputed = false,
   backHref = "/spieler",
@@ -97,6 +98,8 @@ export function ReportSummary({
   // with) is shown only to them; neutral observers see just the result.
   privileged: boolean;
   round: number;
+  // "Spieltag 3", or "Woche 1" after the regular season.
+  weekName?: string;
   groupName: string;
   // An open dispute flips the status chip Final → Angefochten (§4.4). Only
   // participants/staff ever see this — neutral observers are passed `false`.
@@ -174,7 +177,7 @@ export function ReportSummary({
     return (
       <>
         <BackAndEyebrow
-          label={`${covered ? "Ergebnis" : "Freewin"} · Spieltag ${round} · ${groupName}`}
+          label={`${covered ? "Ergebnis" : "Freewin"} · ${weekName} · ${groupName}`}
           backHref={backHref}
         />
         <div
@@ -283,7 +286,7 @@ export function ReportSummary({
   return (
     <>
       <BackAndEyebrow
-        label={`Ergebnis · Spieltag ${round} · ${groupName}`}
+        label={`Ergebnis · ${weekName} · ${groupName}`}
         backHref={backHref}
       />
       <div

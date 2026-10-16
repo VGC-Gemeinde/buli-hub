@@ -45,13 +45,13 @@ function Divider() {
 // section's real destinations. The current page carries the orange bar; a
 // detail page (a match, a profile, a teamsheet) is none of them, so nothing
 // is marked there and the page's own back link leads on. Scrolls sideways on
-// a phone, fading at the right edge while more is hidden there, and opens
-// scrolled to the current entry.
+// a phone (and with the mouse wheel in a narrow window), fading at an edge
+// while more is hidden there, and opens scrolled to the current entry.
 export function SectionNav({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname();
   const active = activeHref(groups, pathname);
   const ref = useRef<HTMLElement>(null);
-  const [moreRight, setMoreRight] = useState(false);
+  const [more, setMore] = useState({ left: false, right: false });
 
   useEffect(() => {
     const nav = ref.current;
@@ -68,12 +68,33 @@ export function SectionNav({ groups }: { groups: NavGroup[] }) {
       }
     }
     const update = () =>
-      setMoreRight(nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 1);
+      setMore({
+        left: nav.scrollLeft > 1,
+        right: nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 1,
+      });
+    // A mouse wheel only scrolls vertically, and the scrollbar is hidden:
+    // in a narrow window the row turns the wheel sideways while it can
+    // still move that way, and leaves the page scroll alone otherwise.
+    const wheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+        return;
+      }
+      const max = nav.scrollWidth - nav.clientWidth;
+      const canMove =
+        event.deltaY > 0 ? nav.scrollLeft < max - 1 : nav.scrollLeft > 1;
+      if (max <= 0 || !canMove) {
+        return;
+      }
+      event.preventDefault();
+      nav.scrollLeft += event.deltaY;
+    };
     update();
     nav.addEventListener("scroll", update, { passive: true });
+    nav.addEventListener("wheel", wheel, { passive: false });
     window.addEventListener("resize", update);
     return () => {
       nav.removeEventListener("scroll", update);
+      nav.removeEventListener("wheel", wheel);
       window.removeEventListener("resize", update);
     };
   }, []);
@@ -89,7 +110,14 @@ export function SectionNav({ groups }: { groups: NavGroup[] }) {
         // on it inside the scroll container (a real border below would be
         // clipped away from the bar by the overflow).
         "flex h-11 items-stretch overflow-x-auto bg-muted px-1 shadow-[inset_0_-1px_0_var(--border)] [scrollbar-width:none] sm:px-4 [&::-webkit-scrollbar]:hidden",
-        moreRight &&
+        more.left &&
+          more.right &&
+          "[mask-image:linear-gradient(to_right,transparent,black_32px,black_calc(100%-32px),transparent)]",
+        more.left &&
+          !more.right &&
+          "[mask-image:linear-gradient(to_right,transparent,black_32px)]",
+        !more.left &&
+          more.right &&
           "[mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]",
       )}
     >

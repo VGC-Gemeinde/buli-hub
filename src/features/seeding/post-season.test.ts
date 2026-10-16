@@ -87,7 +87,6 @@ describe("validatePostSeason", () => {
       div(1, { guaranteedDemotions: 3, groupSizes: [8, 8] }),
       div(2, {
         guaranteedPromotions: 2,
-        promotionPlayoffSlots: 1,
         groupSizes: [8, 8, 8],
       }),
     ];
@@ -101,11 +100,40 @@ describe("validatePostSeason", () => {
       div(2, {
         relevantTable: "division",
         guaranteedPromotions: 3,
-        promotionPlayoffSlots: 1,
         groupSizes: [8, 8, 8],
       }),
     ];
     expect(validatePostSeason(divisions)).toEqual([]);
+  });
+
+  it("balances relegation seats like guaranteed movement (totals)", () => {
+    // Div1: 2 groups x 3 relegation seats = 6. Div2: 3 groups x 2 = 6.
+    const divisions = [
+      div(1, {
+        guaranteedDemotions: 1,
+        demotionPlayoffSlots: 3,
+        groupSizes: [8, 8],
+      }),
+      div(2, {
+        guaranteedPromotions: 1,
+        promotionPlayoffSlots: 2,
+        guaranteedDemotions: 0,
+        groupSizes: [8, 8, 8],
+      }),
+    ];
+    expect(kinds(divisions)).not.toContain("relegation_unbalanced");
+  });
+
+  it("rejects relegation seats that cannot be paired one to one", () => {
+    const divisions = [
+      div(1, { guaranteedDemotions: 2, demotionPlayoffSlots: 1 }),
+      div(2, { guaranteedPromotions: 2, promotionPlayoffSlots: 2 }),
+    ];
+    expect(validatePostSeason(divisions)).toContainEqual({
+      kind: "relegation_unbalanced",
+      upperTier: 1,
+      lowerTier: 2,
+    });
   });
 
   it("rejects division mode when groups are unequal", () => {

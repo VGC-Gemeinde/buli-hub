@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import {
   bans,
   disputes,
@@ -24,17 +24,26 @@ import type {
 import { acceptOffer, createOffer } from "@/features/replacements/queries";
 import {
   markSchedulePublished,
+  persistRelegationPlayoffsSchedule,
   persistSchedule,
+  regularSeasonClosed,
   subDivisionRosters,
 } from "@/features/schedule/queries";
+import {
+  relegationPlayoffsMatches,
+  relegationPlayoffsWeeks,
+} from "@/features/schedule/relegation-playoffs";
+import { syncSeats } from "@/features/schedule/relegation-playoffs-setup";
 import { generateRoundRobin } from "@/features/schedule/round-robin";
 import {
+  dayAfter,
   defaultDeadlines,
   spieltagCount,
   windowsFromDeadlines,
 } from "@/features/schedule/spieltage";
 import { currentMatchday } from "@/features/season/dashboard";
 import { matchdaysForWindow } from "@/features/season/queries";
+import { regularPlayerAId } from "@/features/season/regular-match";
 import {
   divisionModeAvailable,
   validatePostSeason,
@@ -474,6 +483,23 @@ async function applyDevPostSeason(
     }
   }
 
+  // Relegation is one match per pairing, so at every boundary the demotion
+  // seats above must equal the promotion seats below. Per-group counts scale
+  // by the group count (a division table counts once), so the smallest
+  // per-table counts that balance are the other side's factor over their gcd.
+  if (!richDemo) {
+    const factor = (i: number) =>
+      configs[i].relevantTable === "division" ? 1 : divs[i].groupSizes.length;
+    const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+    for (let i = 0; i < divs.length - 1; i++) {
+      const upper = factor(i);
+      const lower = factor(i + 1);
+      const common = gcd(upper, lower);
+      configs[i].demotionPlayoffSlots = lower / common;
+      configs[i + 1].promotionPlayoffSlots = upper / common;
+    }
+  }
+
   const valid =
     validatePostSeason(
       divs.map((d, i) => ({
@@ -497,17 +523,20 @@ async function applyDevPostSeason(
 async function generateDevSchedule(
   windowId: string,
   publish = true,
+  // When the season started; the default puts the running season two weeks
+  // in.
+  start?: (count: number) => string,
 ): Promise<void> {
   const rosters = await subDivisionRosters(windowId);
   const count = spieltagCount(rosters.map((roster) => roster.userIds.length));
   if (count === 0) {
     return;
   }
-  const seasonStart = (
-    publish ? new Date(Date.now() - 14 * 86_400_000) : new Date()
-  )
-    .toISOString()
-    .slice(0, 10);
+  const seasonStart =
+    start?.(count) ??
+    (publish ? new Date(Date.now() - 14 * 86_400_000) : new Date())
+      .toISOString()
+      .slice(0, 10);
   const deadlines = defaultDeadlines(seasonStart, count);
   const windows = windowsFromDeadlines(seasonStart, deadlines);
   const matchRows = rosters.flatMap((roster) =>
@@ -573,7 +602,7 @@ export async function reportDevResults(count: number): Promise<number> {
   const candidates = await db
     .select({
       id: matches.id,
-      playerAId: matches.playerAId,
+      playerAId: regularPlayerAId,
       playerBId: matches.playerBId,
       tier: divisions.tier,
     })
@@ -589,6 +618,9 @@ export async function reportDevResults(count: number): Promise<number> {
       ),
     )
     .orderBy(asc(matches.round), asc(matches.id));
+  if (candidates.length === 0) {
+    return reportDevLateResults(window.id, count);
+  }
   const top = candidates.filter((m) => m.tier <= TOP_RESULT_TIERS);
   const rest = candidates.filter((m) => m.tier > TOP_RESULT_TIERS);
   const open: typeof candidates = [];
@@ -621,6 +653,53 @@ export async function reportDevResults(count: number): Promise<number> {
   return open.length;
 }
 
+// After the regular season: reports the tiebreaker, Relegation and playoff
+// matches whose players are known, then writes the players of the matches
+// they lead to, as a real report does.
+async function reportDevLateResults(
+  windowId: string,
+  count: number,
+): Promise<number> {
+  if (!(await regularSeasonClosed(windowId))) {
+    return 0;
+  }
+  const open = await db
+    .select({
+      id: matches.id,
+      playerAId: matches.playerAId,
+      playerBId: matches.playerBId,
+    })
+    .from(matches)
+    .leftJoin(matchResults, eq(matchResults.matchId, matches.id))
+    .where(
+      and(
+        eq(matches.windowId, windowId),
+        ne(matches.stage, "regular"),
+        isNotNull(matches.playerAId),
+        isNotNull(matches.playerBId),
+        isNull(matchResults.matchId),
+      ),
+    )
+    .orderBy(asc(matches.round), asc(matches.position), asc(matches.id))
+    .limit(count);
+  let index = 0;
+  for (const match of open) {
+    const a = match.playerAId as string;
+    const b = match.playerBId as string;
+    await insertNormalResult(
+      match.id,
+      a,
+      b,
+      index % 2 === 0 ? a : b,
+      index % 3 === 0,
+    );
+    await syncResultPost(match.id);
+    index++;
+  }
+  await syncSeats(windowId);
+  return open.length;
+}
+
 // Fills the season with varied, lived-in results so the dashboards and
 // standings have something to chew on. Past rounds are mostly reported with
 // mixed winners and 2:0/2:1 scores, plus one of each edge state (overdue,
@@ -639,7 +718,7 @@ async function seedDevResults(
       .select({
         id: matches.id,
         round: matches.round,
-        playerAId: matches.playerAId,
+        playerAId: regularPlayerAId,
         playerBId: matches.playerBId,
       })
       .from(matches)
@@ -1263,4 +1342,341 @@ async function applyLadderPostSeason(
       })),
     ).length === 0;
   await savePostSeasonConfig(windowId, configs, valid);
+}
+
+// The day `days` after (or before) an ISO date.
+function shiftIso(iso: string, days: number): string {
+  return new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+// The last Sunday before today, and the Sunday that ends this week.
+function lastSunday(today: string): string {
+  const dow = new Date(`${today}T00:00:00Z`).getUTCDay();
+  return shiftIso(today, -(dow === 0 ? 7 : dow));
+}
+
+// A dev result: a best-of-3 with its winner, or a double loss.
+type DevResult =
+  | { kind: "normal"; winner: string; sweep: boolean }
+  | { kind: "double_loss" };
+
+// Writes many results at once, the way a player report stores them.
+async function insertResultsBatch(
+  rows: { matchId: string; a: string; b: string; result: DevResult }[],
+): Promise<void> {
+  for (let i = 0; i < rows.length; i += 200) {
+    const chunk = rows.slice(i, i + 200);
+    await db.insert(matchResults).values(
+      chunk.map(({ matchId, a, result }) => ({
+        matchId,
+        outcome: result.kind,
+        winnerId: result.kind === "normal" ? result.winner : null,
+        platform: result.kind === "normal" ? ("showdown" as const) : null,
+        reportedById: a,
+      })),
+    );
+    const played = chunk.flatMap((row) =>
+      row.result.kind === "normal" ? [{ ...row, result: row.result }] : [],
+    );
+    if (played.length === 0) {
+      continue;
+    }
+    await db.insert(teamSheets).values(
+      played.flatMap(({ matchId, a, b }) => [
+        { matchId, playerId: a, source: "import" as const, ots: SEED_SHEET_A },
+        {
+          matchId,
+          playerId: b,
+          source: "pokepaste" as const,
+          ots: SEED_SHEET_B,
+        },
+      ]),
+    );
+    await db.insert(matchGames).values(
+      played.flatMap(({ matchId, a, b, result }) => {
+        const loser = result.winner === a ? b : a;
+        const games = result.sweep
+          ? [result.winner, result.winner]
+          : [result.winner, loser, result.winner];
+        return games.map((w, n) => ({
+          matchId,
+          gameNumber: n + 1,
+          winnerId: w,
+          replayUrl: `https://replay.pokemonshowdown.com/seed-${n + 1}`,
+        }));
+      }),
+    );
+  }
+}
+
+// The regular matches of a season with their group, for writing results.
+async function regularMatchesOf(windowId: string) {
+  return db
+    .select({
+      id: matches.id,
+      round: matches.round,
+      playerAId: regularPlayerAId,
+      playerBId: matches.playerBId,
+      subDivisionId: matches.subDivisionId,
+      tier: divisions.tier,
+      position: subDivisions.position,
+    })
+    .from(matches)
+    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .where(and(eq(divisions.windowId, windowId), isNotNull(matches.playerBId)))
+    .orderBy(asc(matches.round), asc(matches.id));
+}
+
+// Shared places at zone boundaries, by group (tier, group position): who
+// ends level, so publishing has tiebreakers and a staff order to show
+// (docs/plans/relegation-and-playoffs.md).
+//   two-way at index i: the players on places i+1 and i+2 lose their match
+//     to each other as a double loss and otherwise score alike.
+//   three-way at the bottom: places 6 to 8 beat each other in a circle.
+type DevTie = { kind: "two_way"; index: number } | { kind: "three_way_bottom" };
+const DEV_TIES: { tier: number; position: number; tie: DevTie }[] = [
+  // Division 1a, places 2 and 3: the Playoff boundary.
+  { tier: 1, position: 0, tie: { kind: "two_way", index: 1 } },
+  // Division 2a, places 1 and 2: the Relegation seat.
+  { tier: 2, position: 0, tie: { kind: "two_way", index: 0 } },
+  // Division 3a, places 6 to 8: the Relegation seat, a staff order.
+  { tier: 3, position: 0, tie: { kind: "three_way_bottom" } },
+];
+
+// The result of every regular match. Each group has a fixed order (the
+// persona first, then by id) and the better player always wins, so no two
+// players of a group end level unless a tie is planned (`DEV_TIES`). Whether
+// a match ends 2:0 or 2:1 depends on the group's position (2:0 when the two
+// are at most `position` places apart), so no player matches the game tally
+// of the same place in another group either, which keeps a Gesamttabelle
+// free of ties as well.
+function devRegularResults(
+  all: Awaited<ReturnType<typeof regularMatchesOf>>,
+  personaId: string | undefined,
+  ties: boolean,
+): { matchId: string; a: string; b: string; result: DevResult }[] {
+  const tieOf = (tier: number, position: number) =>
+    ties
+      ? (DEV_TIES.find((t) => t.tier === tier && t.position === position)
+          ?.tie ?? null)
+      : null;
+  const orderBySub = new Map<string, Map<string, number>>();
+  for (const match of all) {
+    const sub = match.subDivisionId as string;
+    if (orderBySub.has(sub)) {
+      continue;
+    }
+    const players = [
+      ...new Set(
+        all
+          .filter((m) => m.subDivisionId === sub)
+          .flatMap((m) => [m.playerAId, m.playerBId as string]),
+      ),
+    ].sort((x, y) =>
+      x === personaId ? -1 : y === personaId ? 1 : x.localeCompare(y),
+    );
+    orderBySub.set(sub, new Map(players.map((id, i) => [id, i])));
+  }
+
+  return all.map((match) => {
+    const a = match.playerAId;
+    const b = match.playerBId as string;
+    const order = orderBySub.get(match.subDivisionId as string);
+    const ia = order?.get(a) ?? 0;
+    const ib = order?.get(b) ?? 0;
+    const [hi, lo] = ia < ib ? [ia, ib] : [ib, ia];
+    const tie = tieOf(match.tier, match.position);
+    if (tie?.kind === "two_way" && hi === tie.index && lo === tie.index + 1) {
+      return { matchId: match.id, a, b, result: { kind: "double_loss" } };
+    }
+    // The circle: place 8 beats place 6.
+    const upset = tie?.kind === "three_way_bottom" && hi === 5 && lo === 7;
+    const better = ia < ib ? a : b;
+    const worse = better === a ? b : a;
+    return {
+      matchId: match.id,
+      a,
+      b,
+      result: {
+        kind: "normal",
+        winner: upset ? worse : better,
+        sweep: !tie && lo - hi <= match.position,
+      },
+    };
+  });
+}
+
+// A season whose regular part is over: every Spieltag ended by last Sunday,
+// every regular match played, the schedule for Relegation und Playoffs
+// created with its first week running now, nothing published yet. The
+// staff's "Relegation und Playoffs veröffentlichen" is the next step
+// (docs/plans/relegation-and-playoffs.md). The signed-in persona plays in
+// Division 1 and wins every match, so their dashboard shows the Playoffs.
+// With `ties`, some groups end level at a zone boundary (`DEV_TIES`).
+export async function generateAfterSeasonSeed(
+  includeUserId?: string,
+  opts: { ties?: boolean } = {},
+): Promise<void> {
+  const { windowId } = await generateSeedData(0, {
+    finalize: true,
+    includeUserId,
+    shape: DEV_SEASON_SHAPE,
+  });
+  if (includeUserId) {
+    await moveIntoTopGroup(windowId, includeUserId);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const closedOn = lastSunday(today);
+  await generateDevSchedule(windowId, true, (count) =>
+    shiftIso(closedOn, -7 * count),
+  );
+  await insertResultsBatch(
+    devRegularResults(
+      await regularMatchesOf(windowId),
+      includeUserId,
+      opts.ties ?? false,
+    ),
+  );
+
+  const shape = await divisionsWithGroupSizes(windowId);
+  const days = await matchdaysForWindow(windowId);
+  const last = days[days.length - 1];
+  if (!last) {
+    return;
+  }
+  const weeks = relegationPlayoffsWeeks(shape);
+  const deadlines = Array.from({ length: weeks }, (_, i) =>
+    shiftIso(last.endsOn, 7 * (i + 1)),
+  );
+  await persistRelegationPlayoffsSchedule({
+    windowId,
+    firstRound: last.round + 1,
+    windows: windowsFromDeadlines(dayAfter(last.endsOn), deadlines),
+    matchRows: relegationPlayoffsMatches(shape),
+  });
+}
+
+// A season in its second-to-last Spieltag: the earlier ones played, the
+// running one half, the last one open, and the schedule for Relegation und
+// Playoffs not created yet, so staff can create it and watch the preview
+// move while results come in. One finished match of the previous Spieltag is
+// still held for a recording, an open point of the publish checklist. The
+// persona leads a Division 1 group.
+export async function generateLateRegularSeasonSeed(
+  includeUserId?: string,
+): Promise<void> {
+  const { windowId, staffId } = await generateSeedData(0, {
+    finalize: true,
+    includeUserId,
+    shape: DEV_SEASON_SHAPE,
+  });
+  if (includeUserId) {
+    await moveIntoTopGroup(windowId, includeUserId);
+  }
+
+  // The second-to-last Spieltag ends this Sunday.
+  const today = new Date().toISOString().slice(0, 10);
+  const thisSunday = shiftIso(lastSunday(today), 7);
+  await generateDevSchedule(windowId, true, (count) =>
+    shiftIso(thisSunday, -7 * (count - 1)),
+  );
+
+  const all = await regularMatchesOf(windowId);
+  const days = await matchdaysForWindow(windowId);
+  const running = days.length - 1;
+  const results = devRegularResults(all, includeUserId, false).filter(
+    (_, i) =>
+      all[i].round < running || (all[i].round === running && i % 2 === 0),
+  );
+  await insertResultsBatch(results);
+
+  const held = all.find(
+    (match) =>
+      match.round === running - 1 &&
+      match.playerAId !== includeUserId &&
+      match.playerBId !== includeUserId,
+  );
+  if (held) {
+    await db.insert(recordingHolds).values({
+      matchId: held.id,
+      windowId,
+      round: held.round,
+      heldById: staffId,
+      motwRole: null,
+    });
+  }
+}
+
+// Swaps a player into the first group of Division 1, with whoever sat there
+// first taking their place.
+async function moveIntoTopGroup(
+  windowId: string,
+  userId: string,
+): Promise<void> {
+  const [top] = await db
+    .select({ id: subDivisions.id })
+    .from(subDivisions)
+    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .where(and(eq(divisions.windowId, windowId), eq(divisions.tier, 1)))
+    .orderBy(asc(subDivisions.position))
+    .limit(1);
+  const [own] = await db
+    .select({ subDivisionId: placements.subDivisionId })
+    .from(placements)
+    .where(
+      and(eq(placements.windowId, windowId), eq(placements.userId, userId)),
+    );
+  if (!top || !own || own.subDivisionId === top.id) {
+    return;
+  }
+  const [other] = await db
+    .select({ userId: placements.userId })
+    .from(placements)
+    .where(
+      and(
+        eq(placements.windowId, windowId),
+        eq(placements.subDivisionId, top.id),
+      ),
+    )
+    .limit(1);
+  if (!other) {
+    return;
+  }
+  const [mine] = await db
+    .select()
+    .from(placements)
+    .where(
+      and(eq(placements.windowId, windowId), eq(placements.userId, userId)),
+    );
+  const [theirs] = await db
+    .select()
+    .from(placements)
+    .where(
+      and(
+        eq(placements.windowId, windowId),
+        eq(placements.userId, other.userId),
+      ),
+    );
+  if (!mine || !theirs) {
+    return;
+  }
+  await db
+    .update(placements)
+    .set({ divisionId: theirs.divisionId, subDivisionId: theirs.subDivisionId })
+    .where(
+      and(eq(placements.windowId, windowId), eq(placements.userId, userId)),
+    );
+  await db
+    .update(placements)
+    .set({ divisionId: mine.divisionId, subDivisionId: mine.subDivisionId })
+    .where(
+      and(
+        eq(placements.windowId, windowId),
+        eq(placements.userId, other.userId),
+      ),
+    );
 }

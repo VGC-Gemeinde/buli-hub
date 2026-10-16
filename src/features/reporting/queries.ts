@@ -24,8 +24,14 @@ import {
   replacedByMap,
   standingsRoster,
 } from "@/features/replacements/replacement";
+import {
+  type MatchStage,
+  matchStageTitle,
+  tieKeyGroup,
+} from "@/features/schedule/stage-title";
 import type { Identity } from "@/features/season/dashboard";
 import { groupRoster } from "@/features/season/queries";
+import { regularPlayerAId } from "@/features/season/regular-match";
 import { subDivisionName } from "@/features/seeding/seeding";
 import type { TeamsheetSource } from "@/features/teamsheets/sources";
 import { db } from "@/lib/db";
@@ -54,11 +60,19 @@ function toIdentity(row: {
 
 // The pairing + both players' identities plus the group name and matchday
 // deadline for the report screen header (playerB null = bye, unreportable).
-// Null when the match does not exist.
+// Null when the match does not exist, or for a Relegation or playoff match
+// whose players are not set yet: it has no page before its pairing is
+// settled (docs/plans/relegation-and-playoffs.md). For those matches
+// `groupName` is the stage ("Relegation · Division 1 und 2") and
+// `subDivisionId` is null.
 export async function getMatchForReport(matchId: string): Promise<{
   matchId: string;
+  windowId: string;
+  stage: MatchStage;
   round: number;
-  subDivisionId: string;
+  // "Spieltag 3", or "Woche 1" for a week after the regular season.
+  weekName: string;
+  subDivisionId: string | null;
   tier: number;
   groupName: string;
   deadline: string | null;
@@ -69,34 +83,38 @@ export async function getMatchForReport(matchId: string): Promise<{
   const [match] = await db
     .select({
       id: matches.id,
+      windowId: matches.windowId,
+      stage: matches.stage,
       round: matches.round,
       subDivisionId: matches.subDivisionId,
       playerAId: matches.playerAId,
       playerBId: matches.playerBId,
-      tier: divisions.tier,
+      matchTier: matches.tier,
+      tieKey: matches.tieKey,
+      groupTier: divisions.tier,
       position: subDivisions.position,
-      windowId: divisions.windowId,
       // The season's top-X replay rule. Null cannot occur for a running
       // season (finalize gates on it); treated as "required" defensively.
       replayRequiredTiers: seedings.replayRequiredTiers,
       motwId: motwSelections.id,
     })
     .from(matches)
-    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
-    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
-    .leftJoin(seedings, eq(seedings.windowId, divisions.windowId))
+    .leftJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
+    .leftJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    .leftJoin(seedings, eq(seedings.windowId, matches.windowId))
     .leftJoin(motwSelections, eq(motwSelections.matchId, matches.id))
     .where(eq(matches.id, matchId))
     .limit(1);
-  if (!match) {
+  if (!match || match.playerAId === null) {
     return null;
   }
+  const tier = match.groupTier ?? match.matchTier ?? 0;
   // The Match of the Week is played on stream and recorded, so the
   // recording is its proof: no replay links, whatever the tier rule says.
+  // A Relegation match follows its upper division's rule (its `tier`).
   const proofRequired =
     match.motwId === null &&
-    (match.replayRequiredTiers === null ||
-      match.tier <= match.replayRequiredTiers);
+    (match.replayRequiredTiers === null || tier <= match.replayRequiredTiers);
 
   const [matchday] = await db
     .select({ endsOn: matchdays.endsOn })
@@ -108,6 +126,18 @@ export async function getMatchForReport(matchId: string): Promise<{
       ),
     )
     .limit(1);
+  const [regular] =
+    match.stage === "regular"
+      ? [{ rounds: 0 }]
+      : await db
+          .select({ rounds: sql<number>`count(*)::int` })
+          .from(matchdays)
+          .where(
+            and(
+              eq(matchdays.windowId, match.windowId),
+              eq(matchdays.regular, true),
+            ),
+          );
 
   const ids = [match.playerAId, match.playerBId].filter(
     (id): id is string => id !== null,
@@ -129,15 +159,72 @@ export async function getMatchForReport(matchId: string): Promise<{
   };
   return {
     matchId: match.id,
+    windowId: match.windowId,
+    stage: match.stage,
     round: match.round,
+    weekName:
+      match.stage === "regular"
+        ? `Spieltag ${match.round}`
+        : `Woche ${match.round - regular.rounds}`,
     subDivisionId: match.subDivisionId,
-    tier: match.tier,
-    groupName: subDivisionName(match.tier, match.position),
+    tier,
+    groupName: await stageGroupName({ ...match, tier }),
     deadline: matchday?.endsOn ?? null,
     proofRequired,
     playerA: identity(match.playerAId),
     playerB: match.playerBId ? identity(match.playerBId) : null,
   };
+}
+
+// The group name a match shows: its sub-division, or its stage.
+async function stageGroupName(match: {
+  windowId: string;
+  stage: MatchStage;
+  round: number;
+  tier: number;
+  position: number | null;
+  tieKey: string | null;
+}): Promise<string> {
+  if (match.stage === "regular") {
+    return subDivisionName(match.tier, match.position ?? 0);
+  }
+  if (match.stage === "tiebreaker") {
+    const group = match.tieKey ? tieKeyGroup(match.tieKey) : null;
+    const [row] = group
+      ? await db
+          .select({ position: subDivisions.position })
+          .from(subDivisions)
+          .where(eq(subDivisions.id, group))
+      : [];
+    return matchStageTitle({
+      stage: "tiebreaker",
+      tier: match.tier,
+      groupPosition: row?.position ?? null,
+    });
+  }
+  if (match.stage === "relegation") {
+    return matchStageTitle({
+      stage: "relegation",
+      tier: match.tier,
+      groupPosition: null,
+    });
+  }
+  // The bracket's rounds are consecutive weeks from the first one on.
+  const rounds = await db
+    .selectDistinct({ round: matches.round })
+    .from(matches)
+    .where(
+      and(eq(matches.windowId, match.windowId), eq(matches.stage, "playoff")),
+    )
+    .orderBy(asc(matches.round));
+  const index = rounds.findIndex((r) => r.round === match.round);
+  return matchStageTitle({
+    stage: "playoff",
+    tier: match.tier,
+    groupPosition: null,
+    playoffRound: index + 1,
+    playoffRounds: rounds.length,
+  });
 }
 
 export type StoredResult = ResultRow & {
@@ -283,7 +370,7 @@ export async function groupResults(
     db
       .select({
         matchId: matches.id,
-        playerAId: matches.playerAId,
+        playerAId: regularPlayerAId,
         playerBId: matches.playerBId,
         outcome: matchResults.outcome,
         winnerId: matchResults.winnerId,
@@ -401,7 +488,7 @@ export async function subDivisionResults(
     db
       .select({
         matchId: matches.id,
-        playerAId: matches.playerAId,
+        playerAId: regularPlayerAId,
         playerBId: matches.playerBId,
         outcome: matchResults.outcome,
         winnerId: matchResults.winnerId,
@@ -543,7 +630,7 @@ export async function windowMatchOverview(
       tier: divisions.tier,
       position: subDivisions.position,
       endsOn: matchdays.endsOn,
-      playerAId: matches.playerAId,
+      playerAId: regularPlayerAId,
       playerBId: matches.playerBId,
       aName: pa.displayName,
       aUser: pa.username,
@@ -884,7 +971,7 @@ export async function windowResolvedDisputes(
       round: matches.round,
       tier: divisions.tier,
       position: subDivisions.position,
-      playerAId: matches.playerAId,
+      playerAId: regularPlayerAId,
       playerBId: matches.playerBId,
       aName: pa.displayName,
       aUser: pa.username,
@@ -990,4 +1077,69 @@ async function writeReplacedResult(
       .values(input.games.map((game) => ({ matchId: input.matchId, ...game })));
   }
   await writeSheets(tx, input.matchId, input.sheets);
+}
+
+// Which of the given matches have a stored result, of any kind.
+export async function reportedMatchIds(
+  matchIds: readonly string[],
+): Promise<Set<string>> {
+  if (matchIds.length === 0) {
+    return new Set();
+  }
+  const rows = await db
+    .select({ matchId: matchResults.matchId })
+    .from(matchResults)
+    .where(inArray(matchResults.matchId, [...matchIds]));
+  return new Set(rows.map((row) => row.matchId));
+}
+
+// Stored results with their games for the given matches, keyed by match id.
+export async function resultsWithGames(matchIds: readonly string[]): Promise<
+  Map<
+    string,
+    {
+      outcome: MatchOutcome;
+      winnerId: string | null;
+      confirmedAt: Date | null;
+      games: { winnerId: string }[];
+    }
+  >
+> {
+  if (matchIds.length === 0) {
+    return new Map();
+  }
+  const rows = await db
+    .select({
+      matchId: matchResults.matchId,
+      outcome: matchResults.outcome,
+      winnerId: matchResults.winnerId,
+      confirmedAt: matchResults.confirmedAt,
+      gameWinnerId: matchGames.winnerId,
+    })
+    .from(matchResults)
+    .leftJoin(matchGames, eq(matchGames.matchId, matchResults.matchId))
+    .where(inArray(matchResults.matchId, [...matchIds]))
+    .orderBy(asc(matchGames.gameNumber));
+  const byMatch = new Map<
+    string,
+    {
+      outcome: MatchOutcome;
+      winnerId: string | null;
+      confirmedAt: Date | null;
+      games: { winnerId: string }[];
+    }
+  >();
+  for (const row of rows) {
+    const entry = byMatch.get(row.matchId) ?? {
+      outcome: row.outcome as MatchOutcome,
+      winnerId: row.winnerId,
+      confirmedAt: row.confirmedAt,
+      games: [],
+    };
+    if (row.gameWinnerId) {
+      entry.games.push({ winnerId: row.gameWinnerId });
+    }
+    byMatch.set(row.matchId, entry);
+  }
+  return byMatch;
 }

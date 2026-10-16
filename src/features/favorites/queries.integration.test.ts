@@ -89,12 +89,14 @@ beforeAll(async () => {
     .insert(matches)
     .values([
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 1,
         playerAId: alice,
         playerBId: bob,
       },
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 2,
         playerAId: alice,

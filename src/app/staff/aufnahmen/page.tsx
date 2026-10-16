@@ -9,8 +9,9 @@ import { holdsForWindow } from "@/features/recordings/queries";
 import { windowMatchOverview } from "@/features/reporting/queries";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
+import { settledLateMatches } from "@/features/schedule/relegation-playoffs-setup";
 import { currentMatchday } from "@/features/season/dashboard";
-import { matchdaysForWindow } from "@/features/season/queries";
+import { allMatchdaysForWindow } from "@/features/season/queries";
 import { StaffPage } from "@/features/staff/components/staff-page";
 import { latestWindow } from "@/features/staff/queries";
 import { streamPhotoUrl } from "@/features/stream-photos/photo";
@@ -30,20 +31,25 @@ export default async function StaffRecordingsPage() {
   if (!window) {
     redirect("/staff");
   }
-  const matchdays = await matchdaysForWindow(window.id);
+  // Every week: the recordings run on through Relegation und Playoffs.
+  const matchdays = await allMatchdaysForWindow(window.id);
   if (matchdays.length === 0) {
     redirect("/staff");
   }
 
   const currentRound = currentMatchday(matchdays, germanToday())?.round ?? null;
-  const [overview, holds] = await Promise.all([
+  const [overview, late, holds] = await Promise.all([
     windowMatchOverview(window.id),
+    settledLateMatches(window.id),
     holdsForWindow(window.id),
   ]);
   const roleByMatch = new Map(holds.map((h) => [h.matchId, h.motwRole]));
   const photos = await streamPhotoPathsFor([
     ...new Set(
-      overview.flatMap((match) => [match.playerA.userId, match.playerB.userId]),
+      [...overview, ...late].flatMap((match) => [
+        match.playerA.userId,
+        match.playerB.userId,
+      ]),
     ),
   ]);
   const withPhoto = (identity: {
@@ -68,6 +74,24 @@ export default async function StaffRecordingsPage() {
     motwRole: roleByMatch.get(match.matchId) ?? null,
     endsOn: match.endsOn,
   }));
+  // Tiebreaker, Relegation and playoff matches, once their players are set.
+  for (const match of late) {
+    matches.push({
+      matchId: match.matchId,
+      round: match.round,
+      tier: match.tier,
+      groupName: match.groupName,
+      playerA: withPhoto(match.playerA),
+      playerB: withPhoto(match.playerB),
+      reported: match.outcome !== null,
+      pendingFreeWin:
+        match.outcome === "free_win" && match.confirmedAt === null,
+      decidedByDrop: false,
+      held: roleByMatch.has(match.matchId),
+      motwRole: roleByMatch.get(match.matchId) ?? null,
+      endsOn: match.endsOn,
+    });
+  }
 
   return (
     <StaffPage

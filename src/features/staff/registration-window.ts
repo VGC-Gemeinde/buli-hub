@@ -9,6 +9,9 @@ export type RegistrationWindow = {
   // Null until staff publish the generated schedule ("Pairings
   // veröffentlichen") — the schedule is staff-internal before that.
   schedulePublishedAt: Date | null;
+  // Null until staff publish Relegation und Playoffs, which makes the regular
+  // season's results final (docs/plans/relegation-and-playoffs.md).
+  regularSeasonClosedAt: Date | null;
 };
 
 export type RegistrationState = "not_started" | "open" | "closed";

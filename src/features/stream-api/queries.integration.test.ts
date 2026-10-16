@@ -93,7 +93,13 @@ beforeAll(async () => {
   ) => {
     const [row] = await db
       .insert(matches)
-      .values({ subDivisionId: group.id, round, playerAId, playerBId })
+      .values({
+        windowId,
+        subDivisionId: group.id,
+        round,
+        playerAId,
+        playerBId,
+      })
       .returning({ id: matches.id });
     return row.id;
   };
@@ -286,5 +292,84 @@ describe("getStreamMatch", () => {
     expect(await getStreamMatch(windowId, open)).toBeNull();
     expect(await getStreamMatch(windowId, bye)).toBeNull();
     expect(await getStreamMatch(randomUUID(), played)).toBeNull();
+  });
+});
+
+describe("after the regular season", () => {
+  let relegation: string;
+  beforeAll(async () => {
+    await db.insert(matchdays).values({
+      windowId,
+      round: 3,
+      startsOn: "2026-07-15",
+      endsOn: "2026-07-21",
+      regular: false,
+    });
+    const [row] = await db
+      .insert(matches)
+      .values({
+        windowId,
+        stage: "relegation",
+        tier: 2,
+        position: 0,
+        round: 3,
+        playerAId: erin,
+        playerBId: alice,
+      })
+      .returning({ id: matches.id });
+    relegation = row.id;
+    await saveResult(
+      relegation,
+      {
+        outcome: "normal",
+        winnerId: alice,
+        platform: "showdown",
+        videoUrl: null,
+        freeWinReason: null,
+        discussedWithId: null,
+      },
+      [
+        { gameNumber: 1, winnerId: alice, replayUrl: "https://replay/r1" },
+        { gameNumber: 2, winnerId: alice, replayUrl: "https://replay/r2" },
+      ],
+      [
+        { playerId: erin, source: "import", ots: "Incineroar @ Sitrus Berry" },
+        { playerId: alice, source: "import", ots: "Garchomp @ Life Orb" },
+      ],
+      alice,
+    );
+  });
+
+  it("lists a played relegation match by its week and stage", async () => {
+    const list = await listStreamMatches(windowId);
+    const match = list.find((m) => m.id === relegation);
+    expect(match).toMatchObject({
+      stage: "relegation",
+      round: 3,
+      weekName: "Woche 1",
+      roundLabel: "Relegation",
+      division: { tier: 2, name: "Division 2" },
+      group: { name: "Division 2 und 3", shortName: "2/3" },
+      games: ["b", "b"],
+    });
+    // The regular ones keep their Spieltag.
+    expect(list.find((m) => m.id === played)).toMatchObject({
+      stage: "regular",
+      roundLabel: "Spieltag 2",
+    });
+  });
+
+  it("carries the record into the relegation match without counting it", async () => {
+    const detail = await getStreamMatch(windowId, relegation);
+    const regularAlice = (await getStreamMatch(windowId, played))?.playerA
+      .record;
+    expect(detail?.sheets).toEqual({
+      a: "Incineroar @ Sitrus Berry",
+      b: "Garchomp @ Life Orb",
+    });
+    // Alice's regular tally and nothing from the relegation match itself.
+    // Her Spieltag-2 win is the Match of the Week still waiting for its VOD,
+    // so it counts in neither.
+    expect(detail?.playerB.record).toEqual(regularAlice);
   });
 });

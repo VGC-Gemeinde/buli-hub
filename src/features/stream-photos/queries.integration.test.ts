@@ -63,18 +63,21 @@ beforeAll(async () => {
     .insert(matches)
     .values([
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 1,
         playerAId: alice,
         playerBId: bob,
       },
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 2,
         playerAId: carol,
         playerBId: dave,
       },
       {
+        windowId,
         subDivisionId: subDivision.id,
         round: 3,
         playerAId: outsider,

@@ -10,6 +10,11 @@ import {
   SIGN_IN_ERROR_COPY,
 } from "@/features/auth/sign-in-error";
 import { favoriteIds } from "@/features/favorites/queries";
+import {
+  afterSeasonWeekToShow,
+  currentAfterSeasonWeek,
+} from "@/features/playoffs/public-view";
+import { publicRelegationPlayoffs } from "@/features/playoffs/queries";
 import { PublicLeague } from "@/features/public-league/components/public-league";
 import { publicLeagueOverview } from "@/features/public-league/queries";
 import { currentUser } from "@/features/roles/guard";
@@ -53,6 +58,11 @@ export default async function Home({
     const spoilersOff = parseSpoilersOff(
       cookieStore.get(SPOILERS_OFF_COOKIE)?.value,
     );
+    // After the regular season: Relegation, Playoffs and the tiebreakers.
+    const afterSeason = await publicRelegationPlayoffs(window.id, {
+      userId: current?.userId ?? null,
+      isStaff: current !== null && roleAtLeast(current.role, "staff"),
+    });
     return (
       <div className="flex flex-1 flex-col">
         <SiteHeader section="liga" />
@@ -61,6 +71,18 @@ export default async function Home({
           meId={current?.userId ?? ""}
           initialSpoilersOff={spoilersOff}
           favoriteIds={favorites}
+          afterSeason={afterSeason}
+          afterSeasonWeek={
+            afterSeason
+              ? {
+                  current: currentAfterSeasonWeek(afterSeason.weeks, today),
+                  show: afterSeasonWeekToShow(afterSeason.weeks, today),
+                  begun: afterSeason.weeks.filter(
+                    (week) => week.startsOn <= today,
+                  ).length,
+                }
+              : null
+          }
         />
       </div>
     );

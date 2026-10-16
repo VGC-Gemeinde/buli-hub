@@ -1,0 +1,1 @@
+ALTER TABLE "recording_holds" ADD COLUMN "nominated_sides" jsonb;

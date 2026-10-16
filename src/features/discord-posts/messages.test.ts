@@ -261,3 +261,43 @@ describe("shouldPostResult", () => {
     ).toBe(false);
   });
 });
+
+describe("messages after the regular season", () => {
+  it("heads a relegation result with its stage instead of a Spieltag", () => {
+    const message = resultMessage({
+      groupName: "Relegation · Division 1 und 2",
+      round: 10,
+      regular: false,
+      playerAName: "Pia",
+      playerBName: "Hendrik",
+      outcome: "free_win",
+      winnerName: "Hendrik",
+      scoreA: 0,
+      scoreB: 0,
+      platform: null,
+      playerATeamUrl: null,
+      playerBTeamUrl: null,
+      videoUrl: null,
+      replayUrls: [],
+      corrected: false,
+      matchUrl: null,
+      isMotw: false,
+    });
+    expect(message.split("\n")[0]).toBe(
+      "__**VGC Bundesliga · Relegation · Division 1 und 2**__",
+    );
+  });
+
+  it("names the week in a VOD announcement after the regular season", () => {
+    expect(
+      motwVodMessage({
+        round: 10,
+        weekName: "Woche 1",
+        playerAName: "A",
+        playerBName: "B",
+        youtubeUrl: "https://youtu.be/x",
+        matchUrl: null,
+      }).split("\n")[0],
+    ).toBe("__**VGC Bundesliga · Match of the Week · Woche 1**__");
+  });
+});

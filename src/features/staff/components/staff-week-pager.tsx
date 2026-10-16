@@ -25,6 +25,8 @@ export function StaffWeekPager({
   mark,
   describe,
   legend,
+  name = (round) => `Spieltag ${round}`,
+  chip = (round) => String(round),
 }: {
   rounds: readonly number[];
   activeRound: number;
@@ -37,6 +39,10 @@ export function StaffWeekPager({
   describe: (round: number) => string;
   // The workspace's legend entries (`PagerLegendItem`s).
   legend: ReactNode;
+  // A week's name for the tooltip and its short chip text: "Spieltag 7" and
+  // "7" by default, "Woche 1" and "W1" for a week after the regular season.
+  name?: (round: number) => string;
+  chip?: (round: number) => string;
 }) {
   const activeRef = useRef<HTMLButtonElement>(null);
   const index = rounds.indexOf(activeRound);
@@ -100,7 +106,7 @@ export function StaffWeekPager({
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  title={`Spieltag ${round}: ${describe(round)}${
+                  title={`${name(round)}: ${describe(round)}${
                     isCurrent ? " · aktueller Spieltag" : ""
                   }`}
                   onClick={() => onSelect(round)}
@@ -116,7 +122,7 @@ export function StaffWeekPager({
                   )}
                 >
                   <span className="font-semibold text-[13px] leading-none tabular-nums">
-                    {round}
+                    {chip(round)}
                   </span>
                   {mark(round, active)}
                 </button>

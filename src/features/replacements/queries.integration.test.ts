@@ -91,12 +91,12 @@ beforeAll(async () => {
     })),
   );
   await db.insert(matches).values([
-    { subDivisionId, round: 1, playerAId: x, playerBId: a },
-    { subDivisionId, round: 1, playerAId: b, playerBId: c },
-    { subDivisionId, round: 2, playerAId: b, playerBId: x },
-    { subDivisionId, round: 2, playerAId: a, playerBId: c },
-    { subDivisionId, round: 3, playerAId: x, playerBId: c },
-    { subDivisionId, round: 3, playerAId: a, playerBId: b },
+    { windowId, subDivisionId, round: 1, playerAId: x, playerBId: a },
+    { windowId, subDivisionId, round: 1, playerAId: b, playerBId: c },
+    { windowId, subDivisionId, round: 2, playerAId: b, playerBId: x },
+    { windowId, subDivisionId, round: 2, playerAId: a, playerBId: c },
+    { windowId, subDivisionId, round: 3, playerAId: x, playerBId: c },
+    { windowId, subDivisionId, round: 3, playerAId: a, playerBId: b },
   ]);
   await setDropped({ windowId, userId: x, staffId: staff, reason: "Weg" });
 });

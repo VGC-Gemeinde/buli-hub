@@ -388,6 +388,12 @@ function WeekPager({
       mark={(round, active) => (
         <HoldMark count={holds.get(round) ?? 0} active={active} />
       )}
+      name={(round) =>
+        weeks.find((week) => week.round === round)?.name ?? `Spieltag ${round}`
+      }
+      chip={(round) =>
+        weeks.find((week) => week.round === round)?.chip ?? String(round)
+      }
       describe={(round) => {
         const count = holds.get(round) ?? 0;
         return count === 0
@@ -492,7 +498,7 @@ function WeekPanel({ week }: { week: RecordingWeek }) {
         <div className="flex min-w-0 items-center gap-2.5">
           <Tick size="m" />
           <h3 className="font-bold font-heading text-[20px] text-brand-blue uppercase tracking-[0.03em] dark:text-white">
-            Spieltag {week.round}
+            {week.name}
           </h3>
           <span
             className={cn(

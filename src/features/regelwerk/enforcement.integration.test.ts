@@ -97,6 +97,7 @@ beforeAll(async () => {
   const [match] = await db
     .insert(matches)
     .values({
+      windowId,
       subDivisionId: subDivision.id,
       round: 1,
       playerAId: alice,

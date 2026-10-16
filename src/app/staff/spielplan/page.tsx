@@ -15,7 +15,8 @@ import { germanToday } from "@/lib/german-time";
 // The Spielplan inside the Staff-Bereich (docs/plans/staff-dashboard.md):
 // the same schedule as the public `/spielplan`, in the staff shell, so the
 // tab bar does not send staff out of their area. While the schedule is still
-// internal it is the preview of exactly what will go live.
+// internal it is the preview of exactly what will go live. Relegation und
+// Playoffs have their own page (`/staff/relegation-playoffs`).
 export default async function StaffSchedulePage() {
   const current = await currentUser();
   if (!current || !roleAtLeast(current.role, "staff")) {
@@ -33,6 +34,9 @@ export default async function StaffSchedulePage() {
     }),
     cookies(),
   ]);
+  const spoilersOff = parseSpoilersOff(
+    cookieStore.get(SPOILERS_OFF_COOKIE)?.value,
+  );
 
   return (
     <StaffPage
@@ -46,9 +50,7 @@ export default async function StaffSchedulePage() {
       <FullSchedule
         overview={overview}
         meId={current.userId}
-        initialSpoilersOff={parseSpoilersOff(
-          cookieStore.get(SPOILERS_OFF_COOKIE)?.value,
-        )}
+        initialSpoilersOff={spoilersOff}
         hiddenPreview={phase === "schedule_hidden"}
         embedded
       />

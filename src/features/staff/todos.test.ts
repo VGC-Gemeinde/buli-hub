@@ -12,12 +12,94 @@ const calm: TodoFacts = {
   discord: null,
   nonMembers: 0,
   scheduleSetup: null,
+  relegationPlayoffsSetup: null,
+  motwLineUpChanged: null,
+  relegationPlayoffsPublish: null,
+  tieOrdersOpen: 0,
+  seasonCompletable: false,
 };
 
 const ids = (facts: Partial<TodoFacts>) =>
   staffTodos({ ...calm, ...facts }).map((todo) => todo.id);
 
 describe("staffTodos", () => {
+  it("asks to publish Relegation und Playoffs, naming what is open", () => {
+    const [ready] = staffTodos({
+      ...calm,
+      relegationPlayoffsPublish: { openPoints: 0 },
+    });
+    expect(ready).toMatchObject({
+      id: "relegation-playoffs-publish",
+      title: "Relegation und Playoffs veröffentlichen",
+      action: { href: "/staff/relegation-playoffs" },
+    });
+    const [blocked] = staffTodos({
+      ...calm,
+      relegationPlayoffsPublish: { openPoints: 2 },
+    });
+    expect(blocked.detail).toBe(
+      "2 Punkte sind noch offen, bevor veröffentlicht werden kann.",
+    );
+  });
+
+  it("asks to complete the season once everything is decided", () => {
+    expect(staffTodos({ ...calm, seasonCompletable: true })[0]).toMatchObject({
+      id: "complete-season",
+      title: "Saison abschließen",
+    });
+  });
+
+  it("asks for open staff orders", () => {
+    expect(staffTodos({ ...calm, tieOrdersOpen: 2 })[0].title).toBe(
+      "Reihenfolge für 2 Gleichstände festlegen",
+    );
+  });
+
+  it("names a week after the regular season in the MotW todo", () => {
+    expect(
+      staffTodos({
+        ...calm,
+        motw: {
+          round: 10,
+          name: "Woche 1",
+          kind: "nominate",
+          urgency: "urgent",
+        },
+      })[0],
+    ).toMatchObject({
+      title: "Kandidaten für Woche 1 wählen",
+      detail: "Woche 1 läuft noch ohne Kandidaten für das Match of the Week.",
+      action: { href: "/staff/motw?spieltag=10" },
+    });
+  });
+
+  it("flags candidates whose line-up moved", () => {
+    expect(
+      staffTodos({
+        ...calm,
+        motwLineUpChanged: { count: 1, round: 10, name: "Woche 1" },
+      })[0],
+    ).toMatchObject({
+      id: "motw-line-up",
+      title: "Besetzung eines MotW-Kandidaten in Woche 1 hat sich geändert",
+      action: { href: "/staff/motw?spieltag=10" },
+    });
+  });
+
+  it("asks for the Relegation und Playoffs schedule with the dialog", () => {
+    const [todo] = staffTodos({
+      ...calm,
+      relegationPlayoffsSetup: { weeks: 3, matches: 11 },
+    });
+    expect(todo).toMatchObject({
+      id: "relegation-playoffs-schedule",
+      tone: "due",
+      title: "Spielplan für Relegation und Playoffs erstellen",
+      action: { kind: "create_relegation_playoffs_schedule" },
+    });
+    expect(todo.detail).toMatch(/^3 Wochen · 11 Matches\./);
+  });
+
   it("has nothing to do in a calm week", () => {
     expect(staffTodos(calm)).toEqual([]);
   });
@@ -28,7 +110,12 @@ describe("staffTodos", () => {
       nonMembers: 2,
       pendingFreeWins: 1,
       overdue: 3,
-      motw: { round: 3, kind: "nominate", urgency: "warning" },
+      motw: {
+        round: 3,
+        name: "Spieltag 3",
+        kind: "nominate",
+        urgency: "warning",
+      },
       staleRecordings: { count: 1, allReported: true },
     });
     expect(todos.map((t) => [t.id, t.tone])).toEqual([
@@ -65,7 +152,12 @@ describe("staffTodos", () => {
     expect(
       staffTodos({
         ...calm,
-        motw: { round: 2, kind: "confirm", urgency: "urgent" },
+        motw: {
+          round: 2,
+          name: "Spieltag 2",
+          kind: "confirm",
+          urgency: "urgent",
+        },
       })[0],
     ).toMatchObject({
       tone: "urgent",

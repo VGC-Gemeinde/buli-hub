@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   type MatchInput,
+  recordAfterSeason,
+  streamNaming,
   toStreamMatch,
   toStreamMatchDetail,
 } from "./to-stream-match";
@@ -12,8 +14,11 @@ const carol = "00000000-0000-0000-0000-00000000000c";
 const base: MatchInput = {
   id: "m1",
   round: 3,
+  stage: "regular",
+  weekName: "Spieltag 3",
+  roundLabel: "Spieltag 3",
   tier: 1,
-  position: 1,
+  group: { name: "Division 1b", shortName: "1b" },
   playerAId: alice,
   playerBId: bob,
   playerA: {
@@ -57,6 +62,9 @@ describe("toStreamMatchDetail", () => {
     expect(match).toEqual({
       id: "m1",
       round: 3,
+      stage: "regular",
+      weekName: "Spieltag 3",
+      roundLabel: "Spieltag 3",
       division: { tier: 1, name: "Division 1" },
       group: { name: "Division 1b", shortName: "1b" },
       playerA: {
@@ -127,5 +135,110 @@ describe("toStreamMatch", () => {
 
   it("is null whenever the detail is", () => {
     expect(toStreamMatch({ ...base, platform: null })).toBeNull();
+  });
+});
+
+describe("streamNaming", () => {
+  const shape = { regularRounds: 7, playoffRounds: [8, 9, 10] };
+
+  it("names a regular match by its Spieltag and group", () => {
+    expect(
+      streamNaming({
+        stage: "regular",
+        round: 3,
+        tier: 2,
+        groupPosition: 0,
+        ...shape,
+      }),
+    ).toEqual({
+      weekName: "Spieltag 3",
+      roundLabel: "Spieltag 3",
+      group: { name: "Division 2a", shortName: "2a" },
+    });
+  });
+
+  it("names the stages after the regular season by week and stage", () => {
+    expect(
+      streamNaming({
+        stage: "relegation",
+        round: 8,
+        tier: 1,
+        groupPosition: null,
+        ...shape,
+      }),
+    ).toEqual({
+      weekName: "Woche 1",
+      roundLabel: "Relegation",
+      group: { name: "Division 1 und 2", shortName: "1/2" },
+    });
+    expect(
+      streamNaming({
+        stage: "playoff",
+        round: 9,
+        tier: 1,
+        groupPosition: null,
+        ...shape,
+      }),
+    ).toEqual({
+      weekName: "Woche 2",
+      roundLabel: "Playoffs · Halbfinale",
+      group: { name: "Playoffs", shortName: "PO" },
+    });
+    expect(
+      streamNaming({
+        stage: "tiebreaker",
+        round: 8,
+        tier: 4,
+        groupPosition: null,
+        ...shape,
+      }),
+    ).toEqual({
+      weekName: "Woche 1",
+      roundLabel: "Tiebreaker",
+      group: { name: "Division 4", shortName: "4" },
+    });
+  });
+});
+
+describe("recordAfterSeason", () => {
+  it("adds the earlier matches after the season, minus withheld ones", () => {
+    expect(
+      recordAfterSeason({
+        userId: alice,
+        regular: { wins: 5, losses: 2 },
+        earlier: [
+          {
+            matchId: "rel",
+            round: 8,
+            playerAId: alice,
+            playerBId: bob,
+            winnerId: alice,
+          },
+          {
+            matchId: "held",
+            round: 8,
+            playerAId: carol,
+            playerBId: alice,
+            winnerId: carol,
+          },
+          {
+            matchId: "dl",
+            round: 8,
+            playerAId: alice,
+            playerBId: carol,
+            winnerId: null,
+          },
+          {
+            matchId: "later",
+            round: 9,
+            playerAId: alice,
+            playerBId: bob,
+            winnerId: alice,
+          },
+        ],
+        beforeRound: 9,
+        excluded: new Set(["held"]),
+      }),
+    ).toEqual({ wins: 6, losses: 3 });
   });
 });

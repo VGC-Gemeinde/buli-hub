@@ -3,7 +3,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
 import { StreamPhotoMark } from "@/features/stream-photos/components/stream-photo-mark";
 import { cn } from "@/lib/utils";
-import type { MotwPlayer } from "../motw";
+import {
+  isOpenSide,
+  type MotwOpenSide,
+  type MotwPlayer,
+  type MotwSideData,
+} from "../motw";
 
 // The player side of a MotW matchup, shared by the picker rows and the pick
 // panel — the same broadcast anatomy as the public billboard: avatars on the
@@ -121,19 +126,80 @@ function PlayerFormLine({
   );
 }
 
+// A Relegation or playoff side whose player is not settled: the dashed
+// circle instead of an avatar (design/PLAYOFFS.md §0.6), the candidates as
+// the name ("Alice oder Bob") and what the side is underneath ("Division 2a
+// · Platz 7", "Sieger HF 1"). No form line: there is no one player to judge.
+function OpenMotwSide({
+  open,
+  side,
+  size,
+}: {
+  open: MotwOpenSide;
+  side: "left" | "right";
+  size: "sm" | "lg";
+}) {
+  const names =
+    open.candidates.length > 0
+      ? open.candidates.map((player) => player.name).join(" oder ")
+      : open.label;
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2.5 sm:justify-between",
+        size === "lg" && "gap-3.5",
+        side === "right" && "sm:flex-row-reverse",
+      )}
+    >
+      <span
+        className={cn(
+          "shrink-0 rounded-full border-[1.5px] border-border border-dashed",
+          size === "lg" ? "size-11" : "size-8",
+        )}
+      />
+      <div
+        className={cn(
+          "flex min-w-0 flex-col gap-1",
+          side === "left" && "sm:items-end sm:text-right",
+        )}
+      >
+        <span
+          className={cn(
+            "min-w-0 break-words text-muted-foreground",
+            size === "lg"
+              ? "font-bold font-heading text-[19px] uppercase leading-[1.1] tracking-[0.02em] sm:text-[22px]"
+              : "font-semibold text-[16px] leading-tight",
+          )}
+        >
+          {names}
+        </span>
+        {open.candidates.length > 0 ? (
+          <span className="text-[12.5px] text-muted-foreground">
+            {open.label}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 // `size="lg"` is the pick panel's treatment (condensed uppercase name, like the
 // billboard), `"sm"` the picker row's.
 export function MotwSide({
-  player,
+  player: data,
   side,
   size = "sm",
   linkName = false,
 }: {
-  player: MotwPlayer;
+  player: MotwSideData;
   side: "left" | "right";
   size?: "sm" | "lg";
   linkName?: boolean;
 }) {
+  if (isOpenSide(data)) {
+    return <OpenMotwSide open={data} side={side} size={size} />;
+  }
+  const player: MotwPlayer = data;
   const nameClass = cn(
     "min-w-0 break-words",
     size === "lg"

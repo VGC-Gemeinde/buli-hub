@@ -149,13 +149,66 @@ export default async function DevPage() {
             </span>
           </a>
           <a
+            href="/dev/seed-registrations?late_season=1"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Vorletzter Spieltag läuft
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Spielplan für Relegation und Playoffs noch nicht erstellt,
+              Ergebnisse teils offen, ein Match noch für eine Aufnahme
+              zurückgehalten; du führst eine Gruppe der Division 1 an → zum
+              Spielplan im Staff-Bereich
+            </span>
+          </a>
+          <a
+            href="/dev/seed-registrations?after_season=1"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Nach dem letzten Spieltag
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Reguläre Saison komplett gespielt, Spielplan für Relegation und
+              Playoffs erstellt, noch nicht veröffentlicht; du führst eine
+              Gruppe der Division 1 an → zum Spielplan im Staff-Bereich
+            </span>
+          </a>
+          <a
+            href="/dev/seed-registrations?after_season=1&ties=1"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Nach dem letzten Spieltag, mit Gleichständen
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Wie oben, dazu geteilte Plätze an Zonengrenzen: Division 1a Platz
+              2/3 und Division 2a Platz 1/2 (Tiebreaker), Division 3a Platz 6
+              bis 8 (Staff-Reihenfolge)
+            </span>
+          </a>
+          <a
+            href="/dev/report-results?count=1000"
+            className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
+          >
+            <span className="font-medium text-sm">
+              Alle offenen Ergebnisse melden
+            </span>
+            <span className="text-[13px] text-muted-foreground">
+              Wie unten, aber alles, was gerade offen ist (nach der regulären
+              Saison: eine Runde)
+            </span>
+          </a>
+          <a
             href="/dev/report-results?count=5"
             className="flex flex-col rounded-lg border px-4 py-2.5 hover:bg-secondary"
           >
             <span className="font-medium text-sm">5 Ergebnisse melden</span>
             <span className="text-[13px] text-muted-foreground">
-              Meldet offene Matches der laufenden Saison wie echte Reports —
-              inkl. Discord-Post, wenn die drei Channel-IDs gesetzt sind
+              Meldet offene Matches der laufenden Saison wie echte Reports (nach
+              der regulären Saison Tiebreaker, Relegation und Playoffs) — inkl.
+              Discord-Post, wenn die drei Channel-IDs gesetzt sind
             </span>
           </a>
           <a

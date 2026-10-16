@@ -10,6 +10,7 @@ import {
   type DivisionForValidation,
   divisionModeAvailable,
   effectiveMovement,
+  effectiveSeats,
   type PostSeasonIssue,
   type RelevantTable,
   validatePostSeason,
@@ -157,6 +158,13 @@ function describeIssue(issue: PostSeasonIssue, rows: Row[]): string {
     const d = upper ? effectiveMovement(forValidation(upper)).demotions : 0;
     const p = lower ? effectiveMovement(forValidation(lower)).promotions : 0;
     return `Division ${issue.upperTier} & ${issue.lowerTier}: ${d} Abstiege stehen ${p} Aufstiegen gegenüber. Die Zahlen müssen sich decken.`;
+  }
+  if (issue.kind === "relegation_unbalanced") {
+    const upper = rows.find((r) => r.tier === issue.upperTier);
+    const lower = rows.find((r) => r.tier === issue.lowerTier);
+    const d = upper ? effectiveSeats(forValidation(upper)).demotionPlayoff : 0;
+    const p = lower ? effectiveSeats(forValidation(lower)).promotionPlayoff : 0;
+    return `Division ${issue.upperTier} & ${issue.lowerTier}: ${d} Relegationsplätze oben stehen ${p} unten gegenüber. Die Relegation spielt einer gegen einen, die Zahlen müssen sich decken.`;
   }
   switch (issue.kind) {
     case "capacity":

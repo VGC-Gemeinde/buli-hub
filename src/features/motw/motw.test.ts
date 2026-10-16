@@ -8,15 +8,21 @@ import {
   defaultDivisionFilter,
   findMotw,
   initialMotwRound,
+  isOpenSide,
+  isSettled,
   isYoutubeUrl,
+  lineUpChange,
   type MotwOption,
   type MotwPlayer,
   motwTodo,
   recordability,
+  relegationPlayoffsOptions,
   selectableRounds,
+  sideName,
   sortOptions,
   toggleAllDivisions,
   weekCandidates,
+  weekNames,
   weekState,
   youtubeUrlSchema,
 } from "./motw";
@@ -33,6 +39,7 @@ describe("motwTodo", () => {
   it("is urgent when the current round has no candidate at all", () => {
     expect(todo([], [])).toEqual({
       round: 3,
+      name: "Spieltag 3",
       kind: "nominate",
       urgency: "urgent",
     });
@@ -42,12 +49,14 @@ describe("motwTodo", () => {
     // Even a prepared next week does not soften the current round's gap …
     expect(todo([], [4])).toEqual({
       round: 3,
+      name: "Spieltag 3",
       kind: "nominate",
       urgency: "urgent",
     });
     // … and with both empty, the warning is replaced, not shown alongside.
     expect(todo([], [])).toEqual({
       round: 3,
+      name: "Spieltag 3",
       kind: "nominate",
       urgency: "urgent",
     });
@@ -56,6 +65,7 @@ describe("motwTodo", () => {
   it("warns when only the next round is empty", () => {
     expect(todo([], [3])).toEqual({
       round: 4,
+      name: "Spieltag 4",
       kind: "nominate",
       urgency: "warning",
     });
@@ -74,6 +84,7 @@ describe("motwTodo", () => {
     // This is the one that holds the billboard on an older week.
     expect(todo([], [2, 3, 4])).toEqual({
       round: 2,
+      name: "Spieltag 2",
       kind: "confirm",
       urgency: "urgent",
     });
@@ -82,6 +93,7 @@ describe("motwTodo", () => {
   it("asks about the latest undecided week and outranks an empty current one", () => {
     expect(todo([], [1, 2])).toEqual({
       round: 2,
+      name: "Spieltag 2",
       kind: "confirm",
       urgency: "urgent",
     });
@@ -107,7 +119,30 @@ describe("motwTodo", () => {
         confirmedRounds: new Set([1]),
         candidateRounds: new Set([1, 7]),
       }),
-    ).toEqual({ round: 7, kind: "confirm", urgency: "urgent" });
+    ).toEqual({
+      round: 7,
+      name: "Spieltag 7",
+      kind: "confirm",
+      urgency: "urgent",
+    });
+  });
+
+  it("names a week after the regular season by its name", () => {
+    expect(
+      motwTodo({
+        currentRound: 8,
+        totalRounds: 9,
+        confirmedRounds: new Set(),
+        candidateRounds: new Set(),
+        weekName: (round) =>
+          round > 7 ? `Woche ${round - 7}` : `Spieltag ${round}`,
+      }),
+    ).toEqual({
+      round: 8,
+      name: "Woche 1",
+      kind: "nominate",
+      urgency: "urgent",
+    });
   });
 
   it("is silent outside a running round with nothing left to decide", () => {
@@ -369,7 +404,7 @@ describe("sortOptions / weekCandidates / buildMotwWeeks", () => {
 
     // One side is enough.
     const halfway = option("m2", 1, 1, 2, false);
-    halfway.playerA.hasCaptureCard = true;
+    (halfway.playerA as MotwPlayer).hasCaptureCard = true;
     expect(recordability(halfway)).toBe("yes");
 
     // Both answered the question, and both said no.
@@ -378,11 +413,11 @@ describe("sortOptions / weekCandidates / buildMotwWeeks", () => {
     // A player who never saved a profile has `hasCaptureCard: false` by
     // default — that is not an answer, so the pairing is unknown, not a no.
     const untouched = option("m4", 1, 1, 2, false);
-    untouched.playerB.profileEdited = false;
+    (untouched.playerB as MotwPlayer).profileEdited = false;
     expect(recordability(untouched)).toBe("unknown");
 
     // …unless the other side already has one, which settles it.
-    untouched.playerA.hasCaptureCard = true;
+    (untouched.playerA as MotwPlayer).hasCaptureCard = true;
     expect(recordability(untouched)).toBe("yes");
   });
 
@@ -673,6 +708,9 @@ describe("findMotw", () => {
     expect(found?.youtubeUrl).toBe("https://youtu.be/x");
     expect(found?.rankA).toBe(4);
     expect(found?.rankB).toBe(1);
+    // A regular match: named by its Spieltag, never the final variant.
+    expect(found?.weekName).toBe("Spieltag 2");
+    expect(found?.final).toBe(false);
   });
 
   it("falls back to null ranks when a player is not in the table", () => {
@@ -718,5 +756,102 @@ describe("findMotw", () => {
     expect(
       findMotw(withBye, { round: 2, matchId: "m3", youtubeUrl: null }, 2),
     ).toBeNull();
+  });
+});
+
+describe("Relegation and playoff options", () => {
+  const player = (userId: string): MotwPlayer => ({
+    userId,
+    name: userId.toUpperCase(),
+    avatarUrl: null,
+    streamPhotoUrl: null,
+    rank: 1,
+    wins: 3,
+    losses: 0,
+    hasCaptureCard: false,
+    profileEdited: true,
+    dropped: false,
+  });
+  const [unsettled, settled] = relegationPlayoffsOptions({
+    matches: [
+      {
+        matchId: "r1",
+        tier: 1,
+        round: 10,
+        title: "Relegation · Division 1 und 2",
+        a: { label: "Division 1a · Platz 8", candidates: ["a"] },
+        b: { label: "Division 2b · Platz 1", candidates: ["b", "c"] },
+      },
+      {
+        matchId: "p1",
+        tier: 1,
+        round: 10,
+        title: "Playoffs · Halbfinale",
+        a: { label: null, candidates: ["d"] },
+        b: { label: null, candidates: ["e"] },
+      },
+    ],
+    toPlayer: player,
+    reported: new Set(["p1"]),
+  });
+
+  it("keeps a side open until the match carries its player", () => {
+    expect(isOpenSide(unsettled.playerA)).toBe(true);
+    expect(sideName(unsettled.playerA)).toBe("A");
+    expect(sideName(unsettled.playerB)).toBe("B oder C");
+    expect(isSettled(unsettled)).toBe(false);
+    expect(isSettled(settled)).toBe(true);
+    expect(settled.reported).toBe(true);
+    expect(unsettled.groupName).toBe("Relegation · Division 1 und 2");
+  });
+
+  it("cannot judge recordability or rank an open line-up", () => {
+    expect(recordability(unsettled)).toBe("unknown");
+    expect(sortOptions([unsettled, settled], "rank")[0]).toBe(settled);
+  });
+
+  it("says when a candidate's line-up moved since nomination", () => {
+    const nameOf = (id: string) => id.toUpperCase();
+    expect(lineUpChange(unsettled, null, nameOf)).toBeNull();
+    expect(
+      lineUpChange(unsettled, { a: ["a"], b: ["c", "b"] }, nameOf),
+    ).toBeNull();
+    expect(lineUpChange(unsettled, { a: ["x"], b: ["b", "c"] }, nameOf)).toBe(
+      "X gegen B oder C",
+    );
+  });
+
+  it("carries the change into the week's candidates", () => {
+    const [candidate] = weekCandidates(
+      [unsettled],
+      [
+        {
+          matchId: "r1",
+          round: 10,
+          motwRole: "primary",
+          nominatedSides: { a: ["x"], b: ["b", "c"] },
+        },
+      ],
+      10,
+      (id) => id.toUpperCase(),
+    );
+    expect(candidate.changedFrom).toBe("X gegen B oder C");
+  });
+});
+
+describe("weekNames", () => {
+  it("names Spieltage by number and the weeks after them Woche 1, 2", () => {
+    const names = weekNames([
+      { round: 1, startsOn: "", endsOn: "" },
+      { round: 2, startsOn: "", endsOn: "", regular: true },
+      { round: 3, startsOn: "", endsOn: "", regular: false },
+      { round: 4, startsOn: "", endsOn: "", regular: false },
+    ]);
+    expect([...names.values()]).toEqual([
+      { name: "Spieltag 1", chip: "1" },
+      { name: "Spieltag 2", chip: "2" },
+      { name: "Woche 1", chip: "W1" },
+      { name: "Woche 2", chip: "W2" },
+    ]);
   });
 });

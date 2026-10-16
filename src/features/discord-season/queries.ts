@@ -1,10 +1,11 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import {
   discordSeasonResources,
   discordSeasonSyncState,
   placements,
 } from "@/db/schema";
 import { discordIdentityFromUser } from "@/features/auth/identity";
+import { publishedStages } from "@/features/schedule/queries";
 import { listSubDivisions } from "@/features/seeding/queries";
 import { db } from "@/lib/db";
 import { PLAYER_NAME_FALLBACK, playerName } from "@/lib/player-name";
@@ -12,6 +13,7 @@ import type {
   ResourceKind,
   SeasonGroup,
   SeasonPlayer,
+  StageRoom,
   TrackedResource,
 } from "./plan";
 import {
@@ -44,9 +46,18 @@ export async function listPlacedPlayers(
     display_name: string | null;
     username: string | null;
     meta: Record<string, unknown> | null;
+    stages: string[] | null;
   }>(
+    // `stages`: the stages after the regular season the player has a match
+    // in (their players are set once Relegation und Playoffs are published).
     sql`select p.user_id, p.sub_division_id, pr.display_name, pr.username,
-               u.raw_user_meta_data as meta
+               u.raw_user_meta_data as meta,
+               array(
+                 select distinct m.stage::text from matches m
+                 where m.window_id = p.window_id
+                   and m.stage in ('playoff', 'relegation')
+                   and (m.player_a_id = p.user_id or m.player_b_id = p.user_id)
+               ) as stages
         from placements p
         join auth.users u on u.id = p.user_id
         left join profiles pr on pr.user_id = p.user_id
@@ -58,6 +69,10 @@ export async function listPlacedPlayers(
   return rows.map((row) => ({
     userId: row.user_id,
     subDivisionId: row.sub_division_id,
+    stages: (row.stages ?? []).filter(
+      (stage): stage is StageRoom =>
+        stage === "playoff" || stage === "relegation",
+    ),
     name: playerName(row.display_name, row.username) || PLAYER_NAME_FALLBACK,
     discordId: discordIdentityFromUser({
       user_metadata: row.meta ?? {},
@@ -79,13 +94,29 @@ export async function trackedResources(
 }
 
 // Records a created role or channel; re-points the row when the sync had to
-// recreate a resource whose Discord object was gone.
+// recreate a resource whose Discord object was gone. A stage room's rows
+// carry no sub-division and are unique per season and kind.
 export async function recordResource(input: {
   windowId: string;
-  subDivisionId: string;
+  subDivisionId: string | null;
   kind: ResourceKind;
   discordId: string;
 }): Promise<void> {
+  if (input.subDivisionId === null) {
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(discordSeasonResources)
+        .where(
+          and(
+            eq(discordSeasonResources.windowId, input.windowId),
+            eq(discordSeasonResources.kind, input.kind),
+            isNull(discordSeasonResources.subDivisionId),
+          ),
+        );
+      await tx.insert(discordSeasonResources).values(input);
+    });
+    return;
+  }
   await db
     .insert(discordSeasonResources)
     .values(input)
@@ -96,6 +127,19 @@ export async function recordResource(input: {
       ],
       set: { discordId: input.discordId, createdAt: new Date() },
     });
+}
+
+// The stages after the regular season that get a room: once Relegation und
+// Playoffs are published, those the season has.
+export async function listStageRooms(windowId: string): Promise<StageRoom[]> {
+  const stages = await publishedStages(windowId);
+  if (!stages) {
+    return [];
+  }
+  return [
+    ...(stages.playoffs ? (["playoff"] as const) : []),
+    ...(stages.relegation ? (["relegation"] as const) : []),
+  ];
 }
 
 export async function saveSyncState(

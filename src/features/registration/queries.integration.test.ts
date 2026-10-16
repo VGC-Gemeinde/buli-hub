@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createWindow, latestWindow } from "@/features/staff/queries";
+import { createWindow } from "@/features/staff/queries";
 import { db } from "@/lib/db";
 import {
   countRegistrations,

@@ -1,4 +1,4 @@
-import { droppedIdsForSubDivision } from "@/features/drops/queries";
+import { droppedIdsForWindow } from "@/features/drops/queries";
 import { motwByMatchId } from "@/features/motw/queries";
 import { isHeld } from "@/features/recordings/queries";
 import {
@@ -124,7 +124,7 @@ export async function syncResultPost(matchId: string): Promise<void> {
       getMatchResult(matchId),
       motwByMatchId(matchId),
       isHeld(matchId),
-      droppedIdsForSubDivision(match.subDivisionId),
+      droppedIdsForWindow(match.windowId),
     ]);
 
     const hasDroppedParticipant =
@@ -151,9 +151,13 @@ export async function syncResultPost(matchId: string): Promise<void> {
         : result.winnerId === match.playerB.userId
           ? match.playerB.name
           : null;
+    // After the regular season the header is the stage, and the channel is
+    // the higher division's (`match.tier`: a Relegation match's upper
+    // division, 1 for the Playoffs).
     const content = resultMessage({
       groupName: match.groupName,
       round: match.round,
+      regular: match.stage === "regular",
       playerAName: match.playerA.name,
       playerBName: match.playerB.name,
       outcome: result.outcome,
@@ -205,6 +209,7 @@ export async function syncMotwVodPost(matchId: string): Promise<void> {
     }
     const content = motwVodMessage({
       round: selection.round,
+      weekName: match.weekName,
       playerAName: match.playerA.name,
       playerBName: match.playerB.name,
       youtubeUrl: selection.youtubeUrl,

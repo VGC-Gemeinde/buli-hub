@@ -2,6 +2,14 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import type { PickablePlayer } from "@/components/player-picker";
 import { favorites, profiles } from "@/db/schema";
 import {
+  afterSeasonWeekToShow,
+  currentAfterSeasonWeek,
+} from "@/features/playoffs/public-view";
+import {
+  type PublicRelegationPlayoffs,
+  publicRelegationPlayoffs,
+} from "@/features/playoffs/queries";
+import {
   type OverviewViewer,
   publicLeagueOverview,
 } from "@/features/public-league/queries";
@@ -64,6 +72,14 @@ export type FavoritesPageData = {
   groups: FavoriteGroup[];
   players: FavoritePlayer[];
   candidates: PickablePlayer[];
+  // Once published: Relegation, Playoffs and the tiebreakers, their week
+  // running today, the one the page opens on and how many have begun.
+  afterSeason: PublicRelegationPlayoffs | null;
+  afterSeasonWeek: {
+    current: number | null;
+    show: number;
+    begun: number;
+  } | null;
 };
 
 // Everything `/favoriten` shows, built on the public overview so the page
@@ -76,7 +92,7 @@ export async function favoritesPage(input: {
   viewer: OverviewViewer & { userId: string };
   favoriteIds: ReadonlySet<string>;
 }): Promise<FavoritesPageData> {
-  const [overview, replacements] = await Promise.all([
+  const [overview, replacements, afterSeason] = await Promise.all([
     publicLeagueOverview(
       input.windowId,
       input.seasonNumber,
@@ -84,6 +100,7 @@ export async function favoritesPage(input: {
       input.viewer,
     ),
     replacementsForWindow(input.windowId),
+    publicRelegationPlayoffs(input.windowId, input.viewer),
   ]);
   const accepted = replacements.filter((r) => r.acceptedAt !== null);
   const replacedBy = replacedByMap(
@@ -116,6 +133,16 @@ export async function favoritesPage(input: {
       usernames,
       input.viewer.userId,
     ),
+    afterSeason,
+    afterSeasonWeek: afterSeason
+      ? {
+          current: currentAfterSeasonWeek(afterSeason.weeks, input.today),
+          show: afterSeasonWeekToShow(afterSeason.weeks, input.today),
+          begun: afterSeason.weeks.filter(
+            (week) => week.startsOn <= input.today,
+          ).length,
+        }
+      : null,
   };
 }
 

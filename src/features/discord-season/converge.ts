@@ -16,17 +16,24 @@ import {
 } from "@/lib/discord";
 import { type SeasonDiscordConfig, seasonDiscordConfig } from "./config";
 import {
+  groupRoom,
+  isStageKey,
   missingOverwrites,
-  planGroupResources,
   planMemberRoles,
+  planRoomResources,
   type ResourceKind,
+  roomKinds,
   type SeasonGroup,
   type SeasonPlayer,
+  STAGE_ROOM_LABEL,
+  type StageRoom,
+  stageRoom,
   type TrackedResource,
 } from "./plan";
 import {
   listPlacedPlayers,
   listSeasonGroups,
+  listStageRooms,
   recordResource,
   saveSyncState,
   trackedResources,
@@ -60,11 +67,14 @@ export type SeasonDiscordClient = {
 
 export type SeasonDiscordStore = {
   listSeasonGroups: (windowId: string) => Promise<SeasonGroup[]>;
+  // The stages after the regular season that have a room: once Relegation
+  // und Playoffs are published, those the season has.
+  listStageRooms?: (windowId: string) => Promise<StageRoom[]>;
   listPlacedPlayers: (windowId: string) => Promise<SeasonPlayer[]>;
   trackedResources: (windowId: string) => Promise<TrackedResource[]>;
   recordResource: (input: {
     windowId: string;
-    subDivisionId: string;
+    subDivisionId: string | null;
     kind: ResourceKind;
     discordId: string;
   }) => Promise<void>;
@@ -105,12 +115,18 @@ export async function runSeasonDiscordSync(
 
   try {
     const groups = await store.listSeasonGroups(windowId);
+    const stages = (await store.listStageRooms?.(windowId)) ?? [];
     const players = await store.listPlacedPlayers(windowId);
-    report.groupsTotal = groups.length;
+    // A room per group, and one per stage after the regular season.
+    const rooms = [...groups.map(groupRoom), ...stages.map(stageRoom)];
+    report.groupsTotal = rooms.length;
     report.playersTotal = players.length;
-    const groupName = new Map(
-      groups.map((g) => [g.subDivisionId, subDivisionName(g.tier, g.position)]),
-    );
+    const groupName = new Map<string, string>([
+      ...groups.map(
+        (g) => [g.subDivisionId, subDivisionName(g.tier, g.position)] as const,
+      ),
+      ...stages.map((stage) => [stage, STAGE_ROOM_LABEL[stage]] as const),
+    ]);
 
     // --- Current state -------------------------------------------------
     const category = await discord.fetchChannel(config.categoryId);
@@ -154,8 +170,8 @@ export async function runSeasonDiscordSync(
         .filter((channel) => channel.type === CHANNEL_TYPE_TEXT)
         .map((channel) => [channel.id, channel]),
     );
-    const plans = planGroupResources({
-      groups,
+    const plans = planRoomResources({
+      rooms,
       tracked: await store.trackedResources(windowId),
       liveRoleIds: new Set(roles.roles.map((role) => role.id)),
       liveChannelIds: new Set(textChannels.keys()),
@@ -169,7 +185,9 @@ export async function runSeasonDiscordSync(
         // A permission problem repeats for every group; stop hammering.
         break;
       }
-      const name = groupName.get(plan.subDivisionId) ?? plan.subDivisionId;
+      const name = groupName.get(plan.key) ?? plan.key;
+      const kinds = roomKinds(plan.key);
+      const subDivisionId = isStageKey(plan.key) ? null : plan.key;
 
       let roleId: string;
       if (plan.role.status === "exists") {
@@ -189,12 +207,12 @@ export async function runSeasonDiscordSync(
         roleId = created.roleId;
         await store.recordResource({
           windowId,
-          subDivisionId: plan.subDivisionId,
-          kind: "group_role",
+          subDivisionId,
+          kind: kinds.role,
           discordId: roleId,
         });
       }
-      groupRoleIds.set(plan.subDivisionId, roleId);
+      groupRoleIds.set(plan.key, roleId);
 
       let channel: Pick<GuildChannel, "id" | "permissionOverwrites">;
       if (plan.channel.status === "exists") {
@@ -217,8 +235,8 @@ export async function runSeasonDiscordSync(
         channel = { id: created.channelId, permissionOverwrites: [] };
         await store.recordResource({
           windowId,
-          subDivisionId: plan.subDivisionId,
-          kind: "group_channel",
+          subDivisionId,
+          kind: kinds.channel,
           discordId: channel.id,
         });
       }
@@ -339,6 +357,7 @@ const realClient: SeasonDiscordClient = {
 
 const realStore: SeasonDiscordStore = {
   listSeasonGroups,
+  listStageRooms,
   listPlacedPlayers,
   trackedResources,
   recordResource,

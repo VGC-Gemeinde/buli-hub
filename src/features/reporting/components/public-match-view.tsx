@@ -54,6 +54,7 @@ function Face({ identity }: { identity: Identity }) {
 
 export function PublicMatchView({
   round,
+  weekName = `Spieltag ${round}`,
   groupName,
   seasonLabel,
   playerA,
@@ -61,6 +62,8 @@ export function PublicMatchView({
   state = "open",
 }: {
   round: number;
+  // "Spieltag 3", or "Woche 1" after the regular season.
+  weekName?: string;
   groupName: string;
   seasonLabel: string;
   playerA: Identity;
@@ -83,7 +86,7 @@ export function PublicMatchView({
         ← Zur Übersicht
       </Link>
       <p className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.12em]">
-        Spieltag {round} · {groupName} · {seasonLabel}
+        {weekName} · {groupName} · {seasonLabel}
       </p>
       <h1 className="mt-2 text-[34px] text-brand-blue leading-[1.1] sm:text-[40px] dark:text-white">
         <span className="break-words">{playerA.name}</span>{" "}

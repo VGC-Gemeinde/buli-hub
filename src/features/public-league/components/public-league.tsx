@@ -7,6 +7,12 @@ import { Tick } from "@/components/tick";
 import { FavoriteStar } from "@/features/favorites/components/favorite-star";
 import { MotwBlock } from "@/features/motw/components/motw-block";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
+import {
+  DivisionWeekMatches,
+  RelegationPlayoffsOverviewBlock,
+} from "@/features/playoffs/components/relegation-playoffs-public";
+import { divisionWeek } from "@/features/playoffs/public-view";
+import type { PublicRelegationPlayoffs } from "@/features/playoffs/queries";
 import { PlayerAvatar } from "@/features/season/components/player-avatar";
 import { StandingsTable } from "@/features/season/components/standings-panel";
 import type { MatchdayLite } from "@/features/season/dashboard";
@@ -86,11 +92,23 @@ export function PublicLeague({
   meId,
   initialSpoilersOff,
   favoriteIds,
+  afterSeason = null,
+  afterSeasonWeek = null,
 }: {
   overview: PublicOverview;
   meId: string;
   initialSpoilersOff: boolean;
   favoriteIds: ReadonlySet<string>;
+  // Once published: Relegation, Playoffs and the tiebreakers
+  // (docs/plans/relegation-and-playoffs.md).
+  afterSeason?: PublicRelegationPlayoffs | null;
+  // Their week running today, and the one the Spielplan opens on.
+  afterSeasonWeek?: {
+    current: number | null;
+    show: number;
+    // How many of them have started.
+    begun: number;
+  } | null;
 }) {
   const [tier, setTier] = useState(overview.divisions[0]?.tier ?? 1);
   // The global spoiler preference: cookie-backed (the server rendered this
@@ -116,12 +134,25 @@ export function PublicLeague({
             <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
               Spieltag {overview.currentRound} / {overview.totalRounds}
             </span>
+          ) : afterSeason && afterSeasonWeek?.current ? (
+            <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
+              Woche {afterSeasonWeek.current} / {afterSeason.weeks.length}
+            </span>
           ) : null}
           <SpoilerSwitch spoilersOff={spoilersOff} onChange={setSpoilersOff} />
         </div>
       </div>
 
-      {overview.motw ? <MotwBlock motw={overview.motw} /> : null}
+      {overview.motw ? (
+        <MotwBlock motw={overview.motw} season={overview.seasonName} />
+      ) : null}
+
+      {afterSeason ? (
+        <RelegationPlayoffsOverviewBlock
+          cards={afterSeason.cards}
+          spoilersOff={spoilersOff}
+        />
+      ) : null}
 
       <div className="mt-6">
         <Switcher
@@ -144,6 +175,8 @@ export function PublicLeague({
           meId={meId}
           spoilersOff={spoilersOff}
           favoriteIds={favoriteIds}
+          afterSeason={afterSeason}
+          afterSeasonWeek={afterSeasonWeek}
         />
       ) : null}
     </div>
@@ -158,6 +191,8 @@ function DivisionView({
   meId,
   spoilersOff,
   favoriteIds,
+  afterSeason,
+  afterSeasonWeek,
 }: {
   division: PublicDivision;
   matchdays: MatchdayLite[];
@@ -166,6 +201,12 @@ function DivisionView({
   meId: string;
   spoilersOff: boolean;
   favoriteIds: ReadonlySet<string>;
+  afterSeason: PublicRelegationPlayoffs | null;
+  afterSeasonWeek: {
+    current: number | null;
+    show: number;
+    begun: number;
+  } | null;
 }) {
   // Selection is either a sub-division id or "gesamt" (only offered when the
   // division has a merged Gesamttabelle, i.e. in division mode). Gesamt shows the
@@ -174,7 +215,15 @@ function DivisionView({
   const [selected, setSelected] = useState<string>(
     gesamt ? "gesamt" : (division.groups[0]?.subDivisionId ?? ""),
   );
-  const [round, setRound] = useState(currentRound ?? 1);
+  // One index over every week: the Spieltage, then the weeks after the
+  // regular season.
+  const afterWeeks = afterSeason?.weeks ?? [];
+  const [round, setRound] = useState(
+    afterSeason && afterWeeks.length > 0
+      ? totalRounds + (afterSeasonWeek?.show ?? 1)
+      : (currentRound ?? 1),
+  );
+  const afterWeek = round > totalRounds ? round - totalRounds : null;
   const showGesamt = selected === "gesamt" && gesamt;
   const group = showGesamt
     ? null
@@ -189,7 +238,10 @@ function DivisionView({
     );
   }
 
-  const matchday = matchdays.find((m) => m.round === round) ?? null;
+  const matchday =
+    afterWeek !== null
+      ? (afterWeeks[afterWeek - 1] ?? null)
+      : (matchdays.find((m) => m.round === round) ?? null);
   // Both section heads carry the same meta (§4.5): the division name in Gesamt
   // mode, otherwise the full group name ("Division 1a").
   const scopeMeta = showGesamt || !group ? division.name : group.name;
@@ -231,15 +283,41 @@ function DivisionView({
         </section>
 
         <section className="flex flex-col gap-4">
-          <SectionHeader meta={scopeMeta}>Spielplan</SectionHeader>
+          <SectionHeader meta={afterWeek !== null ? division.name : scopeMeta}>
+            Spielplan
+          </SectionHeader>
           <SpieltagTimeline
             selected={round}
             total={totalRounds}
-            current={currentRound}
+            current={
+              afterSeasonWeek?.current
+                ? totalRounds + afterSeasonWeek.current
+                : currentRound
+            }
             matchday={matchday}
             onSelect={setRound}
+            afterSeason={
+              afterSeason && afterWeeks.length > 0
+                ? {
+                    count: afterWeeks.length,
+                    begun: afterSeasonWeek?.begun ?? 0,
+                  }
+                : undefined
+            }
           />
-          {showGesamt ? (
+          {afterSeason && afterWeek !== null ? (
+            <DivisionWeekMatches
+              sections={divisionWeek({
+                cards: afterSeason.cards,
+                tiebreakers: afterSeason.tiebreakers,
+                tiebreakerTiers: afterSeason.tiebreakerTiers,
+                tier: division.tier,
+                week: afterWeek,
+              })}
+              cards={afterSeason.cards}
+              spoilersOff={spoilersOff}
+            />
+          ) : showGesamt ? (
             <div className="flex flex-col gap-5">
               {division.groups.map((g) => (
                 <div key={g.subDivisionId} className="flex flex-col gap-2">
@@ -271,25 +349,74 @@ function DivisionView({
 
 // Browsable version of the dashboard's progress strip: one clickable segment per
 // Spieltag. The current matchday keeps its orange marker; the selected round is
-// outlined so you can tell "viewing" from "live".
+// outlined so you can tell "viewing" from "live". Once the weeks after the
+// regular season are published they follow as a second group, each group
+// named underneath; `selected` and `current` then count on through them
+// (Spieltag 7 is 7, Woche 1 after it is 8).
 export function SpieltagTimeline({
   selected,
   total,
   current,
   matchday,
   onSelect,
+  afterSeason,
 }: {
   selected: number;
   total: number;
   current: number | null;
-  matchday: MatchdayLite | null;
+  matchday: { startsOn: string; endsOn: string } | null;
   onSelect: (round: number) => void;
+  afterSeason?: { count: number; begun: number };
 }) {
+  const after = afterSeason ?? null;
+  // Every Spieltag is over once the later weeks are published; of those, the
+  // ones begun before the running one.
+  const past = (index: number) =>
+    after !== null
+      ? index <= total ||
+        (current !== null ? index < current : index <= total + after.begun)
+      : current !== null && index < current;
+  const segment = (index: number, label: string) => {
+    const isSelected = index === selected;
+    const isCurrent = index === current;
+    return (
+      <button
+        key={index}
+        type="button"
+        aria-label={label}
+        aria-pressed={isSelected}
+        onClick={() => onSelect(index)}
+        className="group flex-1 py-1.5"
+      >
+        <span
+          className={cn(
+            "block h-2 rounded-[3px] transition-colors",
+            isSelected
+              ? "bg-brand-orange"
+              : isCurrent
+                ? "bg-brand-orange/45 group-hover:bg-brand-orange/70"
+                : past(index)
+                  ? "bg-brand-blue/30 group-hover:bg-brand-blue/50 dark:bg-white/35 dark:group-hover:bg-white/50"
+                  : "bg-muted group-hover:bg-muted-foreground/30",
+          )}
+        />
+      </button>
+    );
+  };
+  const regular = (
+    <div className="flex gap-[5px]">
+      {Array.from({ length: total }, (_, i) =>
+        segment(i + 1, `Spieltag ${i + 1}`),
+      )}
+    </div>
+  );
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
         <span className="font-semibold text-[13px] text-muted-foreground uppercase tracking-[0.12em]">
-          Spieltag {selected} von {total}
+          {after !== null && selected > total
+            ? `Woche ${selected - total} von ${after.count}`
+            : `Spieltag ${selected} von ${total}`}
         </span>
         {matchday ? (
           <span className="text-[13px] text-muted-foreground tabular-nums">
@@ -297,35 +424,31 @@ export function SpieltagTimeline({
           </span>
         ) : null}
       </div>
-      <div className="flex gap-[5px]">
-        {Array.from({ length: total }, (_, i) => i + 1).map((round) => {
-          const isSelected = round === selected;
-          const isCurrent = round === current;
-          return (
-            <button
-              key={round}
-              type="button"
-              aria-label={`Spieltag ${round}`}
-              aria-pressed={isSelected}
-              onClick={() => onSelect(round)}
-              className="group flex-1 py-1.5"
-            >
-              <span
-                className={cn(
-                  "block h-2 rounded-[3px] transition-colors",
-                  isSelected
-                    ? "bg-brand-orange"
-                    : isCurrent
-                      ? "bg-brand-orange/45 group-hover:bg-brand-orange/70"
-                      : current !== null && round < current
-                        ? "bg-brand-blue/30 group-hover:bg-brand-blue/50 dark:bg-white/35 dark:group-hover:bg-white/50"
-                        : "bg-muted group-hover:bg-muted-foreground/30",
-                )}
-              />
-            </button>
-          );
-        })}
-      </div>
+      {after === null ? (
+        regular
+      ) : (
+        <div className="flex gap-3.5">
+          <div className="flex flex-col gap-1" style={{ flex: total }}>
+            {regular}
+            <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
+              Spieltage
+            </span>
+          </div>
+          <div
+            className="flex flex-col gap-1"
+            style={{ flex: Math.max(after.count, Math.ceil(total / 3)) }}
+          >
+            <div className="flex gap-[5px]">
+              {Array.from({ length: after.count }, (_, i) =>
+                segment(total + i + 1, `Woche ${i + 1}`),
+              )}
+            </div>
+            <span className="truncate font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
+              Relegation und Playoffs
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

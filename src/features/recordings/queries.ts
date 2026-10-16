@@ -10,6 +10,9 @@ export type RecordingHold = {
   // Set when the hold is also a Match-of-the-Week candidate
   // (docs/plans/motw-candidates.md); null for an ordinary recording.
   motwRole: MotwRole | null;
+  // A Relegation or playoff candidate's sides as they were at nomination
+  // (docs/plans/relegation-and-playoffs.md); null otherwise.
+  nominatedSides: { a: string[]; b: string[] } | null;
   createdAt: Date;
 };
 
@@ -26,6 +29,7 @@ export async function holdsForWindow(
       round: recordingHolds.round,
       heldById: recordingHolds.heldById,
       motwRole: recordingHolds.motwRole,
+      nominatedSides: recordingHolds.nominatedSides,
       createdAt: recordingHolds.createdAt,
     })
     .from(recordingHolds)
@@ -74,7 +78,12 @@ export async function nominateHold(input: {
   round: number;
   staffId: string;
   role: MotwRole;
+  // Who could play each side right now; null for a regular match. Every
+  // nomination takes a fresh snapshot, so re-nominating acknowledges a
+  // changed line-up.
+  nominatedSides?: { a: string[]; b: string[] } | null;
 }): Promise<void> {
+  const nominatedSides = input.nominatedSides ?? null;
   await db.transaction(async (tx) => {
     if (input.role === "primary") {
       await tx
@@ -96,10 +105,11 @@ export async function nominateHold(input: {
         round: input.round,
         heldById: input.staffId,
         motwRole: input.role,
+        nominatedSides,
       })
       .onConflictDoUpdate({
         target: recordingHolds.matchId,
-        set: { motwRole: input.role },
+        set: { motwRole: input.role, nominatedSides },
       });
   });
 }

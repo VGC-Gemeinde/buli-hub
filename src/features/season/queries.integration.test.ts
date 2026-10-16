@@ -68,9 +68,9 @@ beforeAll(async () => {
     { windowId, round: 3, startsOn: "2026-07-15", endsOn: "2026-07-21" },
   ]);
   await db.insert(matches).values([
-    { subDivisionId, round: 1, playerAId: me, playerBId: opp1 },
-    { subDivisionId, round: 2, playerAId: opp2, playerBId: me },
-    { subDivisionId, round: 3, playerAId: me, playerBId: null }, // bye
+    { windowId, subDivisionId, round: 1, playerAId: me, playerBId: opp1 },
+    { windowId, subDivisionId, round: 2, playerAId: opp2, playerBId: me },
+    { windowId, subDivisionId, round: 3, playerAId: me, playerBId: null }, // bye
   ]);
 });
 

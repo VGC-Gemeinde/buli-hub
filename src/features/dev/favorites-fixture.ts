@@ -209,6 +209,8 @@ export const FAVORITES_GALLERY: FavoritesPageData = {
     new Map([["mira", "mira.vgc"]]),
     "me",
   ),
+  afterSeason: null,
+  afterSeasonWeek: null,
 };
 
 export const FAVORITES_GALLERY_EMPTY: FavoritesPageData = {

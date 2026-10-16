@@ -10,10 +10,13 @@ import { StreamPhotoHint } from "@/features/stream-photos/components/stream-phot
 // the result anyway. Server-renderable.
 export function RecordingBanner({
   round,
+  weekName = `Spieltag ${round}`,
   notPublic = false,
   photoHint = false,
 }: {
   round: number;
+  // "Spieltag 3", or "Woche 1" after the regular season.
+  weekName?: string;
   notPublic?: boolean;
   // A participant of this match who has no stream photo yet.
   photoHint?: boolean;
@@ -25,7 +28,7 @@ export function RecordingBanner({
         Aufnahme
       </span>
       <span className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.08em]">
-        Spieltag {round}
+        {weekName}
       </span>
       {notPublic ? (
         <span className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-brand-blue/50 px-2.5 py-[3px] font-semibold text-[11px] text-brand-blue uppercase tracking-[0.08em] dark:border-white/50 dark:text-white">

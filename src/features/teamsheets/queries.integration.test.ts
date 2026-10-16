@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   divisions,
   matchdays,
   matches,
+  matchResults,
   profiles,
   subDivisions,
   teamSheets,
@@ -15,6 +16,7 @@ import { getTeamSheet } from "./queries";
 
 const alice = randomUUID();
 const bob = randomUUID();
+let windowId: string;
 let regularSheet: string;
 let tiebreakerSheet: string;
 
@@ -31,7 +33,7 @@ beforeAll(async () => {
   const rows = await db.execute<{ id: string }>(
     sql`select id from registration_windows where opened_by = ${alice}`,
   );
-  const windowId = rows[0].id;
+  windowId = rows[0].id;
 
   const [division] = await db
     .insert(divisions)
@@ -77,6 +79,17 @@ beforeAll(async () => {
     })
     .returning({ id: matches.id });
 
+  // A sheet belongs to a reported result (team_sheets_match_id_match_results_fk).
+  await db.insert(matchResults).values(
+    [regular.id, tiebreaker.id].map((matchId) => ({
+      matchId,
+      outcome: "normal" as const,
+      winnerId: alice,
+      platform: "showdown" as const,
+      reportedById: alice,
+    })),
+  );
+
   const sheets = await db
     .insert(teamSheets)
     .values([
@@ -96,6 +109,15 @@ beforeAll(async () => {
     .returning({ id: teamSheets.id, matchId: teamSheets.matchId });
   regularSheet = sheets.find((s) => s.matchId === regular.id)?.id ?? "";
   tiebreakerSheet = sheets.find((s) => s.matchId === tiebreaker.id)?.id ?? "";
+});
+
+afterAll(async () => {
+  await db.execute(
+    sql`delete from registration_windows where id = ${windowId}`,
+  );
+  for (const id of [alice, bob]) {
+    await db.execute(sql`delete from auth.users where id = ${id}`);
+  }
 });
 
 describe("getTeamSheet", () => {

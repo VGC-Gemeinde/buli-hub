@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
 import {
-  divisions,
+  matchdays,
   matches,
   profiles,
   registrationWindows,
-  subDivisions,
   teamSheets,
 } from "@/db/schema";
+import { weekNames } from "@/features/season/week-names";
 import { db } from "@/lib/db";
 import { playerName } from "@/lib/player-name";
 
@@ -15,7 +15,8 @@ export type StoredSheet = {
   matchId: string;
   playerName: string;
   seasonNumber: number;
-  round: number;
+  // "Spieltag 3", or "Woche 1" for a tiebreaker, Relegation or Playoff week.
+  weekName: string;
   ots: string;
 };
 
@@ -35,6 +36,7 @@ export async function getTeamSheet(id: string): Promise<StoredSheet | null> {
       id: teamSheets.id,
       matchId: teamSheets.matchId,
       ots: teamSheets.ots,
+      windowId: matches.windowId,
       round: matches.round,
       seasonNumber: registrationWindows.seasonNumber,
       displayName: profiles.displayName,
@@ -42,11 +44,11 @@ export async function getTeamSheet(id: string): Promise<StoredSheet | null> {
     })
     .from(teamSheets)
     .innerJoin(matches, eq(matches.id, teamSheets.matchId))
-    .innerJoin(subDivisions, eq(subDivisions.id, matches.subDivisionId))
-    .innerJoin(divisions, eq(divisions.id, subDivisions.divisionId))
+    // Through the match's own window: only regular matches have a
+    // sub-division, so a join through it lost every other stage's sheets.
     .innerJoin(
       registrationWindows,
-      eq(registrationWindows.id, divisions.windowId),
+      eq(registrationWindows.id, matches.windowId),
     )
     .leftJoin(profiles, eq(profiles.userId, teamSheets.playerId))
     .where(eq(teamSheets.id, id))
@@ -55,12 +57,21 @@ export async function getTeamSheet(id: string): Promise<StoredSheet | null> {
   if (!row) {
     return null;
   }
+  const weeks = await db
+    .select({
+      round: matchdays.round,
+      startsOn: matchdays.startsOn,
+      endsOn: matchdays.endsOn,
+      regular: matchdays.regular,
+    })
+    .from(matchdays)
+    .where(eq(matchdays.windowId, row.windowId));
   return {
     id: row.id,
     matchId: row.matchId,
     playerName: playerName(row.displayName, row.username),
     seasonNumber: row.seasonNumber,
-    round: row.round,
+    weekName: weekNames(weeks).get(row.round)?.name ?? `Spieltag ${row.round}`,
     ots: row.ots,
   };
 }

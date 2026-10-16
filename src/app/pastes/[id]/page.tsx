@@ -53,7 +53,7 @@ export default async function PastePage({
             <span className="font-semibold text-[12.5px] text-muted-foreground uppercase tracking-[0.12em]">
               Saison {sheet.seasonNumber}
               <span className="px-1.5 text-border">·</span>
-              Spieltag {sheet.round}
+              {sheet.weekName}
             </span>
             <ActionLink
               href={`/match/${sheet.matchId}`}

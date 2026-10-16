@@ -17,8 +17,8 @@ export type CountedSheet = {
   round: number;
   // The division the player is placed in this season.
   tier: number | null;
-  // Null when the match is not rated (research R2).
-  result: "won" | "lost" | null;
+  // Only rated matches are counted, so every sheet has a result.
+  result: "won" | "lost";
   mons: Slot[];
 };
 

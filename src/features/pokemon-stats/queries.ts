@@ -18,8 +18,9 @@ import { toSlots } from "./sheets";
 
 // Every team sheet of a season the public may count
 // (specs/001-pokemon-usage-stats, research R1 to R3): all stages, minus the
-// matches under public embargo (the one rule the tables use), each with its
-// phase, week, the player's division and whether the match is rated.
+// matches under public embargo (the one rule the tables use) and the matches
+// that are not rated, each with its phase, week, the player's division and
+// its result.
 export async function countedSheets(windowId: string): Promise<CountedSheet[]> {
   const [rows, tiers, motw, holds, droppedIds] = await Promise.all([
     db
@@ -62,8 +63,10 @@ export async function countedSheets(windowId: string): Promise<CountedSheet[]> {
       );
       continue;
     }
-    // A regular match a drop decided counts what was brought, but its
-    // result says nothing about the teams any more (research R2).
+    // Only rated matches count, for usage and win rate alike, so every
+    // number in a row rests on the same matches: a regular match a drop
+    // decided (its result says nothing about the teams any more), and
+    // anything without a winner, leaves the stats entirely.
     const droppedOut =
       row.stage === "regular" &&
       row.playerAId !== null &&
@@ -73,6 +76,9 @@ export async function countedSheets(windowId: string): Promise<CountedSheet[]> {
       );
     const rated =
       row.outcome === "normal" && row.winnerId !== null && !droppedOut;
+    if (!rated) {
+      continue;
+    }
     sheets.push({
       matchId: row.matchId,
       playerId: row.playerId,
@@ -82,7 +88,7 @@ export async function countedSheets(windowId: string): Promise<CountedSheet[]> {
           : "post",
       round: row.round,
       tier: tierOf.get(row.playerId) ?? null,
-      result: rated ? (row.winnerId === row.playerId ? "won" : "lost") : null,
+      result: row.winnerId === row.playerId ? "won" : "lost",
       mons,
     });
   }

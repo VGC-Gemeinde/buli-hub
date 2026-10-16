@@ -39,19 +39,19 @@ export const STATS_COLUMNS = {
     "use",
     "Nutzung",
     "desc",
-    "Anteil der Teams, die dieses Pokémon mitgebracht haben.",
+    "Anteil der Teams, die dieses Pokémon mitgebracht haben. Gezählt werden nur gewertete Matches: Freilose, Doppelniederlagen und Drops zählen nicht.",
   ),
   win: column(
     "win",
     "Siegquote",
     null,
-    "Anteil der gewonnenen Matches der Teams, die es mitgebracht haben. Freilose, Doppelniederlagen und Drops zählen nicht.",
+    "Anteil der gewonnenen Matches der Teams, die es mitgebracht haben.",
   ),
   matches: column(
     "matches",
     "Matches",
     null,
-    "Gewertete Matches, auf denen die Siegquote beruht.",
+    "Gewertete Matches, auf denen Nutzung und Siegquote beruhen.",
   ),
 };
 

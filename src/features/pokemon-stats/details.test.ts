@@ -36,7 +36,7 @@ const sheets = [
   counted(team(zardY, incin), { result: "won" }),
   counted(team(zardYSolar, incinGoggles), { result: "lost" }),
   counted(team(zard, incinStone), { result: "won" }),
-  counted(team(zardX), { result: null }),
+  counted(team(zardX), { result: "lost" }),
 ];
 
 describe("pokemonDetail", () => {

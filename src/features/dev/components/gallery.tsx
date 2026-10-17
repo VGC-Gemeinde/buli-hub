@@ -31,6 +31,7 @@ import {
 import type { ImpersonatableUser } from "@/features/dev/impersonation/users";
 import {
   STATS_COLUMNS,
+  STATS_FORME_ROWS,
   STATS_ITEM_ROWS,
   STATS_MOVE_CARDS,
   STATS_MOVE_ROWS,
@@ -84,6 +85,10 @@ import {
 import { afterSeasonSchedule } from "@/features/playoffs/dashboard";
 import { resolveRelegationPlayoffs } from "@/features/playoffs/progression";
 import { publicCards } from "@/features/playoffs/public-view";
+import {
+  DistList,
+  Panel,
+} from "@/features/pokemon-stats/components/detail-parts";
 import { MoveCardView } from "@/features/pokemon-stats/components/move-card-view";
 import { RankingTable } from "@/features/pokemon-stats/components/ranking-table";
 import { StatsFilters } from "@/features/pokemon-stats/components/stats-filters";
@@ -2674,6 +2679,13 @@ export function Gallery() {
             nameLabel="Attacken"
             withIcon
           />
+        </Specimen>
+        <Specimen label="Pokémon-Detail: Formen eines zusammengefassten Eintrags (keine Links)">
+          <div className="max-w-md">
+            <Panel title="Formen">
+              <DistList rows={STATS_FORME_ROWS} />
+            </Panel>
+          </div>
         </Specimen>
         <Specimen label="Filter: nichts gesetzt (Zurücksetzen reserviert, unsichtbar) · gesetzt · Nachsaison begonnen">
           <div className="flex flex-col gap-4">

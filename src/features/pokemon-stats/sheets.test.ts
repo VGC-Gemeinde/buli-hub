@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { exportMon, team } from "./fixtures";
-import { megaLabel, toSlots } from "./sheets";
+import { groupedEntryId, megaLabel, toSlots } from "./sheets";
 
 const slot = (ots: string, index = 0) => {
   const slots = toSlots(ots);
@@ -27,6 +27,7 @@ describe("toSlots", () => {
       name: "Incineroar",
       mega: null,
       sprite: "Incineroar",
+      writtenSpecies: "Incineroar",
       item: "Sitrus Berry",
       ownStone: false,
       sheetAbility: "Intimidate",
@@ -129,6 +130,63 @@ describe("toSlots", () => {
     ).toBe("ninetalesalola");
   });
 
+  it("counts a listed forme as its base and keeps the forme as written (spec 002)", () => {
+    expect(
+      slot(team({ species: "Sinistcha-Masterpiece", ability: "Hospitality" })),
+    ).toMatchObject({
+      entryId: "sinistcha",
+      name: "Sinistcha",
+      sprite: "Sinistcha",
+      mega: null,
+      writtenSpecies: "Sinistcha-Masterpiece",
+    });
+    expect(slot(team({ species: "Vivillon-Ocean" }))).toMatchObject({
+      entryId: "vivillon",
+      name: "Vivillon",
+      writtenSpecies: "Vivillon-Ocean",
+    });
+  });
+
+  it("counts a battle-only forme as the Pokémon it changes from (spec 002)", () => {
+    expect(slot(team({ species: "Palafin-Hero" }))).toMatchObject({
+      entryId: "palafin",
+      name: "Palafin",
+      sprite: "Palafin",
+      writtenSpecies: "Palafin-Hero",
+    });
+  });
+
+  it("keeps formes that play differently as entries of their own (spec 002, FR-003)", () => {
+    for (const [species, id] of [
+      ["Indeedee-F", "indeedeef"],
+      ["Rotom-Wash", "rotomwash"],
+      ["Basculegion-F", "basculegionf"],
+      ["Gourgeist-Super", "gourgeistsuper"],
+    ]) {
+      expect(slot(team({ species })).entryId).toBe(id);
+    }
+  });
+
+  it("never groups a Mega (spec 002, FR-005)", () => {
+    expect(
+      slot(team({ species: "Meowstic-F", item: "Meowsticite" })),
+    ).toMatchObject({
+      entryId: "meowsticfmega",
+      name: "Meowstic-F",
+      mega: "Mega",
+      writtenSpecies: "Meowstic-F-Mega",
+    });
+    expect(
+      slot(team({ species: "Floette-Eternal", item: "Floettite" })),
+    ).toMatchObject({ entryId: "floettemega", writtenSpecies: "Floette-Mega" });
+    expect(
+      slot(team({ species: "Charizard", item: "Charizardite Y" })),
+    ).toMatchObject({
+      entryId: "charizardmegay",
+      writtenSpecies: "Charizard-Mega-Y",
+    });
+  });
+
   it("merges spellings through the dex and passes unknown names through", () => {
     const mon = slot(
       team({
@@ -160,5 +218,26 @@ describe("megaLabel", () => {
     expect(megaLabel("Meowstic-F-Mega")).toBe("Mega");
     expect(megaLabel("Rotom-Wash")).toBeNull();
     expect(megaLabel("Fakemon")).toBeNull();
+  });
+});
+
+describe("groupedEntryId", () => {
+  it("finds the entry a former forme id counts under (spec 002, FR-008)", () => {
+    expect(groupedEntryId("sinistchamasterpiece")).toBe("sinistcha");
+    expect(groupedEntryId("vivillonocean")).toBe("vivillon");
+    expect(groupedEntryId("palafinhero")).toBe("palafin");
+  });
+
+  it("leaves Megas, separate formes, entries and unknown ids alone", () => {
+    for (const id of [
+      "charizardmegay",
+      "meowsticfmega",
+      "rotomwash",
+      "indeedeef",
+      "sinistcha",
+      "fakemon",
+    ]) {
+      expect(groupedEntryId(id)).toBe(id);
+    }
   });
 });

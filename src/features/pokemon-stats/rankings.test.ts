@@ -274,3 +274,66 @@ describe("sortEntries", () => {
     }
   });
 });
+
+describe("grouped formes (spec 002)", () => {
+  const sinistcha = { species: "Sinistcha", ability: "Hospitality" };
+  const masterpiece = { ...sinistcha, species: "Sinistcha-Masterpiece" };
+
+  it("counts listed formes as one entry with one win rate", () => {
+    const grouped = [
+      counted(team(sinistcha), { result: "won" }),
+      counted(team(sinistcha), { result: "lost" }),
+      counted(team(sinistcha), { result: "won" }),
+      counted(team(masterpiece), { result: "won" }),
+    ];
+    const e = byId(ranking(grouped, "pokemon", opts()).entries);
+    expect(e.sinistcha).toMatchObject({
+      name: "Sinistcha",
+      count: 4,
+      share: 1,
+      wins: 3,
+      rated: 4,
+    });
+    expect(e.sinistchamasterpiece).toBeUndefined();
+  });
+
+  it("makes two formes of one Pokémon in one match a mirror", () => {
+    const mirror = [
+      counted(team({ species: "Maushold" }), { matchId: "y", result: "won" }),
+      counted(team({ species: "Maushold-Four" }), {
+        matchId: "y",
+        result: "lost",
+      }),
+    ];
+    expect(
+      byId(ranking(mirror, "pokemon", opts()).entries).maushold,
+    ).toMatchObject({ count: 2, wins: 1, rated: 2 });
+  });
+
+  it("counts a battle-only forme as its Pokémon, never a Mega", () => {
+    const palafin = [
+      counted(team({ species: "Palafin" })),
+      counted(team({ species: "Palafin" })),
+      counted(team({ species: "Palafin-Hero" })),
+      counted(team({ species: "Charizard-Mega-Y", item: "Charizardite Y" })),
+    ];
+    const e = byId(ranking(palafin, "pokemon", opts()).entries);
+    expect(e.palafin).toMatchObject({ count: 3 });
+    expect(e.palafinhero).toBeUndefined();
+    expect(e.charizardmegay).toMatchObject({ count: 1, mega: "Mega Y" });
+  });
+
+  it("keeps grouped entries with the non-Megas of the Mega filter", () => {
+    const mixed = [counted(team(masterpiece, zard))];
+    expect(
+      ranking(mixed, "pokemon", opts({ mega: "base" })).entries.map(
+        (e) => e.id,
+      ),
+    ).toContain("sinistcha");
+    expect(
+      ranking(mixed, "pokemon", opts({ mega: "mega" })).entries.map(
+        (e) => e.id,
+      ),
+    ).toEqual(["charizardmegay"]);
+  });
+});

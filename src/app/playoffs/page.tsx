@@ -32,7 +32,7 @@ export default async function PlayoffsPage() {
     }),
     cookies(),
   ]);
-  if (!data || !data.cards.some((card) => card.stage === "playoff")) {
+  if (!data?.cards.some((card) => card.stage === "playoff")) {
     notFound();
   }
   return (

@@ -371,7 +371,6 @@ export function ReportForm({
             <SectionHead title="Wer erhält den Freewin?" />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[reporter, opponent].map((p) => (
-                // biome-ignore lint/a11y/noStaticElementInteractions: pick card
                 <button
                   key={p.userId}
                   type="button"
@@ -645,7 +644,6 @@ function GameRow({
   }
 
   const segment = (p: Identity, isReporter: boolean) => (
-    // biome-ignore lint/a11y/noStaticElementInteractions: segmented pick
     <button
       type="button"
       onClick={() => onPick(p.userId)}

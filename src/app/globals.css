@@ -159,7 +159,8 @@
 }
 
 .dark {
-  --background: oklch(0.17 0.045 265); /* dark navy, derived from falinks-blue */
+  /* dark navy, derived from falinks-blue */
+  --background: oklch(0.17 0.045 265);
   --foreground: oklch(0.96 0.005 260);
   --card: oklch(0.21 0.05 265);
   --card-foreground: oklch(0.96 0.005 260);

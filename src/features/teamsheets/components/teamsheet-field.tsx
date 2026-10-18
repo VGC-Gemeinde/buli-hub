@@ -33,7 +33,7 @@ function MonIcons({ value }: { value: TeamsheetValue }) {
       {value.accepted.icons.map((icon, index) => (
         // biome-ignore lint/performance/noImgElement: box icons are external bucket assets, not app images
         <img
-          // Species can repeat; the slot identifies the icon.
+          // biome-ignore lint/suspicious/noArrayIndexKey: species can repeat; the slot identifies the icon
           key={`${icon.species}-${index}`}
           src={icon.iconUrl}
           alt={icon.species}

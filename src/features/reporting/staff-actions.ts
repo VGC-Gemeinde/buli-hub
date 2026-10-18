@@ -62,7 +62,7 @@ async function staffGate(matchId: string) {
     return { ok: false as const, error: lockError };
   }
   const match = await getMatchForReport(matchId);
-  if (!match || !match.playerB) {
+  if (!match?.playerB) {
     return { ok: false as const, error: "Match nicht gefunden" };
   }
   // A line-up that comes from a withheld result gets no result yet, from
@@ -89,7 +89,7 @@ export async function confirmFreeWin(
     return gate;
   }
   const result = await getMatchResult(matchId);
-  if (!result || result.outcome !== "free_win") {
+  if (result?.outcome !== "free_win") {
     return { ok: false, error: "Kein Freewin zum Bestätigen" };
   }
   if (result.confirmedAt) {

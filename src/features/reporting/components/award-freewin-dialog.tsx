@@ -96,7 +96,6 @@ export function AwardFreewinDialog({
             <Label>Gewinner</Label>
             <div className="grid grid-cols-2 gap-2.5">
               {[playerA, playerB].map((p) => (
-                // biome-ignore lint/a11y/noStaticElementInteractions: pick card
                 <button
                   key={p.userId}
                   type="button"

@@ -77,7 +77,7 @@ export default async function MatchReportPage({
 
   const match = await getMatchForReport(matchId);
   // A bye (playerB null) or an unknown id has no match to show.
-  if (!match || !match.playerB) {
+  if (!match?.playerB) {
     notFound();
   }
 

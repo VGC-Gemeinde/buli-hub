@@ -67,7 +67,7 @@ export async function openDispute(input: {
     return { ok: false, error: lockError };
   }
   const match = await getMatchForReport(input.matchId);
-  if (!match || !match.playerB) {
+  if (!match?.playerB) {
     return { ok: false, error: "Match nicht gefunden" };
   }
   if (
@@ -126,7 +126,7 @@ export async function decideDispute(input: {
     return { ok: false, error: "Keine offene Anfechtung" };
   }
   const match = await getMatchForReport(input.matchId);
-  if (!match || !match.playerB) {
+  if (!match?.playerB) {
     return { ok: false, error: "Match nicht gefunden" };
   }
   const result = await getMatchResult(input.matchId);

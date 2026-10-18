@@ -33,9 +33,9 @@ export function Colors() {
     <div className="flex flex-col gap-4">
       {(
         [
-          ["orange", "Aktiv — Spieltag läuft"],
-          ["neutral", "Informativ — noch kein Ergebnis"],
-          ["navy", "Staff — nur intern sichtbar"],
+          ["orange", "Aktiv · Spieltag läuft"],
+          ["neutral", "Informativ · noch kein Ergebnis"],
+          ["navy", "Staff · nur intern sichtbar"],
         ] as const
       ).map(([color, label]) => (
         <div className="flex items-center gap-3" key={color}>

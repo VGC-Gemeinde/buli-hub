@@ -20,7 +20,7 @@ export function SpielerDroppen() {
         </span>
         <p className="text-[13px] text-muted-foreground leading-snug">
           Blaubeerkuchen (Division 1b): alle Matches des Spielers zählen ab
-          sofort als Freewin (2:0) für die Gegner — auch bereits gespielte.
+          sofort als Freewin (2:0) für die Gegner, auch bereits gespielte.
         </p>
       </div>
       <div className="grid gap-2">

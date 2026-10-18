@@ -9,15 +9,16 @@ import { AVATAR_URL, PLAYER_MATCHES } from "./_fixtures";
  *
  * Row anatomy: fixed `w-[92px]` Spieltag + week range, opponent avatar + name
  * (links to their profile), then the fixed `w-12` score slot — so pill, score
- * and „offen" swap without a pixel of horizontal shift. The whole row is a
+ * and "offen" swap without a pixel of horizontal shift. The whole row is a
  * stretched link to the match; byes are not clickable.
  *
  * Spoiler rules exercised by the row set (design/SPOILER-SCHUTZ.md §2):
  *   ordinary reported row  follows the switch
  *   MotW row               permanently covered, orange pill, ignores the switch
+ *   recording hold         withheld from this viewer, inert "REC" pill
  *   `isMine` row           always open — your own result is never a spoiler
- *   unreported row         „offen"
- *   bye                    „spielfrei"
+ *   unreported row         "offen"
+ *   bye                    "spielfrei"
  *
  * Not renderable statically: the per-row tap-to-reveal (component `useState`).
  *
@@ -39,6 +40,8 @@ const row = (
   scoreOpponent: null,
   isMine: false,
   isMotw: false,
+  embargo: null,
+  inherited: false,
   ...extra,
 });
 
@@ -75,6 +78,18 @@ const ROWS: ProfileScheduleRow[] = [
       round: 6,
       startsOn: "2026-02-09",
       endsOn: "2026-02-15",
+      opponent: { userId: "e", name: "Kilowattrel", avatarUrl: null },
+    },
+    // Held for a Gemeinde stream recording: the score never reaches this
+    // viewer, the row carries the inert "REC" pill and ignores the switch.
+    { reported: true, embargo: { reason: "recording", access: "withheld" } },
+  ),
+  row(
+    {
+      matchId: "m7",
+      round: 7,
+      startsOn: "2026-02-16",
+      endsOn: "2026-02-22",
       opponent: { userId: "d", name: "Grafaiai", avatarUrl: null },
     },
     {},

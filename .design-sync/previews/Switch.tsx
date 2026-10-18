@@ -49,7 +49,7 @@ export function SpoilerSchutz() {
           <Switch
             id="sw-spoiler-on"
             defaultChecked
-            className="data-checked:bg-brand-blue dark:data-checked:bg-white"
+            className="data-checked:bg-brand-blue dark:data-checked:bg-primary"
           />
           <Label
             htmlFor="sw-spoiler-on"
@@ -62,13 +62,13 @@ export function SpoilerSchutz() {
       <div className="flex items-center gap-2">
         <Switch
           id="sw-spoiler-off"
-          className="data-checked:bg-brand-blue dark:data-checked:bg-white"
+          className="data-checked:bg-brand-blue dark:data-checked:bg-primary"
         />
         <Label
           htmlFor="sw-spoiler-off"
-          className="cursor-pointer whitespace-nowrap font-semibold text-[13.5px] text-muted-foreground"
+          className="cursor-pointer whitespace-nowrap font-semibold text-[13.5px] text-brand-blue dark:text-white"
         >
-          Spoiler-Schutz aus — alle Ergebnisse sichtbar
+          Spoiler-Schutz
         </Label>
       </div>
     </div>

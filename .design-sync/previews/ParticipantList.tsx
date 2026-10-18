@@ -7,7 +7,7 @@ import { AVATAR_URL, ROSTER } from "./_fixtures";
  * strictly alphabetical, so the list never reads as a sign-up ranking. The
  * count in the section header comes from `players.length`; the empty state is
  * the component's own informational EmptyStateCard.
- * Ported from the dev/ui gallery („Dashboard: Teilnehmerfeld"). */
+ * Ported from the dev/ui gallery ("Dashboard: Teilnehmerfeld"). */
 
 /* A full field: the grid is `auto-fill minmax(140px, 1fr)`, so it only shows
  * its own rhythm once there are enough names to wrap. Same shape as the shared
@@ -33,7 +33,7 @@ const FULL_FIELD = [
   { id: "p18", name: "Jonas" },
 ];
 
-export function Teilnehmerfeld() {
+export function AnmeldungLaeuft() {
   return <ParticipantList players={FULL_FIELD} seasonName="Saison 9" />;
 }
 

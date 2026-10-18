@@ -55,7 +55,7 @@ export function ImFliesstext() {
         </InlineLink>
       </p>
       <p className="text-muted-foreground">
-        Angaben gemäß § 5 DDG — vollständig im{" "}
+        Angaben gemäß § 5 DDG, vollständig im{" "}
         <InlineLink href="/impressum">Impressum</InlineLink>.
       </p>
     </div>

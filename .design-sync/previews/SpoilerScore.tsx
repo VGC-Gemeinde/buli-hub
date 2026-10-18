@@ -5,7 +5,7 @@ import { SpoilerScore } from "buli-hub";
  * pill while covered, the orange MotW pill for the featured match — that pill
  * IS the row's only MotW marker — and the plain score once revealed.
  *
- * Always shown inside the row's fixed `w-12` slot: pill ⇄ score ⇄ „offen" swap
+ * Always shown inside the row's fixed `w-12` slot: pill ⇄ score ⇄ "offen" swap
  * without a pixel of horizontal shift. */
 
 const noop = () => {};
@@ -50,7 +50,7 @@ function MatchRow({
 
 /** The whole state machine as a neutral visitor sees a Spieltag: unplayed,
  *  covered, the permanent MotW cover, and the one match that is their own. */
-export function Spieltagsliste() {
+export function AmSpieltag() {
   return (
     <div className="flex flex-col gap-2">
       <MatchRow playerA="Testerino" playerB="Falinks" winner="a" mine>
@@ -61,6 +61,15 @@ export function Spieltagsliste() {
       </MatchRow>
       <MatchRow playerA="Grafaiai" playerB="Kilowattrel">
         <SpoilerScore scoreA={2} scoreB={1} covered motw onReveal={noop} />
+      </MatchRow>
+      <MatchRow playerA="Pawmi" playerB="annegret">
+        <SpoilerScore
+          scoreA={null}
+          scoreB={null}
+          covered
+          embargo={{ reason: "recording", access: "withheld" }}
+          onReveal={noop}
+        />
       </MatchRow>
       <MatchRow playerA="Maushold" playerB="Tinkatink">
         offen
@@ -95,5 +104,44 @@ export function Aufgedeckt() {
     <MatchRow playerA="Blaubeerkuchen" playerB="Wooloo" winner="a">
       <SpoilerScore scoreA={2} scoreB={0} covered={false} onReveal={noop} />
     </MatchRow>
+  );
+}
+
+/** Held for a stream recording: the navy "REC" pill. Withheld from a neutral
+ *  visitor it is inert (no score exists in the payload); a participant or
+ *  staff member gets the same pill as a button that reveals the not yet
+ *  public result. A held MotW keeps its orange pill instead. */
+export function AufnahmeZurueckgehalten() {
+  return (
+    <div className="flex flex-col gap-2">
+      <MatchRow playerA="Pawmi" playerB="annegret">
+        <SpoilerScore
+          scoreA={null}
+          scoreB={null}
+          covered
+          embargo={{ reason: "recording", access: "withheld" }}
+          onReveal={noop}
+        />
+      </MatchRow>
+      <MatchRow playerA="Testerino" playerB="Kilowattrel" mine>
+        <SpoilerScore
+          scoreA={2}
+          scoreB={0}
+          covered
+          embargo={{ reason: "recording", access: "preview" }}
+          onReveal={noop}
+        />
+      </MatchRow>
+      <MatchRow playerA="Grafaiai" playerB="Maushold">
+        <SpoilerScore
+          scoreA={null}
+          scoreB={null}
+          covered
+          motw
+          embargo={{ reason: "motw", access: "withheld" }}
+          onReveal={noop}
+        />
+      </MatchRow>
+    </div>
   );
 }

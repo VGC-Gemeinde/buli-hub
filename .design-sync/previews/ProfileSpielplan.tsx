@@ -2,7 +2,7 @@ import { ProfileSpielplan } from "buli-hub";
 import type { ProfileScheduleRow } from "@/features/player-profile/profile";
 import { AVATAR_URL, MATCHDAYS } from "./_fixtures";
 
-/* The whole „Spielplan" section of a player profile (`/spieler/[userId]`): the
+/* The whole "Spielplan" section of a player profile (`/spieler/[userId]`): the
  * signature section header with its rule, the spoiler switch parked in the
  * header's meta slot, and the row list below it.
  *
@@ -38,6 +38,8 @@ const row = (
   scoreOpponent: null,
   isMine: false,
   isMotw: false,
+  embargo: null,
+  inherited: false,
   ...extra,
 });
 
@@ -82,7 +84,7 @@ const ROWS: ProfileScheduleRow[] = [
   row(EXTRA_MATCHDAY, null),
 ];
 
-/** Arriving protected (the default): the switch shows „Spoiler-Schutz" on and
+/** Arriving protected (the default): the switch shows "Spoiler-Schutz" on and
  *  Spieltag 1, 2 and 3 all sit behind pills — only the viewer's own Spieltag 4
  *  score is readable. */
 export function MitSpoilerSchutz() {

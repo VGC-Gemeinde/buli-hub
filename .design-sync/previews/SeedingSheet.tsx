@@ -4,8 +4,8 @@ import { assembleSheetRows, UNPLACED_SECTION } from "@/features/seeding/sheet";
 
 /* The seeding sheet: the staff table the whole Divisions-Einteilung happens in.
  * One flat, ordered row list (`assembleSheetRows`) built from four row kinds —
- * the „Nicht platziert" pool, a navy division separator per division, a group
- * separator per sub-division (plus „Ohne Gruppe" for stragglers or an empty
+ * the "Nicht platziert" pool, a navy division separator per division, a group
+ * separator per sub-division (plus "Ohne Gruppe" for stragglers or an empty
  * hint), and the player rows themselves. Ten columns carry every placement
  * signal at once: status, platform, last season, caveat, self-assessment bar,
  * achievements, and the Division/Gruppe selects.
@@ -20,7 +20,7 @@ import { assembleSheetRows, UNPLACED_SECTION } from "@/features/seeding/sheet";
  * there is no prop for it. Multi-select is shown instead, since dragging a
  * selected row carries the whole selection.
  *
- * Fixtures ported from the dev/ui gallery („Seeding: Sheet"), with stable ids —
+ * Fixtures ported from the dev/ui gallery ("Seeding: Sheet"), with stable ids —
  * the gallery's `seedPlayer` uses `crypto.randomUUID()`, which would change the
  * render hash on every capture. */
 
@@ -64,7 +64,7 @@ function player(
 }
 
 /* A returning player: the registration answers come from their own memory of
- * last season, which is what the „Selbst angegeben" caveat chip flags. */
+ * last season, which is what the "Selbst angegeben" caveat chip flags. */
 function returning(
   userId: string,
   displayName: string,
@@ -85,7 +85,7 @@ function returning(
 }
 
 /* Mid-meeting: four registrations still in the pool, Division 1 grouped except
- * for one straggler, Division 2 grouped. „Nicht platziert" is ordered
+ * for one straggler, Division 2 grouped. "Nicht platziert" is ordered
  * Rückkehrer first, then by self-assessment descending (`orderForPlacement`). */
 const PLAYERS: SeedingPlayer[] = [
   returning("u01", "AltHase", 1, 2, {
@@ -152,7 +152,7 @@ const PLAYERS: SeedingPlayer[] = [
 ];
 
 /* Earlier in the same meeting: nothing is grouped yet and Division 1 still
- * shows its projected group count („→ 2 Gruppen bei Größe 8"). */
+ * shows its projected group count ("→ 2 Gruppen bei Größe 8"). */
 const UNGROUPED: SeedingPlayer[] = PLAYERS.map((p) => ({
   ...p,
   subDivisionId: null,
@@ -188,7 +188,7 @@ const rows = (
 const noop = () => {};
 
 /* The controlling staff member's view: checkboxes, per-row Division/Gruppe
- * selects and the „Gruppen generieren" / „Neu generieren" action on each
+ * selects and the "Gruppen generieren" / "Neu generieren" action on each
  * division separator. Two rows are selected — dragging either one moves both. */
 export function Sheet() {
   return (

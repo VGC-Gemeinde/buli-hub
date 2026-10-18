@@ -1,8 +1,8 @@
 import { EmptyStateCard, PlayerGrid, type RegisteredPlayer } from "buli-hub";
 import { AVATAR_URL, ROSTER } from "./_fixtures";
 
-/* The compact roster grid — shared by the staff dashboard's „Anmeldungen"
- * section and the player dashboard's „Teilnehmerfeld". It sorts by name with a
+/* The compact roster grid — shared by the staff dashboard's "Anmeldungen"
+ * section and the player dashboard's "Teilnehmerfeld". It sorts by name with a
  * German collator, so the cells below are deliberately handed unsorted data.
  * `empty` is caller-supplied: the app always passes an EmptyStateCard. */
 

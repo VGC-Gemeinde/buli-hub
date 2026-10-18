@@ -15,7 +15,7 @@ export function Spieltermin() {
   return <DatePicker value="2026-07-27" onChange={noop} />;
 }
 
-/** Nothing picked yet — muted „Datum wählen" placeholder. */
+/** Nothing picked yet — muted "Datum wählen" placeholder. */
 export function OhneAuswahl() {
   return <DatePicker value="" onChange={noop} />;
 }
@@ -54,7 +54,7 @@ export function ImSpieltagsFormular() {
           className="w-[190px]"
         />
         <p className="text-[13px] text-muted-foreground">
-          Frühere Tage sind gesperrt — der Spieltag kann nicht vor seinem Start
+          Frühere Tage sind gesperrt. Der Spieltag kann nicht vor seinem Start
           enden.
         </p>
       </div>

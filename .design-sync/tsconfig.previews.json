@@ -15,10 +15,10 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "baseUrl": "..",
+    "types": ["node"],
     "paths": {
-      "@/*": ["./src/*"],
-      "buli-hub": ["./index.d.ts"]
+      "@/*": ["../src/*"],
+      "buli-hub": ["../index.d.ts"]
     }
   },
   "include": ["previews/**/*.ts", "previews/**/*.tsx", "../index.d.ts"],

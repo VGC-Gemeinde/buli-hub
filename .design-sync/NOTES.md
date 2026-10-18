@@ -1,7 +1,40 @@
-# design-sync notes — buli-hub → claude.ai/design
+# design-sync notes — buli-hub → Claude Design System artifact
 
-Project: **VGC Gemeinde Design System** (`10803020-3e43-41f1-80f1-029698d498ad`)
-First sync: 2026-07-27. Shape: `package` (no Storybook anywhere in the repo).
+**Target since 2026-10-18:** the Design System artifact **VGC Gemeinde Design
+System**, https://claude.ai/artifact/MWNaiDiio2n81VAYY6Pbx9. It was migrated
+(the Claude Design "migrate" button) from the standalone claude.ai/design project
+`10803020-3e43-41f1-80f1-029698d498ad`, which closes by 2026-12-14 and is no
+longer synced; `config.json`'s `projectId` still names that old project only
+because the converter reads it. First sync: 2026-07-27. Shape: `package` (no
+Storybook anywhere in the repo).
+
+## Syncing to the artifact (since 2026-10-18)
+
+The converter (`/design-sync` skill, staged into `.ds-sync/`) still builds and
+grades everything; only the last step changed. `.design-sync/to-system.mjs`
+turns its output into the artifact's files, reproducing byte for byte what the
+migration made of the old layout (verified against the migration's own
+before/after pairs), so an update changes only what the code changed.
+
+1. Build, validate, capture, grade as below (commands under "Environment").
+2. Read the artifact back: `project/README.md` and `project/design-system.json`
+   (Artifact tool, `action: "read"`). Check the index's `lastChange`: if it is
+   not ours, someone edited on the page; read and merge their files first.
+3. `node .design-sync/to-system.mjs --sys <dir with that README.md> --out <stage>`
+   writes `<stage>/project/...` (components, `_preview/`, bundle, guidelines,
+   README with the system's own header kept) and `<stage>/removed.json`.
+4. Tokens are NOT generated: the artifact owns `tokens.json` (the page edits it).
+   When `globals.css` gains or changes a token, edit `tokens.json` by hand (a list
+   per family, a usage note with contrast per token) and rewrite `tokens.css` in
+   the page's compiled layout (one `--name: value; /* usage */` line in the first
+   theme block, dark values under `[data-theme="dark"]`). `bundle.css` loses the
+   token blocks (`lift()` in to-system.mjs), so a token missing from `tokens.json`
+   is missing everywhere.
+5. Publish with the Artifact tool to the URL above: `root` = `<stage>`, at most
+   255 paths per call, `removed.json` paths as `null`, and the index
+   `project/design-system.json` (re-read, `lastChange` set) in the LAST call.
+6. There is no `_ds_sync.json` anchor any more: grades live only in the local
+   gitignored `.cache/review/`. A fresh machine re-grades everything.
 
 ## Why this repo needs extra wiring
 
@@ -79,7 +112,27 @@ where the WSL2 fix above does **not** apply:
   the sheets (they render clean, 0 bad) and move on. A sync run from a different
   chromium will always re-churn; it is not a real change.
 
-## Scope: 49 of 65 candidates
+## Scope: 96 components (since 2026-10-18; 49 at first sync)
+
+The 2026-10-18 sync added 48 components that appeared since July (navigation,
+staff shell, standings, favorites, playoffs, MotW candidates, recordings, stream
+photos, Pokémon stats, usage, Regelwerk) and removed `MotwTodoCard` (deleted
+from the app). Taint-checked with a per-file esbuild browser bundle: a file whose
+closure fails (`net`, `@opentelemetry/api`) reaches a server action and stays out
+(`StaffPage`, `FavoritesView`, `RegistrationForm`, `WeekMatches`, `SiteHeader`,
+`UserMenu`, every dialog with an action, ...). `ReportSummary` reaches
+`db/schema.ts` (via `registration.ts` `PLATFORM_LABELS`), which only pulls
+`drizzle-orm/pg-core`: browser-safe, just weight.
+
+**`EntryDetailView` and `PokemonDetailView` are excluded on size**: they compute
+their view from `@pkmn/dex` + `@pkmn/mods` (19.7 MB), which took the bundle to
+21.6 MB against the artifact's 6 MB cap. Everything else in pokemon-stats takes
+precomputed view models and bundles fine (2.7 MB total).
+
+Subparts that come along with a mapped file (`StandingsPanel`, `MatchRow`,
+`InfoTooltip`, `NextAppRouter`, ...) are `null` in `componentSrcMap`.
+
+### First sync (2026-07-27): 49 of 65 candidates
 
 Scoped in: all 15 `src/components/ui` primitives, the brand/shared components
 (`Tick`, `SectionHeader`, `EmptyStateCard`, `PlayerGrid`, `TypeToConfirm`,
@@ -148,7 +201,7 @@ is an app refactor, deliberately not done as part of this import.
   hash on every run and defeats the re-sync cache.
 - **The capture pins the browser clock to 2024-05-15.** A `Calendar` with no
   explicit `defaultMonth`/`today` opens on May 2024 and highlights the wrong
-  „heute" — it reads as broken rather than stale. Pass both anchors explicitly.
+  "heute" — it reads as broken rather than stale. Pass both anchors explicitly.
 - **A Tailwind class the app itself never uses does not exist, and fails
   silently** (the element just renders unstyled). `preview-rebuild.mjs` does not
   re-run `buildCmd`, so a utility invented for a preview is never compiled.
@@ -207,10 +260,10 @@ is an app refactor, deliberately not done as part of this import.
   its comment claims.** It is documented as exercising the overbooked diagonal
   stripe, but `previewZones()` only stripes a place claimed by BOTH a top-side and
   a bottom-side band, and that fixture has zero promotions and zero
-  promotion-playoff slots — so it only trips the capacity note („Überbelegt um
+  promotion-playoff slots — so it only trips the capacity note ("Überbelegt um
   1"). The `PostSeasonPanel` preview instead uses `championshipPlayoffSlots: 2` +
   `guaranteedDemotions: 2` + `demotionPlayoffSlots: 1` on `groupSizes: [4,4]`,
-  which produces the real stripe and keeps the „✕ Nicht gedeckt" seam. Worth
+  which produces the real stripe and keeps the "✕ Nicht gedeckt" seam. Worth
   fixing in the gallery.
 - **`SeedingSheet` cannot fit its full grid in a card.** Its grid has ~1364px of
   fixed column minimums; the override is `1440x900`. Below that the Division and
@@ -221,6 +274,15 @@ is an app refactor, deliberately not done as part of this import.
   `MatchResultLite` states, the 14-player stable-id seeding roster, and an
   18-name `FULL_FIELD` (the shared `ROSTER`'s four names are too few for
   `PlayerGrid`'s grid to wrap).
+
+### Type icons: in the sprite bucket since 2026-10-18
+
+`TypeIcon` used to load `/type-icons/*.svg` from the app's `public/`, which no
+design-system card or design can reach. The icons (with their MIT LICENSE) now
+live in the sprite bucket at `/types/` (`SPRITE_BASE` in
+`src/features/teamsheets/sprite-base.ts`, kept dex-free on purpose so the stats
+components don't pull `sprites.ts` and with it `@pkmn/dex`). Remote images from
+`storage.googleapis.com/justhit-sprites` load in cards and designs.
 
 ### Known gap: the logo is not in the bundle
 
@@ -245,6 +307,28 @@ sourced from real feature code instead — `registration-form.tsx`,
 
 ## Findings for the app team (not design-sync problems)
 
+Found 2026-10-18:
+
+- **`motw-player.tsx:204`**: a long player name without spaces overflows its
+  column (`min-w-0 break-words` does not lower min-content; `sm:items-end` at
+  line 229). The gallery's own "Blaubeerkuchenbäckermeisterin Annegret" draws
+  over the avatar and the group label. Fix: `wrap-anywhere`.
+- **`usage-cards.tsx:28-37`**: a five-digit value with its unit ("12.408
+  Personen") runs past the card edge in the 4-across layout.
+- **`step-bar.tsx:264`** (and `gallery.tsx:4243`): "Finalisieren…" opens a
+  dialog; the constitution says no trailing "…".
+- **`app/match/[matchId]/page.tsx` ~246-345**: a drop-decided match without a
+  stored result shows the drop banner ("zählt als Freewin") above "Die beiden
+  Spieler haben ihr Match noch nicht gemeldet".
+- **`relegation-playoffs-public.tsx` ~374-378**: the bracket grid is `min-w-max`
+  with `minmax(240px, 340px)` columns, so a three-round bracket needs 1116px and
+  scrolls sideways inside the 1040px page at every desktop width.
+- `_fixtures.ts` `PUBLIC_OVERVIEW` tags the viewer "1b" while they play in 1a,
+  lacks group 1b, and gives them a bye in their MotW week; PublicLeague and
+  InSeasonDashboard correct this locally (other cards are graded against it).
+
+Found 2026-07-27:
+
 Surfaced while authoring previews against the real components:
 
 - **`Switch` sizing override in `settings-form.tsx` is broken.** It resizes the
@@ -267,11 +351,44 @@ Surfaced while authoring previews against the real components:
   ships no disabled cell.
 - **`profile-schedule.tsx`'s `w-[92px]` date column wraps German week ranges**
   (`12. Jan. – 18. Jan.`), giving the schedule ragged row heights.
-- **`report-summary.tsx` offers „Replays spoilerfrei ansehen" whenever a result
+- **`report-summary.tsx` offers "Replays spoilerfrei ansehen" whenever a result
   is covered**, including cartridge results that have no replays. The previews
   keep covered cells on Showdown so the cards don't showcase it.
-- **`DivisionSeparator` isn't pluralized** — „→ **1 Gruppen** bei Größe 8" is
+- **`DivisionSeparator` isn't pluralized** — "→ **1 Gruppen** bei Größe 8" is
   reachable.
+
+## Authoring learnings from the 2026-10-18 sync
+
+- **Router context.** Components that call `useRouter`/`usePathname`/
+  `useSearchParams` throw outside Next. `.design-sync/next-router.tsx`
+  (`NextAppRouter`, shipped via `cfg.extraEntries`, wrapped around every preview
+  via `cfg.provider`) provides Next's own three contexts with a no-op router.
+  Nest one with `pathname`/`search` for a specific page. It must keep up with
+  Next's `AppRouterInstance` type (Next 16 added `bfcacheId`). `prepare-css.mjs`
+  re-exports repo-owned extraEntries from `index.d.ts` so previews type-check.
+- **Heading font = its own family.** The app loads the heading instance at
+  700/800 only (`layout.tsx`, since a14cc46 a local variable font with
+  `weight: "700 800"`), so `font-heading` text without a bold class renders bold
+  there. The bundle mirrors that with a separate "Montserrat Heading" family
+  (700/800 faces only) in `fonts.css`/`ds.css` and in the artifact's
+  `tokens.json`. With one shared family those titles rendered thin.
+- **Hover-only tooltips** (`HoverHint`, `InfoLabel`) are shown open by focusing
+  the trigger on mount; the wrapper needs a fixed height AND `items-start`.
+  `FavoriteSearch` opens its list on focus the same way.
+- **The capture screenshots the viewport only** (900x700 by default): page-body
+  components need a taller `viewport` override or they grade as cut off.
+- **A recapture deletes the component's grade**, and any source edit (a comment)
+  triggers one. Write grades after the final capture. Never run biome over the
+  whole `previews/` folder while agents work: it reformats their files and
+  clears their grades.
+- **Pure helpers may be value-imported in previews** when they don't reach the
+  db (`finalTable`, `relegationPlayoffsPreview`, `resolveRelegationPlayoffs`,
+  `publicCards`, `@/features/regelwerk/components/prose`). Check a helper's
+  output quickly with `node --import ./scripts/src-alias.register.mjs <file.ts>`.
+- Copy rules apply to previews too (constitution 1.1.0): straight quotes even in
+  comments, no em-dash in rendered copy.
+- `[GRID_OVERFLOW]` on page-sized cards: `cardMode: "column"`; a portal tooltip
+  (`HoverHint`): `cardMode: "single"` + `primaryStory`.
 
 ## Known render warns
 
@@ -339,3 +456,23 @@ three ineffective `biome-ignore` comments) do not fail `biome ci`.
   from the `.tsx` sources via ts-morph.
 - **Toolchain assumed:** node 24.17, Tailwind CLI 4.3.2 pinned in `.ds-sync`
   (matches the repo's `tailwindcss` devDep — keep them in step), playwright 1.61.0.
+  On 2026-10-18 the WSL2 cache held `chromium-1234` (no 1228): the 1.61.0 client
+  drives it fine with `DS_CHROMIUM_PATH=~/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome`
+  plus the `pw-deps` `LD_LIBRARY_PATH`.
+- **to-system.mjs assumes the artifact type's file layout** (Design System type,
+  contract 0.2.47 at migration). If the type's `format.md` changes, re-check the
+  mapping before publishing.
+- **The 6 MB bundle cap.** A component that starts importing `@pkmn/dex`,
+  `@pkmn/mods` or another data package can push the bundle past it; check the
+  `_ds_bundle.js` size after every build.
+- **Tokens drift silently.** `globals.css` tokens are mirrored into the
+  artifact's `tokens.json` by hand (step 4 above): diff `globals.css` on every
+  sync.
+- **README header lives in the artifact now.** to-system.mjs keeps the
+  published header; `conventions.md` is a copy kept for the converter's README
+  and should be updated alongside.
+- **The app's fonts are local since a14cc46** (`src/app/fonts/montserrat.woff2`,
+  one variable file for both instances). `prepare-css.mjs` still self-hosts the
+  static Google per-weight files from `.design-sync/fonts/`; same design, so the
+  cards are right, but pointing it at the app's own file would remove the
+  duplicate source.

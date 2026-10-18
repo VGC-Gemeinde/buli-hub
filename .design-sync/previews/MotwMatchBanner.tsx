@@ -7,7 +7,7 @@ import { MotwMatchBanner } from "buli-hub";
  * spoiler reveal itself lives inline in `ReportSummary`, not here.
  *
  * Deliberately has NO placeholder when the link is missing: the overview
- * billboard owns the „VOD folgt" slot, so this bar simply stays quiet.
+ * billboard owns the "VOD folgt" slot, so this bar simply stays quiet.
  *
  * Wrapped at the real match page's column width (`max-w-3xl` ≈ the page's
  * 760px) so the `ml-auto` button lands where it does in production.
@@ -31,6 +31,17 @@ export function MitVod() {
   return (
     <div className="mx-auto max-w-3xl">
       <MotwMatchBanner round={2} youtubeUrl={VOD} />
+    </div>
+  );
+}
+
+/** A participant before the VOD: the result is under embargo, so the bar adds
+ *  the "Noch nicht öffentlich" lock chip and says who sees the result until
+ *  then; without a stream photo yet, the one-line upload hint follows. */
+export function NochNichtOeffentlich() {
+  return (
+    <div className="mx-auto max-w-3xl">
+      <MotwMatchBanner round={2} youtubeUrl={null} notPublic photoHint />
     </div>
   );
 }

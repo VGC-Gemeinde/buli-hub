@@ -1,6 +1,6 @@
 import { Label, Textarea } from "buli-hub";
 
-/* Two real homes in the app: the dispute dialog („Was stimmt nicht?", rows=4)
+/* Two real homes in the app: the dispute dialog ("Was stimmt nicht?", rows=4)
  * and the registration form's optional achievements field. The control is
  * `field-sizing-content`, so a filled cell grows past `min-h-16` on its own. */
 
@@ -36,7 +36,7 @@ export function Ausgefuellt() {
         }
       />
       <p className="text-[13px] text-muted-foreground leading-snug">
-        Hilft uns beim Seeding und bei Liga-Content — Turniere, Platzierungen,
+        Hilft uns beim Seeding und bei Liga-Content: Turniere, Platzierungen,
         Momente, auf die du stolz bist.
       </p>
     </div>
@@ -51,7 +51,7 @@ export function Zustaende() {
         <Textarea
           id="ta-disabled"
           rows={3}
-          defaultValue="Der Fall wurde bereits entschieden — die Notiz ist gesperrt."
+          defaultValue="Der Fall wurde bereits entschieden, die Notiz ist gesperrt."
           disabled
           readOnly
         />
@@ -65,7 +65,7 @@ export function Zustaende() {
           aria-invalid
         />
         <p className="text-destructive text-sm">
-          Bitte beschreibe ausführlicher, was ihr versucht habt — mindestens 50
+          Bitte beschreibe ausführlicher, was ihr versucht habt, mindestens 50
           Zeichen.
         </p>
       </div>

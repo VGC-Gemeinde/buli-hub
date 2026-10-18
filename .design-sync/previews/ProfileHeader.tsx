@@ -8,7 +8,7 @@ import { AVATAR_URL } from "./_fixtures";
  * The variant axis is the identity data itself, because that is what actually
  * varies in production — Discord accounts arrive with or without an avatar,
  * with or without a display name. The name runs through the shared
- * `playerName()` fallback chain (display name → @handle → „Discord-Nutzer"), so
+ * `playerName()` fallback chain (display name → @handle → "Discord-Nutzer"), so
  * the heading is never empty.
  *
  * Each cell is boxed at the real page column (`max-w-xl`) so the `truncate` on

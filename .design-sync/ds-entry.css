@@ -63,6 +63,8 @@
 /* color — the design system's semantic + brand tokens only */
 @source inline("{bg,text,border,ring,fill,stroke,divide}-{background,foreground,card,card-foreground,popover,popover-foreground,primary,primary-foreground,secondary,secondary-foreground,muted,muted-foreground,accent,accent-foreground,destructive,border,input,ring,brand-blue,brand-orange}");
 @source inline("{bg,text,border}-{zone-promote,zone-playoff,zone-demote,zone-champion}");
+@source inline("{bg,text,border}-{form-win,form-loss}");
+@source inline("{bg,text,border}-type-{normal,fire,water,grass,electric,ice,fighting,poison,ground,flying,psychic,bug,rock,ghost,dragon,dark,steel,fairy}");
 @source inline("dark:{bg,text,border}-{background,foreground,card,muted,muted-foreground,primary,secondary,accent,border,brand-blue,brand-orange}");
 @source inline("bg-{transparent,current,white,black}");
 @source inline("text-{transparent,current,white,black}");

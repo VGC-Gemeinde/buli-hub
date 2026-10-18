@@ -81,3 +81,35 @@
   font-display: swap;
   src: url("./fonts/Montserrat-800-latin-ext.woff2") format("woff2");
 }
+
+@font-face {
+  font-family: "Montserrat Heading";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/Montserrat-700-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Montserrat Heading";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/Montserrat-700-latin-ext.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Montserrat Heading";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./fonts/Montserrat-800-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Montserrat Heading";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./fonts/Montserrat-800-latin-ext.woff2") format("woff2");
+}

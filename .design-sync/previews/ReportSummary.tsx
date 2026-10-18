@@ -3,38 +3,53 @@ import type { StoredResult } from "@/features/reporting/queries";
 import { asIdentity, STANDINGS } from "./_fixtures";
 
 /* The read-only result page for a played match (design/MATCH-REPORTING.md §9–10
- * and design/SPOILER-SCHUTZ.md §3): back link, tick eyebrow „Ergebnis ·
+ * and design/SPOILER-SCHUTZ.md §3): back link, tick eyebrow "Ergebnis ·
  * Spieltag n · Division", the outcome headline with its status chip, the big
- * scoreboard (avatars 50px, names 28px, score 56px, orange „Sieger" tick), the
+ * scoreboard (avatars 50px, names 28px, score 56px, orange "Sieger" tick), the
  * meta line, then the Spiele and Teamsheets sections.
  *
  * Two independent axes, both swept below:
- *   viewer      participant/staff (filled navy avatar, „Du"/„Gegner" sublabels,
- *               „Gemeldet von", free-win context) vs. neutral observer, who gets
+ *   viewer      participant/staff (filled navy avatar, "Du"/"Gegner" sublabels,
+ *               "Gemeldet von", free-win context) vs. neutral observer, who gets
  *               the objective A vs. B view with no report metadata at all
  *   spoilerMode none | default | motw — the SAME layout with masked slots, so
  *               replays, teamsheets and the match video stay usable unspoiled
  *
- * Not renderable statically: „Ergebnis aufdecken", „Wieder verdecken" and the
+ * Not renderable statically: "Ergebnis aufdecken", "Wieder verdecken" and the
  * per-game pills are client `useState`. The covered cells are the state a page
  * loads in; `spoilerMode="none"` is what a reveal resolves to.
  *
  * Cell names sort so the canonical participant result comes first.
  */
 
-const TESTERINO = asIdentity(STANDINGS[0]); // „me", avatar
-const FALINKS = asIdentity(STANDINGS[1]); // „a", initials fallback
+const TESTERINO = asIdentity(STANDINGS[0]); // "me", avatar
+const FALINKS = asIdentity(STANDINGS[1]); // "a", initials fallback
 
 // The neutral cells get their own pairing: a neutral observer is by definition
-// looking at somebody else's match, not at one „me" played.
+// looking at somebody else's match, not at one "me" played.
 const WOOLOO = asIdentity(STANDINGS[2]);
 const GRAFAIAI = { userId: "d", name: "Grafaiai", avatarUrl: null };
 
 const REPORTED_AT = new Date("2026-01-14T19:20:00Z");
 
+/* One stored sheet per participant; the page only links them under
+ * `/pastes/<id>` (the canonical `ots` feeds the staff editor, not this view). */
+const sheetsFor = (aId: string, bId: string): StoredResult["sheets"] => [
+  {
+    playerId: aId,
+    id: "4f1c9ab2-d7e0-4c1a-9b2e-7a10c3d5e8f1",
+    source: "pokepaste",
+    ots: "Delphox @ Delphoxite\nAbility: Blaze\nModest Nature",
+  },
+  {
+    playerId: bId,
+    id: "8b3d05fe-61ca-4e7d-8f3a-2c9b1d4e6a70",
+    source: "import",
+    ots: "Garchomp @ Life Orb\nAbility: Rough Skin\nJolly Nature",
+  },
+];
+
 const BASE = {
-  playerATeamUrl: "https://pokepast.es/4f1c9ab2d7e0",
-  playerBTeamUrl: "https://pokepast.es/8b3d05fe61ca",
   videoUrl: null,
   freeWinReason: null,
   discussedWithId: null,
@@ -53,6 +68,7 @@ const SIEG: StoredResult = {
   outcome: "normal",
   winnerId: "me",
   platform: "showdown",
+  sheets: sheetsFor("me", "a"),
   games: [
     { gameNumber: 1, winnerId: "me", replayUrl: `${REPLAY}-1` },
     { gameNumber: 2, winnerId: "a", replayUrl: `${REPLAY}-2` },
@@ -60,7 +76,7 @@ const SIEG: StoredResult = {
   ],
 };
 
-/** The mirror image — Falinks takes it 2:1. Drives the „Sieg für Falinks"
+/** The mirror image — Falinks takes it 2:1. Drives the "Sieg für Falinks"
  *  headline the losing participant reads before filing an Anfechtung. */
 const NIEDERLAGE: StoredResult = {
   ...SIEG,
@@ -81,6 +97,7 @@ const SWEEP: StoredResult = {
   outcome: "normal",
   winnerId: "d",
   platform: "showdown",
+  sheets: sheetsFor("b", "d"),
   reportedById: "d",
   games: [
     { gameNumber: 1, winnerId: "d", replayUrl: `${REPLAY}-1` },
@@ -95,6 +112,7 @@ const CARTRIDGE: StoredResult = {
   outcome: "normal",
   winnerId: "d",
   platform: "cartridge",
+  sheets: sheetsFor("b", "d"),
   videoUrl: "https://www.youtube.com/watch?v=vgc-bundesliga-s1-st3",
   reportedById: "d",
   games: [
@@ -105,7 +123,7 @@ const CARTRIDGE: StoredResult = {
 };
 
 /** The Match of the Week: a Showdown Bo3 whose recording is already up, so the
- *  covered page can point at the VOD („erst das VOD ansehen"). */
+ *  covered page can point at the VOD ("erst das VOD ansehen"). */
 const MOTW_RESULT: StoredResult = {
   ...SIEG,
   videoUrl: "https://www.youtube.com/watch?v=vgc-bundesliga-s1-st2",
@@ -118,8 +136,7 @@ const FREEWIN: StoredResult = {
   outcome: "free_win",
   winnerId: "me",
   platform: null,
-  playerATeamUrl: null,
-  playerBTeamUrl: null,
+  sheets: [],
   freeWinReason:
     "Gegner war trotz mehrerer Terminvorschläge über die ganze Woche nicht erreichbar.",
   discussedWithId: "staff1",
@@ -127,8 +144,8 @@ const FREEWIN: StoredResult = {
   games: [],
 };
 
-/** Participant view of a normal result: „Sieg für dich", Final chip, the filled
- *  navy avatar plus „Du"/„Gegner" sublabels, „Gemeldet von" in the meta line,
+/** Participant view of a normal result: "Sieg für dich", Final chip, the filled
+ *  navy avatar plus "Du"/"Gegner" sublabels, "Gemeldet von" in the meta line,
  *  three game rows with real replay affordances, two pokepaste cards. */
 export function Ergebnis() {
   return (
@@ -166,7 +183,7 @@ export function ErgebnisAngefochten() {
   );
 }
 
-/** Free win, not yet confirmed: orange „Wartet auf Staff" chip, the „Noch nicht
+/** Free win, not yet confirmed: orange "Wartet auf Staff" chip, the "Noch nicht
  *  gewertet" banner, the walkover 2:0 scoreboard and the privileged context
  *  stack (Begründung · Besprochen mit · Gemeldet). */
 export function Freewin() {
@@ -188,7 +205,7 @@ export function Freewin() {
 /** Match of the Week, covered: identical masking to the ordinary cover, only the
  *  notice copy changes — and this cover ignores the global spoiler switch, so it
  *  is what every neutral viewer gets until they choose to reveal. The VOD is
- *  linked in the Teamsheets section as „Video zum Match": watch first, reveal
+ *  linked in the Teamsheets section as "Video zum Match": watch first, reveal
  *  after. */
 export function MatchOfTheWeekVerdeckt() {
   return (
@@ -202,15 +219,14 @@ export function MatchOfTheWeekVerdeckt() {
         round={2}
         groupName="Division 1a"
         backHref="/"
-        backLabel="Zur Übersicht"
         spoilerMode="motw"
       />
     </div>
   );
 }
 
-/** Neutral observer on somebody else's cartridge match: objective „Sieg für
- *  Grafaiai", no „Du" framing, no reporter and no free-win context — just the
+/** Neutral observer on somebody else's cartridge match: objective "Sieg für
+ *  Grafaiai", no "Du" framing, no reporter and no free-win context — just the
  *  result. Cartridge means no replay buttons anywhere; the match video is the
  *  third card under Teamsheets. */
 export function NeutraleSicht() {
@@ -225,7 +241,6 @@ export function NeutraleSicht() {
         round={3}
         groupName="Division 1b"
         backHref="/"
-        backLabel="Zur Übersicht"
       />
     </div>
   );
@@ -236,7 +251,7 @@ export function NeutraleSicht() {
  *  slot, the winner markers wait in blank reserved rows, and every game hides its
  *  winner behind its own pill while its replay stays clickable. This series was
  *  a 2:0 — Spiel 3 is the phantom row that keeps the count from betraying it and
- *  becomes the dashed „Nicht gespielt" ghost once revealed. */
+ *  becomes the dashed "Nicht gespielt" ghost once revealed. */
 export function SpoilerVerdeckt() {
   return (
     <div className="mx-auto max-w-3xl">
@@ -249,7 +264,6 @@ export function SpoilerVerdeckt() {
         round={2}
         groupName="Division 1b"
         backHref="/"
-        backLabel="Zur Übersicht"
         spoilerMode="default"
       />
     </div>

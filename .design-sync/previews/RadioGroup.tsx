@@ -3,7 +3,7 @@ import { RadioGroup, RadioGroupItem } from "buli-hub";
 /* The app never shows a naked radio row: the item sits inside a clickable
  * bordered card whose border and tint switch to brand-orange via
  * `has-data-[state=checked]:` — see the registration form's platform picker
- * and the report form's „Wo habt ihr gespielt?" block. `defaultValue` makes
+ * and the report form's "Wo habt ihr gespielt?" block. `defaultValue` makes
  * the selected state render statically. */
 
 export function Plattformwahl() {
@@ -49,7 +49,7 @@ export function MitBeschreibung() {
           {
             value: "cartridge",
             title: "Cartridge",
-            note: "Auf der Konsole gespielt — Video-Link erforderlich.",
+            note: "Auf der Konsole gespielt, Video-Link erforderlich.",
           },
         ].map((option) => (
           // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control

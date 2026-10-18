@@ -2,6 +2,7 @@ import { Dex } from "@pkmn/dex";
 import { Icons, Sprites } from "@pkmn/img";
 import hostedItemIds from "./data/hosted-items.json";
 import hostedSpriteIds from "./data/hosted-sprites.json";
+import { SPRITE_BASE } from "./sprite-base";
 
 // Sprite resolution, ported from justhit.gg (src/lib/sprites.ts). The animated
 // HOME renders, the item renders and the pre-sliced box icons are far too large
@@ -9,19 +10,19 @@ import hostedSpriteIds from "./data/hosted-sprites.json";
 // id lists here are what we know is on it. Anything else falls back to the
 // Showdown CDN, which is why a Champions mon the bucket lacks still renders.
 //
-// One bucket, three prefixes:
+// One bucket, four prefixes:
 //   /pokemon/<id>.webp        animated HOME render
 //   /pokemon/<id>.png         lossless still of the same
 //   /pokemon-pixel/<id>.png   40x30 box icon, pre-sliced
 //   /items/<id>.png           item render
+//   /types/<type>.svg         type icon (partywhale/pokemon-type-icons, MIT,
+//                             its LICENSE beside them); used by TypeIcon
 //
 // The box icons are pre-sliced rather than addressed through Showdown's
 // spritesheet on purpose: Showdown reorganizes that sheet over time, which
 // silently shifts every icon to the wrong Pokémon.
 
-const BUCKET =
-  process.env.NEXT_PUBLIC_SPRITE_BASE ||
-  "https://storage.googleapis.com/justhit-sprites";
+const BUCKET = SPRITE_BASE;
 
 const HOSTED = new Set(hostedSpriteIds as string[]);
 const HOSTED_ITEMS = new Set(hostedItemIds as string[]);

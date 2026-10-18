@@ -103,7 +103,7 @@
   --form-loss: oklch(0.57 0.2 27);
 
   /* Type palette (DESIGN.md §8.13): the circle colours of the type icons in
-     public/type-icons/ (partywhale/pokemon-type-icons, MIT), so an icon and
+     the sprite bucket's /types/ (partywhale/pokemon-type-icons, MIT), so an icon and
      anything tinted in its type agree. Game colours, same in both modes. */
   --type-normal: #828282;
   --type-fire: #e4613e;

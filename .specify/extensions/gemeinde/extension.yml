@@ -1,12 +1,12 @@
 schema_version: "1.0"
 
 extension:
-  id: buli
-  name: "Buli Hub workflow"
+  id: gemeinde
+  name: "VGC Gemeinde workflow"
   version: "1.0.0"
-  description: "Project steps for Buli Hub: mockups before planning (Gate 1) and the Definition of Done check before commit (Gate 3)"
-  author: buli-hub
-  repository: https://github.com/VGC-Gemeinde/buli-hub
+  description: "Shared gates for the VGC Gemeinde projects: mockups before planning (Gate 1) and the Definition of Done check before commit (Gate 3), configured by each project's constitution"
+  author: VGC-Gemeinde
+  repository: https://github.com/VGC-Gemeinde/gemeinde-dev-kit
   license: MIT
 
 requires:
@@ -14,20 +14,20 @@ requires:
 
 provides:
   commands:
-    - name: speckit.buli.mockups
-      file: commands/speckit.buli.mockups.md
+    - name: speckit.gemeinde.mockups
+      file: commands/speckit.gemeinde.mockups.md
       description: "Design and iterate the feature's mockups, export them into the spec, and get the maintainer's approval of spec and mockups"
-    - name: speckit.buli.ship
-      file: commands/speckit.buli.ship.md
+    - name: speckit.gemeinde.ship
+      file: commands/speckit.gemeinde.ship.md
       description: "Check the Definition of Done, freeze spec and plan to what was built, and hand the work to the maintainer for approval"
 
 hooks:
   before_plan:
-    command: speckit.buli.mockups
+    command: speckit.gemeinde.mockups
     optional: false
     description: "Mockups and Gate 1 before implementation planning"
   after_converge:
-    command: speckit.buli.ship
+    command: speckit.gemeinde.ship
     optional: false
     description: "Definition of Done and Gate 3 once converge finds no gaps"
 

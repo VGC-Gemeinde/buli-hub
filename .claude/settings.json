@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "gemeinde": {
+      "source": { "source": "github", "repo": "VGC-Gemeinde/gemeinde-dev-kit" }
+    }
+  },
+  "enabledPlugins": {
+    "gemeinde-dev@gemeinde": true
+  }
+}

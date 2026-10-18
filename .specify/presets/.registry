@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "gemeinde": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:06c84bde4df2a43d9259782fc4695e3193f278390c99f65ac7695ac88bfd1f28",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {},
+      "registered_skills": {},
+      "installed_at": "2026-10-18T07:53:55.072761+00:00"
+    }
+  }
+}

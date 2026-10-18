@@ -84,8 +84,10 @@ Precedence when documents disagree: code and tests, then the newest spec, then o
 ## Spec Kit
 
 - **CLI pinned** to `specify-cli` 1.1.3: `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.1.3` (needs `uv`). Upgrades are deliberate: bump the tag here, run `specify init --here --force --integration claude`, review the diff.
-- **Generated, do not edit:** `.claude/skills/speckit-*` and `.specify/templates/*.md`, `.specify/scripts/`. An upgrade overwrites them.
-- **Our customizations** survive upgrades: the constitution, the template overrides in `.specify/templates/overrides/` (spec with a UX & Mockups section, plan with the pinned stack and our sections, tasks with mandatory tests and the Definition of Done), and the project extension `buli` (source in `.specify/extensions-src/buli/`, reinstall after editing with `specify extension add --dev .specify/extensions-src/buli --force`). It adds `/speckit-buli-mockups` as a mandatory hook before `/speckit-plan` and `/speckit-buli-ship` as a mandatory hook after `/speckit-converge`.
+- **Generated, do not edit:** `.claude/skills/speckit-*`, `.specify/templates/*.md`, `.specify/scripts/`, `.specify/extensions/gemeinde/`, `.specify/presets/gemeinde/`. An upgrade or re-install overwrites them.
+- **The workflow comes from the shared `gemeinde-dev-kit`** (`VGC-Gemeinde/gemeinde-dev-kit`, also used by gemeinde-tours): extension `gemeinde` adds `/speckit-gemeinde-mockups` as a mandatory hook before `/speckit-plan` and `/speckit-gemeinde-ship` as a mandatory hook after `/speckit-converge`; preset `gemeinde` supplies the spec template. Both are installed from release v1.0.0; the kit's README has the install and upgrade commands. The gates read the constitution's **Workflow profile**. Changes to the gates go into the kit, never into the installed copies.
+- **Our customizations** survive upgrades: the constitution and the template overrides in `.specify/templates/overrides/` (plan with the pinned stack and our sections, tasks with mandatory tests and our paths), which take precedence over the kit's preset.
+- **Shared Claude Code skills** come from the kit's `gemeinde-dev` plugin, enabled in `.claude/settings.json` (e.g. `gemeinde-dev:dependency-update`).
 - **No git extension:** Spec Kit creates no branches and makes no commits; work stays on `dev`.
 - The flow, its three maintainer gates and when it applies: constitution, Development Workflow.
 

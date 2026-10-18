@@ -1,23 +1,23 @@
 installed:
-- buli
+- gemeinde
 settings:
   auto_execute_hooks: true
 hooks:
   before_plan:
-  - extension: buli
-    command: speckit.buli.mockups
+  - extension: gemeinde
+    command: speckit.gemeinde.mockups
     enabled: true
     optional: false
     priority: 10
-    prompt: Execute speckit.buli.mockups?
+    prompt: Execute speckit.gemeinde.mockups?
     description: Mockups and Gate 1 before implementation planning
     condition: null
   after_converge:
-  - extension: buli
-    command: speckit.buli.ship
+  - extension: gemeinde
+    command: speckit.gemeinde.ship
     enabled: true
     optional: false
     priority: 10
-    prompt: Execute speckit.buli.ship?
+    prompt: Execute speckit.gemeinde.ship?
     description: Definition of Done and Gate 3 once converge finds no gaps
     condition: null

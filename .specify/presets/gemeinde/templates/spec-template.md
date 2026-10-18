@@ -106,7 +106,7 @@
 ## UX & Mockups *(mandatory when users see a change)*
 
 <!--
-  Filled by /speckit-buli-mockups (mandatory hook before /speckit-plan). Write "No visible
+  Filled by /speckit-gemeinde-mockups (mandatory hook before /speckit-plan). Write "No visible
   change" and delete the rest if the feature changes nothing a user sees.
 -->
 
@@ -117,10 +117,10 @@ one sentence why.
 
 | View | Route | Who sees it | Mockup file |
 |------|-------|-------------|-------------|
-| [View name] | [/route] | [public / signed-in / player / staff] | [mockups/view.html] |
+| [View name] | [/route] | [Viewers from the constitution's Workflow profile] | [mockups/view.html] |
 
-Each mockup shows desktop and phone width, light and dark, and every state the view can be in
-(empty, loading-free placeholder, error, spoiler covered/revealed, embargoed, ...).
+Each mockup shows the widths and themes the Workflow profile's Mockup frame names, and every state
+the view can be in (empty, loading-free placeholder, error, and the project's own states).
 
 **UX decisions**: [Decisions taken while iterating the mockups that the plan must honor]
 
@@ -146,7 +146,7 @@ Each mockup shows desktop and phone width, light and dark, and every state the v
   chosen when the feature description did not specify certain details.
 -->
 
-- [Assumption about target users, e.g., "Staff work from desktop, players mostly from phones"]
-- [Assumption about scope boundaries, e.g., "No Discord notification in this feature"]
+- [Assumption about target users, e.g., "Most visitors arrive on a phone"]
+- [Assumption about scope boundaries, e.g., "No notification in this feature"]
 - [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
 - [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]

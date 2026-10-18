@@ -307,22 +307,18 @@ sourced from real feature code instead — `registration-form.tsx`,
 
 ## Findings for the app team (not design-sync problems)
 
-Found 2026-10-18:
+Found 2026-10-18 (all five fixed the same day: af0cd08 for the first four,
+the bracket in the commit after it):
 
-- **`motw-player.tsx:204`**: a long player name without spaces overflows its
-  column (`min-w-0 break-words` does not lower min-content; `sm:items-end` at
-  line 229). The gallery's own "Blaubeerkuchenbäckermeisterin Annegret" draws
-  over the avatar and the group label. Fix: `wrap-anywhere`.
-- **`usage-cards.tsx:28-37`**: a five-digit value with its unit ("12.408
-  Personen") runs past the card edge in the 4-across layout.
-- **`step-bar.tsx:264`** (and `gallery.tsx:4243`): "Finalisieren…" opens a
-  dialog; the constitution says no trailing "…".
-- **`app/match/[matchId]/page.tsx` ~246-345**: a drop-decided match without a
-  stored result shows the drop banner ("zählt als Freewin") above "Die beiden
-  Spieler haben ihr Match noch nicht gemeldet".
-- **`relegation-playoffs-public.tsx` ~374-378**: the bracket grid is `min-w-max`
-  with `minmax(240px, 340px)` columns, so a three-round bracket needs 1116px and
-  scrolls sideways inside the 1040px page at every desktop width.
+- `motw-player.tsx`: long names without spaces overflowed their column
+  (now `wrap-anywhere hyphens-auto`).
+- `usage-cards.tsx`: a five-digit value pushed its unit past the card edge.
+- `step-bar.tsx`: "Finalisieren…" opened a dialog with a trailing "…".
+- Match page: a drop-decided match without a result showed the drop banner
+  above "noch nicht gemeldet" (now `PublicMatchView` state `dropped`).
+- `relegation-playoffs-public.tsx`: the bracket grid was `min-w-max`, so a
+  three-round bracket scrolled at every desktop width; the columns now shrink
+  within their `minmax(240px, 340px)` and only scroll below that.
 - `_fixtures.ts` `PUBLIC_OVERVIEW` tags the viewer "1b" while they play in 1a,
   lacks group 1b, and gives them a bye in their MotW week; PublicLeague and
   InSeasonDashboard correct this locally (other cards are graded against it).

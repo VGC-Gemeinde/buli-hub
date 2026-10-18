@@ -373,7 +373,7 @@ function Bracket({
       </div>
       <div className="hidden overflow-x-auto pb-2 sm:block">
         <div
-          className="grid min-w-max gap-x-12 gap-y-4"
+          className="grid gap-x-12 gap-y-4"
           style={{
             gridTemplateColumns: `repeat(${total}, minmax(240px, 340px))`,
           }}

@@ -145,9 +145,6 @@ Settings → Environments → **PROD** (the deploy job declares
 | Variable | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…` |
 | Secret | `PROD_DATABASE_URL` | **session** connection string (port 5432) — migrations need DDL over a stable session, not the transaction pooler |
 
-Then: install the **Renovate** GitHub app on the repo (config is
-`renovate.json`; weekly, grouped minor/patch — CI gates every update PR).
-
 ## 4. Observability & backups (minimal)
 
 - **Uptime check** (Cloud Monitoring) on `https://<DOMAIN>/` + alert to the

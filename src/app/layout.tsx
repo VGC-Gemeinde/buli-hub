@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Montserrat } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Suspense } from "react";
 import { NavigationMemory } from "@/components/back-link";
@@ -7,21 +7,26 @@ import { SiteFooter } from "@/components/site-footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CountPageLoad } from "@/features/usage/count-page-load";
 
-const montserratSans = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+// Self-hosted, so `next build` never fetches from Google Fonts: a failed
+// download there fails the build as an unrelated-looking "Module not found".
+// Both files are the google/fonts variable fonts subset to latin + latin-ext,
+// so names with ł, ş or č keep the brand font (licences: OFL-*.txt beside them).
+const montserratSans = localFont({
+  src: "./fonts/montserrat.woff2",
+  weight: "400 600",
   variable: "--font-sans",
 });
 
-const montserratHeading = Montserrat({
-  subsets: ["latin"],
-  weight: ["700", "800"],
+const montserratHeading = localFont({
+  src: "./fonts/montserrat.woff2",
+  weight: "700 800",
   variable: "--font-heading",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "./fonts/geist-mono.woff2",
+  weight: "100 900",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {

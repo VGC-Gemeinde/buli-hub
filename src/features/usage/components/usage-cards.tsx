@@ -19,12 +19,12 @@ export function UsageCards({ cards }: { cards: readonly UsageCard[] }) {
       {cards.map((card) => (
         <div
           key={`${card.label}-${card.unit}`}
-          className="flex flex-col gap-1 rounded-xl border px-5 py-4"
+          className="flex min-w-0 flex-col gap-1 rounded-xl border px-5 py-4"
         >
           <span className="font-semibold text-[12px] text-muted-foreground uppercase tracking-[0.12em]">
             {card.label}
           </span>
-          <span className="flex items-baseline gap-1.5">
+          <span className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
             <span className="font-bold font-heading text-[30px] text-brand-blue leading-none tabular-nums dark:text-white">
               {formatCount(card.value)}
             </span>

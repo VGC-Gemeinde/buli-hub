@@ -337,15 +337,18 @@ export default async function MatchReportPage({
               seasonLabel={seasonLabel}
               playerA={match.playerA}
               playerB={match.playerB}
-              // A withheld result: played, but not for this viewer yet.
+              // A withheld result: played, but not for this viewer yet. A
+              // drop-decided match without a result is decided, not open.
               state={
-                embargo?.access === "withheld" &&
-                result !== null &&
-                !pendingFreeWinHidden
-                  ? embargo.reason === "motw"
-                    ? "played_motw"
-                    : "played_recording"
-                  : "open"
+                isDropDecided
+                  ? "dropped"
+                  : embargo?.access === "withheld" &&
+                      result !== null &&
+                      !pendingFreeWinHidden
+                    ? embargo.reason === "motw"
+                      ? "played_motw"
+                      : "played_recording"
+                    : "open"
               }
             />
           )

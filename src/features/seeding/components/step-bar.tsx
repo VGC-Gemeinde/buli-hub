@@ -261,7 +261,7 @@ function FinalizeStep({
       >
         <Circle state={step.state} number={STEP_NUMBER.finalize} />
         <Button type="button" onClick={finalize.onOpen}>
-          Finalisieren…
+          Finalisieren
         </Button>
       </span>
     );

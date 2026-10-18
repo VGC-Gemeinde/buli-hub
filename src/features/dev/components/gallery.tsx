@@ -3744,6 +3744,24 @@ export function Gallery() {
             state="played_recording"
           />
         </Specimen>
+        <Specimen label="Öffentliche Sicht (durch Drop entschieden, kein Ergebnis gemeldet)">
+          <div>
+            <DropBanner
+              playerAName={SUMMARY_A.name}
+              playerBName={SUMMARY_B.name}
+              aDropped={false}
+              bDropped
+            />
+            <PublicMatchView
+              round={2}
+              groupName="Division 1a"
+              seasonLabel="Saison 1"
+              playerA={SUMMARY_A}
+              playerB={SUMMARY_B}
+              state="dropped"
+            />
+          </div>
+        </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">
@@ -4240,7 +4258,7 @@ function FinalizeSpecimen() {
   return (
     <>
       <Button type="button" size="sm" onClick={() => setOpen(true)}>
-        Finalisieren…
+        Finalisieren
       </Button>
       <FinalizeDialog
         season="Saison 9"

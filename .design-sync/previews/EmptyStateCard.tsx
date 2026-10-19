@@ -11,8 +11,8 @@ export function MitAktion() {
       title="Noch nicht geöffnet"
       action={<Button>Mit Discord anmelden</Button>}
     >
-      Die Anmeldung startet in Kürze — sie wird im Discord angekündigt. Sobald
-      sie läuft, kannst du dich hier direkt für die kommende Saison eintragen.
+      Die Anmeldung startet in Kürze und wird im Discord angekündigt. Sobald sie
+      läuft, kannst du dich hier direkt für die kommende Saison eintragen.
     </EmptyStateCard>
   );
 }

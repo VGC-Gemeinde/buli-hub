@@ -12,7 +12,13 @@ import type { Identity } from "@/features/season/dashboard";
 // Match of the Week before its VOD (docs/plans/motw-result-embargo.md) or a
 // match held for a recording (docs/plans/recording-holds.md). Those are the
 // two "played" states: same page, different words about when the result comes.
-export type PublicMatchState = "open" | "played_motw" | "played_recording";
+// A match decided by a drop without a stored result is "dropped": the drop
+// banner above names the counted outcome, so this must not say "not reported".
+export type PublicMatchState =
+  | "open"
+  | "played_motw"
+  | "played_recording"
+  | "dropped";
 
 const STATE_COPY: Record<
   PublicMatchState,
@@ -38,6 +44,13 @@ const STATE_COPY: Record<
     line: "Das Ergebnis wird veröffentlicht, sobald der Stream vorbei ist.",
     title: "Ergebnis folgt nach dem Stream",
     body: "Dieses Match wurde für den Stream aufgenommen. Spiele, Replays und Teamsheets erscheinen hier, sobald der Staff das Ergebnis freigibt, damit niemand vorher gespoilert wird.",
+  },
+  dropped: {
+    chip: "Entschieden",
+    sub: "Durch Drop",
+    line: "Es gibt kein gespieltes Ergebnis.",
+    title: "Durch Drop entschieden",
+    body: "Das Match wird wegen des Drops nicht mehr gespielt und zählt so, wie es oben steht.",
   },
 };
 

@@ -295,7 +295,7 @@ a green cell next to a red rail would read as a zone.
 ### 8.13 Type palette — tokens in `globals.css`
 
 The 18 Pokémon types (`--type-normal` … `--type-fairy`, also as `bg-type-*`)
-are the circle colours of the type icons in `public/type-icons/`
+are the circle colours of the type icons in the sprite bucket's `/types/`
 (`partywhale/pokemon-type-icons`, MIT, licence beside the files), so an icon
 and anything tinted in its type agree. Game colours, the same in both modes.
 They tint only what belongs to one type (the move card: border at 55 %, fill

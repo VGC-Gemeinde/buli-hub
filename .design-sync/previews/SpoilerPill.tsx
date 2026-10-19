@@ -4,7 +4,7 @@ import { SpoilerPill } from "buli-hub";
  * drawn IN PLACE, at the size the real value would occupy, as a quiet
  * placeholder — never a dark chip, never a cover card. The pill carries no
  * size of its own, so every use site sets it: 40×12 in an overview score slot,
- * 88×13 next to a game's „Sieger:" label. On its own it is a blank rounded
+ * 88×13 next to a game's "Sieger:" label. On its own it is a blank rounded
  * rectangle, which is why all three cards show it inside its real row. */
 
 const noop = () => {};
@@ -34,20 +34,20 @@ function MatchRow({
 }
 
 /** Overview score slot (§2.2): the 40×12 pill in the fixed `w-12` box, next to
- *  an unplayed „offen" row so the reserved footprint is visible. */
+ *  an unplayed "offen" row so the reserved footprint is visible. */
 export function ErgebnisSlot() {
   return (
     <div className="flex w-[560px] flex-col gap-2">
       <MatchRow playerA="Testerino" playerB="Falinks">
         <SpoilerPill
-          title="Ergebnis verdeckt — antippen zum Aufdecken"
+          title="Ergebnis verdeckt, antippen zum Aufdecken"
           onReveal={noop}
           className="h-3 w-10"
         />
       </MatchRow>
       <MatchRow playerA="Blaubeerkuchen" playerB="Wooloo">
         <SpoilerPill
-          title="Ergebnis verdeckt — antippen zum Aufdecken"
+          title="Ergebnis verdeckt, antippen zum Aufdecken"
           onReveal={noop}
           className="h-3 w-10"
         />
@@ -59,7 +59,7 @@ export function ErgebnisSlot() {
   );
 }
 
-/** Match page, „Spiele" section (§3.5): the 88×13 pill masks each game's
+/** Match page, "Spiele" section (§3.5): the 88×13 pill masks each game's
  *  winner — every game reveals on its own, the replay links stay live. */
 export function SiegerZeile() {
   return (
@@ -78,7 +78,7 @@ export function SiegerZeile() {
           <span className="flex min-h-[31px] flex-1 items-center gap-2 font-semibold text-sm">
             <span className="text-muted-foreground">Sieger:</span>
             <SpoilerPill
-              title="Sieger verdeckt — antippen zum Aufdecken"
+              title="Sieger verdeckt, antippen zum Aufdecken"
               onReveal={noop}
               className="h-[13px] w-[88px]"
             />
@@ -102,7 +102,7 @@ export function VerdecktUndAufgedeckt() {
         <span className="text-[13px] text-muted-foreground">Verdeckt</span>
         <MatchRow playerA="Testerino" playerB="Falinks">
           <SpoilerPill
-            title="Ergebnis verdeckt — antippen zum Aufdecken"
+            title="Ergebnis verdeckt, antippen zum Aufdecken"
             onReveal={noop}
             className="h-3 w-10"
           />

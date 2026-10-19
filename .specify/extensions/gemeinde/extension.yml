@@ -1,0 +1,36 @@
+schema_version: "1.0"
+
+extension:
+  id: gemeinde
+  name: "VGC Gemeinde workflow"
+  version: "1.0.0"
+  description: "Shared gates for the VGC Gemeinde projects: mockups before planning (Gate 1) and the Definition of Done check before commit (Gate 3), configured by each project's constitution"
+  author: VGC-Gemeinde
+  repository: https://github.com/VGC-Gemeinde/gemeinde-dev-kit
+  license: MIT
+
+requires:
+  speckit_version: ">=1.1.0"
+
+provides:
+  commands:
+    - name: speckit.gemeinde.mockups
+      file: commands/speckit.gemeinde.mockups.md
+      description: "Design and iterate the feature's mockups, export them into the spec, and get the maintainer's approval of spec and mockups"
+    - name: speckit.gemeinde.ship
+      file: commands/speckit.gemeinde.ship.md
+      description: "Check the Definition of Done, freeze spec and plan to what was built, and hand the work to the maintainer for approval"
+
+hooks:
+  before_plan:
+    command: speckit.gemeinde.mockups
+    optional: false
+    description: "Mockups and Gate 1 before implementation planning"
+  after_converge:
+    command: speckit.gemeinde.ship
+    optional: false
+    description: "Definition of Done and Gate 3 once converge finds no gaps"
+
+tags:
+  - "workflow"
+  - "ux"

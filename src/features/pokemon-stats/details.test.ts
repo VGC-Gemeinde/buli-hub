@@ -156,3 +156,93 @@ describe("entryDetail", () => {
     expect(entryDetail(sheets, "moves", "coaching")).toBeNull();
   });
 });
+
+describe("grouped formes (spec 002)", () => {
+  const vivillon = (species: string) =>
+    counted(
+      team({ species, item: "Focus Sash", moves: ["Hurricane", "Protect"] }),
+    );
+  const vivillons = [
+    ...Array.from({ length: 6 }, () => vivillon("Vivillon")),
+    vivillon("Vivillon-Ocean"),
+    vivillon("Vivillon-Ocean"),
+    vivillon("Vivillon-Elegant"),
+    vivillon("Vivillon-High Plains"),
+  ];
+
+  it("breaks a grouped entry down by the formes as written", () => {
+    const detail = pokemonDetail(vivillons, "vivillon");
+    expect(detail).toMatchObject({ name: "Vivillon", sprite: "Vivillon" });
+    expect(
+      detail?.formes.map((f) => [f.name, f.count, f.share, f.sprite]),
+    ).toEqual([
+      ["Vivillon", 6, 0.6, "Vivillon"],
+      ["Vivillon-Ocean", 2, 0.2, "Vivillon-Ocean"],
+      ["Vivillon-Elegant", 1, 0.1, "Vivillon-Elegant"],
+      ["Vivillon-High Plains", 1, 0.1, "Vivillon-High Plains"],
+    ]);
+  });
+
+  it("shows one forme other than the base as a single row", () => {
+    const ocean = vivillons.filter(
+      (sheet) => sheet.mons[0].writtenSpecies === "Vivillon-Ocean",
+    );
+    expect(pokemonDetail(ocean, "vivillon")?.formes).toMatchObject([
+      { name: "Vivillon-Ocean", count: 2, share: 1 },
+    ]);
+  });
+
+  it("has no breakdown when every appearance wrote the base", () => {
+    expect(pokemonDetail(vivillons.slice(0, 6), "vivillon")?.formes).toEqual(
+      [],
+    );
+  });
+
+  it("lists a battle-only forme beside its Pokémon", () => {
+    const palafin = [
+      counted(team({ species: "Palafin" })),
+      counted(team({ species: "Palafin" })),
+      counted(team({ species: "Palafin-Hero" })),
+    ];
+    expect(
+      pokemonDetail(palafin, "palafin")?.formes.map((f) => [f.name, f.count]),
+    ).toEqual([
+      ["Palafin", 2],
+      ["Palafin-Hero", 1],
+    ]);
+  });
+
+  it("has no breakdown for ungrouped entries and Megas", () => {
+    expect(pokemonDetail(sheets, "incineroar")?.formes).toEqual([]);
+    expect(pokemonDetail(sheets, "charizardmegay")?.formes).toEqual([]);
+  });
+
+  it("merges grouped teammates and carriers", () => {
+    const mixed = [
+      counted(
+        team(incin, {
+          species: "Polteageist-Antique",
+          moves: ["Shell Smash"],
+        }),
+      ),
+      counted(team(incin, { species: "Polteageist", moves: ["Shell Smash"] })),
+      counted(team({ species: "Florges-Blue", moves: ["Moonblast"] })),
+      counted(team({ species: "Florges", moves: ["Moonblast"] })),
+    ];
+    expect(
+      pokemonDetail(mixed, "incineroar")?.teammates.find(
+        (t) => t.id === "polteageist",
+      ),
+    ).toMatchObject({ count: 2, share: 1 });
+    const moonblast = entryDetail(mixed, "moves", "moonblast");
+    expect(moonblast?.carriers.find((c) => c.id === "florges")).toMatchObject({
+      count: 2,
+    });
+    expect(moonblast?.carriers.some((c) => c.id === "florgesblue")).toBe(false);
+    expect(
+      entryDetail(mixed, "items", "none")?.carriers.find(
+        (c) => c.id === "polteageist",
+      ),
+    ).toMatchObject({ count: 2 });
+  });
+});

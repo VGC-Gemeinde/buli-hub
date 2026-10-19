@@ -23,7 +23,7 @@ import { AVATAR_URL } from "./_fixtures";
  * painted inside the card instead of over its neighbours.
  *
  * The canonical cell is the app's real header menu (features/auth/components/
- * user-menu.tsx), minus the server action on „Abmelden".
+ * user-menu.tsx), minus the server action on "Abmelden".
  *
  * Single-mode cards show ONE export, and the harness enumerates exports in
  * esbuild's alphabetical order — not source order. Without a cfg

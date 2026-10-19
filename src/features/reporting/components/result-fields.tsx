@@ -158,6 +158,7 @@ function StaffSheetField({
               {accepted.icons.slice(0, 6).map((icon, index) => (
                 // biome-ignore lint/performance/noImgElement: box icons are external bucket assets, not app images
                 <img
+                  // biome-ignore lint/suspicious/noArrayIndexKey: species can repeat; the slot identifies the icon
                   key={`${icon.species}-${index}`}
                   src={icon.iconUrl}
                   alt=""

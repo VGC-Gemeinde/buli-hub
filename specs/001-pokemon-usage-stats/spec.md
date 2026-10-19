@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/002-pokemon-forme-groups (Formen).
+
 # Feature Specification: Pokémon usage stats of the running season
 
 **Feature Directory**: `specs/001-pokemon-usage-stats/`

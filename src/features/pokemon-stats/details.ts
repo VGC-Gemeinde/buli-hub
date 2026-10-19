@@ -38,6 +38,9 @@ export type PokemonDetail = Usage & {
   teammates: DistRow[];
   // Base and Mega entries of the same species ("Auch gespielt als").
   family: { id: string; name: string; mega: MegaLabel | null; share: number }[];
+  // The formes as the sheets wrote them (specs/002-pokemon-forme-groups,
+  // FR-007); empty unless one of them is not the entry itself.
+  formes: DistRow[];
 };
 
 export type EntryDetail = Usage & {
@@ -143,6 +146,22 @@ export function pokemonDetail(
     }
   }
 
+  // A Mega's written species is its Mega forme, never its base name, so it is
+  // ruled out first; for everything else the breakdown shows once one
+  // appearance wrote another forme than the entry.
+  const written = found.map(({ slot }) => slot.writtenSpecies);
+  const formes =
+    first.mega || written.every((species) => species === first.name)
+      ? []
+      : tally(
+          written.map((species) => ({
+            id: toId(species),
+            name: species,
+            extra: { sprite: species },
+          })),
+          n,
+        );
+
   return {
     ...usage(found, sheets.length),
     id: entryId,
@@ -198,6 +217,7 @@ export function pokemonDetail(
         (a, b) =>
           b.share - a.share || (a.mega ?? "").localeCompare(b.mega ?? "", "en"),
       ),
+    formes,
   };
 }
 

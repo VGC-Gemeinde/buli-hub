@@ -337,7 +337,7 @@ export async function setTieOrder(input: unknown): Promise<ScheduleResult> {
     .flat()
     .flatMap((table) => table.ties)
     .find((t) => t.key === parsed.data.tieKey);
-  if (!tie || tie.decision !== "staff_order") {
+  if (tie?.decision !== "staff_order") {
     return { ok: false, error: "Diesen Gleichstand gibt es nicht" };
   }
   const order = parsed.data.order;

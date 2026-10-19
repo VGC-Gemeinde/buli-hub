@@ -1,8 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage, Badge } from "buli-hub";
 import { AVATAR_URL } from "./_fixtures";
 
-/* Badges are the app's status tags: „Drop" on a withdrawn player, „MotW" on the
- * match of the week, „offen"/„gemeldet" on a fixture, „Rückkehrer"/„Neu" in the
+/* Badges are the app's status tags: "Drop" on a withdrawn player, "MotW" on the
+ * match of the week, "offen"/"gemeldet" on a fixture, "Rückkehrer"/"Neu" in the
  * seeding sheet (the one place the real app uses <Badge> today — see
  * features/seeding/components/sheet-rows.tsx). */
 

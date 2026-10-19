@@ -135,14 +135,14 @@ into smaller specs.
 ### The flow and its gates
 
 1. `/speckit-specify`, then `/speckit-clarify`: what and why, no implementation.
-2. Mockups (`/speckit-buli-mockups`, runs as a mandatory hook before `/speckit-plan`): iterated
+2. Mockups (`/speckit-gemeinde-mockups`, runs as a mandatory hook before `/speckit-plan`): iterated
    as private Artifacts, exported as self-contained HTML to `specs/<NNN-feature>/mockups/`.
    **Gate 1:** the maintainer approves spec and mockups.
 3. `/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`. **Gate 2:** the maintainer approves
    plan and tasks.
 4. `/speckit-implement`, then `/speckit-converge` until it finds no gaps. What changed during
    implementation flows back into `spec.md` and `plan.md` before shipping.
-5. `/speckit-buli-ship` (mandatory hook after converge): Definition of Done check.
+5. `/speckit-gemeinde-ship` (mandatory hook after converge): Definition of Done check.
    **Gate 3:** the maintainer approves the finished work; only then is it committed.
 
 ### Definition of Done
@@ -174,6 +174,33 @@ into smaller specs.
 They stay in place (code comments link them) and describe how existing behavior came to be; nothing
 new is added to them. `design/DESIGN.md` is not legacy: it is the living design system.
 
+### Workflow profile
+
+Read by the shared gates and templates (`gemeinde-dev-kit`).
+
+- **Viewers**: public visitors, signed-in users, registered players and participants, staff,
+  admins; Discord readers for posts and messages.
+- **Design sources**: `design/DESIGN.md` (the living design system) and the tokens in
+  `src/app/globals.css`, light and `.dark`; fonts as loaded in `src/app/layout.tsx`; shared
+  primitives per `DESIGN.md` §8.
+- **Mockup frame**: desktop and phone width (about 390px), light and dark.
+- **Checks**: `npx biome check .`, `npm run typecheck`, `npm test -- --run`. The integration tests
+  truncate the local database: ask the maintainer first whether they are testing by hand on it,
+  and run only after a yes.
+- **Copy checks**: no `„` or `“` anywhere; no `—` in user-facing strings (pages, components,
+  Discord messages in `src/features/discord-posts/messages.ts`), with the exemptions of
+  Principle VI.
+- **Running-app check**: `supabase start` and `npm run dev` (localhost:3000); sign in through the
+  `/dev` personas to see each viewer.
+- **Dev tooling to extend**: the `/dev/ui` gallery (`src/features/dev/components/gallery.tsx`) for
+  new visual states, the `/dev` personas (`src/features/dev/personas.ts`) for new user-specific
+  data or auth-metadata shapes (Principle V).
+- **Living documents**: `CLAUDE.md` (the architecture map), this constitution, `design/DESIGN.md`
+  and `docs/deployment.md`.
+- **Legacy documents**: `docs/plans/`, `docs/decisions/`, `design/<FEATURE>.md`; backlink line
+  `> Abgelöst in Teilen durch specs/NNN-… (<Bereich>).`
+- **Commit target**: `dev`, never `main`.
+
 ### Collaboration rules
 
 - Commits only after the maintainer's explicit approval, including small fixups.
@@ -196,4 +223,4 @@ new is added to them. `design/DESIGN.md` is not legacy: it is the living design 
 - Compliance is checked by the Constitution Check in every `plan.md` and by `/speckit-analyze`;
   a violation is either fixed or justified in the plan's Complexity Tracking.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-16 | **Last Amended**: 2026-10-16
+**Version**: 1.2.0 | **Ratified**: 2026-10-16 | **Last Amended**: 2026-10-18

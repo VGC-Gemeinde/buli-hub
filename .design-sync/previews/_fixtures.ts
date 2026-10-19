@@ -28,7 +28,7 @@ export const ROSTER = [
   { id: "4", name: "Yannick mit sehr langem Namen" },
 ];
 
-/** One group's table. `c` is dropped → exercises the „Drop" tag; b/c share
+/** One group's table. `c` is dropped → exercises the "Drop" tag; b/c share
  *  rank 3 → exercises the tie rendering (no rank 4). */
 export const STANDINGS: StandingsRow[] = [
   {
@@ -78,7 +78,7 @@ export const STANDINGS: StandingsRow[] = [
   },
 ];
 
-/** Groups 1a + 1b merged — the „Gesamttabelle" view of the division switcher. */
+/** Groups 1a + 1b merged — the "Gesamttabelle" view of the division switcher. */
 export const DIVISION_STANDINGS: StandingsRow[] = [
   {
     userId: "d",
@@ -194,15 +194,19 @@ export const MOTW_MATCH: PublicMatch = {
   scoreB: 1,
   winnerId: STANDINGS[0].userId,
   isMotw: true,
+  embargo: null,
 };
 
 /** Note the shape: MotwBlockData WRAPS a PublicMatch, it does not flatten it. */
 export const MOTW_BLOCK: MotwBlockData = {
   match: MOTW_MATCH,
+  weekName: "Spieltag 2",
   groupName: "Division 1a",
+  final: false,
   youtubeUrl: null,
   rankA: 1,
   rankB: 2,
+  isCurrentRound: true,
 };
 
 /** A player's own schedule — used by the season/profile dashboards. */
@@ -258,6 +262,7 @@ export const PUBLIC_OVERVIEW: PublicOverview = {
       mode: "division",
       divisionStandings: DIVISION_STANDINGS,
       divisionZones: null,
+      withheldResults: 0,
       divisionGroupLabels: new Map(
         DIVISION_STANDINGS.map((r, i) => [r.userId, i % 2 === 0 ? "1a" : "1b"]),
       ),
@@ -268,6 +273,7 @@ export const PUBLIC_OVERVIEW: PublicOverview = {
           shortName: "1a",
           standings: STANDINGS,
           zones: null,
+          withheldResults: 0,
           matches: [
             MOTW_MATCH,
             {
@@ -281,18 +287,20 @@ export const PUBLIC_OVERVIEW: PublicOverview = {
               scoreB: null,
               winnerId: null,
               isMotw: false,
+              embargo: null,
             },
             {
               matchId: "pm3",
               round: 2,
               playerA: asIdentity(STANDINGS[0]),
-              playerB: null, // bye („spielfrei")
+              playerB: null, // bye ("spielfrei")
               reported: false,
               pending: false,
               scoreA: null,
               scoreB: null,
               winnerId: null,
               isMotw: false,
+              embargo: null,
             },
           ],
         },

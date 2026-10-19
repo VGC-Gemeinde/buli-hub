@@ -2,20 +2,28 @@ import { InSeasonDashboard } from "buli-hub";
 import type { MatchResultLite } from "@/features/reporting/queries";
 import type { StandingsRow } from "@/features/reporting/standings";
 import { assignZones } from "@/features/seeding/post-season";
-import { DIVISION_STANDINGS, PLAYER_MATCHES, STANDINGS } from "./_fixtures";
+import {
+  asIdentity,
+  DIVISION_STANDINGS,
+  PLAYER_MATCHES,
+  STANDINGS,
+} from "./_fixtures";
 
 /* The whole running-season Spieler-Dashboard: progress strip → hero (next match
- * or its result) → „Dein Spielplan" + „Tabelle" side by side. Wide by nature —
+ * or its result) → "Dein Spielplan" + "Tabelle" side by side. Wide by nature —
  * cfg.overrides gives it cardMode:"column" and a 1120x900 viewport so the
  * two-column lg layout renders instead of stacking.
  *
  * `today` is an explicit ISO day, never `new Date()`: the whole hero (Deadline,
- * „noch N Tage", überfällig) and every schedule row state derives from it, and
+ * "noch N Tage", überfällig) and every schedule row state derives from it, and
  * the capture pins the browser clock to 2024-05-15. The shared PLAYER_MATCHES
  * fixture runs 05.01.–01.02.2026, so 14.01. puts Spieltag 2 in flight.
- * Ported from the dev/ui gallery („Spieler-Dashboard"). */
+ * Ported from the dev/ui gallery ("Spieler-Dashboard"). */
 
 const TODAY = "2026-01-14";
+
+/* The signed-in player the hero names: Testerino, the "me" row of the tables. */
+const ME = asIdentity(STANDINGS[0]);
 
 /* userId → zone for a standings fixture, so the table shows the post-season
  * tints without a saved config. Same helper the gallery uses. */
@@ -52,7 +60,7 @@ const RESULTS = new Map<string, MatchResultLite>([
 ]);
 
 /* Spieltag 2 lost and the result angefochten — the row keeps the score and adds
- * the „Angefochten" chip. */
+ * the "Angefochten" chip. */
 const LOST_AND_DISPUTED: [string, MatchResultLite] = [
   "m2",
   {
@@ -90,8 +98,10 @@ const FINAL_RESULTS = new Map<string, MatchResultLite>([
 ]);
 
 /* Division-Modus: Auf- und Abstieg wird über die Gesamttabelle entschieden, so
- * the switcher opens on „Division 1" and the zones sit on the merged table —
- * Meister-Playoff, Aufstieg, beide Playoff-Bänder, Abstieg. */
+ * the switcher opens on "Division 1" and the zones sit on the merged table —
+ * Meister-Playoff, Aufstieg, beide Playoff-Bänder, Abstieg. The group tags
+ * follow the real membership (the viewer's own group is 1a), and one result
+ * is still under embargo, so the table carries its withheld note. */
 export function Gesamttabelle() {
   return (
     <InSeasonDashboard
@@ -113,14 +123,15 @@ export function Gesamttabelle() {
       })}
       divisionGroupLabels={
         new Map(
-          DIVISION_STANDINGS.map((row, i) => [
+          DIVISION_STANDINGS.map((row) => [
             row.userId,
-            i % 2 === 0 ? "1a" : "1b",
+            STANDINGS.some((own) => own.userId === row.userId) ? "1a" : "1b",
           ]),
         )
       }
       defaultScope="division"
-      meId="me"
+      divisionWithheld={1}
+      me={ME}
       today={TODAY}
     />
   );
@@ -129,7 +140,7 @@ export function Gesamttabelle() {
 /* Gruppen-Modus: entschieden wird innerhalb der eigenen Gruppe, so there is no
  * switcher at all and the zones sit on the four-player group table. Set one
  * matchday later and on the deadline day, which is also the hero's urgent
- * variant — „heute fällig" flips the chip to solid orange. */
+ * variant — "heute fällig" flips the chip to solid orange. */
 export function Gruppentabelle() {
   return (
     <InSeasonDashboard
@@ -149,7 +160,7 @@ export function Gruppentabelle() {
       divisionName="Division 2"
       divisionStandings={null}
       defaultScope="group"
-      meId="me"
+      me={ME}
       today="2026-01-25"
     />
   );
@@ -176,7 +187,7 @@ export function AlleSpieleGemeldet() {
       divisionName="Division 1"
       divisionStandings={null}
       defaultScope="group"
-      meId="me"
+      me={ME}
       today="2026-02-05"
     />
   );

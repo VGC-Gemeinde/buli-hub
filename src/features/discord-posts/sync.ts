@@ -117,7 +117,7 @@ export async function syncResultPost(matchId: string): Promise<void> {
       return;
     }
     const match = await getMatchForReport(matchId);
-    if (!match || !match.playerB) {
+    if (!match?.playerB) {
       return;
     }
     const [result, motw, held, droppedIds] = await Promise.all([
@@ -198,7 +198,7 @@ export async function syncMotwVodPost(matchId: string): Promise<void> {
       return;
     }
     const match = await getMatchForReport(matchId);
-    if (!match || !match.playerB) {
+    if (!match?.playerB) {
       return;
     }
     const selection = await motwByMatchId(matchId);

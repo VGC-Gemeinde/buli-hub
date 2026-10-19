@@ -1,8 +1,8 @@
 import { ActionLink, SectionHeader } from "buli-hub";
 
 /* The standalone action link (DESIGN.md §2.7): semibold brand-blue with a
- * trailing „→" that slides on hover. It renders a Next.js Link when `href` is
- * given and a plain button otherwise (in-place actions such as „Alle Partien
+ * trailing "→" that slides on hover. It renders a Next.js Link when `href` is
+ * given and a plain button otherwise (in-place actions such as "Alle Partien
  * anzeigen") — the two modes are styled identically on purpose, so the cells
  * below vary the surrounding context rather than the mode.
  *

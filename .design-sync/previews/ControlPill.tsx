@@ -5,7 +5,7 @@ import { ControlPill } from "buli-hub";
  * `flex-1` spacer · pill). Seeding is a live staff meeting: the page opens
  * read-only for everyone and exactly one person takes control to edit, so the
  * pill answers
- * „who is driving?" without spending a chrome row on it. Three visually distinct
+ * "who is driving?" without spending a chrome row on it. Three visually distinct
  * tones — muted while the seat is free, amber while someone else holds it,
  * orange while it is yours. A free or stale lock is taken with a light
  * confirmation; a live lock held by someone else needs an explicit takeover.
@@ -17,7 +17,7 @@ import { ControlPill } from "buli-hub";
  * The confirmation dialogs are portal overlays owned by internal state, so no
  * prop opens them (`Dialog` covers that). `state="stale"` takes the same branch
  * as `"free"` — an expired heartbeat is a free seat — so it gets no cell of its
- * own. Ported from the dev/ui gallery („Seeding: Steuerungs-Pill"). */
+ * own. Ported from the dev/ui gallery ("Seeding: Steuerungs-Pill"). */
 
 export function BeobachterNiemandSteuert() {
   return (

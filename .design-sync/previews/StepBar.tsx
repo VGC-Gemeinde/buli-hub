@@ -11,7 +11,7 @@ import { seedingSteps } from "@/features/seeding/steps";
  *
  * `steps` comes from the real `seedingSteps()` progress model, so done/active/
  * pending is derived, never hand-set. Ported from the dev/ui gallery
- * („Einteilung: Schrittleiste"). */
+ * ("Einteilung: Schrittleiste"). */
 
 const PROGRESS = {
   total: 42,
@@ -89,7 +89,7 @@ export function RegelnAnsicht() {
 }
 
 /* All three steps done and the viewer is driving: step 4 turns into the primary
- * „Finalisieren…" button. */
+ * "Finalisieren…" button. */
 export function BereitZumFinalisieren() {
   return (
     <StepBar
@@ -108,7 +108,7 @@ export function BereitZumFinalisieren() {
         ready: true,
         readOnly: false,
         gateShort: null,
-        gateHint: "Endgültig — kann nicht rückgängig gemacht werden.",
+        gateHint: "Endgültig, kann nicht rückgängig gemacht werden.",
         onOpen: () => {},
       }}
     />
@@ -135,7 +135,7 @@ export function BereitAberBeobachter() {
         ready: true,
         readOnly: true,
         gateShort: null,
-        gateHint: "Endgültig — kann nicht rückgängig gemacht werden.",
+        gateHint: "Endgültig, kann nicht rückgängig gemacht werden.",
         onOpen: () => {},
       }}
     />

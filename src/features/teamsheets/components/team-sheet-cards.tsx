@@ -192,7 +192,7 @@ export function TeamSheetCards({
       <ul className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         {cards.map((card, index) => (
           <Card
-            // Species can repeat in principle; the slot is what identifies a card.
+            // biome-ignore lint/suspicious/noArrayIndexKey: species can repeat in principle; the slot is what identifies a card
             key={`${card.name}-${index}`}
             card={card}
             animate={animate}

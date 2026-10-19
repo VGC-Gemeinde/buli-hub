@@ -58,6 +58,8 @@ const TW_CLI = resolve(
 
 // Weights the app actually loads (layout.tsx): body 400/500/600, headings 700/800.
 const WEIGHTS = [400, 500, 600, 700, 800];
+// The heading font's own weights (layout.tsx: montserratHeading).
+const HEADING_WEIGHTS = [700, 800];
 // German copy needs latin + latin-ext; the cyrillic/vietnamese subsets are dead weight.
 const SUBSETS = new Set(["latin", "latin-ext"]);
 const UA =
@@ -134,25 +136,34 @@ async function main() {
     " * design-system bundle has no access to). Wired via cfg.extraFonts. */",
     "",
   ];
-  for (const w of WEIGHTS) {
-    for (const s of SUBSETS) {
-      const name = `Montserrat-${w}-${s}.woff2`;
-      if (!existsSync(resolve(FONT_DIR, name))) continue;
-      /* Double quotes, not single: this file is committed, so `biome ci .`
-       * formats it — emitting biome's preferred style keeps CI green without
-       * having to exclude a generated file from the check. */
-      lines.push(
-        "@font-face {",
-        '  font-family: "Montserrat";',
-        "  font-style: normal;",
-        `  font-weight: ${w};`,
-        "  font-display: swap;",
-        `  src: url("./fonts/${name}") format("woff2");`,
-        "}",
-        "",
-      );
+  /* Two families, as layout.tsx loads them: body text at 400/500/600 and
+   * headings at 700/800 only. A heading family that also had 400 would render
+   * `font-heading` text without an explicit weight thin, where the app (which
+   * only has the bold faces) renders it bold. */
+  const families = [
+    ["Montserrat", WEIGHTS],
+    ["Montserrat Heading", HEADING_WEIGHTS],
+  ];
+  for (const [family, weights] of families)
+    for (const w of weights) {
+      for (const s of SUBSETS) {
+        const name = `Montserrat-${w}-${s}.woff2`;
+        if (!existsSync(resolve(FONT_DIR, name))) continue;
+        /* Double quotes, not single: this file is committed, so `biome ci .`
+         * formats it — emitting biome's preferred style keeps CI green without
+         * having to exclude a generated file from the check. */
+        lines.push(
+          "@font-face {",
+          `  font-family: "${family}";`,
+          "  font-style: normal;",
+          `  font-weight: ${w};`,
+          "  font-display: swap;",
+          `  src: url("./fonts/${name}") format("woff2");`,
+          "}",
+          "",
+        );
+      }
     }
-  }
   writeFileSync(FONTS_CSS, lines.join("\n"));
   log(
     `wrote fonts.css (${lines.filter((l) => l === "@font-face {").length} faces)`,
@@ -185,7 +196,7 @@ async function main() {
     " * next/font would otherwise supply. Wired via cfg.cssEntry. */",
     ":root {",
     "  --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;",
-    "  --font-heading: 'Montserrat', ui-sans-serif, system-ui, sans-serif;",
+    "  --font-heading: 'Montserrat Heading', 'Montserrat', ui-sans-serif, system-ui, sans-serif;",
     "}",
     "",
   ].join("\n");
@@ -263,6 +274,14 @@ async function main() {
         (f) =>
           `export * from ${JSON.stringify(`./${f.replace(/\.tsx?$/, "")}`)};`,
       ),
+      // Repo-owned extraEntries (NextAppRouter) are bundle exports too, so
+      // previews must be able to import them from "buli-hub".
+      ...(cfg.extraEntries ?? [])
+        .filter((e) => e.startsWith("./"))
+        .map(
+          (e) =>
+            `export * from ${JSON.stringify(`./${e.slice(2).replace(/\.tsx?$/, "")}`)};`,
+        ),
       "",
     ].join("\n"),
   );

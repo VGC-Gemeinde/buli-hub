@@ -103,7 +103,7 @@ export function Rueckfrage() {
           </Button>
         </PopoverTrigger>
         {/* Radix focuses the first control on open; suppressed so the card
-            shows the resting state instead of a focus ring on „Abbrechen". */}
+            shows the resting state instead of a focus ring on "Abbrechen". */}
         <PopoverContent
           align="start"
           sideOffset={6}

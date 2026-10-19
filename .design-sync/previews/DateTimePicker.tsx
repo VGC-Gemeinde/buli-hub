@@ -12,7 +12,7 @@ export function Spieltermin() {
   return <DateTimePicker value="2026-07-20T18:00" onChange={noop} />;
 }
 
-/** Unset: „Datum wählen" plus the 18:00 default the component falls back to. */
+/** Unset: "Datum wählen" plus the 18:00 default the component falls back to. */
 export function OhneTermin() {
   return <DateTimePicker value="" onChange={noop} />;
 }
@@ -29,7 +29,7 @@ export function Anmeldeschluss() {
         disabledBefore="2026-07-27"
       />
       <p className="text-[13px] text-muted-foreground">
-        Gilt in deutscher Zeit (Europe/Berlin) — für alle Spieler derselbe
+        Gilt in deutscher Zeit (Europe/Berlin). Für alle Spieler derselbe
         Zeitpunkt.
       </p>
     </div>

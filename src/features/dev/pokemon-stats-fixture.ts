@@ -2,6 +2,7 @@
 // (specs/001-pokemon-usage-stats). Plain data: the gallery is a client
 // component, so nothing here may pull in the dex.
 
+import type { DistItem } from "@/features/pokemon-stats/components/detail-parts";
 import type {
   RankingRow,
   SortColumn,
@@ -222,3 +223,18 @@ export const STATS_TYPES = [
   "Steel",
   "Fairy",
 ];
+
+// The "Formen" panel of a grouped entry (specs/002-pokemon-forme-groups):
+// formes as written, box icons, no links.
+export const STATS_FORME_ROWS: DistItem[] = [
+  ["Vivillon", "vivillon", "60,0 %", 100],
+  ["Vivillon-Ocean", "vivillon-ocean", "20,0 %", 33.3],
+  ["Vivillon-Elegant", "vivillon-elegant", "10,0 %", 16.7],
+  ["Vivillon-High Plains", "vivillon-highplains", "10,0 %", 16.7],
+].map(([name, id, share, bar]) => ({
+  key: id as string,
+  name: name as string,
+  icon: box(id as string),
+  share: share as string,
+  bar: bar as number,
+}));

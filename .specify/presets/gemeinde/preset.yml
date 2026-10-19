@@ -1,0 +1,37 @@
+schema_version: "1.0"
+
+preset:
+  id: "gemeinde"
+  name: "VGC Gemeinde templates"
+  version: "1.0.0"
+  description: "Spec, plan and tasks templates for the VGC Gemeinde projects: a UX & Mockups section filled by Gate 1, a plan that restates the constitution's pinned stack, mandatory tests and the Workflow profile's Definition of Done"
+  author: "VGC-Gemeinde"
+  repository: "https://github.com/VGC-Gemeinde/gemeinde-dev-kit"
+  license: "MIT"
+
+requires:
+  speckit_version: ">=1.1.0"
+
+provides:
+  templates:
+    - type: "template"
+      name: "spec-template"
+      file: "templates/spec-template.md"
+      description: "Spec with a mandatory UX & Mockups section"
+      replaces: "spec-template"
+
+    - type: "template"
+      name: "plan-template"
+      file: "templates/plan-template.md"
+      description: "Plan that restates the constitution's pinned stack"
+      replaces: "plan-template"
+
+    - type: "template"
+      name: "tasks-template"
+      file: "templates/tasks-template.md"
+      description: "Tasks with mandatory tests and the Definition of Done"
+      replaces: "tasks-template"
+
+tags:
+  - "workflow"
+  - "ux"

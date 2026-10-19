@@ -23,9 +23,9 @@ export function Groessen() {
     <div className="flex items-end gap-6">
       {(
         [
-          ["sm", "sm — 24px · Tabellenzeile"],
-          ["default", "default — 32px · Spielerliste"],
-          ["lg", "lg — 40px · Profilkopf"],
+          ["sm", "sm · 24px · Tabellenzeile"],
+          ["default", "default · 32px · Spielerliste"],
+          ["lg", "lg · 40px · Profilkopf"],
         ] as const
       ).map(([size, label]) => (
         <div className="flex flex-col items-center gap-2" key={size}>
@@ -69,7 +69,7 @@ export function Gruppe() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <span className="text-[13px] text-muted-foreground">
-          Division 1a — 8 Teilnehmer
+          Division 1a · 8 Teilnehmer
         </span>
         <AvatarGroup>
           <Avatar>
@@ -86,7 +86,7 @@ export function Gruppe() {
       </div>
       <div className="flex flex-col gap-2">
         <span className="text-[13px] text-muted-foreground">
-          Kompakt (sm) — Spieltag 2, offene Partien
+          Kompakt (sm) · Spieltag 2, offene Partien
         </span>
         <AvatarGroup>
           {["Grafaiai", "Kilowattrel", "Maushold", "Tinkatink"].map((name) => (

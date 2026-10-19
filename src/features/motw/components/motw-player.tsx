@@ -165,7 +165,7 @@ function OpenMotwSide({
       >
         <span
           className={cn(
-            "min-w-0 break-words text-muted-foreground",
+            "min-w-0 wrap-anywhere text-muted-foreground",
             size === "lg"
               ? "font-bold font-heading text-[19px] uppercase leading-[1.1] tracking-[0.02em] sm:text-[22px]"
               : "font-semibold text-[16px] leading-tight",
@@ -201,7 +201,7 @@ export function MotwSide({
   }
   const player: MotwPlayer = data;
   const nameClass = cn(
-    "min-w-0 break-words",
+    "min-w-0 wrap-anywhere hyphens-auto",
     size === "lg"
       ? "font-bold font-heading text-[19px] text-brand-blue uppercase leading-[1.1] tracking-[0.02em] sm:text-[22px] dark:text-white"
       : "font-semibold text-[16px] leading-tight",

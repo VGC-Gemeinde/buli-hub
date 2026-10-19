@@ -1,6 +1,7 @@
 import { Dex } from "@pkmn/dex";
 import { resolveMega } from "@/features/teamsheets/mega";
 import { parseTeamsheet } from "@/features/teamsheets/parse";
+import { countedSpecies } from "./formes";
 
 // One stored team sheet as the stats count it (specs/001-pokemon-usage-stats,
 // research R5): six slots, each resolved the way the team sheet pages resolve
@@ -9,19 +10,24 @@ import { parseTeamsheet } from "@/features/teamsheets/parse";
 // Unlike on the sheet pages, the dex shapes numbers here: the Mega a stone
 // makes is an entry of its own (FR-004) and counts with its Mega ability
 // (FR-027). The override maps in teamsheets/mega.ts stay the remedy for a dex
-// that is behind a Champions patch.
+// that is behind a Champions patch. Formes that play the same, and formes that
+// only exist in battle, count as their base (specs/002-pokemon-forme-groups).
 
 export type MegaLabel = "Mega" | "Mega X" | "Mega Y" | "Mega Z";
 
 export type Slot = {
-  // The Pokémon entry: the Mega forme when it is one, the species as written
-  // otherwise.
+  // The Pokémon entry: the Mega forme when it is one, the species it counts as
+  // otherwise (formes.ts).
   entryId: string;
-  // As the team sheet pages name it: always the base name.
+  // The base name for a Mega (as the team sheet pages name it), the counted
+  // species otherwise.
   name: string;
   mega: MegaLabel | null;
   // The species to draw.
   sprite: string;
+  // As the sheet writes it, after Mega resolution ("Vivillon-Ocean"): the
+  // detail's forme breakdown (spec 002, FR-007).
+  writtenSpecies: string;
   item: string | null;
   // The item is this slot's own Mega stone (FR-028).
   ownStone: boolean;
@@ -79,11 +85,14 @@ export function toSlots(ots: string): Slot[] | null {
     const resolution = resolveMega(mon.species, item);
     const mega = megaLabel(resolution.spriteSpecies);
     const sheetAbility = abilityName(mon.ability);
+    // Grouping never touches a Mega (spec 002, FR-005).
+    const species = mega ? null : countedSpecies(resolution.spriteSpecies);
     return {
-      entryId: toId(resolution.spriteSpecies),
-      name: resolution.displayName,
+      entryId: toId(species ?? resolution.spriteSpecies),
+      name: species ?? resolution.displayName,
       mega,
-      sprite: resolution.spriteSpecies,
+      sprite: species ?? resolution.spriteSpecies,
+      writtenSpecies: resolution.spriteSpecies,
       item,
       // The stone did the evolving: the paste names the base (canonical form)
       // and the resolution names a Mega.
@@ -99,4 +108,15 @@ export function toSlots(ots: string): Slot[] | null {
       moves: mon.moves.map(moveName),
     };
   });
+}
+
+// The entry a Pokémon detail id counts under, so a link to a forme that is now
+// grouped (shared before spec 002) finds its entry (FR-008). Megas and species
+// the dex does not know stay as they are.
+export function groupedEntryId(id: string): string {
+  const sp = Dex.species.get(id);
+  if (!sp.exists || megaLabel(sp.name)) {
+    return id;
+  }
+  return toId(countedSpecies(sp.name));
 }

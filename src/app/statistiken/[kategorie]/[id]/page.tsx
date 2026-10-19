@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { EntryDetailView } from "@/features/pokemon-stats/components/entry-detail";
 import {
@@ -22,6 +22,7 @@ import {
 import { CATEGORY_KIND } from "@/features/pokemon-stats/labels";
 import { loadStats } from "@/features/pokemon-stats/load";
 import { moveCard } from "@/features/pokemon-stats/move-card";
+import { groupedEntryId } from "@/features/pokemon-stats/sheets";
 
 // The detail behind a ranking entry (specs/001-pokemon-usage-stats, Stories
 // 4 and 5). An entry not played under the filters shows its empty state,
@@ -38,7 +39,28 @@ export default async function StatsDetailPage({
     notFound();
   }
   const category = kategorie as Category;
-  const load = await loadStats(await searchParams);
+  const query = await searchParams;
+  // A forme now counted under its base was an entry of its own before
+  // specs/002-pokemon-forme-groups; its links land on the grouped entry, the
+  // query string travels along as on /statistiken.
+  if (category === "pokemon") {
+    const grouped = groupedEntryId(id);
+    if (grouped !== id) {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(query)) {
+        for (const item of Array.isArray(value)
+          ? value
+          : value
+            ? [value]
+            : []) {
+          params.append(key, item);
+        }
+      }
+      const path = statsPath("pokemon", grouped);
+      redirect(params.size > 0 ? `${path}?${params}` : path);
+    }
+  }
+  const load = await loadStats(query);
   const path = statsPath(category, id);
 
   const body = () => {

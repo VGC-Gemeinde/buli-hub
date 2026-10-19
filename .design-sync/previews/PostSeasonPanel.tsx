@@ -1,7 +1,7 @@
 import { PostSeasonPanel } from "buli-hub";
 import type { DivisionWithGroupSizes } from "@/features/seeding/queries";
 
-/* „Auf- & Abstieg" — step 3 of the Divisions-Einteilung, and the densest view in
+/* "Auf- & Abstieg" — step 3 of the Divisions-Einteilung, and the densest view in
  * the system. Per-division promotion/demotion rules as a ladder of division
  * cards with a balance seam between neighbours: what tier t demotes must equal
  * what tier t+1 promotes (`validatePostSeason`), and everything staff types is
@@ -18,7 +18,7 @@ import type { DivisionWithGroupSizes } from "@/features/seeding/queries";
  * The panel is `flex-1` inside a scroll frame, so it needs a parent with a
  * definite height — without one, `min-h-0 flex-1` collapses the body to zero.
  * cfg.overrides gives it cardMode:"column" + a 1120x900 viewport.
- * Division configs ported verbatim from the dev/ui gallery („Einteilung: Auf- &
+ * Division configs ported verbatim from the dev/ui gallery ("Einteilung: Auf- &
  * Abstieg (Ansicht)"). */
 
 /* A balanced three-tier config: Division 1 sends its top two to the
@@ -66,9 +66,9 @@ const BALANCED: DivisionWithGroupSizes[] = [
  *
  * - Division 1 claims 5 of 4 places (2 Meister-Playoff + 1 Abstiegs-Playoff +
  *   2 direkte Abstiege), and place 2 is claimed from the top AND from the
- *   bottom → the red/amber diagonal overbooked stripe plus „Überbelegt um 1".
+ *   bottom → the red/amber diagonal overbooked stripe plus "Überbelegt um 1".
  * - It demotes 4 (2 je Gruppe × 2) where Division 2 only promotes 2 → the seam
- *   flips to „✕ Nicht gedeckt".
+ *   flips to "✕ Nicht gedeckt".
  *
  * Deliberately not the gallery's `POST_SEASON_OVERBOOKED` numbers: those have no
  * top-side band at all (0 Aufstiege, 0 Aufstiegs-Playoff), and `previewZones`

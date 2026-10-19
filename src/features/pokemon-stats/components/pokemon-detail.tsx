@@ -126,6 +126,20 @@ export function PokemonDetailView({
           />
         </Panel>
         <div className="flex min-w-0 flex-col gap-7">
+          {/* The formes as written (specs/002-pokemon-forme-groups): no links,
+              a forme has no detail of its own. */}
+          {detail.formes.length > 0 ? (
+            <Panel title="Formen">
+              <DistList
+                rows={items(
+                  detail.formes,
+                  href,
+                  (row) => pokemonIcon(row.sprite ?? row.name),
+                  () => undefined,
+                )}
+              />
+            </Panel>
+          ) : null}
           <Panel title="Item">
             {detail.fixedItem ? (
               <div className="flex items-center gap-2.5 px-1.5 pt-2.5 pb-1 text-[14px]">

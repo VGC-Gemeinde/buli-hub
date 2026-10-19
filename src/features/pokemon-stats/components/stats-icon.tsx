@@ -1,3 +1,4 @@
+import { SPRITE_BASE } from "@/features/teamsheets/sprite-base";
 import { cn } from "@/lib/utils";
 import type { Icon } from "../view";
 
@@ -12,9 +13,9 @@ export function TypeIcon({
   className?: string;
 }) {
   return (
-    // biome-ignore lint/performance/noImgElement: small static SVGs from public/, no optimisation to gain
+    // biome-ignore lint/performance/noImgElement: small static SVGs from the sprite bucket, no optimisation to gain
     <img
-      src={`/type-icons/${type.toLowerCase()}.svg`}
+      src={`${SPRITE_BASE}/types/${type.toLowerCase()}.svg`}
       alt={type}
       title={type}
       className={cn("size-6 shrink-0", className)}

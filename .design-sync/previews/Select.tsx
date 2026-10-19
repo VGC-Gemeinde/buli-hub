@@ -14,7 +14,7 @@ import {
  * its trigger — `defaultOpen` is the static equivalent of a click. The config
  * gives this component `cardMode:"single"` (viewport 520x420), so the FIRST
  * export below is the one the product card shows; keep the open composition
- * first. The item list is the profile settings form's „Herkunft" field
+ * first. The item list is the profile settings form's "Herkunft" field
  * (`features/profile/regions.ts`), shortened so the open list fits the card.
  *
  * `position="popper"` instead of the app's default `item-aligned`: item-aligned
@@ -66,7 +66,7 @@ export function TriggerZustaende() {
             <SelectValue placeholder="Spieler wählen …" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="1">Testerino — Division 1a</SelectItem>
+            <SelectItem value="1">Testerino · Division 1a</SelectItem>
           </SelectContent>
         </Select>
       </div>

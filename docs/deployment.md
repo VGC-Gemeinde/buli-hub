@@ -128,6 +128,26 @@ Cloud Run → custom domain mapping for `<DOMAIN>`, then set the DNS records
 it prints at the registrar. `APP_BASE_URL`, the Supabase site URL, and the
 Datenschutz page's imprint must all match the final domain.
 
+### Shared sign-in across the Gemeinde sites
+
+One session counts for every Gemeinde site under `vgcgemein.de` (today the
+hub and gemeinde-tippspiel; `specs/003-shared-discord-login/`, contract in
+`contracts/shared-session.md`). It is switched on by one runtime variable on
+the **production** service, set once and kept by every CI deploy:
+
+```bash
+gcloud run services update buli-hub --region europe-west1 \
+  --update-env-vars=AUTH_COOKIE_DOMAIN=.vgcgemein.de
+```
+
+Never on staging or locally: without it the session cookie stays per host
+under the library's default name, which is what staging (its own Supabase
+project, a `*.run.app` URL) and local development need.
+
+Every `*.vgcgemein.de` host must be operated by the Gemeinde. The session
+cookie is sent to all of them, so a subdomain pointed at a third-party
+service would receive every player's session.
+
 ## 3. GitHub repository configuration
 
 Settings → Environments → **PROD** (the deploy job declares
@@ -488,6 +508,8 @@ Differences from production, each for a reason:
   indexed.
 - `APP_BASE_URL` must be the staging URL, or the "Zum Match" links in Discord
   posts point at production.
+- **No `AUTH_COOKIE_DOMAIN`**: staging keeps its per-host session (see
+  "Shared sign-in across the Gemeinde sites" above).
 - **No role variables** — see above.
 - `DISCORD_LEAGUE_CATEGORY_ID` / `DISCORD_ROLE_ID_BULI_PLAYER` point at the
   **test server**: the season setup resolves its guild from the category, so

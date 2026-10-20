@@ -24,6 +24,9 @@ export async function signInWithDiscord() {
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // This browser only, on every Gemeinde site (the session cookie is shared);
+  // the account's other devices stay signed in (specs/003-shared-discord-login,
+  // clarification 2026-10-18).
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/");
 }

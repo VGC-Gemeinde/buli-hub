@@ -143,6 +143,39 @@ describe("syncMember membership write rules", () => {
   });
 });
 
+// A session can now be minted by another Gemeinde site, so the first request
+// on the hub may come without the hub's own sign-in callback having run
+// (specs/003-shared-discord-login, FR-006). getRole alone must create the
+// profile then, exactly as that callback's syncMember would.
+describe("getRole without a stored profile", () => {
+  it("creates the profile with the synced role, identity and membership", async () => {
+    fetchGuildMemberMock.mockResolvedValue({
+      ...member,
+      roles: ["role-staff"],
+    });
+    expect(await storedProfile()).toBeUndefined();
+
+    const role = await getRole(userId, identity);
+
+    expect(role).toBe("staff");
+    const stored = await db.query.profiles.findFirst({
+      columns: {
+        role: true,
+        displayName: true,
+        username: true,
+        guildMember: true,
+      },
+      where: eq(profiles.userId, userId),
+    });
+    expect(stored).toEqual({
+      role: "staff",
+      displayName: "Testnutzer",
+      username: "test",
+      guildMember: true,
+    });
+  });
+});
+
 describe("getRole fallback", () => {
   it("keeps the stored membership when the re-sync fails", async () => {
     fetchGuildMemberMock.mockResolvedValue(null);

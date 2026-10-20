@@ -23,7 +23,7 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
   - Server Actions for mutations
   - Route Handlers only where an HTTP URL is required (e.g. Cloud Scheduler targets)
 - **Supabase** — Postgres, Auth, Storage
-  - Auth via **Discord OAuth provider** (all users have Discord accounts; Discord ID lives in user metadata)
+  - Auth via **Discord OAuth provider** (all users have Discord accounts; Discord ID lives in user metadata). In production the session is shared with every Gemeinde site under `vgcgemein.de` (gemeinde-tippspiel today): cookie `gemeinde-auth` on `.vgcgemein.de`, switched on by `AUTH_COOKIE_DOMAIN`, defined once in `src/lib/supabase/cookie-options.ts` (kept identical in gemeinde-tippspiel); locally and on staging it stays per host. The cookie is httpOnly, so no browser code reads the session; sign-out ends it in this browser on every site, not on other devices. Details: `specs/003-shared-discord-login/`.
   - Local development runs against **Supabase CLI** (`supabase start`, Dockerized local stack)
 - **Drizzle ORM** (pinned) — schema defined in TypeScript (`schema.ts`), SQL migrations generated and committed to the repo. Drizzle connects directly to Postgres, so **RLS is bypassed for app queries: authorization checks live in server code (Server Actions)**. RLS policies are still defined as a defense-in-depth safety net.
 - **Zod** — validation, schemas shared between server and forms

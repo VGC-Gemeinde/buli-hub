@@ -1,0 +1,133 @@
+<!-- Mockup for specs/003-shared-discord-login, view "Tippspiel footer" (every Tippspiel page). Draft for Gate 1. Footer and header from gemeinde-tippspiel src/components/shell.tsx; the page body is a marked placeholder. Light only: the Tippspiel has no dark mode. -->
+<title>Tippspiel Footer Datenschutz</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: a mockup toolbar over two live frames (desktop up to 1120px, phone 390px) showing the
+   end of a Tippspiel page; the Tippspiel's tokens live on .tipp (light only), the shell's on :root. */
+:root {
+  --shell-bg: oklch(0.975 0.006 262);
+  --shell-fg: oklch(0.28 0.06 264);
+  --shell-muted: oklch(0.52 0.035 263);
+  --shell-border: oklch(0.9 0.012 262);
+  --shell-card: #ffffff;
+  --shell-accent: #ff7b00;
+  --font: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shell-bg: oklch(0.13 0.035 265); --shell-fg: oklch(0.96 0.005 260);
+    --shell-muted: oklch(0.72 0.025 262); --shell-border: oklch(1 0 0 / 12%);
+    --shell-card: oklch(0.17 0.045 265); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --shell-bg: oklch(0.13 0.035 265); --shell-fg: oklch(0.96 0.005 260);
+  --shell-muted: oklch(0.72 0.025 262); --shell-border: oklch(1 0 0 / 12%);
+  --shell-card: oklch(0.17 0.045 265); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--shell-bg); color: var(--shell-fg); font-family: var(--font); margin: 0; }
+.shell { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: flex-start; margin-bottom: 22px; }
+.toolbar h1 { font-size: 15px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.toolbar p { margin: 0; font-size: 12.5px; color: var(--shell-muted); max-width: 52ch; line-height: 1.5; }
+.group { display: flex; flex-direction: column; gap: 6px; }
+.group > span { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--shell-muted); }
+.seg { display: inline-flex; border: 1px solid var(--shell-border); border-radius: 8px; overflow: hidden; background: var(--shell-card); }
+.seg button { font: inherit; font-size: 12.5px; font-weight: 600; padding: 7px 12px; border: 0; background: transparent; color: var(--shell-fg); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--shell-border); }
+.seg button[aria-pressed="true"] { background: var(--shell-accent); color: #fff; }
+.seg button:focus-visible { outline: 2px solid var(--shell-accent); outline-offset: -2px; }
+.frames { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.frame { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.frame > span { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--shell-muted); }
+.frame.desk { width: min(1120px, 100%); }
+.frame.phone { width: min(390px, 100%); }
+.screen { border: 1px solid var(--shell-border); border-radius: 12px; overflow: hidden; container-type: inline-size; }
+.phone .screen { border-radius: 22px; }
+
+/* The Tippspiel, tokens from gemeinde-tippspiel src/app/globals.css (light only) */
+.tipp {
+  --brand-blue: #021f66; --brand-orange: #ff7b00;
+  --background: #ffffff; --foreground: oklch(0.28 0.06 264);
+  --muted: oklch(0.965 0.008 262); --muted-foreground: oklch(0.52 0.035 263);
+  --border: oklch(0.91 0.012 262);
+  background: var(--background); color: var(--foreground); font-family: var(--font);
+  display: flex; flex-direction: column; min-height: 420px;
+}
+.head { background: var(--brand-blue); box-shadow: 0 4px 14px rgba(2, 31, 102, 0.25); }
+.head div { max-width: 1100px; margin: 0 auto; height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; }
+.word { color: #fff; font-weight: 700; font-size: 14px; letter-spacing: .02em; }
+.word em { font-style: normal; color: var(--brand-orange); }
+.word .long { display: none; }
+.menu { width: 22px; height: 14px; border-block: 2px solid #fff; position: relative; }
+.menu::after { content: ""; position: absolute; left: 0; right: 0; top: 4px; border-top: 2px solid #fff; }
+.body { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 32px 16px; }
+.placeholder { border: 1px dashed var(--border); border-radius: 10px; background: var(--muted); min-height: 180px; display: grid; place-items: center; color: var(--muted-foreground); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+footer.site { margin-top: auto; border-top: 1px solid var(--border); }
+footer.site > div { max-width: 1100px; margin: 0 auto; padding: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted-foreground); }
+.links { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.links a { color: var(--brand-orange); text-decoration: none; }
+.links a:hover { color: var(--brand-blue); }
+.links a:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; border-radius: 2px; }
+@container (min-width: 640px) {
+  .word { font-size: 16px; }
+  .word .short { display: none; }
+  .word .long { display: inline; }
+  .menu { display: none; }
+}
+</style>
+
+<div class="shell">
+  <div class="toolbar">
+    <div>
+      <h1>Tippspiel · Footer</h1>
+      <p>Spec 003, FR-012: Neben dem Impressum ein Link auf die Datenschutzerklärung des Buli Hub (buli.vgcgemein.de/datenschutz), weil das Tippspiel jetzt dasselbe Anmelde-Cookie setzt.</p>
+    </div>
+    <div class="group"><span>Stand</span>
+      <div class="seg" id="version" role="group" aria-label="Stand">
+        <button type="button" data-version="before" aria-pressed="false">Heute</button>
+        <button type="button" data-version="after" aria-pressed="true">Neu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="frames">
+    <div class="frame desk"><span>Desktop</span><div class="screen" data-slot></div></div>
+    <div class="frame phone"><span>Phone · 390px</span><div class="screen" data-slot></div></div>
+  </div>
+</div>
+
+<template id="page">
+  <div class="tipp">
+    <header class="head"><div>
+      <span class="word"><span class="short">WORLDS <em>26</em></span><span class="long">WORLDS TIPPSPIEL <em>2026</em></span></span>
+      <span class="menu" aria-hidden="true"></span>
+    </div></header>
+    <div class="body"><div class="placeholder">Seiteninhalt (Platzhalter)</div></div>
+    <footer class="site"><div>
+      <span>VGC Gemeinde Worlds Tippspiel</span>
+      <span class="links">
+        <a href="https://vgcgemein.de/impressum" target="_blank" rel="noreferrer">Impressum</a>
+        <a data-after href="https://buli.vgcgemein.de/datenschutz" target="_blank" rel="noreferrer">Datenschutz</a>
+      </span>
+    </div></footer>
+  </div>
+</template>
+
+<script>
+(function () {
+  var tpl = document.getElementById("page");
+  document.querySelectorAll("[data-slot]").forEach(function (slot) { slot.appendChild(tpl.content.cloneNode(true)); });
+  var version = "after";
+  function render() {
+    document.querySelectorAll("[data-after]").forEach(function (el) { el.hidden = version !== "after"; });
+    document.querySelectorAll("#version button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.version === version)); });
+  }
+  document.getElementById("version").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { version = b.dataset.version; render(); } });
+  render();
+})();
+</script>

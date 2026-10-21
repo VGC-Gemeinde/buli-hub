@@ -1,6 +1,10 @@
-import { createServerClient } from "@supabase/ssr";
+import { clearAuthCookiesAtScopes, createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { PATH_HEADER } from "@/features/usage/path-header";
+import {
+  legacySessionKey,
+  sessionCookieOptions,
+} from "@/lib/supabase/cookie-options";
 import { supabaseEnv } from "@/lib/supabase/env";
 
 // Refreshes expired Supabase auth tokens on navigation and keeps the
@@ -15,6 +19,7 @@ export async function proxy(request: NextRequest) {
   const { url, publishableKey } = supabaseEnv();
 
   const supabase = createServerClient(url, publishableKey, {
+    cookieOptions: sessionCookieOptions(),
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -33,6 +38,23 @@ export async function proxy(request: NextRequest) {
 
   // The call itself triggers the token refresh; the result is not needed.
   await supabase.auth.getUser();
+
+  // The shared session (specs/003-shared-discord-login) has a name of its own,
+  // so the pre-switch session in the library's default cookie on this host is
+  // never read again; clear it instead of letting the browser send it for a
+  // year. The helper does nothing once it is gone.
+  if (process.env.AUTH_COOKIE_DOMAIN) {
+    await clearAuthCookiesAtScopes({
+      getAll: () => request.cookies.getAll(),
+      setAll: (cookiesToSet) => {
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options);
+        }
+      },
+      storageKey: legacySessionKey(url),
+      scopes: [{}],
+    });
+  }
 
   // Staging is served on a public but unguessable URL (docs/deployment.md §7).
   // Set here rather than in next.config.ts `headers()`, which is baked into

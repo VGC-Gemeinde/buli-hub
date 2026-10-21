@@ -1,0 +1,186 @@
+<!-- Mockup for specs/003-shared-discord-login, view "Datenschutzerklärung, section 6 Cookies" (/datenschutz). Draft for Gate 1. Copy of sections 6 and 7 verbatim from src/app/datenschutz/page.tsx; only section 6 gains the shared-login sentences and the "Stand" date moves. Header simplified to the parts that frame the page. -->
+<title>Datenschutz Login-Cookie</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: a mockup toolbar over two live frames (desktop up to 1120px, phone 390px) rendering the
+   same legal page; the hub's tokens live on .hub (light, or .hub.dark), the shell's on :root. */
+:root {
+  --shell-bg: oklch(0.975 0.006 262);
+  --shell-fg: oklch(0.28 0.06 264);
+  --shell-muted: oklch(0.52 0.035 263);
+  --shell-border: oklch(0.9 0.012 262);
+  --shell-card: #ffffff;
+  --shell-accent: #ff7b00;
+  --font: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shell-bg: oklch(0.13 0.035 265); --shell-fg: oklch(0.96 0.005 260);
+    --shell-muted: oklch(0.72 0.025 262); --shell-border: oklch(1 0 0 / 12%);
+    --shell-card: oklch(0.17 0.045 265); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --shell-bg: oklch(0.13 0.035 265); --shell-fg: oklch(0.96 0.005 260);
+  --shell-muted: oklch(0.72 0.025 262); --shell-border: oklch(1 0 0 / 12%);
+  --shell-card: oklch(0.17 0.045 265); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--shell-bg); color: var(--shell-fg); font-family: var(--font); margin: 0; }
+.shell { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: flex-start; margin-bottom: 22px; }
+.toolbar h1 { font-size: 15px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.toolbar p { margin: 0; font-size: 12.5px; color: var(--shell-muted); max-width: 52ch; line-height: 1.5; }
+.group { display: flex; flex-direction: column; gap: 6px; }
+.group > span { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--shell-muted); }
+.seg { display: inline-flex; border: 1px solid var(--shell-border); border-radius: 8px; overflow: hidden; background: var(--shell-card); }
+.seg button { font: inherit; font-size: 12.5px; font-weight: 600; padding: 7px 12px; border: 0; background: transparent; color: var(--shell-fg); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--shell-border); }
+.seg button[aria-pressed="true"] { background: var(--shell-accent); color: #fff; }
+.seg button:focus-visible { outline: 2px solid var(--shell-accent); outline-offset: -2px; }
+.check { display: inline-flex; gap: 8px; align-items: center; font-size: 12.5px; font-weight: 600; }
+.frames { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.frame { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.frame > span { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--shell-muted); }
+.frame.desk { width: min(1120px, 100%); }
+.frame.phone { width: min(390px, 100%); }
+.screen { border: 1px solid var(--shell-border); border-radius: 12px; overflow: hidden; container-type: inline-size; }
+.phone .screen { border-radius: 22px; }
+
+/* The hub, tokens from src/app/globals.css */
+.hub {
+  --brand-blue: #021f66; --brand-orange: #ff7b00;
+  --background: #ffffff; --foreground: oklch(0.28 0.06 264);
+  --muted-foreground: oklch(0.52 0.035 263); --border: oklch(0.91 0.012 262);
+  --heading: #021f66; --link: #021f66; --mark: rgba(255, 123, 0, 0.14);
+  background: var(--background); color: var(--foreground); font-family: var(--font);
+  display: flex; flex-direction: column; min-height: 640px;
+}
+.hub.dark {
+  --background: oklch(0.17 0.045 265); --foreground: oklch(0.96 0.005 260);
+  --muted-foreground: oklch(0.72 0.025 262); --border: oklch(1 0 0 / 12%);
+  --heading: #ffffff; --link: #ffffff; --mark: rgba(255, 123, 0, 0.22);
+}
+.accent { height: 3px; background: var(--brand-orange); }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 8px 16px; border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 12px; height: 48px; }
+.logo { width: 41px; height: 28px; border-radius: 6px; background: var(--brand-blue); display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 12px; }
+.hub.dark .logo { outline: 1px solid oklch(1 0 0 / 18%); }
+.brand b { display: none; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
+.signin { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); }
+main { width: 100%; max-width: 760px; margin: 0 auto; padding: 48px 24px; flex: 1; }
+main h1 { margin: 0 0 32px; font-size: 32px; line-height: 1.05; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--heading); hyphens: auto; }
+article { display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; line-height: 1.65; color: var(--muted-foreground); }
+article h2 { margin: 24px 0 0; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--heading); }
+article p, article ul { margin: 0; }
+article ul { display: flex; flex-direction: column; gap: 6px; padding-left: 20px; }
+article .gap { color: var(--muted-foreground); opacity: .6; font-size: 13px; letter-spacing: .12em; }
+article a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+mark { background: transparent; color: inherit; }
+.highlight mark { background: var(--mark); border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 0 2px; }
+footer.site { border-top: 1px solid var(--border); padding: 12px 24px; font-size: 12.5px; color: var(--muted-foreground); }
+footer.site div { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; max-width: 1040px; margin: 0 auto; }
+footer.site .sep { color: var(--border); }
+@container (min-width: 640px) {
+  .bar { padding: 12px 28px; }
+  .brand b { display: inline; }
+  main { padding: 48px 32px; }
+  main h1 { font-size: 40px; }
+}
+@media (prefers-reduced-motion: no-preference) { .highlight mark { transition: background-color .2s; } }
+</style>
+
+<div class="shell">
+  <div class="toolbar">
+    <div>
+      <h1>Datenschutz · Abschnitt 6</h1>
+      <p>Spec 003, FR-011: Der Abschnitt "Cookies" sagt, dass die Anmeldung für alle Gemeinde-Seiten gilt. Abschnitte 6 und 7 wörtlich aus der Seite, der Rest ist ausgelassen.</p>
+    </div>
+    <div class="group"><span>Stand</span>
+      <div class="seg" id="version" role="group" aria-label="Stand">
+        <button type="button" data-version="before" aria-pressed="false">Heute</button>
+        <button type="button" data-version="after" aria-pressed="true">Neu</button>
+      </div>
+    </div>
+    <div class="group"><span>Farbschema</span>
+      <div class="seg" id="theme" role="group" aria-label="Farbschema">
+        <button type="button" data-theme-choice="light" aria-pressed="true">Hell</button>
+        <button type="button" data-theme-choice="dark" aria-pressed="false">Dunkel</button>
+      </div>
+    </div>
+    <div class="group"><span>Prüfhilfe</span>
+      <label class="check"><input type="checkbox" id="highlight" checked> Änderung markieren</label>
+    </div>
+  </div>
+
+  <div class="frames">
+    <div class="frame desk"><span>Desktop</span><div class="screen" data-slot></div></div>
+    <div class="frame phone"><span>Phone · 390px</span><div class="screen" data-slot></div></div>
+  </div>
+</div>
+
+<template id="page">
+  <div class="hub highlight">
+    <div class="accent"></div>
+    <div class="bar">
+      <div class="brand"><span class="logo" aria-hidden="true">BH</span><b>Buli Hub</b></div>
+      <span class="signin">Mit Discord anmelden</span>
+    </div>
+    <main>
+      <h1>Datenschutzerklärung</h1>
+      <article>
+        <p data-before>Stand: Juli 2026</p>
+        <p data-after><mark>Stand: Oktober 2026</mark></p>
+        <p class="gap" aria-hidden="true">· · ·</p>
+        <h2>6. Cookies</h2>
+        <p>
+          Wir setzen ausschließlich technisch notwendige Cookies ein, die für die
+          Anmeldung und das Aufrechterhalten deiner Sitzung erforderlich sind. Es
+          findet kein Tracking und keine Reichweiten- oder Werbeanalyse statt.
+        </p>
+        <p data-after><mark>Die Anmeldung gilt für alle Seiten der VGC Gemeinde unter vgcgemein.de,
+          etwa den Buli Hub und das Tippspiel. Das Anmelde-Cookie wird deshalb an diese
+          Seiten übermittelt, damit du dich nur einmal anmelden musst. Wenn du dich abmeldest,
+          endet die Sitzung auf all diesen Seiten in diesem Browser.</mark></p>
+        <h2>7. Empfänger und Auftragsverarbeiter</h2>
+        <p>
+          Zur Bereitstellung der Plattform setzen wir Dienstleister ein, die Daten
+          in unserem Auftrag verarbeiten:
+        </p>
+        <ul>
+          <li>Supabase (Datenbank, Authentifizierung, Speicher),</li>
+          <li>Google Cloud (Hosting der Anwendung),</li>
+          <li>Discord (Anmeldung und Identität).</li>
+        </ul>
+        <p class="gap" aria-hidden="true">· · ·</p>
+      </article>
+    </main>
+    <footer class="site"><div><span>© 2026 VGC Gemeinde</span><span class="sep">·</span><span>Impressum</span><span>Datenschutz</span><span>Regelwerk</span></div></footer>
+  </div>
+</template>
+
+<script>
+(function () {
+  var tpl = document.getElementById("page");
+  var slots = document.querySelectorAll("[data-slot]");
+  slots.forEach(function (slot) { slot.appendChild(tpl.content.cloneNode(true)); });
+  var state = { version: "after", theme: "light", highlight: true };
+  function render() {
+    document.querySelectorAll(".hub").forEach(function (hub) {
+      hub.classList.toggle("dark", state.theme === "dark");
+      hub.classList.toggle("highlight", state.highlight);
+      hub.querySelectorAll("[data-before]").forEach(function (el) { el.hidden = state.version !== "before"; });
+      hub.querySelectorAll("[data-after]").forEach(function (el) { el.hidden = state.version !== "after"; });
+    });
+    document.querySelectorAll("#version button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.version === state.version)); });
+    document.querySelectorAll("#theme button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.themeChoice === state.theme)); });
+  }
+  document.getElementById("version").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { state.version = b.dataset.version; render(); } });
+  document.getElementById("theme").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { state.theme = b.dataset.themeChoice; render(); } });
+  document.getElementById("highlight").addEventListener("change", function (e) { state.highlight = e.target.checked; render(); });
+  render();
+})();
+</script>

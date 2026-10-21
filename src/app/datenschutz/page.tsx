@@ -97,13 +97,6 @@ export default function DatenschutzPage() {
         Anmeldung und das Aufrechterhalten deiner Sitzung erforderlich sind. Es
         findet kein Tracking und keine Reichweiten- oder Werbeanalyse statt.
       </p>
-      <p>
-        Die Anmeldung gilt für alle Seiten der VGC Gemeinde unter vgcgemein.de,
-        etwa den Buli Hub und das Tippspiel. Das Anmelde-Cookie wird deshalb an
-        diese Seiten übermittelt, damit du dich nur einmal anmelden musst. Wenn
-        du dich abmeldest, endet die Sitzung auf all diesen Seiten in diesem
-        Browser.
-      </p>
 
       <h2>7. Empfänger und Auftragsverarbeiter</h2>
       <p>

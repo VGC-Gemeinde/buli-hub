@@ -1,7 +1,11 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { callbackUrl, discordOAuthConfig } from "@/features/auth/config";
-import { completeSignIn, decodeOAuthCookie } from "@/features/auth/sign-in";
+import { discordOAuthConfig } from "@/features/auth/config";
+import {
+  completeSignIn,
+  decodeOAuthCookie,
+  returnOrigin,
+} from "@/features/auth/sign-in";
 import { SIGN_IN_ERROR_PARAM } from "@/features/auth/sign-in-error";
 import {
   OAUTH_COOKIE,
@@ -13,23 +17,30 @@ import {
 // (specs/004-google-cloud-migration, contracts/session.md). Kept as a thin
 // wrapper around completeSignIn.
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  // Behind Cloud Run's proxy, `request.url` reflects the container's own
-  // listen address (0.0.0.0:8080), not the public domain — redirects must
-  // use APP_BASE_URL. Locally it is unset and the request origin is correct.
-  const base = process.env.APP_BASE_URL || origin;
+  const { searchParams } = new URL(request.url);
 
   const jar = await cookies();
-  const started = decodeOAuthCookie(jar.get(OAUTH_COOKIE)?.value);
+  const cookieStarted = decodeOAuthCookie(jar.get(OAUTH_COOKIE)?.value);
   // Read once: a replayed callback finds no cookie and fails.
   jar.set(OAUTH_COOKIE, "", { path: OAUTH_COOKIE_PATH, maxAge: 0 });
+
+  // Back to the host the sign-in started on, which must be this one. Behind
+  // Cloud Run `request.url` carries the container's own address, so the
+  // public host comes from the Host header; without a usable start, the
+  // configured base URL is where an error is shown.
+  const host = (await headers()).get("host");
+  const origin = cookieStarted
+    ? returnOrigin(cookieStarted.redirectUri, host)
+    : null;
+  const started = origin ? cookieStarted : null;
+  const base =
+    origin ?? process.env.APP_BASE_URL ?? new URL(request.url).origin;
 
   const result = await completeSignIn({
     code: searchParams.get("code"),
     state: searchParams.get("state"),
     error: searchParams.get("error"),
     started,
-    redirectUri: callbackUrl(origin),
     ...discordOAuthConfig(),
   });
 

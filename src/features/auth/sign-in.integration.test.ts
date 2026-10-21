@@ -7,17 +7,21 @@ import {
   completeSignIn,
   decodeOAuthCookie,
   encodeOAuthCookie,
+  returnOrigin,
   type SignInDeps,
 } from "./sign-in";
 
 const discordId = "600000000000000001";
-const started = { state: "state-1", codeVerifier: "verifier-1" };
+const started = {
+  state: "state-1",
+  codeVerifier: "verifier-1",
+  redirectUri: "http://localhost:3000/auth/callback",
+};
 const base = {
   code: "code-1",
   state: "state-1",
   error: null,
   started,
-  redirectUri: "http://localhost:3000/auth/callback",
   clientId: "client",
   clientSecret: "secret",
 };
@@ -52,7 +56,7 @@ describe("completeSignIn", () => {
     expect(d.exchangeCode).toHaveBeenCalledWith({
       code: "code-1",
       codeVerifier: "verifier-1",
-      redirectUri: base.redirectUri,
+      redirectUri: started.redirectUri,
       clientId: "client",
       clientSecret: "secret",
     });
@@ -130,17 +134,53 @@ describe("completeSignIn", () => {
 });
 
 describe("OAuth cookie", () => {
-  it("round-trips state and verifier", () => {
-    expect(decodeOAuthCookie(encodeOAuthCookie("s", "v"))).toEqual({
+  it("round-trips state, verifier and redirect URI", () => {
+    const value = encodeOAuthCookie({
       state: "s",
       codeVerifier: "v",
+      redirectUri: "https://buli.vgcgemein.de/auth/callback",
+    });
+    expect(value).not.toContain("https");
+    expect(decodeOAuthCookie(value)).toEqual({
+      state: "s",
+      codeVerifier: "v",
+      redirectUri: "https://buli.vgcgemein.de/auth/callback",
     });
   });
 
   it("rejects missing or malformed values", () => {
     expect(decodeOAuthCookie(undefined)).toBeNull();
     expect(decodeOAuthCookie("only")).toBeNull();
-    expect(decodeOAuthCookie("a.b.c")).toBeNull();
-    expect(decodeOAuthCookie(".v")).toBeNull();
+    expect(decodeOAuthCookie("s.v")).toBeNull();
+    expect(decodeOAuthCookie("a.b.c.d")).toBeNull();
+    expect(decodeOAuthCookie(".v.x")).toBeNull();
+  });
+});
+
+describe("returnOrigin", () => {
+  const uri = "https://buli-hub-staging-1.europe-west1.run.app/auth/callback";
+
+  it("returns to the host the sign-in started on when it answers the callback", () => {
+    expect(returnOrigin(uri, "buli-hub-staging-1.europe-west1.run.app")).toBe(
+      "https://buli-hub-staging-1.europe-west1.run.app",
+    );
+    expect(
+      returnOrigin("http://localhost:3000/auth/callback", "localhost:3000"),
+    ).toBe("http://localhost:3000");
+  });
+
+  it("refuses a start on another host, a foreign path or scheme, or no host", () => {
+    expect(returnOrigin(uri, "buli.vgcgemein.de")).toBeNull();
+    expect(returnOrigin(uri, null)).toBeNull();
+    expect(
+      returnOrigin("https://evil.example/auth/callback", "buli.vgcgemein.de"),
+    ).toBeNull();
+    expect(
+      returnOrigin("https://buli.vgcgemein.de/elsewhere", "buli.vgcgemein.de"),
+    ).toBeNull();
+    expect(
+      returnOrigin("javascript:alert(1)//auth/callback", "buli.vgcgemein.de"),
+    ).toBeNull();
+    expect(returnOrigin("not a url", "buli.vgcgemein.de")).toBeNull();
   });
 });

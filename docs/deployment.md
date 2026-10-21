@@ -186,12 +186,16 @@ the nightly backup and the staging refresh (§2).
 
 Sign-in is the hub's own (authorization code with state and PKCE, scope
 `identify` only; `specs/004-google-cloud-migration`, contracts/session.md).
-Discord sends the browser back to `<APP_BASE_URL>/auth/callback`, so each URL
-must be registered as a redirect in the Developer Portal (*OAuth2* →
-*Redirects*):
+Discord sends the browser back to `/auth/callback` on the host the sign-in
+started on, so every address the hub is reachable under must be registered as
+a redirect in the Developer Portal (*OAuth2* → *Redirects*, then *Save
+Changes*). A Cloud Run service answers under two `run.app` names
+(`<service>-<project number>.<region>.run.app` and `<service>-<hash>-ew.a.run.app`);
+register both where people may use them:
 
 - **production application**: `https://buli.vgcgemein.de/auth/callback`;
-- **non-production application** (§7): `https://<staging-url>/auth/callback`
+- **non-production application** (§7): `https://buli-hub-staging-225990213981.europe-west1.run.app/auth/callback`,
+  `https://buli-hub-staging-a2336uoihq-ew.a.run.app/auth/callback`
   and `http://localhost:3000/auth/callback`.
 
 Supabase's `https://<ref>.supabase.co/auth/v1/callback` stays registered until

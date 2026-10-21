@@ -14,9 +14,10 @@ export function discordOAuthConfig(): {
   return { clientId, clientSecret };
 }
 
-// Discord sends the browser back here. Behind Cloud Run's proxy the request
-// origin is the container's own address, so APP_BASE_URL wins where it is
-// set; locally the request origin is right.
+// Discord sends the browser back to the host the sign-in started on: the
+// short-lived OAuth cookie lives there, so a callback on another host (staging
+// and production are each reachable under two names) could never be matched.
+// `origin` is the Origin header of the Server Action, the public host.
 export function callbackUrl(origin: string): string {
-  return `${process.env.APP_BASE_URL || origin}/auth/callback`;
+  return `${origin}/auth/callback`;
 }

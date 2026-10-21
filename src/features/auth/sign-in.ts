@@ -11,18 +11,59 @@ import { findOrCreateUserByDiscordId, rememberSignInIdentity } from "./users";
 // The route stays a thin wrapper; Discord's two calls are injectable so the
 // whole flow runs in an integration test.
 
-/** The `buli-hub-oauth` cookie: state and PKCE verifier, joined by a dot. */
-export function encodeOAuthCookie(state: string, codeVerifier: string): string {
-  return `${state}.${codeVerifier}`;
+export type StartedSignIn = {
+  state: string;
+  codeVerifier: string;
+  /** The callback address on the host the sign-in started on. */
+  redirectUri: string;
+};
+
+/**
+ * The `buli-hub-oauth` cookie: state, PKCE verifier and the redirect URI the
+ * sign-in was started with, joined by dots (the URI base64url-encoded). The
+ * redirect URI travels along because Discord must get the identical one at
+ * the token exchange, and the callback cannot rebuild it: the cookie only
+ * comes back to the host it was set on, which is the host the sign-in
+ * started on, whatever APP_BASE_URL says.
+ */
+export function encodeOAuthCookie(started: StartedSignIn): string {
+  return [
+    started.state,
+    started.codeVerifier,
+    Buffer.from(started.redirectUri).toString("base64url"),
+  ].join(".");
 }
 
 export function decodeOAuthCookie(
   value: string | undefined,
-): { state: string; codeVerifier: string } | null {
+): StartedSignIn | null {
   if (!value) return null;
-  const [state, codeVerifier, ...rest] = value.split(".");
-  if (!state || !codeVerifier || rest.length > 0) return null;
-  return { state, codeVerifier };
+  const [state, codeVerifier, encodedUri, ...rest] = value.split(".");
+  if (!state || !codeVerifier || !encodedUri || rest.length > 0) return null;
+  const redirectUri = Buffer.from(encodedUri, "base64url").toString();
+  return { state, codeVerifier, redirectUri };
+}
+
+/**
+ * Where the browser goes after the callback: the host the sign-in started
+ * on, but only if that is the host answering the callback. The cookie is
+ * host-only, so anything else means it was planted (a sibling subdomain can
+ * set cookies for the parent domain), and nobody is sent to a foreign host.
+ */
+export function returnOrigin(
+  redirectUri: string,
+  callbackHost: string | null,
+): string | null {
+  try {
+    const url = new URL(redirectUri);
+    const sameHost = callbackHost !== null && url.host === callbackHost;
+    const httpish = url.protocol === "https:" || url.protocol === "http:";
+    return sameHost && httpish && url.pathname === "/auth/callback"
+      ? url.origin
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export type SignInDeps = {
@@ -44,8 +85,7 @@ export async function completeSignIn(
     state: string | null;
     error: string | null;
     /** The decoded `buli-hub-oauth` cookie of this browser. */
-    started: { state: string; codeVerifier: string } | null;
-    redirectUri: string;
+    started: StartedSignIn | null;
     clientId: string;
     clientSecret: string;
   },
@@ -72,7 +112,7 @@ export async function completeSignIn(
     const accessToken = await deps.exchangeCode({
       code: input.code,
       codeVerifier: input.started.codeVerifier,
-      redirectUri: input.redirectUri,
+      redirectUri: input.started.redirectUri,
       clientId: input.clientId,
       clientSecret: input.clientSecret,
     });

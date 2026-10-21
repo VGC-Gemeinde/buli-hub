@@ -29,18 +29,23 @@ export async function signInWithDiscord() {
   const { clientId } = discordOAuthConfig();
   const state = newOAuthState();
   const codeVerifier = newCodeVerifier();
-  (await cookies()).set(OAUTH_COOKIE, encodeOAuthCookie(state, codeVerifier), {
-    path: OAUTH_COOKIE_PATH,
-    maxAge: OAUTH_MAX_AGE_SECONDS,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
+  const redirectUri = callbackUrl(origin);
+  (await cookies()).set(
+    OAUTH_COOKIE,
+    encodeOAuthCookie({ state, codeVerifier, redirectUri }),
+    {
+      path: OAUTH_COOKIE_PATH,
+      maxAge: OAUTH_MAX_AGE_SECONDS,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
+  );
 
   redirect(
     authorizeUrl({
       clientId,
-      redirectUri: callbackUrl(origin),
+      redirectUri,
       state,
       codeChallenge: pkceChallenge(codeVerifier),
     }),

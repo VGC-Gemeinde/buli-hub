@@ -18,8 +18,6 @@ export const STREAM_PHOTO = {
   maxBytes: 2 * 1024 * 1024,
 } as const;
 
-export const STREAM_PHOTO_BUCKET = "stream-photos";
-
 // One object per upload: the URL is what the stream and its CDN cache, so a
 // stable path would keep serving the previous picture after a change. The
 // extension follows the bytes: the crop dialog always produces WebP, the dev
@@ -38,17 +36,33 @@ export function ownsStreamPhotoPath(path: string, userId: string): boolean {
   return path.startsWith(`${userId}/`);
 }
 
-// The public URL of a stored photo. The bucket is public because the overlay
-// loads it in a browser that has no session.
-export function streamPhotoUrl(
-  path: string | null,
-  baseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL,
-): string | null {
-  if (!path || !baseUrl) {
-    return null;
-  }
-  const base = baseUrl.replace(/\/+$/, "");
-  return `${base}/storage/v1/object/public/${STREAM_PHOTO_BUCKET}/${path}`;
+// Stream photos are not public (specs/004-google-cloud-migration, FR-015):
+// the bucket is private and the hub hands the pictures out itself, at
+// /stream-photos/<path>. A page shows them to the player and to staff through
+// the session; the stream gets a signed address it can load without one,
+// because the overlay runs in a browser source with no login (access.ts,
+// server only).
+
+export const STREAM_PHOTO_ROUTE = "/stream-photos";
+
+// <userId>/<uuid>.<ext>, exactly what streamPhotoPath produces. Anything else
+// is never looked up, so a crafted path cannot reach another object.
+const STORED_PATH =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(webp|png|jpg)$/;
+
+export function isStreamPhotoPath(path: string): boolean {
+  return STORED_PATH.test(path);
+}
+
+export function streamPhotoContentType(path: string): string {
+  if (path.endsWith(".png")) return "image/png";
+  if (path.endsWith(".jpg")) return "image/jpeg";
+  return "image/webp";
+}
+
+// The address a hub page uses: same origin, so the session cookie goes along.
+export function streamPhotoUrl(path: string | null): string | null {
+  return path ? `${STREAM_PHOTO_ROUTE}/${path}` : null;
 }
 
 // Who gets the upload card in /profil: the two players of the Match of the

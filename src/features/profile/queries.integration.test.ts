@@ -5,18 +5,20 @@ import { profiles } from "@/db/schema";
 import { db } from "@/lib/db";
 import { getProfile, upsertProfile } from "./queries";
 
-// Integration test against the local Supabase Postgres (stack must be
-// running). Creates its own auth user (profiles.user_id has an FK to
-// auth.users) and cleans up after itself — the cascade removes the profile.
+// Integration test against the local Postgres (`npm run db:start` must be
+// running). Creates its own user (profiles.user_id has an FK to
+// users) and cleans up after itself — the cascade removes the profile.
 const userId = randomUUID();
 
 afterAll(async () => {
-  await db.execute(sql`delete from auth.users where id = ${userId}`);
+  await db.execute(sql`delete from users where id = ${userId}`);
 });
 
 describe("profile upsert", () => {
   it("returns null for a user without a profile", async () => {
-    await db.execute(sql`insert into auth.users (id) values (${userId})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${userId}, ${userId})`,
+    );
     expect(await getProfile(userId)).toBeNull();
   });
 

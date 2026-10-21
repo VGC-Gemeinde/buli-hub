@@ -1,5 +1,6 @@
-// Test personas for local development: auth users with metadata shapes a
-// single real Discord account cannot produce. Used by /dev/login.
+// Test personas for local development: accounts with identity shapes a
+// single real Discord account cannot produce. Used by /dev/login, which
+// creates the account by its (fake) Discord id and signs the browser in.
 
 import type { Role } from "@/features/roles/roles";
 
@@ -16,7 +17,15 @@ export type Persona = {
   id: PersonaId;
   label: string;
   description: string;
-  userMetadata: Record<string, unknown>;
+  // A fake Discord snowflake: the account is found and created by it, as a
+  // real sign-in would (specs/004-google-cloud-migration).
+  discordId: string;
+  // What Discord would have sent at sign-in; written to the profile.
+  identity: {
+    displayName: string | null;
+    username: string | null;
+    avatarUrl: string | null;
+  };
   // Written directly to the profile row on /dev/login — personas have fake
   // Discord ids, so their roles cannot come from a real guild lookup.
   role: Role;
@@ -41,13 +50,11 @@ export const PERSONAS: readonly Persona[] = [
     id: "voll",
     label: "Voll",
     description: "Avatar + Anzeigename — der Normalfall",
-    userMetadata: {
-      avatar_url: AVATAR_URL,
-      picture: AVATAR_URL,
-      custom_claims: { global_name: "Testerino" },
-      full_name: "testerino",
-      name: "testerino",
-      provider_id: "100000000000000001",
+    discordId: "100000000000000001",
+    identity: {
+      displayName: "Testerino",
+      username: "testerino",
+      avatarUrl: AVATAR_URL,
     },
     role: "admin",
     guildMember: true,
@@ -56,11 +63,11 @@ export const PERSONAS: readonly Persona[] = [
     id: "kein-avatar",
     label: "Kein Avatar",
     description: "Ohne Avatar — Initialen-Fallback überall",
-    userMetadata: {
-      custom_claims: { global_name: "Ohne Avatar" },
-      full_name: "ohne_avatar",
-      name: "ohne_avatar",
-      provider_id: "100000000000000002",
+    discordId: "100000000000000002",
+    identity: {
+      displayName: "Ohne Avatar",
+      username: "ohne_avatar",
+      avatarUrl: null,
     },
     role: "staff",
     guildMember: true,
@@ -69,15 +76,11 @@ export const PERSONAS: readonly Persona[] = [
     id: "langer-name",
     label: "Langer Name",
     description: "Sehr langer Anzeigename — testet Truncation",
-    userMetadata: {
-      avatar_url: AVATAR_URL,
-      picture: AVATAR_URL,
-      custom_claims: {
-        global_name: "Blaubeerkuchenbäckermeisterin Annegret III.",
-      },
-      full_name: "annegret",
-      name: "annegret",
-      provider_id: "100000000000000003",
+    discordId: "100000000000000003",
+    identity: {
+      displayName: "Blaubeerkuchenbäckermeisterin Annegret III.",
+      username: "annegret",
+      avatarUrl: AVATAR_URL,
     },
     role: "dev",
     guildMember: true,
@@ -85,8 +88,9 @@ export const PERSONAS: readonly Persona[] = [
   {
     id: "leer",
     label: "Leer",
-    description: "Leere Metadaten — alle Fallbacks gleichzeitig",
-    userMetadata: {},
+    description: "Ohne Namen und Avatar — alle Fallbacks gleichzeitig",
+    discordId: "100000000000000004",
+    identity: { displayName: null, username: null, avatarUrl: null },
     role: "player",
     guildMember: null,
   },
@@ -95,13 +99,11 @@ export const PERSONAS: readonly Persona[] = [
     label: "Kein Server",
     description:
       "Vom Discord-Server ausgetreten — Mitgliedschafts-Gate überall",
-    userMetadata: {
-      avatar_url: AVATAR_URL,
-      picture: AVATAR_URL,
-      custom_claims: { global_name: "Ausgetreten" },
-      full_name: "ausgetreten",
-      name: "ausgetreten",
-      provider_id: "100000000000000005",
+    discordId: "100000000000000005",
+    identity: {
+      displayName: "Ausgetreten",
+      username: "ausgetreten",
+      avatarUrl: AVATAR_URL,
     },
     role: "player",
     guildMember: false,
@@ -110,13 +112,11 @@ export const PERSONAS: readonly Persona[] = [
     id: "gesperrt",
     label: "Gesperrt",
     description: "Auf der Banliste — Anmeldung gesperrt, Rest offen",
-    userMetadata: {
-      avatar_url: AVATAR_URL,
-      picture: AVATAR_URL,
-      custom_claims: { global_name: "Gesperrter Gustav" },
-      full_name: "gustav_gesperrt",
-      name: "gustav_gesperrt",
-      provider_id: "100000000000000006",
+    discordId: "100000000000000006",
+    identity: {
+      displayName: "Gesperrter Gustav",
+      username: "gustav_gesperrt",
+      avatarUrl: AVATAR_URL,
     },
     role: "player",
     guildMember: true,
@@ -127,13 +127,11 @@ export const PERSONAS: readonly Persona[] = [
     label: "Zuschauerin",
     description:
       "Spielt nicht mit, folgt aber Spielern: Favoriten mit Duell und Drop",
-    userMetadata: {
-      avatar_url: AVATAR_URL,
-      picture: AVATAR_URL,
-      custom_claims: { global_name: "Zoe Zuschauerin" },
-      full_name: "zoe_schaut_zu",
-      name: "zoe_schaut_zu",
-      provider_id: "100000000000000007",
+    discordId: "100000000000000007",
+    identity: {
+      displayName: "Zoe Zuschauerin",
+      username: "zoe_schaut_zu",
+      avatarUrl: AVATAR_URL,
     },
     role: "player",
     guildMember: true,
@@ -143,12 +141,4 @@ export const PERSONAS: readonly Persona[] = [
 
 export function getPersona(id: string): Persona | null {
   return PERSONAS.find((persona) => persona.id === id) ?? null;
-}
-
-export function personaToAdminPayload(persona: Persona) {
-  return {
-    email: `dev-persona-${persona.id}@example.com`,
-    email_confirm: true,
-    user_metadata: persona.userMetadata,
-  };
 }

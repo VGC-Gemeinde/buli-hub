@@ -1,1 +1,0 @@
-ALTER TABLE "feedback_reports" ADD COLUMN "attachment_count" integer DEFAULT 0 NOT NULL;

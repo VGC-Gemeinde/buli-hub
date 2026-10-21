@@ -1,4 +1,3 @@
-import { clearAuthCookiesAtScopes, createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import {
   MAINTENANCE_PAGE_PATH,
@@ -8,17 +7,17 @@ import {
 } from "@/features/maintenance/mode";
 import { PATH_HEADER } from "@/features/usage/path-header";
 import {
-  legacySessionKey,
-  sessionCookieOptions,
-} from "@/lib/supabase/cookie-options";
-import { supabaseEnv } from "@/lib/supabase/env";
+  isLegacySupabaseCookie,
+  sessionCookie,
+} from "@/lib/auth/cookie-options";
 
-// Refreshes expired Supabase auth tokens on navigation and keeps the
-// request + response cookies in sync (Next 16 proxy convention).
+// Runs before every page and route (Next 16 proxy convention). Never touches
+// the database: Next advises against data fetching here, since it also runs
+// for every prefetch. The session itself is checked by currentUser()
+// (specs/004-google-cloud-migration, research.md R9).
 export async function proxy(request: NextRequest) {
   // Maintenance first: while on, nothing but the legal pages reaches route
-  // code, so no write can land during a database move
-  // (specs/004-google-cloud-migration, contracts/maintenance.md).
+  // code, so no write can land during a database move (contracts/maintenance.md).
   if (maintenanceMode()) {
     const route = maintenanceRoute(request.nextUrl.pathname);
     if (route === "json") {
@@ -42,55 +41,30 @@ export async function proxy(request: NextRequest) {
       response.headers.set("Cache-Control", "no-store");
       return response;
     }
-    // The legal pages render without the session refresh below: it would
-    // reach Supabase Auth, and during maintenance nobody is signed in.
-    return NextResponse.next();
   }
 
   // Tell the server tree which path it renders: the root layout counts page
   // loads (src/features/usage/count-page-load.tsx) and a Server Component has
   // no other reliable way to learn its pathname. Set on the request before
-  // any NextResponse.next({ request }) below, so every variant carries it.
+  // NextResponse.next({ request }), so the response carries it.
   request.headers.set(PATH_HEADER, request.nextUrl.pathname);
-  let response = NextResponse.next({ request });
-  const { url, publishableKey } = supabaseEnv();
+  const response = NextResponse.next({ request });
 
-  const supabase = createServerClient(url, publishableKey, {
-    cookieOptions: sessionCookieOptions(),
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        for (const { name, value } of cookiesToSet) {
-          request.cookies.set(name, value);
-        }
-        response = NextResponse.next({ request });
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
-        }
-      },
-    },
-  });
+  // Sliding expiry: every request that carries the session gets it back with
+  // a fresh 30-day Max-Age, so the browser keeps it exactly as long as the
+  // server does (contracts/session.md). Whether it is valid is decided later.
+  const cookie = sessionCookie();
+  const token = request.cookies.get(cookie.name)?.value;
+  if (token) {
+    response.cookies.set(cookie.name, token, cookie.options);
+  }
 
-  // The call itself triggers the token refresh; the result is not needed.
-  await supabase.auth.getUser();
-
-  // The shared session (specs/003-shared-discord-login) has a name of its own,
-  // so the pre-switch session in the library's default cookie on this host is
-  // never read again; clear it instead of letting the browser send it for a
-  // year. The helper does nothing once it is gone.
-  if (process.env.AUTH_COOKIE_DOMAIN) {
-    await clearAuthCookiesAtScopes({
-      getAll: () => request.cookies.getAll(),
-      setAll: (cookiesToSet) => {
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
-        }
-      },
-      storageKey: legacySessionKey(url),
-      scopes: [{}],
-    });
+  // Supabase's session from before the move is never read again; clear it
+  // instead of letting the browser send it for a year.
+  for (const { name } of request.cookies.getAll()) {
+    if (isLegacySupabaseCookie(name)) {
+      response.cookies.set(name, "", { path: "/", maxAge: 0 });
+    }
   }
 
   // Staging is served on a public but unguessable URL (docs/deployment.md §7).

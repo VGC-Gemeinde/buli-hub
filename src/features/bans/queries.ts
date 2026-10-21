@@ -4,12 +4,9 @@ import type { Identity } from "@/features/season/dashboard";
 import { db } from "@/lib/db";
 import { PLAYER_NAME_FALLBACK, playerName } from "@/lib/player-name";
 
-// A hub user's Discord id, read from the auth metadata exactly as
-// `discordIdentityFromUser` reads it (provider_id, else sub). Raw SQL because
-// Drizzle does not manage the auth schema.
-const userDiscordId = sql.raw(
-  "coalesce(nullif(u.raw_user_meta_data->>'provider_id', ''), nullif(u.raw_user_meta_data->>'sub', ''))",
-);
+// A hub user's Discord id: `users.discord_id`, aliased `u` in every query
+// below (specs/004-google-cloud-migration).
+const userDiscordId = sql.raw("u.discord_id");
 
 /** Whether a Discord account is banned right now. No id = never banned. */
 export async function isBanned(discordId: string | null): Promise<boolean> {
@@ -85,7 +82,7 @@ export async function listBans(): Promise<BanRow[]> {
     from bans b
     left join lateral (
       select p.user_id, p.display_name, p.username, p.avatar_url
-      from auth.users u
+      from users u
       join profiles p on p.user_id = u.id
       where ${userDiscordId} = b.discord_id
       limit 1
@@ -139,9 +136,8 @@ export async function banCandidates(): Promise<BanCandidate[]> {
     select p.user_id, p.display_name, p.username, p.avatar_url,
            ${userDiscordId} as discord_id
     from profiles p
-    join auth.users u on u.id = p.user_id
-    where ${userDiscordId} is not null
-      and not exists (
+    join users u on u.id = p.user_id
+    where not exists (
         select 1 from bans b
         where b.discord_id = ${userDiscordId} and b.lifted_at is null
       )
@@ -168,7 +164,7 @@ export async function hubUserByDiscordId(
     avatar_url: string | null;
   }>(sql`
     select p.user_id, p.display_name, p.username, p.avatar_url
-    from auth.users u
+    from users u
     join profiles p on p.user_id = u.id
     where ${userDiscordId} = ${discordId}
     limit 1
@@ -191,16 +187,16 @@ export async function hubUserByDiscordId(
 export async function bannedUserIds(): Promise<Set<string>> {
   const rows = await db.execute<{ user_id: string }>(sql`
     select u.id as user_id
-    from auth.users u
+    from users u
     join bans b on b.discord_id = ${userDiscordId} and b.lifted_at is null
   `);
   return new Set(rows.map((row) => row.user_id));
 }
 
-// The Discord id of a hub user, or null (only dev personas have none).
+// The Discord id of a hub user, or null for an unknown user id.
 export async function discordIdOfUser(userId: string): Promise<string | null> {
   const rows = await db.execute<{ discord_id: string | null }>(sql`
-    select ${userDiscordId} as discord_id from auth.users u where u.id = ${userId}
+    select ${userDiscordId} as discord_id from users u where u.id = ${userId}
   `);
   return rows[0]?.discord_id ?? null;
 }

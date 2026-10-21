@@ -1,10 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { discordIdentityFromUser } from "@/features/auth/identity";
+import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
-import { getRole } from "@/features/roles/sync";
-import { createClient } from "@/lib/supabase/server";
 import { createWindow, latestWindow } from "./queries";
 import {
   openRegistrationSchema,
@@ -19,17 +17,13 @@ export async function openRegistration(input: {
   closesAt: string;
   seasonNumber?: unknown;
 }): Promise<OpenRegistrationResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) {
     return { ok: false, error: "Nicht angemeldet" };
   }
 
   // Never trust UI gating: re-check the role in the action.
-  const role = await getRole(user.id, discordIdentityFromUser(user));
-  if (!roleAtLeast(role, "staff")) {
+  if (!roleAtLeast(user.role, "staff")) {
     return { ok: false, error: "Keine Berechtigung" };
   }
 
@@ -64,7 +58,7 @@ export async function openRegistration(input: {
     : // biome-ignore lint/style/noNonNullAssertion: latest is non-null here
       latest!.seasonNumber + 1;
 
-  await createWindow(parsed.data.closesAt, user.id, seasonNumber);
+  await createWindow(parsed.data.closesAt, user.userId, seasonNumber);
   revalidatePath("/staff");
   return { ok: true };
 }

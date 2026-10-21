@@ -57,7 +57,9 @@ function signedIn(userId: string, role: "player" | "staff") {
 
 beforeAll(async () => {
   for (const id of [player, other, staff]) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   await db
     .insert(profiles)
@@ -86,7 +88,7 @@ afterEach(async () => {
 
 afterAll(async () => {
   for (const id of [player, other, staff]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 

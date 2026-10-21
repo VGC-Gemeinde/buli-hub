@@ -6,10 +6,12 @@ import {
   cropSize,
   initialCropView,
   isLowResolution,
+  isStreamPhotoPath,
   MAX_ZOOM,
   ownsStreamPhotoPath,
   STREAM_PHOTO,
   showStreamPhotoCard,
+  streamPhotoContentType,
   streamPhotoPath,
   streamPhotoUrl,
   validateStreamPhoto,
@@ -29,22 +31,40 @@ describe("streamPhotoPath / ownsStreamPhotoPath", () => {
   });
 });
 
+const OWNER = "0b6f3c3a-3f4e-4c55-9d1e-2a3b4c5d6e7f";
+const PATH = `${OWNER}/9f8e7d6c-5b4a-4321-8fed-cba987654321.webp`;
+
 describe("streamPhotoUrl", () => {
-  it("builds the public URL", () => {
-    expect(streamPhotoUrl("user-1/abc.webp", "https://sb.example.com")).toBe(
-      "https://sb.example.com/storage/v1/object/public/stream-photos/user-1/abc.webp",
-    );
+  it("is the hub's own address, so the session goes along", () => {
+    expect(streamPhotoUrl(PATH)).toBe(`/stream-photos/${PATH}`);
   });
 
-  it("tolerates a trailing slash on the base", () => {
-    expect(streamPhotoUrl("u/a.webp", "https://sb.example.com/")).toBe(
-      "https://sb.example.com/storage/v1/object/public/stream-photos/u/a.webp",
-    );
+  it("is null without a path", () => {
+    expect(streamPhotoUrl(null)).toBeNull();
+  });
+});
+
+describe("isStreamPhotoPath", () => {
+  it("accepts exactly the paths streamPhotoPath produces", () => {
+    expect(isStreamPhotoPath(PATH)).toBe(true);
+    expect(isStreamPhotoPath(PATH.replace(".webp", ".png"))).toBe(true);
+    expect(isStreamPhotoPath(PATH.replace(".webp", ".jpg"))).toBe(true);
   });
 
-  it("is null without a path or without a base", () => {
-    expect(streamPhotoUrl(null, "https://sb.example.com")).toBeNull();
-    expect(streamPhotoUrl("u/a.webp", "")).toBeNull();
+  it("refuses anything else", () => {
+    expect(isStreamPhotoPath("../secret")).toBe(false);
+    expect(isStreamPhotoPath(`${OWNER}/../x.webp`)).toBe(false);
+    expect(isStreamPhotoPath(PATH.replace(".webp", ".svg"))).toBe(false);
+    expect(isStreamPhotoPath(`other/${PATH}`)).toBe(false);
+    expect(isStreamPhotoPath("")).toBe(false);
+  });
+});
+
+describe("streamPhotoContentType", () => {
+  it("follows the extension", () => {
+    expect(streamPhotoContentType("a/b.webp")).toBe("image/webp");
+    expect(streamPhotoContentType("a/b.png")).toBe("image/png");
+    expect(streamPhotoContentType("a/b.jpg")).toBe("image/jpeg");
   });
 });
 

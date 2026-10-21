@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (lokaler Stack).
+
 # Scaffolding
 
 **Status: done** (2026-07-02)

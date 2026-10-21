@@ -25,7 +25,6 @@ import {
   SPOILERS_OFF_COOKIE,
 } from "@/features/spoilers/spoilers";
 import { germanToday } from "@/lib/german-time";
-import { createClient } from "@/lib/supabase/server";
 
 export default async function Home({
   searchParams,
@@ -89,10 +88,7 @@ export default async function Home({
   }
 
   // Otherwise: the pre-/inter-season landing (anon sign-in / logged-in CTA).
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">

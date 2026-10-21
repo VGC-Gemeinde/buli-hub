@@ -101,7 +101,7 @@ src/features/auth/
 ├── discord-api.ts                        # token exchange, /users/@me (fetch)
 ├── session.ts / session.test.ts          # pure: token, hash, validity, renewal
 ├── sessions.ts                           # create, resolve, renew, end, endAllForUser, purgeExpired
-├── users.ts                              # findOrCreateByDiscordId, discordIdOf
+├── users.ts                              # findOrCreateUserByDiscordId, rememberSignInIdentity
 ├── *.integration.test.ts                 # users, sessions, callback flow (Discord stubbed)
 ├── identity.ts                           # DiscordIdentity type stays; Supabase mapper removed
 ├── sign-in-error.ts                      # "no_email" category removed
@@ -117,7 +117,9 @@ src/app/layout.tsx                        # skips DB-touching parts in maintenan
 
 src/features/roles/guard.ts               # currentUser() from the session
 src/features/{bans,membership,discord-season,favorites,replacements}/queries.ts  # users.discord_id
-src/features/stream-photos/{storage,photo}.ts  # GCS; URL base from NEXT_PUBLIC_STREAM_PHOTOS_URL (build arg: three client components call it)
+src/features/stream-photos/{storage,photo}.ts  # private GCS bucket; pages use /stream-photos/<path>
+src/features/stream-photos/access.ts      # signed stream address, who may see a photo (server only)
+src/app/stream-photos/[...path]/route.ts  # serves a photo after the access check
 src/features/dev/{login,personas,seed}.ts, dev/impersonation/queries.ts, dev/clone/{scrub,restore}.ts
 src/features/dev/components/gallery.tsx   # + maintenance page
 
@@ -188,10 +190,12 @@ append-only again.
 - `/auth/callback`: rewritten, same URL. `/wartung`: internal, only reached through the proxy's
   rewrite during maintenance; no navigation entry.
 - No section, row or `staffNav` change. No staff todo.
-- Stream API: same routes and shape; `streamPhotoUrl` now returns
-  `https://storage.googleapis.com/buli-hub-stream-photos/<path>`; 503 JSON during maintenance.
-  gemeinde-streams needs no change (it loads URLs as given); its maintainers are told the host
-  changes.
+- `/stream-photos/[...path]` (new route handler): the only way to a stream photo; session for the
+  player and staff, signed address for the stream, 404 for everyone else (research R7, revised
+  after Gate 3).
+- Stream API: same routes and shape; `photoUrl` is now the signed hub address
+  `<APP_BASE_URL>/stream-photos/<path>?sig=…`; 503 JSON during maintenance. gemeinde-streams
+  needs no change (it loads URLs as given).
 
 ## Rollout
 

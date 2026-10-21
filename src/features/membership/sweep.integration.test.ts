@@ -36,13 +36,14 @@ const { registeredMembership } = await import("./queries");
 const staff = randomUUID();
 const memberUser = randomUUID();
 const goneUser = randomUUID();
-const noDiscordUser = randomUUID();
-const users = [staff, memberUser, goneUser, noDiscordUser];
+const unplacedUser = randomUUID();
+const users = [staff, memberUser, goneUser, unplacedUser];
 // Distinct snowflakes so the list mock can answer per player.
 const snowflake: Record<string, string> = {
   [staff]: "200000000000000009",
   [memberUser]: "200000000000000001",
   [goneUser]: "200000000000000002",
+  [unplacedUser]: "200000000000000003",
 };
 let windowId: string;
 
@@ -50,10 +51,7 @@ beforeAll(async () => {
   await db.delete(registrationWindows);
   for (const id of users) {
     await db.execute(
-      sql`insert into auth.users (id, raw_user_meta_data)
-          values (${id}, ${JSON.stringify(
-            snowflake[id] ? { provider_id: snowflake[id] } : {},
-          )}::jsonb)`,
+      sql`insert into users (id, discord_id) values (${id}, ${snowflake[id]})`,
     );
   }
   const [window] = await db
@@ -66,7 +64,7 @@ beforeAll(async () => {
     .returning({ id: registrationWindows.id });
   windowId = window.id;
   await db.insert(registrations).values(
-    [memberUser, goneUser, noDiscordUser].map((userId) => ({
+    [memberUser, goneUser, unplacedUser].map((userId) => ({
       windowId,
       userId,
       platform: "showdown" as const,
@@ -91,7 +89,7 @@ afterEach(async () => {
 afterAll(async () => {
   await db.delete(registrationWindows);
   for (const id of users) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 
@@ -121,9 +119,7 @@ describe("sweepGuildMemberships", () => {
     expect(byUser.get(memberUser)).toBe(true);
     // In the roster but not in the list: confirmed gone.
     expect(byUser.get(goneUser)).toBe(false);
-    // No Discord id: cannot appear in the list, stays never checked — no
-    // profile row is created at all.
-    expect(byUser.get(noDiscordUser)).toBeNull();
+    expect(byUser.get(unplacedUser)).toBe(false);
   });
 
   it("overwrites a stored state with the fresh one", async () => {
@@ -192,7 +188,7 @@ describe("registeredMembership", () => {
     const roster = await registeredMembership(windowId);
     // Placed and active, and not yet placed at all: both still listed.
     expect(roster.map((row) => row.userId).sort()).toEqual(
-      [memberUser, noDiscordUser].sort(),
+      [memberUser, unplacedUser].sort(),
     );
   });
 });

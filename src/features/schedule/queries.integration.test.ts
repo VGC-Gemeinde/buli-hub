@@ -40,8 +40,8 @@ let subBId: string;
 beforeAll(async () => {
   await db.execute(sql`delete from registration_windows`);
   await db.execute(
-    sql`insert into auth.users (id) values ${sql.join(
-      allIds.map((id) => sql`(${id})`),
+    sql`insert into users (id, discord_id) values ${sql.join(
+      allIds.map((id) => sql`(${id}, ${id})`),
       sql`, `,
     )}`,
   );
@@ -86,7 +86,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await db.execute(sql`delete from registration_windows`);
   await db.execute(
-    sql`delete from auth.users where id in (${sql.join(
+    sql`delete from users where id in (${sql.join(
       allIds.map((id) => sql`${id}`),
       sql`, `,
     )})`,

@@ -14,6 +14,7 @@ import {
   registrations,
   subDivisions,
   teamSheets,
+  users,
 } from "@/db/schema";
 import { TOP_RESULT_TIERS } from "@/features/discord-posts/channels";
 import { syncResultPost } from "@/features/discord-posts/sync";
@@ -66,66 +67,16 @@ import { SEED_SHEET_A, SEED_SHEET_B } from "./teamsheets";
 
 // Dev-only test-data generator: a closed registration window filled with fake
 // registered players so staff can exercise the seeding tool at realistic
-// volume. Fake users are tagged by email so they can be cleared without
-// touching the dev personas.
-const SEED_EMAIL_PREFIX = "seed-";
-const SEED_EMAIL_DOMAIN = "@example.test";
+// volume. Fake users are tagged by their Discord id (SEED_DISCORD_PREFIX) so
+// they can be cleared without touching the dev personas.
 
-// Inserts fake users as *complete* GoTrue accounts, not bare (id, email) rows.
-// The impersonation tool (/dev/login-as) signs a browser in by asking GoTrue
-// for a magic link, and GoTrue 500s on a user that is missing the operational
-// columns (`aud`, `role`, `instance_id`, a confirmed email) or has no matching
-// `auth.identities` row — the same shape `admin.createUser` produces for the
-// personas. Without this, seeded players are listed in the picker but cannot be
-// impersonated. `auth.identities` cascades on user delete, so clearSeedData
-// needs no extra cleanup.
-const GOTRUE_INSTANCE = "00000000-0000-0000-0000-000000000000";
-
-async function insertSeedAuthUsers(
-  users: { id: string; email: string }[],
+// Inserts the fake accounts: an id and a Discord id each, like a real sign-in
+// (specs/004-google-cloud-migration). Impersonation (/dev/login-as) signs a
+// browser in as any of them by id.
+async function insertSeedUsers(
+  rows: { id: string; discordId: string }[],
 ): Promise<void> {
-  const appMeta = JSON.stringify({ provider: "email", providers: ["email"] });
-  const userMeta = JSON.stringify({ email_verified: true });
-  const userRows = users.map(
-    ({ id, email }) =>
-      // The token columns must be '' and not NULL: GoTrue scans them into
-      // non-nullable Go strings on every read, and a NULL makes it 500 (its
-      // error body is empty — the "{}" the impersonation route used to show).
-      // `admin.createUser` sets them to '', which is what a persona login does;
-      // a direct insert defaults them to NULL, so they are set explicitly here.
-      sql`(${id}, ${email}, 'authenticated', 'authenticated', ${GOTRUE_INSTANCE},
-        now(), now(), now(),
-        ${appMeta}::jsonb, ${userMeta}::jsonb,
-        false, false,
-        '', '', '', '')`,
-  );
-  await db.execute(
-    sql`insert into auth.users
-      (id, email, aud, role, instance_id,
-       email_confirmed_at, created_at, updated_at,
-       raw_app_meta_data, raw_user_meta_data,
-       is_sso_user, is_anonymous,
-       confirmation_token, recovery_token, email_change_token_new, email_change)
-     values ${sql.join(userRows, sql`, `)}`,
-  );
-
-  // One email-provider identity per user — provider_id and the `sub` claim are
-  // the user id, mirroring a real email signup.
-  const identityRows = users.map(
-    ({ id, email }) =>
-      // Cast the jsonb_build_object arguments — inside it the params are
-      // otherwise untyped and Postgres cannot infer them ($n type error).
-      // `auth.identities.email` is a generated column (derived from
-      // identity_data->>'email'), so it is deliberately not in the column list.
-      sql`(${id}, ${id}, jsonb_build_object('sub', ${id}::text, 'email', ${email}::text, 'email_verified', true),
-        'email', now(), now(), now())`,
-  );
-  await db.execute(
-    sql`insert into auth.identities
-      (provider_id, user_id, identity_data, provider,
-       last_sign_in_at, created_at, updated_at)
-     values ${sql.join(identityRows, sql`, `)}`,
-  );
+  await db.insert(users).values(rows);
 }
 
 const NAME_POOL = [
@@ -244,25 +195,22 @@ export function buildSeedRegistrations(
   return specs;
 }
 
-// Discord ids the seed bans carry, so clearSeedData can find them again (bans
-// hang on a Discord id, not on the seed users' emails).
+// Every Discord id the seed hands out starts here (18-digit snowflakes), so
+// clearSeedData finds its accounts and bans again: 0… bans, 1… players,
+// 2… replacements, 3… the seed staff member.
 const SEED_DISCORD_PREFIX = "4990000000";
+
+function seedDiscordId(kind: 0 | 1 | 2 | 3, index: number): string {
+  return `${SEED_DISCORD_PREFIX}${kind}${String(index).padStart(7, "0")}`;
+}
 
 // The Banliste (docs/plans/banlist.md) in every state: a banned hub user, a
 // ban by Discord-ID on someone who never signed in, and a lifted ban as
 // history.
 async function seedBans(staffId: string): Promise<void> {
   const bannedId = randomUUID();
-  const bannedDiscord = `${SEED_DISCORD_PREFIX}00000001`;
-  await insertSeedAuthUsers([
-    { id: bannedId, email: `${SEED_EMAIL_PREFIX}gebannt${SEED_EMAIL_DOMAIN}` },
-  ]);
-  // A Discord sign-in stores the id here; the seed users are email users.
-  await db.execute(
-    sql`update auth.users
-        set raw_user_meta_data = raw_user_meta_data || jsonb_build_object('provider_id', ${bannedDiscord}::text)
-        where id = ${bannedId}`,
-  );
+  const bannedDiscord = seedDiscordId(0, 1);
+  await insertSeedUsers([{ id: bannedId, discordId: bannedDiscord }]);
   await db.insert(profiles).values({
     userId: bannedId,
     displayName: "Gebannter Bernd",
@@ -278,7 +226,7 @@ async function seedBans(staffId: string): Promise<void> {
       bannedAt: new Date(Date.now() - 20 * day),
     },
     {
-      discordId: `${SEED_DISCORD_PREFIX}00000002`,
+      discordId: seedDiscordId(0, 2),
       discordName: "Altmeister Alfred",
       reason:
         "Aus Saison 3: Playoffs nicht angetreten, danach nicht erreichbar.",
@@ -286,7 +234,7 @@ async function seedBans(staffId: string): Promise<void> {
       bannedAt: new Date(Date.now() - 60 * day),
     },
     {
-      discordId: `${SEED_DISCORD_PREFIX}00000003`,
+      discordId: seedDiscordId(0, 3),
       discordName: "Ehemals Emil",
       reason: "Account geteilt.",
       bannedById: staffId,
@@ -305,7 +253,7 @@ export async function clearSeedData() {
     sql`delete from bans where discord_id like ${`${SEED_DISCORD_PREFIX}%`}`,
   );
   await db.execute(
-    sql`delete from auth.users where email like ${`${SEED_EMAIL_PREFIX}%${SEED_EMAIL_DOMAIN}`}`,
+    sql`delete from users where discord_id like ${`${SEED_DISCORD_PREFIX}%`}`,
   );
 }
 
@@ -983,10 +931,10 @@ async function seedReplacements(input: {
     { id: randomUUID(), displayName: "Nachrücker Nemo", username: "nemo_nach" },
     { id: randomUUID(), displayName: "Angefragt Ari", username: "ari_vgc" },
   ];
-  await insertSeedAuthUsers(
+  await insertSeedUsers(
     newcomers.map((user, i) => ({
       id: user.id,
-      email: `${SEED_EMAIL_PREFIX}ersatz-${i}${SEED_EMAIL_DOMAIN}`,
+      discordId: seedDiscordId(2, i),
     })),
   );
   await db.insert(profiles).values(
@@ -1090,11 +1038,11 @@ export async function generateSeedData(
   const specs = buildSeedRegistrations(shapeCount);
   const ids: string[] = specs.map(() => randomUUID());
 
-  // Fake auth users (one multi-row insert), then their profiles.
-  await insertSeedAuthUsers(
+  // Fake accounts (one multi-row insert), then their profiles.
+  await insertSeedUsers(
     specs.map((_, i) => ({
       id: ids[i],
-      email: `${SEED_EMAIL_PREFIX}${i}${SEED_EMAIL_DOMAIN}`,
+      discordId: seedDiscordId(1, i),
     })),
   );
   // Profile mix. `has_capture_card` can only be true because the owner saved
@@ -1127,9 +1075,7 @@ export async function generateSeedData(
   // A staff member: opens the window and is the "besprochen mit" contact on
   // player-reported free wins. Not registered — staff don't play the season.
   const staffId = randomUUID();
-  await insertSeedAuthUsers([
-    { id: staffId, email: `${SEED_EMAIL_PREFIX}staff${SEED_EMAIL_DOMAIN}` },
-  ]);
+  await insertSeedUsers([{ id: staffId, discordId: seedDiscordId(3, 0) }]);
   await db.insert(profiles).values({
     userId: staffId,
     displayName: "Orga Team",

@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (Speicherort der Fotos).
+
 # Stream-Fotos (das Spielerfoto im Stream-Overlay)
 
 **Status: done** (2026-09-08). Gestaltet in einem Zug, ohne späteren

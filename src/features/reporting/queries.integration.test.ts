@@ -51,7 +51,9 @@ let matchBye: string; // carol bye
 
 beforeAll(async () => {
   for (const id of [alice, bob, carol, staff]) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   await db.insert(profiles).values([
     { userId: alice, displayName: "Alice" },
@@ -106,7 +108,7 @@ afterAll(async () => {
     sql`delete from registration_windows where id = ${windowId}`,
   );
   for (const id of [alice, bob, carol, staff]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 
@@ -197,7 +199,9 @@ describe("saveResult + getMatchResult", () => {
     // a Discord message or a screenshot has to survive a correction. Runs on
     // its own match so it cannot disturb the shared fixture.
     const throwaway = randomUUID();
-    await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${throwaway}, ${throwaway})`,
+    );
     const [m] = await db
       .insert(matches)
       .values({
@@ -246,14 +250,16 @@ describe("saveResult + getMatchResult", () => {
     expect(sheetAfter?.source).toBe("import");
 
     await db.execute(sql`delete from matches where id = ${m.id}`);
-    await db.execute(sql`delete from auth.users where id = ${throwaway}`);
+    await db.execute(sql`delete from users where id = ${throwaway}`);
   });
 
   it("drops the sheets when a result becomes a free win", async () => {
     // A free win has no games and no teams. Leaving the pastes behind would
     // publish sheets for a match the standings treat as unplayed.
     const throwaway = randomUUID();
-    await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${throwaway}, ${throwaway})`,
+    );
     const [m] = await db
       .insert(matches)
       .values({
@@ -293,7 +299,7 @@ describe("saveResult + getMatchResult", () => {
     expect((await getMatchResult(m.id))?.sheets).toEqual([]);
 
     await db.execute(sql`delete from matches where id = ${m.id}`);
-    await db.execute(sql`delete from auth.users where id = ${throwaway}`);
+    await db.execute(sql`delete from users where id = ${throwaway}`);
   });
 
   it("feeds computeStandings via groupResults (bye + reported)", async () => {
@@ -323,7 +329,9 @@ describe("saveResult + getMatchResult", () => {
 
   it("cascades: deleting the match removes result + games + sheets", async () => {
     const throwaway = randomUUID();
-    await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${throwaway}, ${throwaway})`,
+    );
     const [m] = await db
       .insert(matches)
       .values({
@@ -351,7 +359,7 @@ describe("saveResult + getMatchResult", () => {
     expect(await getMatchResult(m.id)).not.toBeNull();
     await db.execute(sql`delete from matches where id = ${m.id}`);
     expect(await getMatchResult(m.id)).toBeNull();
-    await db.execute(sql`delete from auth.users where id = ${throwaway}`);
+    await db.execute(sql`delete from users where id = ${throwaway}`);
   });
 });
 
@@ -698,7 +706,9 @@ describe("divisionGroups", () => {
 
   beforeAll(async () => {
     for (const id of [x1, x2, y1, y2]) {
-      await db.execute(sql`insert into auth.users (id) values (${id})`);
+      await db.execute(
+        sql`insert into users (id, discord_id) values (${id}, ${id})`,
+      );
     }
     await db.insert(profiles).values([
       { userId: x1, displayName: "Xander" },
@@ -767,7 +777,7 @@ describe("divisionGroups", () => {
 
   afterAll(async () => {
     for (const id of [x1, x2, y1, y2]) {
-      await db.execute(sql`delete from auth.users where id = ${id}`);
+      await db.execute(sql`delete from users where id = ${id}`);
     }
   });
 

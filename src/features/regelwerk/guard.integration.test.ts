@@ -39,7 +39,9 @@ function seasonIs(phase: string) {
 }
 
 beforeAll(async () => {
-  await db.execute(sql`insert into auth.users (id) values (${player})`);
+  await db.execute(
+    sql`insert into users (id, discord_id) values (${player}, ${player})`,
+  );
   const [row] = await db
     .insert(registrationWindows)
     .values({
@@ -58,7 +60,7 @@ afterEach(async () => {
 
 afterAll(async () => {
   await db.delete(registrationWindows);
-  await db.execute(sql`delete from auth.users where id = ${player}`);
+  await db.execute(sql`delete from users where id = ${player}`);
 });
 
 describe("regelwerkBlock", () => {

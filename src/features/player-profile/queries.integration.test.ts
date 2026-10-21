@@ -8,7 +8,9 @@ import { profileIdentity } from "./queries";
 const alice = randomUUID();
 
 beforeAll(async () => {
-  await db.execute(sql`insert into auth.users (id) values (${alice})`);
+  await db.execute(
+    sql`insert into users (id, discord_id) values (${alice}, ${alice})`,
+  );
   await db.insert(profiles).values({
     userId: alice,
     displayName: "Alice",
@@ -18,7 +20,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await db.execute(sql`delete from auth.users where id = ${alice}`);
+  await db.execute(sql`delete from users where id = ${alice}`);
 });
 
 describe("profileIdentity", () => {

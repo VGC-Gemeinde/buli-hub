@@ -28,14 +28,14 @@ let sd1a: string;
 let sd1b: string;
 
 beforeAll(async () => {
-  // alice: full identity; bob: no Discord id in the metadata; carol: dropped;
+  // alice and bob: grouped (bob without a display name); carol: dropped;
   // dave: placed in a division but not (yet) in a sub-division.
   await db.execute(
-    sql`insert into auth.users (id, raw_user_meta_data) values
-      (${alice}, ${JSON.stringify({ provider_id: "100000000000000001" })}::jsonb),
-      (${bob}, '{}'::jsonb),
-      (${carol}, ${JSON.stringify({ provider_id: "100000000000000003" })}::jsonb),
-      (${dave}, ${JSON.stringify({ provider_id: "100000000000000004" })}::jsonb)`,
+    sql`insert into users (id, discord_id) values
+      (${alice}, '100000000000000001'),
+      (${bob}, '100000000000000002'),
+      (${carol}, '100000000000000003'),
+      (${dave}, '100000000000000004')`,
   );
   await db.insert(profiles).values([
     { userId: alice, displayName: "Alice", username: "alice" },
@@ -80,7 +80,7 @@ afterAll(async () => {
   );
   for (const id of [alice, bob, carol, dave]) {
     await db.execute(sql`delete from profiles where user_id = ${id}`);
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 
@@ -104,11 +104,11 @@ describe("listPlacedPlayers", () => {
       subDivisionId: sd1a,
       stages: [],
     });
-    // No Discord id in the metadata → null, the plan skips them by name.
+    // No display name → the username, as everywhere.
     expect(players.find((p) => p.userId === bob)).toEqual({
       userId: bob,
       name: "bob",
-      discordId: null,
+      discordId: "100000000000000002",
       subDivisionId: sd1b,
       stages: [],
     });

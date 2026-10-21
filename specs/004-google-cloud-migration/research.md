@@ -149,8 +149,17 @@ depends on them.
 
 ## R7. Stream photos on Cloud Storage
 
-- **Decision**: buckets `buli-hub-stream-photos` and `buli-hub-stream-photos-staging` in
-  europe-west1, uniform bucket-level access, `allUsers:objectViewer`. Public URL
+- **Decision, revised after Gate 3** (maintainer, 2026-10-21): stream photos are not public. The
+  buckets `buli-hub-stream-photos` and `buli-hub-stream-photos-staging` are private (uniform
+  bucket-level access, public access prevention enforced); only the hub's runtime account reads
+  them. The hub serves a photo at `/stream-photos/<path>` (`src/app/stream-photos/[...path]/route.ts`)
+  to the player and staff through the session, and to the stream through an address carrying an
+  HMAC-SHA256 over the path keyed by `STREAM_API_SECRET` (`src/features/stream-photos/access.ts`):
+  no expiry, since a new photo is a new path; rotating the secret withdraws every address. Anyone
+  else gets 404. gemeinde-streams loads the address as given, so nothing changes on its side. The
+  first plan, a public bucket (`allUsers:objectViewer`), was refused by the organization's Domain
+  Restricted Sharing policy, and would also have let anyone list every photo.
+- **Original decision** (superseded): buckets with `allUsers:objectViewer`, public URL
   `https://storage.googleapis.com/<bucket>/<path>`. Upload with the JSON API, **multipart**
   (`uploadType=multipart`, a JSON metadata part with `contentType` and
   `cacheControl: public, max-age=31536000`, then the bytes), because `uploadType=media` cannot set

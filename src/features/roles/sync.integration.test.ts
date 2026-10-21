@@ -69,7 +69,9 @@ async function storedProfile() {
 }
 
 beforeAll(async () => {
-  await db.execute(sql`insert into auth.users (id) values (${userId})`);
+  await db.execute(
+    sql`insert into users (id, discord_id) values (${userId}, ${userId})`,
+  );
 });
 
 beforeEach(() => {
@@ -83,7 +85,7 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
-  await db.execute(sql`delete from auth.users where id = ${userId}`);
+  await db.execute(sql`delete from users where id = ${userId}`);
 });
 
 describe("syncMember membership write rules", () => {

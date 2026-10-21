@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (Herkunft der Discord-ID).
+
 # Banliste
 
 **Status: done** (2026-09-30): Banliste with bans by hub user or Discord-ID,

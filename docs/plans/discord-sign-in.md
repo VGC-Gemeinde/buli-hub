@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (Anmeldung und Session).
+
 # Discord sign-in
 
 **Status: done** (2026-07-02) — sign-in verified end to end against the local

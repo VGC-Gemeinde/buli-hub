@@ -32,7 +32,9 @@ const today = "2026-07-03";
 
 beforeAll(async () => {
   for (const id of [alice, bob, staff]) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   await createWindow(new Date("2026-06-30T18:00:00Z"), staff, 1);
   const rows = await db.execute<{ id: string }>(
@@ -136,7 +138,7 @@ afterAll(async () => {
     sql`delete from registration_windows where id = ${windowId}`,
   );
   for (const id of [alice, bob, staff]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 

@@ -7,54 +7,21 @@ import {
 } from "./sign-in-error";
 
 describe("classifySignInError", () => {
-  it("recognises Discord accounts without a verified email", () => {
-    expect(
-      classifySignInError({
-        error: "server_error",
-        description: "Error getting user email from external provider",
-        exchangeError: null,
-      }),
-    ).toBe("no_email");
-  });
-
-  it("recognises the same failure surfaced by the code exchange", () => {
-    expect(
-      classifySignInError({
-        error: null,
-        description: null,
-        exchangeError: "Error getting user email from external provider",
-      }),
-    ).toBe("no_email");
-  });
-
   it("recognises a cancelled consent screen", () => {
-    expect(
-      classifySignInError({
-        error: "access_denied",
-        description: "The resource owner denied the request",
-        exchangeError: null,
-      }),
-    ).toBe("cancelled");
+    expect(classifySignInError({ error: "access_denied" })).toBe("cancelled");
   });
 
-  it("falls back to unknown without leaking the message", () => {
-    const kind = classifySignInError({
-      error: "server_error",
-      description: "Unexpected failure in postgres: relation missing",
-      exchangeError: null,
-    });
-    expect(kind).toBe("unknown");
-    expect(SIGN_IN_ERROR_COPY[kind]).not.toContain("postgres");
+  it("falls back to unknown for every other Discord error", () => {
+    expect(classifySignInError({ error: "server_error" })).toBe("unknown");
+    expect(classifySignInError({ error: "invalid_scope" })).toBe("unknown");
   });
 
-  it("treats a missing code with no params as unknown", () => {
-    expect(
-      classifySignInError({
-        error: null,
-        description: null,
-        exchangeError: null,
-      }),
-    ).toBe("unknown");
+  it("treats a callback without an error as unknown", () => {
+    expect(classifySignInError({ error: null })).toBe("unknown");
+  });
+
+  it("no longer knows the email category of the Supabase sign-in", () => {
+    expect(SIGN_IN_ERROR_KINDS).toEqual(["cancelled", "unknown"]);
   });
 });
 
@@ -71,6 +38,7 @@ describe("parseSignInErrorKind", () => {
   });
 
   it("maps tampered or legacy values to unknown", () => {
+    expect(parseSignInErrorKind("no_email")).toBe("unknown");
     expect(parseSignInErrorKind("1")).toBe("unknown");
     expect(parseSignInErrorKind("<script>")).toBe("unknown");
   });

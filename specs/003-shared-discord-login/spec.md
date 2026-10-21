@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (Anmeldung und Session).
+
 # Feature Specification: Ein Discord-Login für alle Gemeinde-Seiten
 
 **Feature Directory**: `specs/003-shared-discord-login/`

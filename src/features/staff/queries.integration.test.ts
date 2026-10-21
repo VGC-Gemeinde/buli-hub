@@ -4,8 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { createWindow, latestWindow } from "./queries";
 
-// Integration test against the local Supabase Postgres (stack must be
-// running). registration_windows.opened_by has an FK to auth.users, so the
+// Integration test against the local Postgres (`npm run db:start` must be
+// running). registration_windows.opened_by has an FK to users, so the
 // test creates its own user and cleans up afterwards.
 const userId = randomUUID();
 
@@ -18,12 +18,14 @@ afterAll(async () => {
   await db.execute(
     sql`delete from registration_windows where opened_by = ${userId}`,
   );
-  await db.execute(sql`delete from auth.users where id = ${userId}`);
+  await db.execute(sql`delete from users where id = ${userId}`);
 });
 
 describe("registration windows", () => {
   it("returns null when none exist", async () => {
-    await db.execute(sql`insert into auth.users (id) values (${userId})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${userId}, ${userId})`,
+    );
     expect(await latestWindow()).toBeNull();
   });
 

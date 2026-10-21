@@ -26,13 +26,12 @@ import {
   listBans,
 } from "./queries";
 
-// Hub users with Discord ids in their auth metadata, the way a Discord
-// sign-in stores them (provider_id), plus one id nobody in the hub has.
+// Hub users with their Discord ids, the way a Discord sign-in stores them
+// (users.discord_id), plus one id nobody in the hub has.
 const anton = randomUUID();
 const bea = randomUUID();
 const staff = randomUUID();
-const noDiscord = randomUUID();
-const users = [anton, bea, staff, noDiscord];
+const users = [anton, bea, staff];
 const discord: Record<string, string> = {
   [anton]: "300000000000000001",
   [bea]: "300000000000000002",
@@ -42,12 +41,9 @@ const oldTimer = "300000000000000077";
 const lateComer = randomUUID();
 let windowId: string;
 
-async function insertUser(id: string, discordId?: string) {
+async function insertUser(id: string, discordId: string) {
   await db.execute(
-    sql`insert into auth.users (id, raw_user_meta_data)
-        values (${id}, ${JSON.stringify(
-          discordId ? { provider_id: discordId } : {},
-        )}::jsonb)`,
+    sql`insert into users (id, discord_id) values (${id}, ${discordId})`,
   );
 }
 
@@ -61,7 +57,6 @@ beforeAll(async () => {
     { userId: anton, displayName: "Anton" },
     { userId: bea, displayName: "Bea" },
     { userId: staff, displayName: "Staffi", role: "staff" },
-    { userId: noDiscord, displayName: "Persona" },
   ]);
   await createWindow(new Date(Date.now() + 7 * 86_400_000), staff, 9);
   const rows = await db.execute<{ id: string }>(
@@ -74,7 +69,7 @@ afterAll(async () => {
   await db.delete(bans);
   await db.delete(registrationWindows);
   for (const id of [...users, lateComer]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 
@@ -172,12 +167,11 @@ describe("bans by Discord-ID", () => {
 });
 
 describe("who can be picked", () => {
-  it("leaves banned accounts and accounts without a Discord id out", async () => {
+  it("leaves banned accounts out", async () => {
     const ids = (await banCandidates()).map((c) => c.userId);
     expect(ids).toContain(bea);
     expect(ids).toContain(staff);
     expect(ids).not.toContain(anton);
-    expect(ids).not.toContain(noDiscord);
     expect(ids).not.toContain(lateComer);
   });
 

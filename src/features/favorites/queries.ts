@@ -1,6 +1,6 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { PickablePlayer } from "@/components/player-picker";
-import { favorites, profiles } from "@/db/schema";
+import { favorites, profiles, users } from "@/db/schema";
 import {
   afterSeasonWeekToShow,
   currentAfterSeasonWeek,
@@ -55,13 +55,13 @@ export async function removeFavorite(
     .where(and(eq(favorites.userId, userId), eq(favorites.playerId, playerId)));
 }
 
-// Whether a hub user with this id exists. Raw SQL because Drizzle does not
-// manage the auth schema.
+// Whether a hub user with this id exists.
 export async function hubUserExists(userId: string): Promise<boolean> {
-  const rows = await db.execute<{ id: string }>(
-    sql`select id from auth.users where id = ${userId}`,
-  );
-  return rows.length > 0;
+  const row = await db.query.users.findFirst({
+    columns: { id: true },
+    where: eq(users.id, userId),
+  });
+  return row !== undefined;
 }
 
 export type FavoritesPageData = {

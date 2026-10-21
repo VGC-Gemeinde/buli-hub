@@ -11,7 +11,6 @@ import {
 import { currentUser } from "@/features/roles/guard";
 import { latestWindow } from "@/features/staff/queries";
 import { registrationState } from "@/features/staff/registration-window";
-import { createClient } from "@/lib/supabase/server";
 import {
   createRegistration,
   deleteRegistration,
@@ -32,7 +31,7 @@ export type RegisterResult =
 export type RegisterInput = RegistrationDraft;
 
 export async function register(input: unknown): Promise<RegisterResult> {
-  // currentUser rather than the bare Supabase session: it runs the role sync
+  // currentUser rather than the bare session: it runs the role sync
   // when stale, so the membership flag checked below is at most TTL-old.
   const current = await currentUser();
   if (!current) {
@@ -88,14 +87,11 @@ export async function register(input: unknown): Promise<RegisterResult> {
 }
 
 export async function dismissRegistrationHint(): Promise<RegisterResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) {
     return { ok: false, error: "Nicht angemeldet" };
   }
-  await dismissProfileHint(user.id);
+  await dismissProfileHint(user.userId);
   // The hint appears on both surfaces; drop the cached HTML for each.
   revalidatePath("/anmeldung");
   revalidatePath("/spieler");
@@ -103,10 +99,7 @@ export async function dismissRegistrationHint(): Promise<RegisterResult> {
 }
 
 export async function withdraw(): Promise<RegisterResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) {
     return { ok: false, error: "Nicht angemeldet" };
   }
@@ -116,12 +109,12 @@ export async function withdraw(): Promise<RegisterResult> {
     return { ok: false, error: "Die Anmeldung ist nicht geöffnet" };
   }
 
-  await deleteRegistration(window.id, user.id);
+  await deleteRegistration(window.id, user.userId);
   // The acceptance goes with it. It was given as part of registering, so
   // leaving it behind would mean someone who is not in the season still counts
   // as having agreed to its rules — and a later re-registration would silently
   // reuse the old agreement instead of asking again.
-  await clearAcceptance(window.id, user.id);
+  await clearAcceptance(window.id, user.userId);
 
   revalidatePath("/anmeldung");
   revalidatePath("/staff");

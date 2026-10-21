@@ -76,7 +76,9 @@ async function storedFor(userId: string) {
 
 beforeAll(async () => {
   for (const id of [player, staff]) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   process.env.DISCORD_FEEDBACK_FORUM_CHANNEL_ID = "forum-1";
   process.env.DISCORD_GUILD_ID = "main-guild";
@@ -91,7 +93,7 @@ afterEach(async () => {
 
 afterAll(async () => {
   for (const id of [player, staff]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 

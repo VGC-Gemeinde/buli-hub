@@ -15,12 +15,9 @@ if (!databaseUrl) {
 export default defineConfig({
   dialect: "postgresql",
   schema: "./src/db/schema.ts",
-  // Migrations live in supabase/migrations with timestamp-prefixed names so
-  // `supabase db reset` replays them alongside drizzle-kit migrate.
-  out: "./supabase/migrations",
-  migrations: {
-    prefix: "supabase",
-  },
+  // The chain restarted from a new baseline when the hub left Supabase
+  // (specs/004-google-cloud-migration, research.md R6); append-only from there.
+  out: "./drizzle",
   dbCredentials: {
     url: databaseUrl,
   },

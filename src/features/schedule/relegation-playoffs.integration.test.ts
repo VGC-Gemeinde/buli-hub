@@ -63,8 +63,8 @@ const asStaff = () =>
 beforeAll(async () => {
   await db.execute(sql`delete from registration_windows`);
   await db.execute(
-    sql`insert into auth.users (id) values ${sql.join(
-      [staff, ...players].map((id) => sql`(${id})`),
+    sql`insert into users (id, discord_id) values ${sql.join(
+      [staff, ...players].map((id) => sql`(${id}, ${id})`),
       sql`, `,
     )}`,
   );
@@ -164,7 +164,7 @@ afterAll(async () => {
     sql`delete from registration_windows where id = ${windowId}`,
   );
   await db.execute(
-    sql`delete from auth.users where id in ${sql.raw(
+    sql`delete from users where id in ${sql.raw(
       `(${[staff, ...players].map((id) => `'${id}'`).join(",")})`,
     )}`,
   );

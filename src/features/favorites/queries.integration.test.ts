@@ -51,7 +51,9 @@ async function win(matchId: string, winnerId: string) {
 
 beforeAll(async () => {
   for (const id of users) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   await createWindow(new Date("2026-06-30T18:00:00Z"), staff, 1);
   const rows = await db.execute<{ id: string }>(
@@ -119,7 +121,7 @@ afterAll(async () => {
     sql`delete from registration_windows where id = ${windowId}`,
   );
   for (const id of users) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 
@@ -142,9 +144,11 @@ describe("favourites storage", () => {
 
   it("goes with the account of either side", async () => {
     const gone = randomUUID();
-    await db.execute(sql`insert into auth.users (id) values (${gone})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${gone}, ${gone})`,
+    );
     await addFavorite(fan, gone);
-    await db.execute(sql`delete from auth.users where id = ${gone}`);
+    await db.execute(sql`delete from users where id = ${gone}`);
     const left = await db
       .select()
       .from(favorites)

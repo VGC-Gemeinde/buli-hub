@@ -13,7 +13,7 @@ later through a contract of its own (a later spec), not by sharing a Supabase pr
 | `AUTH_COOKIE_DOMAIN` | Cookie |
 |---|---|
 | set (production only, value `.vgcgemein.de`) | name `gemeinde-auth`, `Domain=.vgcgemein.de`, `Path=/`, `SameSite=Lax`, `Secure`, `HttpOnly` |
-| unset (local, staging, production until the Tippspiel joins) | name `buli-hub-auth`, host-only, `Path=/`, `SameSite=Lax`, `HttpOnly`, `Secure` except on `http://localhost` |
+| unset (local, staging, production until the Tippspiel joins) | name `buli-hub-auth`, host-only, `Path=/`, `SameSite=Lax`, `HttpOnly`, `Secure` whenever `NODE_ENV=production` (so `next dev` stays reachable over plain http from a phone on the LAN) |
 
 - **Value**: 32 random bytes, base64url (43 characters). Opaque; it means nothing without the
   `sessions` row whose `token_hash` is its SHA-256 (data-model.md).

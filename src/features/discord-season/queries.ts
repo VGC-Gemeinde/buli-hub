@@ -4,7 +4,6 @@ import {
   discordSeasonSyncState,
   placements,
 } from "@/db/schema";
-import { discordIdentityFromUser } from "@/features/auth/identity";
 import { publishedStages } from "@/features/schedule/queries";
 import { listSubDivisions } from "@/features/seeding/queries";
 import { db } from "@/lib/db";
@@ -45,13 +44,13 @@ export async function listPlacedPlayers(
     sub_division_id: string;
     display_name: string | null;
     username: string | null;
-    meta: Record<string, unknown> | null;
+    discord_id: string;
     stages: string[] | null;
   }>(
     // `stages`: the stages after the regular season the player has a match
     // in (their players are set once Relegation und Playoffs are published).
     sql`select p.user_id, p.sub_division_id, pr.display_name, pr.username,
-               u.raw_user_meta_data as meta,
+               u.discord_id,
                array(
                  select distinct m.stage::text from matches m
                  where m.window_id = p.window_id
@@ -59,7 +58,7 @@ export async function listPlacedPlayers(
                    and (m.player_a_id = p.user_id or m.player_b_id = p.user_id)
                ) as stages
         from placements p
-        join auth.users u on u.id = p.user_id
+        join users u on u.id = p.user_id
         left join profiles pr on pr.user_id = p.user_id
         where p.window_id = ${windowId}
           and p.sub_division_id is not null
@@ -74,9 +73,7 @@ export async function listPlacedPlayers(
         stage === "playoff" || stage === "relegation",
     ),
     name: playerName(row.display_name, row.username) || PLAYER_NAME_FALLBACK,
-    discordId: discordIdentityFromUser({
-      user_metadata: row.meta ?? {},
-    } as Parameters<typeof discordIdentityFromUser>[0]).discordId,
+    discordId: row.discord_id,
   }));
 }
 

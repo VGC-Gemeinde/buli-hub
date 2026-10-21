@@ -32,7 +32,7 @@ description: "Task list for the move from Supabase to Google Cloud"
 
 - [X] T001 Create `compose.yaml` with `postgres:17` (port `54322:5432`, user/password/db `postgres`, named volume) and `fsouza/fake-gcs-server:1.56.1` (`-scheme http -port 4443 -public-host localhost:4443 -backend memory`, `./dev/gcs-data` mounted at `/data` holding an empty `buli-hub-stream-photos/` directory with a `.gitkeep`), per research.md R8
 - [X] T002 Update `package.json` scripts: `db:start` = `docker compose up -d --wait`, `db:stop` = `docker compose down`, `db:reset` = new `scripts/db-reset.ts` (drop + recreate the local database named in `DATABASE_URL`, refusing any non-local URL via `src/test/local-database.ts`, then `drizzle-kit migrate`), add `db:move-from-supabase`; keep every other script
-- [X] T003 [P] Update `.env.example`: remove `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_AUTH_EXTERNAL_DISCORD_*`; add `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DATABASE_SOCKET` (empty locally), `DATABASE_POOL_MAX`, `STORAGE_API_URL=http://localhost:4443`, `STREAM_PHOTOS_BUCKET=buli-hub-stream-photos`, `NEXT_PUBLIC_STREAM_PHOTOS_URL=http://localhost:4443/buli-hub-stream-photos`, `MAINTENANCE` (commented), `SUPABASE_DATABASE_URL` / `MOVE_TARGET_DATABASE_URL` (move script only); straight quotes only
+- [X] T003 [P] Update `.env.example`: remove `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_AUTH_EXTERNAL_DISCORD_*`; add `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DATABASE_SOCKET` (empty locally), `DATABASE_POOL_MAX`, `STORAGE_API_URL=http://localhost:4443`, `STREAM_PHOTOS_BUCKET=buli-hub-stream-photos`, `MAINTENANCE` (commented), `SUPABASE_DATABASE_URL` / `MOVE_TARGET_DATABASE_URL` (move script only); straight quotes only
 - [X] T004 [P] Point `drizzle.config.ts` at `out: "./drizzle"` (no `supabase` prefix option; default numbered names) and update its comment
 
 ---
@@ -53,7 +53,7 @@ description: "Task list for the move from Supabase to Google Cloud"
 - [X] T012 Replace every `auth.users` write in the 38 integration test files (`grep -rl "auth\.users" src --include=*.test.ts`) with plain `users` SQL; the three that insert `raw_user_meta_data` (`bans/queries.integration.test.ts`, `discord-season/queries.integration.test.ts`, `membership/sweep.integration.test.ts`) insert `users.discord_id` instead
 - [X] T013 [P] Remove the RLS/grant assertions that switch to `role anon` in `src/features/feedback/queries.integration.test.ts` (FR-013); keep the rest of the file
 - [X] T014 [P] Update messages in `src/test/setup.ts` and `src/test/local-database.ts` (and the Supabase example strings in `local-database.test.ts`) to name the local Postgres from `npm run db:start`; **tighten** the guard: a local hostname is accepted only on port `54322` (the compose port), because after the move the Cloud SQL Auth Proxy exposes production on `127.0.0.1` too; tests for both
-- [X] T015 Replace the Supabase CLI in the `checks` job of `.github/workflows/ci.yml` with a `postgres:17` service container on `54322`, a `npx drizzle-kit migrate` step, and no Supabase env vars; build step env gets `NEXT_PUBLIC_STREAM_PHOTOS_URL` and `DISCORD_CLIENT_ID` dummies
+- [X] T015 Replace the Supabase CLI in the `checks` job of `.github/workflows/ci.yml` with a `postgres:17` service container on `54322`, a `npx drizzle-kit migrate` step, and no Supabase env vars; build step env gets `NEXT_PUBLIC_STREAM_PHOTOS_URL` and `DISCORD_CLIENT_ID` dummies (the photo URL variable was dropped again in T094)
 - [X] T016 `npm run db:start && npm run db:reset`, run the suite once to see the foundation compile and the untouched areas pass (failures in auth-dependent code are expected until US1/US2)
 
 **Checkpoint**: schema, baseline and test harness on plain Postgres.
@@ -73,7 +73,7 @@ description: "Task list for the move from Supabase to Google Cloud"
 
 ### Implementation for User Story 1
 
-- [X] T019 [US1] Implement `src/features/auth/users.ts`: `findOrCreateUserByDiscordId(discordId)` (`insert … on conflict (discord_id) do update set discord_id = excluded.discord_id returning id`), `discordIdOf(userId)`
+- [X] T019 [US1] Implement `src/features/auth/users.ts`: `findOrCreateUserByDiscordId(discordId)` (`insert … on conflict (discord_id) do update set discord_id = excluded.discord_id returning id`), `discordIdOf(userId)` (removed again in T088)
 - [X] T020 [P] [US1] `src/features/bans/queries.ts`: replace the `userDiscordId` fragment over `raw_user_meta_data` with a join on `users` in `listBans`, `banCandidates`, `hubUserByDiscordId`, `bannedUserIds`, `discordIdOfUser`
 - [X] T021 [P] [US1] `src/features/membership/queries.ts` `listRegisteredIdentities`: join `users` + `profiles` and build the `DiscordIdentity` from `users.discord_id` and the profile's `display_name`, `username`, `avatar_url`
 - [X] T022 [P] [US1] `src/features/discord-season/queries.ts` `listPlacedPlayers`: Discord id from `users`
@@ -156,13 +156,13 @@ description: "Task list for the move from Supabase to Google Cloud"
 ### Tests for User Story 4 ⚠️
 
 - [X] T056 [P] [US4] Unit tests `src/lib/gcs.test.ts`: the multipart body (boundary, JSON part with `name`, `contentType`, `cacheControl: "public, max-age=31536000"`, then the bytes); object names are URL-encoded in delete URLs (`/` → `%2F`); the emulator base skips the token
-- [X] T057 [P] [US4] Update `src/features/stream-photos/photo.test.ts`, `src/features/stream-api/to-stream-match.test.ts` and `src/features/stream-api/queries.integration.test.ts` to the URL shape `<NEXT_PUBLIC_STREAM_PHOTOS_URL>/<path>`
+- [X] T057 [P] [US4] Update `src/features/stream-photos/photo.test.ts`, `src/features/stream-api/to-stream-match.test.ts` and `src/features/stream-api/queries.integration.test.ts` to the URL shape `<NEXT_PUBLIC_STREAM_PHOTOS_URL>/<path>` (the photo URL variable was dropped again in T094)
 
 ### Implementation for User Story 4
 
 - [X] T058 [P] [US4] Create `src/lib/gcs.ts`: `accessToken()` (metadata server, cached until shortly before expiry; none when `STORAGE_API_URL` is set), `uploadObject(bucket, name, bytes, contentType)` (multipart), `deleteObject(bucket, name)`
 - [X] T059 [US4] Rewrite `src/features/stream-photos/storage.ts` on `src/lib/gcs.ts` with `STREAM_PHOTOS_BUCKET`; same limits, same best-effort delete
-- [X] T060 [US4] `src/features/stream-photos/photo.ts` `streamPhotoUrl(path, base = process.env.NEXT_PUBLIC_STREAM_PHOTOS_URL)` → `${base}/${path}`; check the three client components that call it still receive the value
+- [X] T060 [US4] `src/features/stream-photos/photo.ts` `streamPhotoUrl(path, base = process.env.NEXT_PUBLIC_STREAM_PHOTOS_URL)` → `${base}/${path}`; check the three client components that call it still receive the value (the photo URL variable was dropped again in T094)
 - [X] T061 [P] [US4] `src/features/dev/stream-photo.ts` (seed upload) on `src/lib/gcs.ts`
 
 **Checkpoint**: upload, replace, remove and the stream API work against the emulator.
@@ -199,7 +199,7 @@ description: "Task list for the move from Supabase to Google Cloud"
 - [X] T067 [US6] `src/features/dev/seed.ts`: seed users into `users` (no GoTrue columns, no `auth.identities`); the banned user's Discord id on `users`
 - [X] T068 [US6] `scripts/clone-prod.ts`, `src/features/dev/clone/scrub.ts`, `src/features/dev/clone/restore.ts`: dump and restore `public` + `drizzle` only (accounts are in `public.users`); scrub rewrites `users.discord_id` for anonymised accounts (staff+ keep theirs) instead of auth metadata; drop the `supabase_admin` ACL stripping if nothing else needs it; messages name the Auth Proxy connection; delete `supabase/` (config.toml, migrations, `.gitignore`)
 - [X] T069 [US6] `.github/workflows/staging-refresh.yml`: both ends through the proxy action (one instance, two databases), pg_dump 17 install kept, comments updated
-- [X] T070 [US6] `.github/workflows/ci.yml` deploy job: the proxy action before `drizzle-kit migrate` (DATABASE_URL secrets now point at `127.0.0.1:5432`), build arg `NEXT_PUBLIC_STREAM_PHOTOS_URL` instead of the two Supabase ones, header comment updated (and its stale `staging.yml` reference fixed); `Dockerfile` build args and placeholders likewise (`SUPABASE_SECRET_KEY` placeholder removed)
+- [X] T070 [US6] `.github/workflows/ci.yml` deploy job: the proxy action before `drizzle-kit migrate` (DATABASE_URL secrets now point at `127.0.0.1:5432`), build arg `NEXT_PUBLIC_STREAM_PHOTOS_URL` instead of the two Supabase ones, header comment updated (and its stale `staging.yml` reference fixed); `Dockerfile` build args and placeholders likewise (`SUPABASE_SECRET_KEY` placeholder removed) (the photo URL variable was dropped again in T094)
 - [X] T071 [P] [US6] Extend the `/dev/ui` gallery with the maintenance page (`src/features/dev/components/gallery.tsx`)
 
 **Checkpoint**: from a fresh clone, setup, suite, personas, impersonation and clone work without Supabase.
@@ -212,10 +212,10 @@ description: "Task list for the move from Supabase to Google Cloud"
 - [X] T073 Remove `@supabase/ssr` and `@supabase/supabase-js` from `package.json` and the lockfile (`npm uninstall`), confirm no import remains
 - [X] T074 `grep -rni supabase` over the repository: only backlink notes, legacy docs, frozen specs, `scripts/move-from-supabase.ts`, `src/features/move/` and the runbook's move section may remain (SC-007)
 - [X] T075 `docs/deployment.md` §1, §2, §3, §6, §7: Cloud SQL instance, databases and roles (research R1, R2), buckets and the `allUsers` binding check (R7), IAM roles for the runtime and deployer service accounts, Secret Manager entries, Cloud Run flags (`--add-cloudsql-instances`, env vars), GitHub variables, Discord redirect URIs, clone and `usage:backfill` via Auth Proxy, staging on the shared instance, costs, the one-command tier upgrade
-- [ ] T076 Constitution amendment via `/speckit-constitution` (maintainer approval): Principle I without the RLS line, Principle III's pinned stack, Principle II and the Workflow profile's "local Postgres", Running-app check with `npm run db:start`
+- [X] T076 Constitution amendment via `/speckit-constitution` (maintainer approval): Principle I without the RLS line, Principle III's pinned stack, Principle II and the Workflow profile's "local Postgres", Running-app check with `npm run db:start`
 - [X] T077 `CLAUDE.md`: architecture bullets (database, auth paragraph pointing at this spec, storage, RLS sentence removed), code layout, commands, environments, `/dev` tooling, stream photos and shared-login paragraphs; `.specify/templates/overrides/plan-template.md` and `tasks-template.md` Stack/Testing/migration path lines
 - [X] T078 [P] Backlink notes `> Abgelöst in Teilen durch specs/004-google-cloud-migration (<Bereich>).` at the top of `specs/003-shared-discord-login/spec.md`, its `contracts/shared-session.md`, `docs/plans/discord-sign-in.md`, `docs/plans/stream-photos.md`, `docs/decisions/migrations-squash-at-launch.md`, and every other legacy plan found describing Supabase behavior
-- [ ] T079 Biome, typecheck, full test suite green (ask the maintainer before running the suite)
+- [X] T079 Biome, typecheck, full test suite green (ask the maintainer before running the suite)
 - [ ] T080 Verify in the running app: sign-in, sign-out, personas, impersonation, photo upload, maintenance page and legal pages during maintenance, on desktop and phone width, light and dark, against the approved mockup
 - [ ] T081 Run quickstart.md §1 to §6
 
@@ -225,11 +225,11 @@ description: "Task list for the move from Supabase to Google Cloud"
 
 **Purpose**: plan.md "Rollout". Operational; each step is confirmed with the maintainer before it runs.
 
-- [ ] T087 Ahead of the move: a commit with maintenance mode (`src/features/maintenance/`, `/wartung`, proxy, header, footer, layout, `currentUser()` short-circuit) and the scrub dropping `stream_photo_path`, built on the Supabase code of `main`; Gate approval, commit, `dev` → `main`; maintenance tried once on staging and production
-- [ ] T082 Infrastructure per `docs/deployment.md`: Cloud SQL instance (db-f1-micro, `DATABASE_POOL_MAX=4`), databases and roles, buckets and `allUsers` check, IAM (staging gets its own runtime service account), secrets, Cloud Run flags for staging, Discord redirect URIs
-- [ ] T083 Staging: refresh staging's Supabase from production (scrubbed), maintenance on for staging, `db:move-from-supabase` into the staging database and bucket, verification ok, push `dev` (deploys to staging on Cloud SQL), maintenance off
-- [ ] T084 Rehearsal checks on staging: SC-001 to SC-004, real staff and player sign-in, one season sync with no changes, nightly backup run and local restore (SC-006); the staging role is refused when it connects to the production database (`psql` as `buli_hub_staging` on `buli_hub`); the time from maintenance on to maintenance off is recorded and stays under one hour (SC-003)
-- [ ] T085 Production at a quiet time, with the maintainer: maintenance on, scheduler paused, move, verification ok; only then switch production's configuration (Cloud Run `--add-cloudsql-instances`, `DATABASE_URL` / `DATABASE_SOCKET` / `DATABASE_POOL_MAX` / `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` / `STREAM_PHOTOS_BUCKET`, GitHub PROD variable `NEXT_PUBLIC_STREAM_PHOTOS_URL` and secret `PROD_DATABASE_URL` in the Auth Proxy form), never earlier, because main's nightly backup and deploy still read them for Supabase; promote `dev` → `main`, smoke check, maintenance off, scheduler resumed, `dev` reset onto `main`
+- [ ] T087 Ahead of the move: a commit with maintenance mode (`src/features/maintenance/`, `/wartung`, proxy, header, footer, layout, `currentUser()` short-circuit) and the scrub dropping `stream_photo_path`, built on the Supabase code of `main`; Gate approval, commit, `dev` → `main` (done 2026-10-21, `eff0d32`, #48); maintenance tried on staging (done 2026-10-21: 503 page, legal pages 200, API 503 JSON, off again) and on production (open)
+- [X] T082 Infrastructure per `docs/deployment.md`: Cloud SQL instance (db-f1-micro, `DATABASE_POOL_MAX=4`), databases and roles, buckets and `allUsers` check, IAM (staging gets its own runtime service account), secrets, Cloud Run flags for staging, Discord redirect URIs (done 2026-10-21: instance `buli-hub-db`, roles and databases with isolation check, private buckets, staging runtime account, secrets incl. `CLOUDSQL_PASSWORD_*`, `DISCORD_CLIENT_SECRET(_STAGING)`)
+- [X] T083 Staging: refresh staging's Supabase from production (scrubbed), maintenance on for staging, `db:move-from-supabase` into the staging database and bucket, verification ok, push `dev` (deploys to staging on Cloud SQL), maintenance off (done 2026-10-21: 32 of 32 checks, maintenance 05:54 to 06:00 UTC)
+- [ ] T084 Rehearsal checks on staging: SC-001 to SC-004, real staff and player sign-in, one season sync with no changes, nightly backup run and local restore (SC-006); the staging role is refused when it connects to the production database (`psql` as `buli_hub_staging` on `buli_hub`); the time from maintenance on to maintenance off is recorded and stays under one hour (SC-003) (2026-10-21: role isolation ✓, 6 minutes ✓, backup dump and local restore ✓, stream API ✓; the season sync fails on the test server with the same HTTP 400 it had before the move, so that check moves to the first production run; real sign-in open)
+- [ ] T085 Production at a quiet time, with the maintainer: maintenance on, scheduler paused, move, verification ok; only then switch production's configuration (Cloud Run `--add-cloudsql-instances`, `DATABASE_URL` / `DATABASE_SOCKET` / `DATABASE_POOL_MAX` / `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` / `STREAM_PHOTOS_BUCKET`, GitHub PROD secret `PROD_DATABASE_URL` in the Auth Proxy form), never earlier, because main's nightly backup and deploy still read them for Supabase; promote `dev` → `main`, smoke check, maintenance off, scheduler resumed, `dev` reset onto `main`
 - [ ] T086 Afterwards: remove Supabase's callback from the Discord app, drop the Supabase GitHub variables and secrets; Supabase itself stays until the maintainer deletes it
 
 ---
@@ -296,3 +296,24 @@ switch strictly needs; US4 to US6 complete the feature and ship in the same comm
 - [P] tasks = different files, no dependencies
 - Ask the maintainer before every full test run (the suite wipes the local database)
 - No commit before Gate 3
+
+## Phase 11: Convergence
+
+- [X] T088 Remove the unused `discordIdOf` from `src/features/auth/users.ts` (consumers read the Discord id through `discordIdOfUser` in `src/features/bans/queries.ts` and the session) and check the created row with SQL in `src/features/auth/users.integration.test.ts` per plan: `users.ts` (unrequested)
+- [X] T089 Align the cookie table in `specs/004-google-cloud-migration/contracts/session.md` with the built rule: `Secure` whenever `NODE_ENV=production`, so `next dev` stays reachable over plain http from a phone on the LAN, per contracts/session.md (contradicts)
+
+## Phase 12: Private stream photos (after Gate 3)
+
+Decided by the maintainer on 2026-10-21 while setting up the buckets: stream photos are for the
+player, staff and the stream only (spec Clarifications, FR-015, FR-016, research R7).
+
+- [X] T090 [US4] `src/features/stream-photos/photo.ts`: `streamPhotoUrl(path)` → `/stream-photos/<path>`, `isStreamPhotoPath` (only `<uuid>/<uuid>.<webp|png|jpg>`), `streamPhotoContentType`; unit tests in `photo.test.ts`
+- [X] T091 [US4] `src/features/stream-photos/access.ts` (server only): `signStreamPhotoPath` / `verifyStreamPhotoSignature` (HMAC-SHA256 keyed by `STREAM_API_SECRET`, constant-time compare), `signedStreamPhotoUrl` (absolute, from `APP_BASE_URL`), `mayViewStreamPhoto` (signature, owner, staff); unit tests in `access.test.ts`
+- [X] T092 [US4] `src/lib/gcs.ts` `downloadObject`; `src/features/stream-photos/storage.ts` `readStreamPhoto`; route `src/app/stream-photos/[...path]/route.ts` (404 for everyone not allowed and for missing photos, `Cache-Control: private, max-age=31536000, immutable`)
+- [X] T093 [US4] Stream API returns `signedStreamPhotoUrl`; tests in `to-stream-match.test.ts` and `queries.integration.test.ts`
+- [X] T094 Drop `NEXT_PUBLIC_STREAM_PHOTOS_URL` (`.env.example`, `Dockerfile`, `ci.yml`, runbook); buckets private with public access prevention (runbook §1, both buckets updated); CLAUDE.md
+- [X] T095 Verify in the running app: owner and staff see the photo, another player and a signed-out visitor get 404, the stream API's address loads signed out, an altered signature gets 404
+
+## Phase 13: Fix from the staging rehearsal
+
+- [X] T096 [US2] Sign-in returns to the host it started on: the redirect URI comes from the Server Action's Origin header and travels in the `buli-hub-oauth` cookie; the callback accepts it only for its own host (`returnOrigin`) and exchanges the code with exactly that URI. Before, the URI came from `APP_BASE_URL`, and a sign-in started under the service's other address failed with `state mismatch` (staging, 2026-10-21). Tests in `src/features/auth/sign-in.integration.test.ts`; contracts/session.md updated

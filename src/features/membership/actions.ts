@@ -3,10 +3,9 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { profiles } from "@/db/schema";
-import { discordIdentityFromUser } from "@/features/auth/identity";
+import { currentUser } from "@/features/roles/guard";
 import { syncMember } from "@/features/roles/sync";
 import { db } from "@/lib/db";
-import { createClient } from "@/lib/supabase/server";
 import { RECHECK_FAILED } from "./membership";
 
 export type RecheckResult =
@@ -21,16 +20,18 @@ export type RecheckResult =
  * bot's rate limits.
  */
 export async function recheckMembership(): Promise<RecheckResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) {
     return { ok: false, error: "Nicht angemeldet" };
   }
 
   try {
-    await syncMember(user.id, discordIdentityFromUser(user));
+    await syncMember(user.userId, {
+      discordId: user.discordId,
+      displayName: user.displayName,
+      username: user.username,
+      avatarUrl: user.avatarUrl,
+    });
   } catch {
     // A failed sync never clears a stored false — an outage is not a rejoin.
     return { ok: false, error: RECHECK_FAILED };
@@ -38,7 +39,7 @@ export async function recheckMembership(): Promise<RecheckResult> {
 
   const stored = await db.query.profiles.findFirst({
     columns: { guildMember: true },
-    where: eq(profiles.userId, user.id),
+    where: eq(profiles.userId, user.userId),
   });
 
   // The gate and the blocked card are server state on these routes.

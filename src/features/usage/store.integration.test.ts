@@ -17,7 +17,7 @@ import {
 } from "./store";
 import { visitorTokenForClient, visitorTokenForUser } from "./visitor";
 
-// Integration tests against the local Supabase Postgres (stack must be
+// Integration tests against the local Postgres (`npm run db:start` must be
 // running). The usage tables are global aggregates, so the file owns their
 // state: start clean, and clean up afterwards.
 

@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (Session-Vertrag).
+
 # Contract: the shared Gemeinde session
 
 The one definition every Gemeinde app that signs players in with Discord adopts (FR-008). Today:

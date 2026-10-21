@@ -30,7 +30,9 @@ let windowId: string;
 
 beforeAll(async () => {
   await db.execute(sql`delete from registration_windows`);
-  await db.execute(sql`insert into auth.users (id) values (${userId})`);
+  await db.execute(
+    sql`insert into users (id, discord_id) values (${userId}, ${userId})`,
+  );
   await createWindow(new Date("2026-08-31T18:00:00Z"), userId, 1);
   const window = await latestWindow();
   if (!window) throw new Error("window setup failed");
@@ -39,7 +41,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.execute(sql`delete from registration_windows`);
-  await db.execute(sql`delete from auth.users where id = ${userId}`);
+  await db.execute(sql`delete from users where id = ${userId}`);
 });
 
 describe("seeding config", () => {
@@ -158,7 +160,9 @@ describe("auto-init from registration history", () => {
 
   beforeAll(async () => {
     for (const id of [initUser, returner1, returner3, newcomer]) {
-      await db.execute(sql`insert into auth.users (id) values (${id})`);
+      await db.execute(
+        sql`insert into users (id, discord_id) values (${id}, ${id})`,
+      );
     }
     await createWindow(new Date("2026-09-30T18:00:00Z"), initUser, 1);
     const windows = await db.execute<{ id: string }>(
@@ -178,7 +182,7 @@ describe("auto-init from registration history", () => {
       sql`delete from registration_windows where id = ${initWindow}`,
     );
     for (const id of [initUser, returner1, returner3, newcomer]) {
-      await db.execute(sql`delete from auth.users where id = ${id}`);
+      await db.execute(sql`delete from users where id = ${id}`);
     }
   });
 
@@ -221,7 +225,9 @@ describe("control lock", () => {
 
   beforeAll(async () => {
     for (const id of [opener, other]) {
-      await db.execute(sql`insert into auth.users (id) values (${id})`);
+      await db.execute(
+        sql`insert into users (id, discord_id) values (${id}, ${id})`,
+      );
     }
     // A profile for `opener` so the holder name join returns a value.
     await db.execute(
@@ -240,7 +246,7 @@ describe("control lock", () => {
     );
     await db.execute(sql`delete from profiles where user_id = ${opener}`);
     for (const id of [opener, other]) {
-      await db.execute(sql`delete from auth.users where id = ${id}`);
+      await db.execute(sql`delete from users where id = ${id}`);
     }
   });
 
@@ -315,7 +321,9 @@ describe("control lock", () => {
 
   it("is torn down when the window is deleted", async () => {
     const throwaway = randomUUID();
-    await db.execute(sql`insert into auth.users (id) values (${throwaway})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${throwaway}, ${throwaway})`,
+    );
     await createWindow(new Date("2026-12-31T18:00:00Z"), throwaway, 1);
     const rows = await db.execute<{ id: string }>(
       sql`select id from registration_windows where opened_by = ${throwaway}`,
@@ -326,6 +334,6 @@ describe("control lock", () => {
 
     await db.execute(sql`delete from registration_windows where id = ${wid}`);
     expect(await getLockWithHolder(wid)).toBeNull();
-    await db.execute(sql`delete from auth.users where id = ${throwaway}`);
+    await db.execute(sql`delete from users where id = ${throwaway}`);
   });
 });

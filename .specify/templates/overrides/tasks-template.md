@@ -9,7 +9,7 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: Required by the constitution (Principle II): unit tests for every piece of domain logic, integration tests against the local Supabase stack for RLS, constraints and multi-step flows. No E2E tests.
+**Tests**: Required by the constitution (Principle II): unit tests for every piece of domain logic, integration tests against the local Postgres for constraints and multi-step flows. No E2E tests.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -22,7 +22,7 @@ description: "Task list template for feature implementation"
 ## Path Conventions
 
 - Feature code: `src/features/<feature>/` (logic, actions, components, colocated `*.test.ts`)
-- Routes: `src/app/...` (thin wrappers), schema: `src/db/schema.ts`, migrations: `supabase/migrations/`
+- Routes: `src/app/...` (thin wrappers), schema: `src/db/schema.ts`, migrations: `drizzle/`
 - Shared code only in `src/lib/`; `/dev` tooling in `src/features/dev/`
 
 <!--
@@ -61,8 +61,8 @@ description: "Task list template for feature implementation"
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Extend src/db/schema.ts, `npm run db:generate`, review the generated SQL in supabase/migrations/
-- [ ] T005 [P] Custom migration for RLS / auth FKs via `npx drizzle-kit generate --custom --name [x]`
+- [ ] T004 Extend src/db/schema.ts, `npm run db:generate`, review the generated SQL in drizzle/
+- [ ] T005 [P] Custom migration for FKs / triggers via `npx drizzle-kit generate --custom --name [x]`
 - [ ] T006 `npm run db:migrate` against the local stack
 - [ ] T007 [P] Pure domain functions shared by all stories in src/features/[feature]/[logic].ts with unit tests
 

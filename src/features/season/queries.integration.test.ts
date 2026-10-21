@@ -28,7 +28,9 @@ let subDivisionId: string;
 
 beforeAll(async () => {
   for (const id of [me, opp1, opp2, outsider]) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   await db.insert(profiles).values([
     { userId: me, displayName: "Charlie" },
@@ -79,7 +81,7 @@ afterAll(async () => {
     sql`delete from registration_windows where id = ${windowId}`,
   );
   for (const id of [me, opp1, opp2, outsider]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 

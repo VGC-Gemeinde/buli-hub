@@ -22,18 +22,6 @@ import { db } from "@/lib/db";
 
 const { currentUserMock } = vi.hoisted(() => ({ currentUserMock: vi.fn() }));
 vi.mock("@/features/roles/guard", () => ({ currentUser: currentUserMock }));
-// `register` reads the session straight from Supabase rather than through
-// currentUser(), so it needs its own stand-in.
-let supabaseUser: string | null = null;
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
-    auth: {
-      getUser: async () => ({
-        data: { user: supabaseUser ? { id: supabaseUser } : null },
-      }),
-    },
-  }),
-}));
 // revalidatePath needs the request-scoped store Next sets up per render, which
 // a test runner has no equivalent of. Cache invalidation is framework plumbing,
 // not the behaviour under test.
@@ -83,13 +71,14 @@ beforeAll(async () => {
   // otherwise decide what "the running season" is.
   await db.delete(registrationWindows);
   for (const id of [player, other]) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
 });
 
 afterEach(async () => {
   vi.clearAllMocks();
-  supabaseUser = null;
   await db.delete(registrations);
   await db.delete(regelwerkAcceptances);
   await db.delete(registrationWindows);
@@ -97,7 +86,7 @@ afterEach(async () => {
 
 afterAll(async () => {
   for (const id of [player, other]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 
@@ -162,7 +151,6 @@ describe("acceptRegelwerk", () => {
 // Regelwerk checkbox, so reaching `register` means the player agreed.
 describe("register / withdraw", () => {
   async function registerPlayer() {
-    supabaseUser = player;
     return register({
       platform: "showdown",
       participatedBefore: false,

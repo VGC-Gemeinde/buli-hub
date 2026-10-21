@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (Datenbank und Speicher von Staging).
+
 # Staging environment & prod/staging split
 
 **Status: repo side done** (2026-07-29) — slice 1 complete and verified

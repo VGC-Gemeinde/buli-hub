@@ -45,7 +45,9 @@ function signedInAs(guildMember: boolean | null) {
 }
 
 beforeAll(async () => {
-  await db.execute(sql`insert into auth.users (id) values (${player})`);
+  await db.execute(
+    sql`insert into users (id, discord_id) values (${player}, ${player})`,
+  );
   // Cleared like the other suites: a leftover window would decide what the
   // latest season is.
   await db.delete(registrationWindows);
@@ -66,7 +68,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.delete(registrationWindows);
-  await db.execute(sql`delete from auth.users where id = ${player}`);
+  await db.execute(sql`delete from users where id = ${player}`);
 });
 
 describe("player actions", () => {

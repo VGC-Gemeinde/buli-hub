@@ -13,7 +13,7 @@ import {
 } from "./queries";
 
 // Integration test against local Postgres. Registrations FK to
-// registration_windows and auth.users; the test owns both.
+// registration_windows and users; the test owns both.
 const userId = randomUUID();
 const otherUserId = randomUUID();
 let windowId: string;
@@ -22,7 +22,7 @@ let priorWindowId: string;
 beforeAll(async () => {
   await db.execute(sql`delete from registration_windows`);
   await db.execute(
-    sql`insert into auth.users (id) values (${userId}), (${otherUserId})`,
+    sql`insert into users (id, discord_id) values (${userId}, ${userId}), (${otherUserId}, ${otherUserId})`,
   );
   // An earlier window (for prior-registration detection) and the current one.
   await createWindow(new Date("2026-01-31T18:00:00Z"), userId, 1);
@@ -38,7 +38,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await db.execute(sql`delete from registration_windows`);
   await db.execute(
-    sql`delete from auth.users where id in (${userId}, ${otherUserId})`,
+    sql`delete from users where id in (${userId}, ${otherUserId})`,
   );
 });
 

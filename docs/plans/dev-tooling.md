@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (Persona-Login und Impersonation).
+
 # Dev tooling: test personas + UI gallery
 
 **Status: done** (2026-07-02) — verified in the browser; /dev routes confirmed 404 in a production build.

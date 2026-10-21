@@ -5,7 +5,7 @@ import {
   subDivisionName,
   subDivisionShortName,
 } from "@/features/seeding/seeding";
-import { streamPhotoUrl } from "@/features/stream-photos/photo";
+import { signedStreamPhotoUrl } from "@/features/stream-photos/access";
 import { playerName } from "@/lib/player-name";
 
 // The stream API payload for one match (docs/plans/stream-api.md): what
@@ -158,14 +158,14 @@ export function toStreamMatchDetail(
     playerA: {
       id: input.playerAId,
       name: playerName(input.playerA?.displayName, input.playerA?.username),
-      photoUrl: streamPhotoUrl(input.playerA?.streamPhotoPath ?? null),
+      photoUrl: signedStreamPhotoUrl(input.playerA?.streamPhotoPath ?? null),
       avatarUrl: null,
       record: records.a,
     },
     playerB: {
       id: input.playerBId,
       name: playerName(input.playerB?.displayName, input.playerB?.username),
-      photoUrl: streamPhotoUrl(input.playerB?.streamPhotoPath ?? null),
+      photoUrl: signedStreamPhotoUrl(input.playerB?.streamPhotoPath ?? null),
       avatarUrl: null,
       record: records.b,
     },

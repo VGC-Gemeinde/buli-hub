@@ -4,7 +4,6 @@ node_modules
 .github
 .env*
 !.env.example
-supabase/.temp
 docs
 design
 Dockerfile

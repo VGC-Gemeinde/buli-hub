@@ -86,8 +86,8 @@ describe("buildScrubSql", () => {
     const sql = buildScrubSql().join("\n");
 
     expect(sql).toContain(`"public"."profiles"`);
-    expect(sql).toContain("auth.users");
-    expect(sql).toContain("auth.identities");
+    expect(sql).toContain(`"public"."users"`);
+    expect(sql).not.toContain("auth.");
     expect(sql).toContain(`"public"."registrations"`);
     expect(sql).toContain(`"public"."disputes"`);
   });

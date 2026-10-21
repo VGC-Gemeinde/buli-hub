@@ -14,15 +14,10 @@ FROM node:24-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
-    NEXT_TELEMETRY_DISABLED=1 \
-    # Build-time placeholders: every page is dynamic, so no query runs during
-    # `next build`, but the modules' import-time env guards must pass.
-    DATABASE_URL=postgresql://build:build@localhost:5432/build \
-    SUPABASE_SECRET_KEY=build-placeholder
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    # Build-time placeholder: every page is dynamic, so no query runs during
+    # `next build`, but the db module's import-time env guard must pass.
+    DATABASE_URL=postgresql://build:build@localhost:5432/build
 RUN npm run build
 
 FROM node:24-alpine

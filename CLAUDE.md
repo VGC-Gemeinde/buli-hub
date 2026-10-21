@@ -22,10 +22,13 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
   - Server Components for data-driven pages
   - Server Actions for mutations
   - Route Handlers only where an HTTP URL is required (e.g. Cloud Scheduler targets)
-- **Supabase** — Postgres, Auth, Storage
-  - Auth via **Discord OAuth provider** (all users have Discord accounts; Discord ID lives in user metadata). In production the session is shared with every Gemeinde site under `vgcgemein.de` (gemeinde-tippspiel today): cookie `gemeinde-auth` on `.vgcgemein.de`, switched on by `AUTH_COOKIE_DOMAIN`, defined once in `src/lib/supabase/cookie-options.ts` (kept identical in gemeinde-tippspiel); locally and on staging it stays per host. The cookie is httpOnly, so no browser code reads the session; sign-out ends it in this browser on every site, not on other devices. Details: `specs/003-shared-discord-login/`.
-  - Local development runs against **Supabase CLI** (`supabase start`, Dockerized local stack)
-- **Drizzle ORM** (pinned) — schema defined in TypeScript (`schema.ts`), SQL migrations generated and committed to the repo. Drizzle connects directly to Postgres, so **RLS is bypassed for app queries: authorization checks live in server code (Server Actions)**. RLS policies are still defined as a defense-in-depth safety net.
+- **Google Cloud** — no Supabase since `specs/004-google-cloud-migration/`
+  - **Cloud SQL for PostgreSQL 17**: one small instance (db-f1-micro), production and staging as two databases with their own login roles, reached by Cloud Run through the built-in connection (`DATABASE_SOCKET`) and by people and CI only through the **Cloud SQL Auth Proxy** (`.github/actions/cloud-sql-proxy/`). The pool is capped (`DATABASE_POOL_MAX=4`) because both environments share the instance's connections.
+  - **Sign-in with Discord, built into the hub** (`src/features/auth/`): authorization code with state and PKCE, scope `identify` only (no email). Accounts are the hub's own `users` table (id + unique `discord_id`, the one place the Discord id lives); names and avatar live on `profiles`. A session is a random token in an httpOnly cookie and only its SHA-256 in `sessions`: valid 30 days after the last use, renewed by use, ended by sign-out (this browser only) or the runbook command (`docs/deployment.md`). `currentUser()` (`src/features/roles/guard.ts`) resolves it; the proxy never touches the database. The cookie is `buli-hub-auth` per host, or `gemeinde-auth` on `.vgcgemein.de` once `AUTH_COOKIE_DOMAIN` is set for another Gemeinde site to share it (`src/lib/auth/cookie-options.ts`, `contracts/session.md`). `/dev` personas and impersonation create sessions directly.
+  - **Cloud Storage** for the stream photos, through its JSON API with plain `fetch` (`src/lib/gcs.ts`); a **private** bucket per environment. The hub serves the photos itself at `/stream-photos/<path>`: to the player and staff through the session, to the stream through a signed address in the stream API (HMAC over the path, keyed by `STREAM_API_SECRET`; `src/features/stream-photos/access.ts`).
+  - **Maintenance mode**: `MAINTENANCE=on` on the Cloud Run service (a new revision, no release) answers every route with the maintenance page (HTTP 503) except `/impressum` and `/datenschutz`, and nothing touches the database (`src/features/maintenance/`, `contracts/maintenance.md`).
+  - Local development and CI run a plain **Postgres 17** (and locally a Cloud Storage emulator) from `compose.yaml`.
+- **Drizzle ORM** (pinned) — schema defined in TypeScript (`schema.ts`), SQL migrations generated and committed to `drizzle/`. Every foreign key lives in the custom migration `drizzle/0001_constraints.sql` (`schema.ts` declares none). Drizzle connects directly to Postgres as the one role that reaches the database, so **authorization checks live in server code (Server Actions)**; there is no RLS.
 - **Zod** — validation, schemas shared between server and forms
 - **Tailwind CSS + shadcn/ui** — UI layer
 - **Team sheets** — the league runs **Pokémon Champions**; teams are built in Showdown. The hub is its own paste service: every reported sheet is parsed, validated as a complete open team sheet, stripped of stats and published at `/pastes/<uuid>` (`src/features/teamsheets/`). Parsing/serialising is `@pkmn/sets` (no game data, so it cannot go stale); `@pkmn/dex` and `@pkmn/img` are display-only (mega resolution, sprite ids, nature arrows), so a dex gap can never reject a submission. Sprites come from a public GCS bucket with a Showdown-CDN fallback. Details: `docs/plans/teamsheet-pastes.md`.
@@ -39,16 +42,15 @@ One deployable: a full-stack **Next.js** app. No separate backend service, no pe
 - **Relegation und Playoffs** — what follows the last Spieltag (`docs/plans/relegation-and-playoffs.md` holds the rules, one plan per slice beside it). No umbrella term in UI or code: Relegation (`src/features/relegation/`, page `/relegation`) and the Division-1 Playoffs (`src/features/playoffs/`, page `/playoffs`) are separate things, tiebreakers belong to the regular season. Pairings are drawn between seats (a table plus a place in a played zone, `src/features/final-table/`), never between players, with Postgres-drawn lots (`placements.lot_number`, `sub_divisions.lot_number`) for equal ranks, so they are a pure function of the standings and nothing is ever redrawn. Their matches live in `matches` with `stage` and no sub-division (only regular matches have one, which keeps every other kind out of the standings); players stay null until staff publish, and `resolveRelegationPlayoffs` (`src/features/playoffs/progression.ts`) is the one source for who plays each side and how it ends, written into the matches by `syncSeats`. Their weeks are `matchdays` with `regular = false`: `matchdaysForWindow` is the regular Spieltage only, `allMatchdaysForWindow` every week. Publishing (`registration_windows.regular_season_closed_at`) makes regular results final and completing (`season_completed_at`) every result, enforced by the actions (`resultLockError`) and by the trigger `reject_closed_regular_write`; the season outcome is written onto `placements`. The flow lives on its own staff page `/staff/relegation-playoffs` (four steps: create the schedule, publish, play, complete); Discord gets a role and chat channel per stage through the season sync's rooms. The stream API carries their played matches with `stage`, `weekName` and `roundLabel`.
 - **Site navigation** — the header is the same on every page and never collapses: each page passes the `section` it belongs to (Liga, Spieler-Dashboard, Staff-Bereich), whose entry becomes a tab running into that section's row (`sectionRow`, `src/features/navigation/`); a detail page (match, player profile, teamsheet) marks its section and no row entry, and carries its own `BackLink` ("← Zurück") in the content. No breadcrumbs. A new page picks its section; a new section page adds its row entry. Details: `docs/plans/site-navigation.md`, `design/NAVIGATION.md`.
 - **Staff-Bereich** — every staff page is a `StaffPage` (`src/features/staff/components/staff-page.tsx`) in the Staff-Bereich section; its row's entries per phase and role come from the pure `staffNav` (`src/features/staff/nav.ts`). The overview `/staff` shows concrete problems as todos (the pure `staffTodos`) and everything normal as numbers; full lists live on subpages (`/staff/woche`, `/staff/teilnehmer`, …). A staff workspace that pages through Spieltage uses the shared `StaffWeekPager` (`src/features/staff/components/staff-week-pager.tsx`) with its own marks. A new staff page adopts the shell and adds its entry to `staffNav`; a new problem staff must act on becomes a todo, not a card. Details: `docs/plans/staff-dashboard.md`, `design/STAFF-DASHBOARD.md`.
-- **Stream photos** — the picture the stream shows next to a player, uploaded and cropped by the player in `/profil` and stored in the Supabase Storage bucket `stream-photos` (`src/features/stream-photos/`). Offered only to the players a stream is about to show (Match of the Week, recording holds); staff see who has one in their workspaces and can take one down. Deliberately separate from the Discord avatar: the avatar is what the hub shows on its own pages, the photo is what the stream shows, and neither substitutes for the other. Details: `docs/plans/stream-photos.md`.
+- **Stream photos** — the picture the stream shows next to a player, uploaded and cropped by the player in `/profil` and stored in the private Cloud Storage bucket `buli-hub-stream-photos` and served only by the hub (`src/features/stream-photos/`; paths unchanged since the move, `specs/004-google-cloud-migration/`). Offered only to the players a stream is about to show (Match of the Week, recording holds); staff see who has one in their workspaces and can take one down. Deliberately separate from the Discord avatar: the avatar is what the hub shows on its own pages, the photo is what the stream shows, and neither substitutes for the other. Details: `docs/plans/stream-photos.md`.
 - **Discord integration** — no bot service. The Next.js backend calls the **Discord REST API directly with a bot token** (messages, embeds, threads, and since the season setup also roles, channels and permission overwrites). Token comes from secret management, never from client code. Season-scoped Discord objects the hub creates are tracked by id in `discord_season_resources` (`src/features/discord-season/`), and the server is kept converged onto the season by a periodic sync rather than by hooks in every action.
 - **Scheduled jobs** — Google **Cloud Scheduler** invoking route handlers under `src/app/api/jobs/`, authorized by a shared secret (`Authorization: Bearer <JOBS_SECRET>`, checked by `authorizeBearer` in `src/lib/bearer.ts`; 503 without a configured secret). Jobs are idempotent converges, so an overlapping or repeated run is harmless. The first one is the Discord season sync (`docs/plans/discord-season-setup.md`); per-environment job setup lives in `docs/deployment.md` §8.
 - **Hosting** — Docker container on **Google Cloud Run**, scale-to-zero
-- **Maintenance mode** — `MAINTENANCE=on` on the Cloud Run service (a new revision, no release) answers every route with the maintenance page (HTTP 503) except `/impressum` and `/datenschutz`, and nothing touches the database or Supabase (`src/features/maintenance/`). Shipped ahead of the move to Google Cloud, which runs inside it (`specs/004-google-cloud-migration/`, `contracts/maintenance.md`).
 - **Stream API** — read-only route handlers under `src/app/api/stream/` for the stream backend (`../gemeinde-streams`): the played matches of the current season with team sheets and avatars (`src/features/stream-api/`). Authorized by its own shared secret (`Authorization: Bearer <STREAM_API_SECRET>`, `authorizeBearer`), never reached from a browser, and deliberately free of spoiler protection: the caller is the stream that shows the match. Details: `docs/plans/stream-api.md`, setup in `docs/deployment.md` §9.
 - **Tooling** — **npm** (package manager), **Biome** (lint + format)
 - **Dependencies** — **exact version pinning** (`save-exact=true` in `.npmrc`, no `^`/`~` ranges), committed lockfile. Updates are made by hand, deliberately, never by a bot.
-- **Three environments** — local (Supabase CLI), **staging** (`buli-hub-staging` on Cloud Run + its own Supabase project, deployed from `dev`), and production (deployed from `main`). Staging exists to meet production-shaped data and rehearse migrations before production does; its database is refreshed on demand from production, never automatically. Full runbook: `docs/deployment.md` §7.
-- **CI/CD** — `.github/workflows/ci.yml`: every push/PR runs Biome, typecheck, the full test suite against a Supabase CLI stack, and a production build. Pushes to `main` **and** `dev` then build the image, apply migrations (`drizzle-kit migrate`) and deploy — the same job, with `environment:` selecting `PROD` or `STAGING`, so the two cannot drift. Every `main` commit ships to production. `.github/workflows/staging-refresh.yml` clones production into staging, manual trigger only. One-time infrastructure setup lives in `docs/deployment.md`.
+- **Three environments** — local (`compose.yaml`), **staging** (`buli-hub-staging` on Cloud Run + its own database on the shared Cloud SQL instance and its own bucket, deployed from `dev`), and production (deployed from `main`). Staging exists to meet production-shaped data and rehearse migrations before production does; its database is refreshed on demand from production, never automatically. Full runbook: `docs/deployment.md` §7.
+- **CI/CD** — `.github/workflows/ci.yml`: every push/PR runs Biome, typecheck, the full test suite against a Postgres service container, and a production build. Pushes to `main` **and** `dev` then build the image, apply migrations (`drizzle-kit migrate`, through the Auth Proxy) and deploy — the same job, with `environment:` selecting `PROD` or `STAGING`, so the two cannot drift. Every `main` commit ships to production. `.github/workflows/staging-refresh.yml` clones production into staging, manual trigger only. One-time infrastructure setup lives in `docs/deployment.md`.
 
 The feature paragraphs above are the **living map** of the hub: each says what exists now and where its record lives. A feature that ships adds or updates its paragraph and points it at its spec (`specs/NNN-…/`); a paragraph that still points at `docs/plans/` describes a feature built before Spec Kit.
 
@@ -98,13 +100,14 @@ Precedence when documents disagree: code and tests, then the newest spec, then o
 ```bash
 npm config set save-exact=true --location=project   # writes .npmrc: exact version pinning
 npm install          # install dependencies
-supabase init        # create supabase/ config (once per repo)
-supabase start       # start local Postgres + Auth (Docker); prints URLs/keys for .env
+cp .env.example .env # already points at the local stack
+npm run db:start     # local Postgres 17 + Cloud Storage emulator (compose.yaml, Docker)
+npm run db:reset     # build the local DB from drizzle/
 ```
 
 ### Daily development
 ```bash
-supabase start       # if not already running
+npm run db:start     # if not already running
 npm run dev          # Next.js dev server with hot reload (Fast Refresh) → localhost:3000
 ```
 
@@ -113,21 +116,21 @@ npm run dev          # Next.js dev server with hot reload (Fast Refresh) → loc
 npx drizzle-kit generate   # diff schema.ts → new SQL migration file
 npx drizzle-kit migrate    # apply migrations to local DB
 npx drizzle-kit studio     # browser GUI to inspect data
-supabase db reset          # wipe local DB, re-run all migrations + seed
+npm run db:reset           # wipe local DB, re-run all migrations (local stack only)
 npm run db:clone-prod      # replace the local DB with production-shaped data
 ```
-`db:clone-prod` is the migration rehearsal: it copies production (including the drizzle journal) into the local stack, optionally shifts every date by one interval, then runs `drizzle-kit migrate` — so pending migrations meet real data before production does. Needs `pg_dump`/`psql` ≥ 17 and `PROD_DATABASE_URL`. Details, flags and the scrub-vs-no-scrub privacy rule: `docs/deployment.md` §6.
+`db:clone-prod` is the migration rehearsal: it copies production (including the drizzle journal) into the local stack, optionally shifts every date by one interval, then runs `drizzle-kit migrate` — so pending migrations meet real data before production does. Needs `pg_dump`/`psql` ≥ 17 and `PROD_DATABASE_URL` pointing at production through the Cloud SQL Auth Proxy (`cloud-sql-proxy --port 5433 …`). Details, flags and the scrub-vs-no-scrub privacy rule: `docs/deployment.md` §6.
 
-Workflow: edit `schema.ts` → `generate` → review generated SQL → `migrate`. Migrations are committed and versioned. SQL that `schema.ts` cannot express (RLS policies, FKs into `auth.users`, grants) goes in a **custom** migration authored with `npx drizzle-kit generate --custom --name <x>` — this writes the file *and* its journal/snapshot entry; a hand-written `.sql` file is silently skipped by `migrate`. Migrations are per-feature and **append-only** — the pre-launch chain was squashed into a baseline at go-live (see `docs/decisions/migrations-squash-at-launch.md`); the deploy workflow applies new migrations to production with each release.
+Workflow: edit `schema.ts` → `generate` → review generated SQL → `migrate`. Migrations are committed and versioned. SQL that `schema.ts` cannot express (foreign keys, triggers, checks and partial indexes Drizzle does not generate) goes in a **custom** migration authored with `npx drizzle-kit generate --custom --name <x>` — this writes the file *and* its journal/snapshot entry; a hand-written `.sql` file is silently skipped by `migrate`. Migrations are per-feature and **append-only** — the chain was squashed into a baseline at go-live (`docs/decisions/migrations-squash-at-launch.md`) and restarted from a new baseline when the hub left Supabase (`specs/004-google-cloud-migration/research.md` R6); the deploy workflow applies new migrations to production with each release.
 
 ### Testing
 ```bash
 npm test                   # Vitest in watch mode
 npm test -- --run          # single run (CI style)
 ```
-Integration tests require the local Supabase stack to be running; shared seed helpers provide fixtures, and each test file starts from a clean state via truncation.
+Integration tests require the local stack to be running (`npm run db:start`); each test file creates its own fixtures and starts from a clean state via truncation.
 
-- **The suite refuses to run against a non-local `DATABASE_URL`** (`src/test/local-database.ts`, enforced from `src/test/setup.ts`). The integration tests delete and truncate on startup against whatever that variable points at, so a pasted production string would destroy live data — this is the only thing standing in the way. Override deliberately with `ALLOW_NONLOCAL_TEST_DATABASE=true`.
+- **The suite refuses to run against a non-local `DATABASE_URL`** (`src/test/local-database.ts`, enforced from `src/test/setup.ts`): local means localhost on port 54322, because the Cloud SQL Auth Proxy serves production on 127.0.0.1 too. The integration tests delete and truncate on startup against whatever that variable points at, so a pasted production string would destroy live data — this is the only thing standing in the way. Override deliberately with `ALLOW_NONLOCAL_TEST_DATABASE=true`.
 - **A test run wipes the local database**, including a `db:clone-prod` fixture and whatever the maintainer is testing by hand. Ask before running the suite while they might be; re-clone afterwards.
 
 ### Code quality
@@ -138,7 +141,7 @@ npx tsc --noEmit           # typecheck without building
 
 ### Occasionally
 ```bash
-supabase stop              # shut down local stack
+npm run db:stop            # shut down local stack
 npm run build && npm start # production build, verify locally
 npx drizzle-kit migrate    # against prod DB URL when deploying schema changes
 ```
@@ -161,7 +164,7 @@ npx drizzle-kit migrate    # against prod DB URL when deploying schema changes
   **The reset is not optional.** A squash-merge puts one new commit on `main` while `dev` keeps the originals — same tree, divergent history. Skip the reset and the *next* promotion takes the old merge base, replays commits already on `main`, and conflicts. Resetting `dev` onto `main` after every promotion keeps them a single line. (Merge commits would avoid the reset but put every intermediate commit on `main`, breaking one commit per promotion.)
 
   Corollaries: never let work exist only on `dev` for long — it is promoted or discarded. A production hotfix that cannot wait for `dev` goes on a branch off `main` and straight into a PR to `main`, then `dev` is reset onto it.
-  - **Staging is not a substitute for the local loop.** Push to `dev` when something genuinely needs a real deployment — hosted Supabase, the Discord OAuth round-trip, Cloud Run behaviour, a migration meeting production-sized data. For everything else the local stack with `npm run db:clone-prod` is more realistic *and* faster than waiting for a deploy.
+  - **Staging is not a substitute for the local loop.** Push to `dev` when something genuinely needs a real deployment — Cloud SQL, the Discord OAuth round-trip, Cloud Run behaviour, a migration meeting production-sized data. For everything else the local stack with `npm run db:clone-prod` is more realistic *and* faster than waiting for a deploy.
   - **One PR per promotion**, even when `dev` holds several features; its squash commit message lists the features it contains.
 
 ## `/dev` tooling
@@ -170,16 +173,16 @@ npx drizzle-kit migrate    # against prod DB URL when deploying schema changes
 
 ## The development loop
 
-Start `supabase start` and `npm run dev` once; leave them running. Feature work happens in the hot-reload loop, with `npm test` in watch mode alongside. Schema changes: edit `schema.ts`, generate, review, migrate — the local DB is disposable; `supabase db reset` recovers from any broken state. Before every commit: Biome, typecheck, full test run.
+Start `npm run db:start` and `npm run dev` once; leave them running. Feature work happens in the hot-reload loop, with `npm test` in watch mode alongside. Schema changes: edit `schema.ts`, generate, review, migrate — the local DB is disposable; `npm run db:reset` recovers from any broken state. Before every commit: Biome, typecheck, full test run.
 
 Common commands should be wrapped as npm scripts (`db:generate`, `db:migrate`, `check`, etc.) so flags don't need to be remembered.
 
 ## Environment & secrets
 
-- `.env` — the single local env file (template: `.env.example`), read by Next.js, drizzle-kit, and the Supabase CLI alike: Supabase URLs/keys, Discord bot token, and the OAuth credentials the CLI substitutes into `supabase/config.toml` via `env()` on `supabase start`
+- `.env` — the single local env file (template: `.env.example`), read by Next.js, drizzle-kit and the scripts alike: the local database, the storage emulator, the Discord bot token and the Discord OAuth app (`DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET`)
 - `NEXT_PUBLIC_SPRITE_BASE` — root of the sprite bucket (`/pokemon`, `/pokemon-pixel`, `/items`, `/types` are appended). Unset → the shared `justhit-sprites` bucket, which is what production uses.
-- Production secrets (Supabase service keys, Discord bot token) via Google Secret Manager, injected into Cloud Run
-- The Discord bot token must never reach client-side code
+- Production secrets (database URL, Discord bot token, Discord client secret, job and stream secrets) via Google Secret Manager, injected into Cloud Run
+- The Discord bot token and client secret must never reach client-side code
 
 ## Open decisions (not yet pinned)
 

@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (Datenbank, Auth und Speicher).
+
 # Deployment
 
 **Status: repo side done** (2026-07-06) — squash (schema-dump verified

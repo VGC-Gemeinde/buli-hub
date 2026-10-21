@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPersona, PERSONAS, personaToAdminPayload } from "./personas";
+import { getPersona, PERSONAS } from "./personas";
 
 function mustGet(id: string) {
   const persona = getPersona(id);
@@ -10,43 +10,41 @@ function mustGet(id: string) {
 }
 
 describe("personas", () => {
-  it("have unique ids and emails", () => {
-    const ids = PERSONAS.map((p) => p.id);
-    expect(new Set(ids).size).toBe(PERSONAS.length);
-
-    const emails = PERSONAS.map((p) => personaToAdminPayload(p).email);
-    expect(new Set(emails).size).toBe(PERSONAS.length);
+  it("have unique ids and Discord ids", () => {
+    expect(new Set(PERSONAS.map((p) => p.id)).size).toBe(PERSONAS.length);
+    expect(new Set(PERSONAS.map((p) => p.discordId)).size).toBe(
+      PERSONAS.length,
+    );
   });
 
-  it("always confirm the email so no mail flow is triggered", () => {
+  it("carry Discord ids in snowflake shape, so a ban on them is valid", () => {
     for (const persona of PERSONAS) {
-      expect(personaToAdminPayload(persona).email_confirm).toBe(true);
+      expect(persona.discordId).toMatch(/^[0-9]{17,20}$/);
     }
   });
 
-  it("voll carries an avatar and a global name", () => {
-    const meta = personaToAdminPayload(mustGet("voll")).user_metadata;
-    expect(meta.avatar_url).toMatch(/^https:/);
-    expect(
-      (meta.custom_claims as Record<string, unknown>).global_name,
-    ).toBeTruthy();
+  it("voll carries an avatar and a display name", () => {
+    const { identity } = mustGet("voll");
+    expect(identity.avatarUrl).toMatch(/^https:/);
+    expect(identity.displayName).toBeTruthy();
   });
 
-  it("kein-avatar has no avatar keys at all", () => {
-    const meta = personaToAdminPayload(mustGet("kein-avatar")).user_metadata;
-    expect(meta).not.toHaveProperty("avatar_url");
-    expect(meta).not.toHaveProperty("picture");
+  it("kein-avatar has no avatar", () => {
+    expect(mustGet("kein-avatar").identity.avatarUrl).toBeNull();
   });
 
   it("langer-name is long enough to force truncation", () => {
-    const meta = personaToAdminPayload(mustGet("langer-name")).user_metadata;
-    const globalName = (meta.custom_claims as Record<string, string>)
-      .global_name;
-    expect(globalName.length).toBeGreaterThan(35);
+    expect(mustGet("langer-name").identity.displayName?.length).toBeGreaterThan(
+      35,
+    );
   });
 
-  it("leer has empty metadata", () => {
-    expect(personaToAdminPayload(mustGet("leer")).user_metadata).toEqual({});
+  it("leer has no name and no avatar at all", () => {
+    expect(mustGet("leer").identity).toEqual({
+      displayName: null,
+      username: null,
+      avatarUrl: null,
+    });
   });
 
   it("kein-server is a confirmed non-member with baseline role", () => {

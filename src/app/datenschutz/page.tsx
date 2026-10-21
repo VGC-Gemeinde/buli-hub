@@ -111,8 +111,7 @@ export default function DatenschutzPage() {
         in unserem Auftrag verarbeiten:
       </p>
       <ul>
-        <li>Supabase (Datenbank, Authentifizierung, Speicher),</li>
-        <li>Google Cloud (Hosting der Anwendung),</li>
+        <li>Google Cloud (Hosting der Anwendung, Datenbank und Speicher),</li>
         <li>Discord (Anmeldung und Identität).</li>
       </ul>
       <p>

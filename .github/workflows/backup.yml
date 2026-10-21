@@ -1,14 +1,14 @@
 # Backs production up to Cloud Storage. Nightly, plus a button for taking one
 # before something risky (docs/deployment.md §4).
 #
-# This exists because Supabase's automated backups are a Pro feature and the
-# organisation is on Free, so without it production has no restore point at all
-# — next to a repository that also contains a script whose job is to drop and
-# recreate schemas.
+# Cloud SQL keeps its own automated backups and point-in-time recovery; this is
+# the copy outside the instance, in a plain format, that also outlives the
+# instance itself — next to a repository that contains a script whose job is to
+# drop and recreate schemas.
 #
-# Read-only against production. The dump covers exactly what a restore needs and
-# what Supabase does not recreate on a fresh project: `public`, the `drizzle`
-# journal, and the two auth tables.
+# Read-only against production. The dump covers everything a restore needs:
+# `public` (accounts included, since specs/004-google-cloud-migration) and the
+# `drizzle` journal. The stream photos are copied beside it.
 name: Backup production
 
 on:
@@ -33,7 +33,7 @@ jobs:
 
       # Same reason as the refresh workflow: the runner ships PostgreSQL 16 and
       # /usr/bin/pg_dump is Debian's pg_wrapper, which dispatches to the default
-      # cluster's version. Supabase runs 17, and pg_dump refuses to dump from a
+      # cluster's version. Cloud SQL runs 17, and pg_dump refuses to dump from a
       # newer server, so install 17 and put it ahead of the wrapper.
       - name: Install PostgreSQL 17 client
         run: |
@@ -50,7 +50,7 @@ jobs:
         run: |
           pg_dump --version
           pg_dump --version | grep -q ' 17\.' || {
-            echo "::error::pg_dump is not version 17; the dump would fail against Supabase."
+            echo "::error::pg_dump is not version 17; the dump would fail against Cloud SQL."
             exit 1
           }
 
@@ -59,6 +59,9 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOYER_SA }}
       - uses: google-github-actions/setup-gcloud@v3
+      - uses: ./.github/actions/cloud-sql-proxy
+        with:
+          instance: ${{ vars.CLOUD_SQL_INSTANCE }}
 
       - name: Dump production
         env:
@@ -68,12 +71,8 @@ jobs:
           STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ)
           echo "STAMP=$STAMP" >> "$GITHUB_ENV"
           mkdir -p backup
-          pg_dump --schema=public --schema=drizzle --no-owner \
+          pg_dump --schema=public --schema=drizzle --no-owner --no-privileges \
             --file=backup/app.sql "$PROD_DATABASE_URL"
-          pg_dump --table=auth.users --data-only --column-inserts --no-owner \
-            --file=backup/auth_users.sql "$PROD_DATABASE_URL"
-          pg_dump --table=auth.identities --data-only --column-inserts --no-owner \
-            --file=backup/auth_identities.sql "$PROD_DATABASE_URL"
 
       # A backup nobody looked at is a guess. Check the dump actually contains
       # rows before it replaces yesterday's, so a silent auth failure or an empty
@@ -81,9 +80,10 @@ jobs:
       - name: Check the dump is not empty
         run: |
           set -euo pipefail
-          users=$(grep -c '^INSERT INTO auth.users' backup/auth_users.sql || true)
+          # The accounts come as a COPY block; count its data lines.
+          users=$(awk '/^COPY public.users /{on=1; next} /^\\\.$/{on=0} on' backup/app.sql | wc -l)
           tables=$(grep -c '^CREATE TABLE' backup/app.sql || true)
-          echo "auth.users rows: $users, tables: $tables"
+          echo "users rows: $users, tables: $tables"
           if [ "$users" -lt 1 ] || [ "$tables" -lt 10 ]; then
             echo "::error::Dump looks empty (users=$users tables=$tables). Not uploading."
             exit 1
@@ -92,6 +92,16 @@ jobs:
       - name: Upload
         run: |
           set -euo pipefail
-          tar -czf "buli-hub-$STAMP.tar.gz" -C backup app.sql auth_users.sql auth_identities.sql
+          tar -czf "buli-hub-$STAMP.tar.gz" -C backup app.sql
           gcloud storage cp "buli-hub-$STAMP.tar.gz" gs://buli-hub-backups/nightly/
           echo "Uploaded buli-hub-$STAMP.tar.gz ($(du -h "buli-hub-$STAMP.tar.gz" | cut -f1))" >> "$GITHUB_STEP_SUMMARY"
+
+      # The photos are few and never change in place (a new object per upload),
+      # so a mirror is enough: rsync copies what is new and keeps what a player
+      # removed, which is what a backup should do.
+      - name: Copy stream photos
+        run: |
+          set -euo pipefail
+          gcloud storage rsync --recursive \
+            gs://buli-hub-stream-photos gs://buli-hub-backups/stream-photos
+          echo "Stream photos: $(gcloud storage ls -r 'gs://buli-hub-backups/stream-photos/**' | wc -l) objects" >> "$GITHUB_STEP_SUMMARY"

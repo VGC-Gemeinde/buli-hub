@@ -1,19 +1,18 @@
 import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { profiles } from "@/db/schema";
-import { discordIdentityFromUser } from "@/features/auth/identity";
+import { currentSession } from "@/features/auth/current-session";
 import { maintenanceMode } from "@/features/maintenance/mode";
 import { db } from "@/lib/db";
-import { createClient } from "@/lib/supabase/server";
-import { type Role, roleAtLeast } from "./roles";
+import { isRoleStale, type Role, roleAtLeast } from "./roles";
 import { getRole } from "./sync";
 
 export type CurrentUser = {
   userId: string;
   discordId: string | null;
   role: Role;
-  // Stored guild identity, falling back to the session identity while a row
-  // has not been synced yet.
+  // Stored guild identity (written by the member sync, or from the sign-in
+  // when the sync could not run).
   displayName: string | null;
   username: string | null;
   avatarUrl: string | null;
@@ -28,50 +27,63 @@ export type CurrentUser = {
 // role and identity checks.
 //
 // Memoized per request: header, footer and page all ask for the current user,
-// and without this each one would repeat the auth round-trip and the role
+// and without this each one would repeat the session lookup and the role
 // sync. The cache lives exactly one request, so a role change still takes
 // effect on the next one.
 export const currentUser = cache(
   async function currentUser(): Promise<CurrentUser | null> {
     // During maintenance the database is being moved: nobody is signed in,
     // and the legal pages render without a single query
-    // (specs/004-google-cloud-migration, contracts/maintenance.md).
+    // (contracts/maintenance.md).
     if (maintenanceMode()) {
       return null;
     }
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    const session = await currentSession();
+    if (!session) {
       return null;
     }
+    const { userId, discordId } = session;
 
-    const identity = discordIdentityFromUser(user);
-    // getRole runs the sync when stale, so the stored identity read below is
-    // fresh.
-    const role = await getRole(user.id, identity);
-    const stored = await db.query.profiles.findFirst({
-      columns: {
-        displayName: true,
-        username: true,
-        avatarUrl: true,
-        guildMember: true,
-      },
-      where: eq(profiles.userId, user.id),
+    const before = await storedIdentity(userId);
+    // getRole runs the sync when the role is stale; the sync refreshes the
+    // stored identity from the guild member and falls back to the identity
+    // passed here, so a non-member keeps the names they have. Only then is
+    // the profile read again.
+    const role = await getRole(userId, {
+      discordId,
+      displayName: before?.displayName ?? null,
+      username: before?.username ?? null,
+      avatarUrl: before?.avatarUrl ?? null,
     });
+    const stored =
+      before && !isRoleStale(before.roleSyncedAt, new Date())
+        ? before
+        : await storedIdentity(userId);
 
     return {
-      userId: user.id,
-      discordId: identity.discordId,
+      userId,
+      discordId,
       role,
-      displayName: stored?.displayName ?? identity.displayName,
-      username: stored?.username ?? identity.username,
-      avatarUrl: stored?.avatarUrl ?? identity.avatarUrl,
+      displayName: stored?.displayName ?? null,
+      username: stored?.username ?? null,
+      avatarUrl: stored?.avatarUrl ?? null,
       guildMember: stored?.guildMember ?? null,
     };
   },
 );
+
+function storedIdentity(userId: string) {
+  return db.query.profiles.findFirst({
+    columns: {
+      displayName: true,
+      username: true,
+      avatarUrl: true,
+      guildMember: true,
+      roleSyncedAt: true,
+    },
+    where: eq(profiles.userId, userId),
+  });
+}
 
 export async function hasRoleAtLeast(minimum: Role): Promise<boolean> {
   const current = await currentUser();

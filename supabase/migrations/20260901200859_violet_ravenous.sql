@@ -1,1 +1,0 @@
-ALTER TABLE "registration_windows" ADD COLUMN "schedule_published_at" timestamp with time zone;

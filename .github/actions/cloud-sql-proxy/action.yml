@@ -1,0 +1,44 @@
+# Starts the Cloud SQL Auth Proxy in the background, so the steps after it
+# reach the instance on 127.0.0.1 (specs/004-google-cloud-migration,
+# research.md R3). Needs google-github-actions/auth before it: the proxy
+# authenticates with the credentials file that action exports, and the
+# service account needs roles/cloudsql.client.
+#
+# Pinned binary, verified against the checksum from the release notes
+# (github.com/GoogleCloudPlatform/cloud-sql-proxy/releases/tag/v2.26.2).
+# Bump deliberately, both lines together.
+name: Cloud SQL Auth Proxy
+description: Start the Cloud SQL Auth Proxy for one instance on 127.0.0.1
+inputs:
+  instance:
+    description: Instance connection name (<project>:<region>:<instance>)
+    required: true
+  port:
+    description: Local port
+    default: "5432"
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        VERSION: v2.26.2
+        SHA256: 787d23b4b396186f307b6b274c94099d25b15a81b7e60c91ceed18c07558e9d7
+      run: |
+        set -euo pipefail
+        curl -fsSL -o "$RUNNER_TEMP/cloud-sql-proxy" \
+          "https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/$VERSION/cloud-sql-proxy.linux.amd64"
+        echo "$SHA256  $RUNNER_TEMP/cloud-sql-proxy" | sha256sum --check --quiet
+        chmod +x "$RUNNER_TEMP/cloud-sql-proxy"
+        "$RUNNER_TEMP/cloud-sql-proxy" --port "${{ inputs.port }}" "${{ inputs.instance }}" \
+          > "$RUNNER_TEMP/cloud-sql-proxy.log" 2>&1 &
+        # Ready once the port accepts connections; fail with the proxy's log
+        # rather than letting the next step time out on its own.
+        for _ in $(seq 1 30); do
+          if (exec 3<>/dev/tcp/127.0.0.1/${{ inputs.port }}) 2>/dev/null; then
+            exit 0
+          fi
+          sleep 1
+        done
+        cat "$RUNNER_TEMP/cloud-sql-proxy.log"
+        echo "::error::Cloud SQL Auth Proxy did not come up"
+        exit 1

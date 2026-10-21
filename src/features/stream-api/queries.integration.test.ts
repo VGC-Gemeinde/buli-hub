@@ -13,6 +13,7 @@ import {
 } from "@/db/schema";
 import { saveResult } from "@/features/reporting/queries";
 import { createWindow } from "@/features/staff/queries";
+import { signStreamPhotoPath } from "@/features/stream-photos/access";
 import { db } from "@/lib/db";
 import { getStreamMatch, listStreamMatches } from "./queries";
 
@@ -34,12 +35,15 @@ let otherHeld: string; // dave
 // The public URL of a stream photo is built from this; CI sets it for the
 // build step only, so the assertion below would otherwise depend on the
 // ambient environment.
-const SUPABASE_URL = "https://sb.test";
+const BASE_URL = "https://buli.vgcgemein.de";
 
 beforeAll(async () => {
-  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", SUPABASE_URL);
+  vi.stubEnv("APP_BASE_URL", BASE_URL);
+  vi.stubEnv("STREAM_API_SECRET", "stream-secret");
   for (const id of [alice, bob, carol, dave, erin, frank]) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   await db.insert(profiles).values([
     {
@@ -217,7 +221,7 @@ afterAll(async () => {
     sql`delete from registration_windows where id = ${windowId}`,
   );
   for (const id of [alice, bob, carol, dave, erin, frank]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 
@@ -252,7 +256,7 @@ describe("getStreamMatch", () => {
       b: "Whimsicott @ Occa Berry",
     });
     expect(match?.playerA.photoUrl).toBe(
-      `${SUPABASE_URL}/storage/v1/object/public/stream-photos/${alice}/photo.webp`,
+      `${BASE_URL}/stream-photos/${alice}/photo.webp?sig=${signStreamPhotoPath(`${alice}/photo.webp`, "stream-secret")}`,
     );
     expect(match?.playerB.photoUrl).toBeNull();
     expect(match?.playerA.avatarUrl).toBeNull();

@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-21
 
-**Status**: Spec and mockups approved 2026-10-21 (Gate 1)
+**Status**: Implemented 2026-10-21; maintenance mode shipped ahead (#48), the rest ships with the rollout (tasks T082 to T086)
 
 **Input**: User description: "Wir müssen so schnell wie möglich von allen Supabase-Services zu
 Google-Cloud-Alternativen migrieren." The Supabase access is expected to end on 2026-10-21; if it
@@ -43,6 +43,10 @@ is done properly and without shortcuts. Decided by the maintainer on 2026-10-21:
 - Q: How specific is the maintenance page? → A: Generic: no reason, no time ("Schau in etwa einer
   Stunde wieder vorbei."), reusable for any later maintenance.
 - Q: Do the imprint and privacy page stay reachable during maintenance? → A: Yes, both.
+- Q: (After Gate 3, while setting up the buckets) Are stream photos public? → A: No: they are
+  for the player, staff and the stream only. The bucket stays private; the hub serves the photos
+  itself, through the session for the player and staff and through a signed address for the
+  stream (maintainer, 2026-10-21).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -140,9 +144,9 @@ compare row counts and content per table before and after.
 
 ### User Story 4 - Stream photos and the stream keep working (Priority: P2)
 
-Players' stream photos show on their profile, in the staff workspaces and on the stream. The stream
-backend (gemeinde-streams) gets working photo addresses from the stream API without any change on
-its side. Uploading, replacing and removing a photo works as today.
+Players' stream photos show on their profile, in the staff workspaces and on the stream, and
+nowhere else. The stream backend (gemeinde-streams) gets working photo addresses from the stream
+API without any change on its side. Uploading, replacing and removing a photo works as today.
 
 **Why this priority**: visible on stream, but a missing photo does not stop the league.
 
@@ -157,6 +161,9 @@ address the stream API returns without being signed in.
    it behaves as today, with the same size and format limits.
 3. **Given** a photo address from the stream API, **When** it is opened without a session, **Then**
    it loads.
+4. **Given** a stored photo, **When** anyone other than the player, staff or the holder of a stream
+   API address asks for it (signed out, another player, a guessed or altered address), **Then** the
+   hub answers as if no photo existed, and the bucket itself refuses every direct request.
 
 ---
 
@@ -282,11 +289,13 @@ persona and as an impersonated user, and clone production into the local stack.
 
 **Storage**
 
-- **FR-015**: Stream photos MUST be stored in Google Cloud Storage under the same paths as today,
-  publicly readable by address, with today's size and format limits and upload, replace and remove
-  behavior.
-- **FR-016**: Every photo address the hub renders or returns from the stream API MUST point at the
-  new storage; the stream API's response shape does not change.
+- **FR-015**: Stream photos MUST be stored in a private Google Cloud Storage bucket under the same
+  paths as today, with today's size and format limits and upload, replace and remove behavior.
+  Only the hub reads the bucket; it shows a photo to the player it belongs to and to staff through
+  the session, and to the stream through a signed address. Everyone else gets "not found".
+- **FR-016**: The photo addresses the hub renders point at its own photo route; the ones the stream
+  API returns are absolute, signed and loadable without a session. The stream API's response shape
+  does not change.
 
 **The switch**
 
@@ -296,7 +305,8 @@ persona and as an impersonated user, and clone production into the local stack.
 - **FR-018**: During maintenance every route of the hub, the stream API and the job endpoints
   included, MUST answer with a maintenance page (HTTP 503) instead of its content, so no change can
   be submitted and none is lost silently. Only the imprint (`/impressum`) and the privacy page
-  (`/datenschutz`) stay reachable, as the law requires for the imprint. Maintenance is switched
+  (`/datenschutz`) stay reachable, as the law requires for the imprint, and `/robots.txt`, so
+  crawlers read the usual rules rather than the maintenance page. Maintenance is switched
   on and off without a new release. There is no bypass, also not for staff or the maintainer.
   The page is generic: it names no reason and no time, so the same switch serves any later
   maintenance.
@@ -386,8 +396,9 @@ is briefly unavailable for maintenance and when to try again. The privacy page s
   replacement player) sees exactly what the same account saw before the move.
 - **SC-003**: The switch in production completes within the planned maintenance window of at most
   one hour, and no change submitted during it is lost silently.
-- **SC-004**: 100% of stream photos referenced by profiles load from the new storage, also without
-  a session.
+- **SC-004**: 100% of stream photos referenced by profiles load from the new storage: through the
+  stream API's address without a session, and on the hub's pages for the player and staff; none
+  loads for anyone else.
 - **SC-005**: A player completes a sign-in with Discord in the same number of steps as today, and
   the first sign-in after the move restores everything with no further action.
 - **SC-006**: The first nightly backup after the move contains every account and every stream photo

@@ -149,7 +149,7 @@ on `window.VgcGemeinde` for composition but get no card of their own.
 
 **16 components are excluded because they reach Next server actions.** Their
 transitive value-import closure hits a `"use server"` module, which drags
-`postgres`/`drizzle-orm`/`@supabase/*`/`next/cache` into the browser bundle and
+`postgres`/`drizzle-orm`/`next/cache` into the browser bundle and
 fails the esbuild step outright (`[UNRESOLVED_IMPORT] net, tls, crypto, …`).
 Next replaces server-action imports with RPC stubs inside its own compiler; a
 plain esbuild bundle follows the real module. Excluded:
@@ -397,7 +397,7 @@ Triaged as legitimate; a warn NOT in this list on a later sync is new:
 
 `.github/workflows/ci.yml` runs **`npx biome ci .`** over the whole repo, and
 `biome.json` only excludes `node_modules`, `.next`, `dist`, `build`, `design` and
-`supabase/migrations` (plus everything gitignored, via `useIgnoreFile`). So every
+`drizzle` (plus everything gitignored, via `useIgnoreFile`). So every
 committed file under `.design-sync/` is linted AND format-checked, and
 `biome ci` is stricter than `biome check`: no auto-fix, and formatting
 differences are errors. The first import broke `main`'s pipeline this way — CI

@@ -13,7 +13,7 @@ later through a contract of its own (a later spec), not by sharing a Supabase pr
 | `AUTH_COOKIE_DOMAIN` | Cookie |
 |---|---|
 | set (production only, value `.vgcgemein.de`) | name `gemeinde-auth`, `Domain=.vgcgemein.de`, `Path=/`, `SameSite=Lax`, `Secure`, `HttpOnly` |
-| unset (local, staging, production until the Tippspiel joins) | name `buli-hub-auth`, host-only, `Path=/`, `SameSite=Lax`, `HttpOnly`, `Secure` except on `http://localhost` |
+| unset (local, staging, production until the Tippspiel joins) | name `buli-hub-auth`, host-only, `Path=/`, `SameSite=Lax`, `HttpOnly`, `Secure` whenever `NODE_ENV=production` (so `next dev` stays reachable over plain http from a phone on the LAN) |
 
 - **Value**: 32 random bytes, base64url (43 characters). Opaque; it means nothing without the
   `sessions` row whose `token_hash` is its SHA-256 (data-model.md).
@@ -35,14 +35,21 @@ later through a contract of its own (a later spec), not by sharing a Supabase pr
 ## Sign-in flow (`/auth/sign-in` → Discord → `/auth/callback`)
 
 1. `signInWithDiscord` (Server Action) creates `state` (16 random bytes) and a PKCE
-   `code_verifier` (32 random bytes), stores both in the `buli-hub-oauth` cookie (`HttpOnly`,
-   `SameSite=Lax`, `Path=/auth/callback`, Max-Age 600) and redirects to Discord's authorize URL
-   with `response_type=code`, `scope=identify`, `state`, `code_challenge` (S256) and
-   `redirect_uri=<APP_BASE_URL or origin>/auth/callback`.
-2. `/auth/callback` reads and clears `buli-hub-oauth`, requires `state` to match, exchanges `code`
-   (with `code_verifier`) at Discord's token endpoint, reads `GET /users/@me`, then:
+   `code_verifier` (32 random bytes) and takes `redirect_uri=<Origin header>/auth/callback`, the
+   host the sign-in starts on. It stores all three in the `buli-hub-oauth` cookie (`HttpOnly`,
+   `SameSite=Lax`, `Path=/auth/callback`, Max-Age 600; the URI base64url-encoded) and redirects to
+   Discord's authorize URL with `response_type=code`, `scope=identify`, `state`, `code_challenge`
+   (S256) and that `redirect_uri`. Every host the hub is reachable under needs its callback
+   registered in the Discord application.
+2. `/auth/callback` reads and clears `buli-hub-oauth` and accepts it only if its redirect URI
+   points at the host answering the callback (`Host` header) and at `/auth/callback`; a cookie
+   planted from a sibling subdomain can therefore never send anyone to a foreign host. It
+   requires `state` to match, exchanges `code` (with `code_verifier` and the same redirect URI)
+   at Discord's token endpoint, reads `GET /users/@me`, then:
    finds or creates the `users` row by `discord_id`, runs `syncMember` with the Discord identity
-   (best effort, as today), creates the session and redirects to the base URL.
+   (best effort, as today), creates the session and redirects to the host the sign-in started on.
+   (Found in the staging rehearsal, 2026-10-21: building the redirect URI from `APP_BASE_URL`
+   lost the cookie whenever the sign-in started under the service's other address.)
 3. Any failure redirects to `/?auth_error=<kind>` with today's categories: `cancelled` when
    Discord returns `error=access_denied`, `unknown` otherwise (the `no_email` category and its message are removed, FR-004). The raw reason is logged, never shown.
 

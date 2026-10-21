@@ -17,10 +17,10 @@
   feature-specific ones and mark unknowns NEEDS CLARIFICATION.
 -->
 
-**Stack**: Next.js App Router + TypeScript, Supabase (Postgres, Auth, Storage), Drizzle ORM, Zod,
+**Stack**: Next.js App Router + TypeScript, Postgres on Cloud SQL, the hub's own Discord sign-in, Cloud Storage, Drizzle ORM, Zod,
 Tailwind CSS + shadcn/ui. New dependencies: [none | name@exact-version, approved because ...]
 
-**Testing**: Vitest unit tests (domain logic), Vitest integration tests against the local Supabase
+**Testing**: Vitest unit tests (domain logic), Vitest integration tests against the local Postgres
 stack. No E2E.
 
 **Target**: Cloud Run container; desktop and phone browsers, light and dark mode.
@@ -63,16 +63,16 @@ src/features/[feature]/
 ├── [logic].test.ts                  # unit tests
 ├── queries.ts                       # database reads
 ├── actions.ts                       # Server Actions (authorization inside)
-├── [name].integration.test.ts       # integration tests against local Supabase
+├── [name].integration.test.ts       # integration tests against local Postgres
 └── components/                      # dumb views
 src/app/[route]/page.tsx             # thin route wrapper
 src/db/schema.ts                     # if the schema changes
-supabase/migrations/                 # generated + reviewed SQL
+drizzle/                             # generated + reviewed SQL
 ```
 
 ## Schema & Migrations
 
-[Tables/columns added or changed, constraints, RLS, triggers. Generated or custom migration.
+[Tables/columns added or changed, constraints, foreign keys, triggers. Generated or custom migration.
 "None" if the schema does not change.]
 
 ## Authorization & Visibility

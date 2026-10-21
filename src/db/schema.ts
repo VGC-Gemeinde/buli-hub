@@ -1,7 +1,12 @@
 // Drizzle schema — the source of truth for the data model.
 //
 // Workflow: edit this file → `npm run db:generate` → review the generated SQL
-// in supabase/migrations/ → `npm run db:migrate`.
+// in drizzle/ → `npm run db:migrate`.
+//
+// Foreign keys are not declared here: every FK lives in the custom migration
+// (`drizzle/*_constraints.sql`), as before the move from Supabase, where most
+// of them pointed into Supabase's own auth schema. No table has RLS: only the
+// hub reaches the database (specs/004-google-cloud-migration).
 //
 // Tables are added per feature (see CLAUDE.md); the schema stays central
 // because tables cross feature boundaries.
@@ -26,13 +31,43 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+// One account per Discord user (specs/004-google-cloud-migration, data-model.md).
+// Replaces Supabase's auth.users: migrated accounts keep their id, so every
+// table that references a user is unchanged. The Discord identity the hub shows
+// (names, avatar) lives on `profiles`; no email is kept. 29 columns reference
+// users(id), each FK in the custom migration with its old delete rule.
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // The Discord snowflake as Discord sends it (a decimal string).
+  discordId: text("discord_id").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// One signed-in browser (contracts/session.md). The cookie carries a random
+// token; only its SHA-256 is stored. Valid while last_seen_at is within 30
+// days; renewed by use, ended by sign-out, the runbook command or expiry.
+export const sessions = pgTable(
+  "sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("sessions_user_id_idx").on(t.userId)],
+);
+
 // App role, derived from the user's Discord guild roles (highest wins).
 export const roleEnum = pgEnum("role", ["dev", "admin", "staff", "player"]);
 
-// User settings, one row per auth user, created lazily on first save or
-// first role sync. user_id references auth.users(id); the FK + RLS policies
-// and the column-level grants for the server-managed role columns live in
-// custom migrations because Drizzle does not express them.
+// User settings, one row per user, created lazily on first save or first
+// role sync. user_id references users(id) (FK in the custom migration).
 export const profiles = pgTable("profiles", {
   userId: uuid("user_id").primaryKey(),
   twitterHandle: text("twitter_handle"),
@@ -89,8 +124,7 @@ export const profiles = pgTable("profiles", {
 // Season registration window. A row exists only once staff has opened a
 // registration; the current state (not started / open / closed) is derived
 // from the latest row and the current time — there is no status column and
-// no scheduled job. opened_by references auth.users (FK + RLS in a custom
-// migration, since Drizzle does not manage the auth schema).
+// no scheduled job. opened_by references users (FK in the custom migration).
 export const registrationWindows = pgTable("registration_windows", {
   id: uuid("id").primaryKey().defaultRandom(),
   openedAt: timestamp("opened_at", { withTimezone: true })
@@ -128,8 +162,8 @@ export const playerStatusEnum = pgEnum("player_status", ["returning", "new"]);
 
 // One player's registration for one window. Status is resolved at submit time
 // (detected-returning / self-reported veteran / new); the branch-specific
-// columns are nullable and set only for the relevant status. FK + RLS live in
-// a custom migration.
+// columns are nullable and set only for the relevant status. FK lives in
+// the custom migration.
 export const registrations = pgTable(
   "registrations",
   {
@@ -165,8 +199,8 @@ export const seasonOutcomeEnum = pgEnum("season_outcome", [
 
 // Division seeding for a season (anchored to its registration window). One
 // seeding per window; holds the season-wide sub-division size and the finalize
-// state. Divisions/sub-divisions/placements hang off it. All FKs + RLS live in
-// a custom migration (server-only, like the other staff tables).
+// state. Divisions/sub-divisions/placements hang off it. All FKs live in the
+// custom migration.
 export const seedings = pgTable("seedings", {
   windowId: uuid("window_id").primaryKey(),
   subDivisionSize: integer("sub_division_size").notNull(),
@@ -256,7 +290,7 @@ export const subDivisions = pgTable(
 // A mid-season drop is a flag here, never a data change: stored results stay
 // untouched and every consumer counts the player's matches as 2:0 free wins
 // for the opponents at read time (`effectiveResult`), which makes un-dropping
-// a plain reset. FK for dropped_by_id in a custom migration.
+// a plain reset. FK for dropped_by_id in the custom migration.
 export const placements = pgTable(
   "placements",
   {
@@ -298,7 +332,7 @@ export const placements = pgTable(
 // `accepted_at` is null; a withdrawn offer is deleted. From acceptance on the
 // dropped player leaves every table and the replacement's row carries the
 // slot's earlier matches as the drop losses they are. One replacement per
-// dropped player, one slot per replacement. FKs + RLS in a custom migration.
+// dropped player, one slot per replacement. FKs in the custom migration.
 export const playerReplacements = pgTable(
   "player_replacements",
   {
@@ -326,7 +360,7 @@ export const playerReplacements = pgTable(
 // the one key shared by bans of hub players and of people who never signed
 // in (players from before the hub), and what makes the latter catch the
 // person the day they first sign in. Lifting sets `lifted_at`, so the
-// history stays. At most one active ban per account. FKs + RLS in a custom
+// history stays. At most one active ban per account. FKs in the custom
 // migration.
 export const bans = pgTable(
   "bans",
@@ -354,7 +388,7 @@ export const bans = pgTable(
 // Favoriten (docs/plans/favorites.md): the players a signed-in user follows
 // through the season. Private: only the user reads their own rows. Keyed on
 // the person, not a season slot, so a favourite outlives the season. Nobody
-// favourites themselves. FKs + RLS in a custom migration.
+// favourites themselves. FKs in the custom migration.
 export const favorites = pgTable(
   "favorites",
   {
@@ -375,7 +409,7 @@ export const favorites = pgTable(
 // keeps everyone else in read-only until they explicitly take control. A stale
 // `heartbeat_at` (older than the client TTL) means the holder's tab is gone and
 // the lock is free to take. Separate from `seedings` because control can be
-// taken before any config row exists. Server-only (RLS on, no policies).
+// taken before any config row exists.
 export const seedingLocks = pgTable("seeding_locks", {
   windowId: uuid("window_id").primaryKey(),
   holderId: uuid("holder_id").notNull(),
@@ -391,8 +425,8 @@ export const seedingLocks = pgTable("seeding_locks", {
 // per matchday (round), shared across all sub-divisions. Week 1 starts on
 // generation; each week's `ends_on` is its deadline (staff-editable in the
 // dialog), and starts follow from the previous deadline. The presence of these
-// rows marks the season as running (no status column). FKs + RLS in a custom
-// migration (server-only, like the other staff tables).
+// rows marks the season as running (no status column). FKs in the custom
+// migration.
 //
 // `regular` is false for the weeks of Relegation und Playoffs, which follow
 // the last Spieltag as further rounds (docs/plans/relegation-and-playoffs.md).
@@ -424,7 +458,7 @@ export const matchStageEnum = pgEnum("match_stage", [
 
 // One match: two players on one matchday (`round`), or a bye when
 // `player_b_id` is null. Its date is the matchday for the same window + round.
-// Results live in `match_results`. FKs + RLS in a custom migration.
+// Results live in `match_results`. FKs in the custom migration.
 //
 // A regular match belongs to a sub-division's single round-robin and always
 // has its players. A relegation or playoff match exists from the moment its
@@ -481,7 +515,7 @@ export const matches = pgTable(
 // zone boundary, after an off-hub tiebreaker tournament
 // (docs/plans/relegation-and-playoffs.md). Keyed by the `BoundaryTie` key;
 // `order` lists the tied players best first. Changeable until a match that
-// builds on it has a result. FKs + RLS in a custom migration.
+// builds on it has a result. FKs in the custom migration.
 export const tieOrders = pgTable(
   "tie_orders",
   {
@@ -511,8 +545,8 @@ export const matchOutcomeEnum = pgEnum("match_outcome", [
 
 // A reported result for a match (1:1, `match_id` PK — a result is a distinct
 // lifecycle object from the pairing, may not exist yet, and can later be
-// corrected in place). Per-game rows live in `match_games`. FKs + RLS in a
-// custom migration (server-only, no policies, like the other tables).
+// corrected in place). Per-game rows live in `match_games`. FKs in the custom
+// migration.
 export const matchResults = pgTable("match_results", {
   matchId: uuid("match_id").primaryKey(),
   outcome: matchOutcomeEnum("outcome").notNull(),
@@ -551,7 +585,7 @@ export const matchResults = pgTable("match_results", {
 
 // One game of a normal (best-of-3) result: 1–3 rows per match_results. Showdown
 // carries a required replay link per game; Cartridge carries none (its optional
-// video lives on match_results). FKs + RLS in a custom migration.
+// video lives on match_results). FKs in the custom migration.
 export const matchGames = pgTable(
   "match_games",
   {
@@ -586,7 +620,7 @@ export const teamsheetSourceEnum = pgEnum("teamsheet_source", [
 // The id is the public slug, and a correction updates this row in place rather
 // than minting a new one: a paste is the identity of a match slot ("Team von
 // Kuro · Saison 1 · Woche 3"), so a stale URL under that title would be a lie.
-// FKs + RLS in a custom migration.
+// FKs in the custom migration.
 export const teamSheets = pgTable(
   "team_sheets",
   {
@@ -611,7 +645,7 @@ export const teamSheets = pgTable(
 // of them, which is when this row appears. Its result is spoiler-protected in
 // every public view; the optional YouTube URL is attached once the VOD is
 // uploaded (possibly well after the Spieltag). Replacing the confirmation
-// clears the URL — it belongs to the previous match. FKs + RLS in a custom
+// clears the URL — it belongs to the previous match. FKs in the custom
 // migration.
 export const motwSelections = pgTable(
   "motw_selections",
@@ -643,7 +677,7 @@ export const motwRoleEnum = pgEnum("motw_role", ["primary", "backup"]);
 // is withheld from the public and from Discord, exactly like the Match of
 // the Week before its VOD; releasing the hold deletes the row. `window_id`
 // and `round` are denormalised so the season's holds and the stale ones
-// (Spieltag over) are one query. FKs + RLS in a custom migration.
+// (Spieltag over) are one query. FKs in the custom migration.
 //
 // `motw_role` makes the row a Match-of-the-Week candidate on top of that: a
 // candidate *is* a recording, so candidacy is a role on the hold rather than
@@ -690,7 +724,7 @@ export const discordPostKindEnum = pgEnum("discord_post_kind", [
 // posted when a result becomes public (or a MotW VOD link lands), edited on
 // changes, deleted when the state disappears (reopen, pick removed). The
 // channel id is stored per post so messages stay editable if the configured
-// results channel later changes. FK + RLS in a custom migration.
+// results channel later changes. FK in the custom migration.
 export const discordPosts = pgTable(
   "discord_posts",
   {
@@ -729,8 +763,8 @@ export const discordSeasonResourceKindEnum = pgEnum(
 // the post-season cleanup can delete them regardless of renames. One row per
 // sub-division and kind for the groups, one per season and kind for the
 // Playoffs and Relegation ones (`sub_division_id` null); a row is replaced
-// when the sync recreates a resource whose Discord object disappeared. FKs +
-// RLS in a custom migration.
+// when the sync recreates a resource whose Discord object disappeared. FKs in
+// the custom migration.
 export const discordSeasonResources = pgTable(
   "discord_season_resources",
   {
@@ -769,7 +803,7 @@ export const disputeResolutionEnum = pgEnum("dispute_resolution", [
 // A participant contesting a match's recorded result; staff adjudicate. A log
 // per match (multiple over time) with at most one `open` at a time — the
 // partial unique index enforcing that lives in the custom migration, alongside
-// FKs + RLS (server-only, no policies).
+// the FKs.
 export const disputes = pgTable("disputes", {
   id: uuid("id").primaryKey().defaultRandom(),
   matchId: uuid("match_id").notNull(),
@@ -790,7 +824,7 @@ export const disputes = pgTable("disputes", {
 // and last season's must not unlock this one. Anchored to the registration
 // window like every other per-season table. The unique constraint makes
 // accepting idempotent — a second confirmation is a no-op and leaves the
-// original timestamp alone. FK + RLS in a custom migration.
+// original timestamp alone. FK in the custom migration.
 export const regelwerkAcceptances = pgTable(
   "regelwerk_acceptances",
   {
@@ -813,7 +847,7 @@ export const feedbackKindEnum = pgEnum("feedback_kind", ["bug", "idea"]);
 // `thread_guild_id` is stored per row rather than configured because the forum
 // may move servers — reports written before a move must still resolve to a
 // working link. `path`/`user_agent` are client-supplied and length-capped by
-// the Zod schema. FK + RLS in a custom migration.
+// the Zod schema. FK in the custom migration.
 export const feedbackReports = pgTable(
   "feedback_reports",
   {
@@ -854,8 +888,7 @@ export const feedbackReports = pgTable(
 // Aggregates only: how many page loads and roughly how many people per period.
 // There is no row per request and nothing that could be joined back to a
 // person. `sketch` is a 4096-byte HyperLogLog (src/features/usage/hll.ts);
-// a visitor's per-period hash bumps one register and is discarded. All three
-// tables are server-only (RLS on, no policies) via the custom migration.
+// a visitor's per-period hash bumps one register and is discarded.
 
 export const usagePeriodKindEnum = pgEnum("usage_period_kind", [
   "day",

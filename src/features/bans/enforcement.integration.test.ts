@@ -37,7 +37,9 @@ let windowId: string;
 
 beforeAll(async () => {
   for (const id of [player, dropped]) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   await db.delete(bans);
   await db.delete(registrationWindows);
@@ -66,7 +68,7 @@ afterAll(async () => {
   await db.delete(bans);
   await db.delete(registrationWindows);
   for (const id of [player, dropped]) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 

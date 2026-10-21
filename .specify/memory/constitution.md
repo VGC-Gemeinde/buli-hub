@@ -12,8 +12,8 @@ commands and environments; where the two overlap, this document wins.
   it posts and notifies, it never decides.
 - Every rule or computation is a pure TypeScript function, separated from database access.
 - UI components are dumb: they display. Logic belongs in tested functions and Server Actions.
-- Drizzle bypasses RLS, so authorization MUST be checked in server code (Server Actions, route
-  handlers). RLS policies are still defined as defense in depth.
+- Only the hub reaches the database, as one role; there is no row-level security. Authorization
+  MUST therefore be checked in server code (Server Actions, route handlers).
 
 Rationale: correct results are what the community trusts the hub for, and pure functions are what
 makes exhaustive testing possible without E2E tests.
@@ -21,18 +21,20 @@ makes exhaustive testing possible without E2E tests.
 ### II. Tests Carry the Weight (NON-NEGOTIABLE)
 
 - Every piece of domain logic MUST have Vitest unit tests, exhaustive over its cases.
-- RLS policies, constraints and multi-step flows MUST have Vitest integration tests against the
-  local Supabase stack.
+- Constraints and multi-step flows MUST have Vitest integration tests against the local Postgres
+  (`npm run db:start`).
 - No E2E tests (no Playwright or similar). No tests of UI snapshots, styling or shadcn internals.
-- The suite refuses a non-local `DATABASE_URL`; that guard is never weakened.
+- The suite refuses a non-local `DATABASE_URL` (local means localhost on the compose port 54322;
+  the Cloud SQL Auth Proxy serves production on 127.0.0.1 too); that guard is never weakened.
 - Before any commit: Biome, typecheck and the full test run are green.
 
 Rationale: cutting E2E tests was only safe because logic lives in tested functions (Principle I).
 
 ### III. Boring Tools, Smallest Mechanism
 
-- The pinned stack (Next.js App Router + TypeScript, Supabase, Drizzle, Zod, Tailwind + shadcn/ui,
-  npm, Biome, Cloud Run) changes only after explicit discussion with the maintainer.
+- The pinned stack (Next.js App Router + TypeScript, Postgres on Cloud SQL, Cloud Storage, the
+  hub's own Discord sign-in, Drizzle, Zod, Tailwind + shadcn/ui, npm, Biome, Cloud Run) changes
+  only after explicit discussion with the maintainer.
 - No niche or exciting library without explicit approval. Dependencies are pinned exactly; the
   lockfile is committed.
 - Default to the smallest mechanism that satisfies the requirement. Before proposing a new table,
@@ -46,7 +48,7 @@ correct.
 
 - The Drizzle schema (`src/db/schema.ts`) and committed SQL migrations are the source of truth.
 - Every schema change goes through generate, review SQL, migrate. SQL that `schema.ts` cannot
-  express (RLS, FKs into `auth.users`, grants) is authored with
+  express (foreign keys, triggers, checks, partial indexes) is authored with
   `drizzle-kit generate --custom --name <x>`; a hand-written `.sql` file is silently skipped.
 - The migration chain is append-only. A migration ships in the same commit as the code using it.
 
@@ -110,7 +112,8 @@ correct.
   HTTP URL is required.
 - Feature-first folders: `src/features/<feature>/` holds components, actions, logic and tests;
   `src/lib/` only what is genuinely shared; `src/app/` routes are thin wrappers.
-- Secrets (Discord bot token, service keys, job and stream secrets) never reach client code.
+- Secrets (Discord bot token, Discord client secret, database password, job and stream secrets)
+  never reach client code.
 - Scheduled jobs and the stream API are bearer-authorized route handlers; jobs are idempotent
   converges, so a repeated run is harmless.
 - `/dev` route handlers call `devToolsEnabled()` themselves; layouts do not cover them.
@@ -190,7 +193,7 @@ Read by the shared gates and templates (`gemeinde-dev-kit`).
 - **Copy checks**: no `„` or `“` anywhere; no `—` in user-facing strings (pages, components,
   Discord messages in `src/features/discord-posts/messages.ts`), with the exemptions of
   Principle VI.
-- **Running-app check**: `supabase start` and `npm run dev` (localhost:3000); sign in through the
+- **Running-app check**: `npm run db:start` and `npm run dev` (localhost:3000); sign in through the
   `/dev` personas to see each viewer.
 - **Dev tooling to extend**: the `/dev/ui` gallery (`src/features/dev/components/gallery.tsx`) for
   new visual states, the `/dev` personas (`src/features/dev/personas.ts`) for new user-specific
@@ -223,4 +226,4 @@ Read by the shared gates and templates (`gemeinde-dev-kit`).
 - Compliance is checked by the Constitution Check in every `plan.md` and by `/speckit-analyze`;
   a violation is either fixed or justified in the plan's Complexity Tracking.
 
-**Version**: 1.2.0 | **Ratified**: 2026-10-16 | **Last Amended**: 2026-10-18
+**Version**: 1.3.0 | **Ratified**: 2026-10-16 | **Last Amended**: 2026-10-21

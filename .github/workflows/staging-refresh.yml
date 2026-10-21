@@ -8,7 +8,9 @@
 #
 # This is the one place production and staging credentials meet: PROD_DATABASE_URL
 # is read from, STAGING_DATABASE_URL is written to. Both must exist in the
-# STAGING environment.
+# STAGING environment. Both databases live on the one Cloud SQL instance and are
+# reached through one Auth Proxy on 127.0.0.1:5432, each with its own user
+# (specs/004-google-cloud-migration, research.md R2, R3).
 name: Refresh staging from production
 
 on:
@@ -27,6 +29,9 @@ jobs:
     concurrency:
       group: staging-database
       cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -35,7 +40,7 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # The runner image ships an older client than Supabase's server, and
+      # The runner image ships an older client than the Cloud SQL server, and
       # pg_dump refuses to dump from a server newer than itself.
       - name: Install PostgreSQL 17 client
         run: |
@@ -56,9 +61,17 @@ jobs:
         run: |
           pg_dump --version
           pg_dump --version | grep -q ' 17\.' || {
-            echo "::error::pg_dump is not version 17; the dump would fail against Supabase."
+            echo "::error::pg_dump is not version 17; the dump would fail against Cloud SQL."
             exit 1
           }
+
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: ./.github/actions/cloud-sql-proxy
+        with:
+          instance: ${{ vars.CLOUD_SQL_INSTANCE }}
 
       # --scrub is mandatory here and the script enforces it for any non-local
       # target: staging is reachable by more people than production's database,

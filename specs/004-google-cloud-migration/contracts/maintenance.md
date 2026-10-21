@@ -13,7 +13,7 @@ Any other value, or none, means off. Read once per request by the pure `maintena
 
 | Request | Response |
 |---|---|
-| `/impressum`, `/datenschutz` | the page as usual, rendered without touching the database |
+| `/impressum`, `/datenschutz`, `/robots.txt` | as usual, rendered without touching the database |
 | `/api/stream/**` | `503` JSON `{ "error": "maintenance" }`, `Retry-After: 3600` |
 | `/api/jobs/**` | `503` JSON `{ "error": "maintenance" }`; Cloud Scheduler retries later |
 | every other route, any method (pages, Server Actions, `/auth/**`, `/dev/**`) | `503` maintenance page, `Retry-After: 3600`, `Cache-Control: no-store` |

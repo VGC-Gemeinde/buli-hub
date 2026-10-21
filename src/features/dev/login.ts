@@ -1,76 +1,41 @@
-import type { User } from "@supabase/supabase-js";
-import { sql } from "drizzle-orm";
-import { bans, profiles } from "@/db/schema";
-import { discordIdentityFromUser } from "@/features/auth/identity";
+import { eq } from "drizzle-orm";
+import { cookies } from "next/headers";
+import { bans, profiles, users } from "@/db/schema";
+import { createSession } from "@/features/auth/sessions";
+import { findOrCreateUserByDiscordId } from "@/features/auth/users";
+import { sessionCookie } from "@/lib/auth/cookie-options";
 import { db } from "@/lib/db";
-import { supabaseAdmin } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 import { ensurePersonaFavorites } from "./favorites-persona";
-import { getPersona, type Persona, personaToAdminPayload } from "./personas";
+import { getPersona, type Persona } from "./personas";
 
 export type DevLoginResult = { ok: true } | { ok: false; error: string };
 
-// GoTrue answers some failures with an empty body, which supabase-js surfaces
-// as an AuthError whose message is "{}" (or blank). Returned raw, that is what
-// the /dev/login routes render — an opaque `{}`. This turns such a response
-// into a message that names the most likely cause and keeps any real detail.
-function describeAuthError(
-  error: { message?: string; status?: number; name?: string },
-  action: string,
-): string {
-  const raw = (error.message ?? "").trim();
-  const opaque = raw === "" || raw === "{}" || raw === "[object Object]";
-  const status = error.status ? ` (HTTP ${error.status})` : "";
-  if (opaque) {
-    return (
-      `${action} ist fehlgeschlagen${status}: GoTrue hat den Nutzer ` +
-      "abgelehnt. Wahrscheinlich ist die auth.users-Zeile kein vollständiges " +
-      "Konto (fehlende Bestätigung/Identität) — nur echte oder über die " +
-      "Testdaten erzeugte Nutzer lassen sich anmelden."
-    );
-  }
-  return `${action} ist fehlgeschlagen${status}: ${raw}`;
-}
-
 /**
- * Signs the current browser session in as an existing auth user: an admin
- * magic link, verified server-side, so no email is ever sent. Shared by
- * persona login and by impersonation of a cloned production user.
+ * Signs the current browser in as an existing account: a session row and its
+ * cookie, exactly what a real sign-in ends with (specs/004-google-cloud-migration).
+ * Shared by persona login and by impersonation of a cloned production user.
+ * Only reachable through the /dev route handlers, each gated by
+ * devToolsEnabled().
  */
-export async function establishSession(email: string): Promise<DevLoginResult> {
-  const admin = supabaseAdmin();
-  if (!admin.ok) {
-    return admin;
-  }
-
-  const { data, error: linkError } = await admin.client.auth.admin.generateLink(
-    {
-      type: "magiclink",
-      email,
-    },
-  );
-  if (linkError) {
-    return { ok: false, error: describeAuthError(linkError, "Magic-Link") };
-  }
-
-  const supabase = await createClient();
-  const { error: verifyError } = await supabase.auth.verifyOtp({
-    type: "magiclink",
-    token_hash: data.properties.hashed_token,
+export async function establishSession(
+  userId: string,
+): Promise<DevLoginResult> {
+  const account = await db.query.users.findFirst({
+    columns: { id: true },
+    where: eq(users.id, userId),
   });
-  if (verifyError) {
-    return {
-      ok: false,
-      error: describeAuthError(verifyError, "Session-Aufbau"),
-    };
+  if (!account) {
+    return { ok: false, error: `Kein Nutzer mit der ID ${userId}` };
   }
-
+  const token = await createSession(userId);
+  const cookie = sessionCookie();
+  (await cookies()).set(cookie.name, token, cookie.options);
   return { ok: true };
 }
 
-// Signs the current browser session in as a test persona: create-or-update the
-// auth user, then establish a session for it. Only reachable through
-// /dev/login, which is gated by devToolsEnabled().
+// Signs the current browser in as a test persona: find or create the account
+// by the persona's (fake) Discord id, pin its profile, then start a session.
+// Only reachable through /dev/login, which is gated by devToolsEnabled().
 export async function loginAsPersona(
   personaId: string,
 ): Promise<DevLoginResult> {
@@ -79,58 +44,15 @@ export async function loginAsPersona(
     return { ok: false, error: `Unbekannte Persona: ${personaId}` };
   }
 
-  const admin = supabaseAdmin();
-  if (!admin.ok) {
-    return admin;
-  }
-
-  const payload = personaToAdminPayload(persona);
-  const { error: createError } =
-    await admin.client.auth.admin.createUser(payload);
-  if (createError) {
-    // The persona already exists from an earlier login — refresh its
-    // metadata so persona edits take effect without wiping its profile row.
-    const rows = await db.execute<{ id: string }>(
-      sql`select id from auth.users where email = ${payload.email}`,
-    );
-    const existingId = rows[0]?.id;
-    if (!existingId) {
-      return { ok: false, error: createError.message };
-    }
-    const { error: updateError } = await admin.client.auth.admin.updateUserById(
-      existingId,
-      { user_metadata: payload.user_metadata },
-    );
-    if (updateError) {
-      return { ok: false, error: updateError.message };
-    }
-  }
-
-  const session = await establishSession(payload.email);
-  if (!session.ok) {
-    return session;
-  }
-
-  await pinPersonaProfile(payload.email, persona);
-
-  return { ok: true };
+  const userId = await findOrCreateUserByDiscordId(persona.discordId);
+  await pinPersonaProfile(userId, persona);
+  return establishSession(userId);
 }
 
 // Personas have fake Discord ids, so their role and identity cannot come from
 // a real guild lookup — write them directly and date the sync far into the
-// future so getRole's TTL revalidation never overwrites them. Identity is
-// derived from the persona metadata via the same mapper as a real session.
-async function pinPersonaProfile(email: string, persona: Persona) {
-  const rows = await db.execute<{ id: string }>(
-    sql`select id from auth.users where email = ${email}`,
-  );
-  const userId = rows[0]?.id;
-  if (!userId) {
-    return;
-  }
-  const identity = discordIdentityFromUser({
-    user_metadata: persona.userMetadata,
-  } as User);
+// future so getRole's TTL revalidation never overwrites them.
+async function pinPersonaProfile(userId: string, persona: Persona) {
   const farFuture = new Date("2100-01-01T00:00:00Z");
   const values = {
     role: persona.role,
@@ -140,22 +62,20 @@ async function pinPersonaProfile(email: string, persona: Persona) {
     // so no checked-at either.
     guildMember: persona.guildMember,
     guildMemberCheckedAt: persona.guildMember === null ? null : new Date(),
-    displayName: identity.displayName,
-    username: identity.username,
-    avatarUrl: identity.avatarUrl,
+    ...persona.identity,
   };
   await db
     .insert(profiles)
     .values({ userId, ...values })
     .onConflictDoUpdate({ target: profiles.userId, set: values });
 
-  if (persona.banned && identity.discordId) {
+  if (persona.banned) {
     // Idempotent: the partial unique index keeps it to one active ban.
     await db
       .insert(bans)
       .values({
-        discordId: identity.discordId,
-        discordName: identity.displayName,
+        discordId: persona.discordId,
+        discordName: persona.identity.displayName,
         reason: "Dev-Persona: gesperrt, um die gesperrte Anmeldung zu sehen.",
       })
       .onConflictDoNothing();

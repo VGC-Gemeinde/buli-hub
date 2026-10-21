@@ -18,25 +18,12 @@ import { divisionLabel, type ImpersonatableUser } from "./users";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Signs the browser in as an existing user. The email is looked up here rather
- * than taken from the caller, so a stale link cannot mint a session for an
- * address that no longer belongs to that row.
- */
+/** Signs the browser in as an existing user, after checking the id's shape. */
 export async function loginAsUser(userId: string): Promise<DevLoginResult> {
   if (!UUID.test(userId)) {
     return { ok: false, error: `Keine gültige Nutzer-ID: ${userId}` };
   }
-
-  const rows = await db.execute<{ email: string | null }>(
-    sql`select email from auth.users where id = ${userId}`,
-  );
-  const email = rows[0]?.email;
-  if (!email) {
-    return { ok: false, error: `Kein Nutzer mit der ID ${userId}` };
-  }
-
-  return establishSession(email);
+  return establishSession(userId);
 }
 
 /**

@@ -1,35 +1,27 @@
 // Classifies a failed OAuth round-trip into a fixed set of categories. The
 // category is the only thing that travels via URL to the landing page; the
-// raw provider/Supabase strings stay in the server log so internals never
+// raw Discord and internal reasons stay in the server log so internals never
 // reach the UI.
 
 export const SIGN_IN_ERROR_PARAM = "auth_error";
 
-export type SignInErrorKind = "no_email" | "cancelled" | "unknown";
+export type SignInErrorKind = "cancelled" | "unknown";
 
 export const SIGN_IN_ERROR_KINDS: readonly SignInErrorKind[] = [
-  "no_email",
   "cancelled",
   "unknown",
 ];
 
-/** What Supabase Auth appends to the redirect when it rejects a sign-in. */
+/** What came back to the callback when the sign-in did not complete. */
 export type SignInFailure = {
-  /** `error` query param, e.g. "server_error", "access_denied". */
+  /** Discord's `error` query param, e.g. "access_denied". */
   error: string | null;
-  /** `error_description` query param, free text from Supabase or Discord. */
-  description: string | null;
-  /** Message from a failed `exchangeCodeForSession`, if a code was present. */
-  exchangeError: string | null;
 };
 
+// Only the identity scope is requested (specs/004-google-cloud-migration,
+// FR-004), so Discord has nothing to reject an account for: the user either
+// cancels or something failed.
 export function classifySignInError(failure: SignInFailure): SignInErrorKind {
-  const text =
-    `${failure.description ?? ""} ${failure.exchangeError ?? ""}`.toLowerCase();
-  // Supabase Auth: Discord returned no (verified) email for the account.
-  if (text.includes("email") && text.includes("external provider")) {
-    return "no_email";
-  }
   // The user pressed "Abbrechen" on Discord's consent screen.
   if (failure.error === "access_denied") {
     return "cancelled";
@@ -48,8 +40,6 @@ export function parseSignInErrorKind(
 }
 
 export const SIGN_IN_ERROR_COPY: Record<SignInErrorKind, string> = {
-  no_email:
-    "Dein Discord-Konto hat keine bestätigte E-Mail-Adresse. Bitte bestätige sie in den Discord-Einstellungen und versuche es dann erneut.",
   cancelled:
     "Die Anmeldung wurde abgebrochen. Du kannst es jederzeit erneut versuchen.",
   unknown: "Anmeldung fehlgeschlagen. Bitte versuche es erneut.",

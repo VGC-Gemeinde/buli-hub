@@ -55,7 +55,9 @@ const newRegistration = () => ({
 
 beforeAll(async () => {
   for (const id of users) {
-    await db.execute(sql`insert into auth.users (id) values (${id})`);
+    await db.execute(
+      sql`insert into users (id, discord_id) values (${id}, ${id})`,
+    );
   }
   await db.insert(profiles).values([
     { userId: a, displayName: "Alpha" },
@@ -106,7 +108,7 @@ afterAll(async () => {
     sql`delete from registration_windows where id = ${windowId}`,
   );
   for (const id of users) {
-    await db.execute(sql`delete from auth.users where id = ${id}`);
+    await db.execute(sql`delete from users where id = ${id}`);
   }
 });
 

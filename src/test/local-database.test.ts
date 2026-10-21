@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { isLocalDatabaseUrl, localDatabaseError } from "./local-database";
 
 const LOCAL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
-const PROD =
-  "postgresql://postgres.abcdef:pw@aws-0-eu-central-1.pooler.supabase.com:5432/postgres";
+const PROD = "postgresql://buli_hub:pw@db.example.com:5432/buli_hub";
+// Production through the Cloud SQL Auth Proxy: a local host, another port.
+const PROXIED = "postgresql://buli_hub:pw@127.0.0.1:5433/buli_hub";
 
 describe("isLocalDatabaseUrl", () => {
   it("accepts the local stack in its usual forms", () => {
@@ -11,18 +12,23 @@ describe("isLocalDatabaseUrl", () => {
     expect(isLocalDatabaseUrl("postgresql://localhost:54322/postgres")).toBe(
       true,
     );
-    expect(isLocalDatabaseUrl("postgresql://user:pw@[::1]:5432/postgres")).toBe(
-      true,
-    );
+    expect(
+      isLocalDatabaseUrl("postgresql://user:pw@[::1]:54322/postgres"),
+    ).toBe(true);
   });
 
   it("rejects hosted databases", () => {
     expect(isLocalDatabaseUrl(PROD)).toBe(false);
-    expect(
-      isLocalDatabaseUrl(
-        "postgresql://u:p@db.abcdef.supabase.co:5432/postgres",
-      ),
-    ).toBe(false);
+  });
+
+  it("rejects a local host on any port but the compose stack's", () => {
+    expect(isLocalDatabaseUrl(PROXIED)).toBe(false);
+    expect(isLocalDatabaseUrl("postgresql://u:p@localhost:5432/postgres")).toBe(
+      false,
+    );
+    expect(isLocalDatabaseUrl("postgresql://u:p@localhost/postgres")).toBe(
+      false,
+    );
   });
 
   // "127.0.0.1.example.com" must not pass by prefix or substring matching.
@@ -58,14 +64,18 @@ describe("localDatabaseError", () => {
     const error = localDatabaseError(PROD);
 
     expect(error).toContain("Refusing to run tests");
-    expect(error).toContain("aws-0-eu-central-1.pooler.supabase.com:5432");
+    expect(error).toContain("db.example.com:5432");
+  });
+
+  it("blocks production reached through the Auth Proxy", () => {
+    expect(localDatabaseError(PROXIED)).toContain("Refusing to run tests");
   });
 
   it("never leaks credentials into the message", () => {
     const error = localDatabaseError(PROD);
 
     expect(error).not.toContain("pw");
-    expect(error).not.toContain("postgres.abcdef");
+    expect(error).not.toContain("buli_hub:");
   });
 
   it("points at the variable the production string actually belongs in", () => {

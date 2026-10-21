@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/004-google-cloud-migration (neue Baseline, RLS).
+
 # Migrations: keep per-feature, squash at go-live
 
 **Decided:** 2026-07-03

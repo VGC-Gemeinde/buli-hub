@@ -11,7 +11,7 @@ import { regularPlayerAId } from "@/features/season/regular-match";
 import { db } from "@/lib/db";
 
 // Reads and writes for the stream photo. The picture itself lives in
-// Supabase Storage; the row only carries its object path.
+// Cloud Storage; the row only carries its object path.
 
 export async function streamPhotoPathOf(
   userId: string,

@@ -14,17 +14,17 @@
 // it fails there, it would have failed in production.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { stripForeignDefaultPrivileges } from "../src/features/dev/clone/restore.ts";
 import { buildScrubSql, KEPT_ROLES } from "../src/features/dev/clone/scrub.ts";
 import {
   buildShiftSql,
   parseShiftInterval,
   type TimestampColumn,
 } from "../src/features/dev/clone/shift.ts";
+import { isLocalDatabaseUrl } from "../src/test/local-database.ts";
 
 try {
   process.loadEnvFile(".env");
@@ -73,7 +73,7 @@ function fail(message: string): never {
 const source = values.source ?? process.env.PROD_DATABASE_URL;
 if (!source) {
   fail(
-    "No source. Set PROD_DATABASE_URL to production's *session* connection string (port 5432, not the 6543 pooler) or pass --source.",
+    "No source. Set PROD_DATABASE_URL to production through the Cloud SQL Auth Proxy (postgresql://buli_hub:<password>@127.0.0.1:5433/buli_hub) or pass --source.",
   );
 }
 
@@ -102,10 +102,9 @@ function describe(url: string): {
   }
   const host = `${parsed.hostname}:${parsed.port || "5432"}`;
   const database = parsed.pathname.replace(/^\//, "") || "postgres";
-  // The username belongs in the identity: on Supabase's pooler every project
-  // shares one hostname, port and database name, and only the username carries
-  // the project ref. Keying on host alone reports two unrelated projects as the
-  // same database.
+  // The username belongs in the identity: production and staging share one
+  // Cloud SQL instance, so behind the Auth Proxy they can share host and port
+  // and differ only in user and database.
   return {
     host,
     database,
@@ -127,9 +126,9 @@ if (from.key === to.key) {
 if (process.env.PROD_DATABASE_URL && target === process.env.PROD_DATABASE_URL) {
   fail("Refusing to use PROD_DATABASE_URL as the target.");
 }
-const targetIsLocal = /^(127\.0\.0\.1|localhost|::1)$/.test(
-  new URL(target).hostname,
-);
+// Local means the compose stack, host *and* port: the Cloud SQL Auth Proxy
+// serves production and staging on 127.0.0.1 as well (src/test/local-database.ts).
+const targetIsLocal = isLocalDatabaseUrl(target);
 if (!targetIsLocal && process.env.CLONE_ALLOW_REMOTE_TARGET !== "true") {
   fail(
     `Target ${to.key} is not local. Set CLONE_ALLOW_REMOTE_TARGET=true to confirm you mean to overwrite a hosted database.`,
@@ -204,10 +203,10 @@ function checkTooling(sourceUrl: string): void {
  * for their cluster's `system_identifier` — assigned at initdb, so it is a
  * genuine fingerprint — together with the database oid.
  *
- * Comparing connection strings cannot do this. Supabase's pooler puts every
- * project on one hostname, port and database name, distinguished only by the
- * username, while the same database is also reachable by several different
- * URLs. Only the server can answer the question.
+ * Comparing connection strings cannot do this. Production and staging share
+ * one Cloud SQL instance (same system_identifier, different database oid), and
+ * behind the Auth Proxy one database is reachable by several URLs. Only the
+ * server can answer the question.
  */
 function assertDistinctDatabases(sourceUrl: string, targetUrl: string): void {
   const fingerprint = (url: string) =>
@@ -308,80 +307,32 @@ const workDir = mkdtempSync(join(tmpdir(), "buli-clone-"));
 process.on("exit", () => rmSync(workDir, { recursive: true, force: true }));
 
 try {
-  // 1. Dump. Three files, because the auth tables need a different strategy
-  //    from our own schema and must be restored in FK order.
+  // 1. Dump. Accounts live in public.users since the move from Supabase
+  //    (specs/004-google-cloud-migration), so one dump of our two schemas is
+  //    the whole hub.
   step(1, "Dumping production");
   const appDump = join(workDir, "app.sql");
-  const usersDump = join(workDir, "auth_users.sql");
-  const identitiesDump = join(workDir, "auth_identities.sql");
 
-  // --no-owner: the target's owning role differs between hosted Supabase and
-  // the local CLI stack. Privileges are kept — the schema relies on
-  // column-level grants (see src/db/schema.ts).
+  // --no-owner / --no-privileges: the owning roles differ between Cloud SQL
+  // and the local stack, and the schema relies on no grant (only the hub's
+  // own role reaches the database).
   run(
     "pg_dump",
-    ["--schema=public", "--schema=drizzle", "--no-owner", `--file=${appDump}`],
+    [
+      "--schema=public",
+      "--schema=drizzle",
+      "--no-owner",
+      "--no-privileges",
+      `--file=${appDump}`,
+    ],
     source,
   );
 
-  // Production's schema carries default-privilege ACLs for `supabase_admin`,
-  // which no non-superuser can replay. Dropping them costs nothing; see
-  // src/features/dev/clone/restore.ts.
-  writeFileSync(
-    appDump,
-    stripForeignDefaultPrivileges(readFileSync(appDump, "utf8")),
-  );
-
-  // --column-inserts rather than COPY: auth is Supabase-managed, and the
-  // hosted project's gotrue version may not have exactly the columns the local
-  // CLI stack has. Named columns tolerate the target having extra ones and
-  // fail with a readable error rather than a column-count mismatch.
-  for (const [table, file] of [
-    ["auth.users", usersDump],
-    ["auth.identities", identitiesDump],
-  ] as const) {
-    run(
-      "pg_dump",
-      [
-        `--table=${table}`,
-        "--data-only",
-        "--column-inserts",
-        "--no-owner",
-        `--file=${file}`,
-      ],
-      source,
-    );
-  }
-
-  // 2. Restore. Drop our schemas first so the FKs into auth.users go with
-  //    them, which is what makes emptying the auth tables possible. The dumps
-  //    recreate both schemas, so nothing is created here.
+  // 2. Restore. The dump recreates both schemas, so nothing is created here.
   step(2, "Restoring into the target");
   psqlScript(
     `drop schema if exists public cascade;
-drop schema if exists drizzle cascade;
-delete from auth.identities;
-delete from auth.users;`,
-    target,
-  );
-  run(
-    "psql",
-    [
-      "--variable=ON_ERROR_STOP=1",
-      "--no-psqlrc",
-      "--quiet",
-      `--file=${usersDump}`,
-    ],
-    target,
-  );
-  run(
-    "psql",
-    [
-      "--variable=ON_ERROR_STOP=1",
-      "--no-psqlrc",
-      "--quiet",
-      `--file=${identitiesDump}`,
-    ],
+drop schema if exists drizzle cascade;`,
     target,
   );
   run(
@@ -404,7 +355,7 @@ delete from auth.users;`,
     const [kept, total] = psqlQuery(
       `select count(*) filter (where p.role::text = any(array[${KEPT_ROLES.map((r) => `'${r}'`).join(", ")}])),
               count(*)
-       from auth.users u
+       from "public"."users" u
        left join "public"."profiles" p on p.user_id = u.id;`,
       target,
     )

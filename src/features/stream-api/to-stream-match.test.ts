@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { signStreamPhotoPath } from "@/features/stream-photos/access";
 import {
   type MatchInput,
   recordAfterSeason,
@@ -42,11 +43,11 @@ const base: MatchInput = {
   ],
 };
 
-// Without a base URL every photo maps to null, and the mapping below would
-// assert nothing. CI sets the variable for the build only, so the test sets
-// its own.
+// Without a base URL and the stream secret every photo maps to null, and the
+// mapping below would assert nothing, so the test sets its own.
 beforeAll(() => {
-  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://sb.test");
+  vi.stubEnv("APP_BASE_URL", "https://buli.vgcgemein.de");
+  vi.stubEnv("STREAM_API_SECRET", "stream-secret");
 });
 
 afterAll(() => {
@@ -70,8 +71,7 @@ describe("toStreamMatchDetail", () => {
       playerA: {
         id: alice,
         name: "Alice",
-        photoUrl:
-          "https://sb.test/storage/v1/object/public/stream-photos/alice/photo.webp",
+        photoUrl: `https://buli.vgcgemein.de/stream-photos/alice/photo.webp?sig=${signStreamPhotoPath("alice/photo.webp", "stream-secret")}`,
         // The Discord avatar is no longer part of the stream payload.
         avatarUrl: null,
         record: { wins: 4, losses: 1 },

@@ -115,7 +115,7 @@ export function buildScrubSql(): string[] {
 create temporary table _scrub_identities as
 with ranked as (
   select u.id as user_id, (row_number() over (order by u.id))::int as n
-  from auth.users u
+  from "public"."users" u
   where not exists (
     select 1 from "public"."profiles" p
     where p.user_id = u.id
@@ -130,29 +130,10 @@ select
   case when r.n % 4 = 0 then null
        else '${AVATAR_BASE}' || (r.n % 6) || '.png'
   end as avatar_url,
-  'scrubbed-' || r.n || '@example.invalid' as email,
   -- Synthetic snowflake, well above the real Discord id range so a scrubbed
   -- id can never collide with a genuine account.
-  (900000000000000000::bigint + r.n)::text as provider_id
+  (900000000000000000::bigint + r.n)::text as discord_id
 from ranked r;`.trim();
-
-  // Rebuilt rather than patched: every key the app reads
-  // (src/features/auth/identity.ts) gets a synthetic value, and any key not
-  // listed here is dropped rather than silently carried over.
-  const metadata = `jsonb_build_object(
-      'iss', 'https://discord.com/api',
-      'sub', s.provider_id,
-      'name', s.username,
-      'email', s.email,
-      'picture', s.avatar_url,
-      'full_name', s.display_name,
-      'user_name', s.username,
-      'avatar_url', s.avatar_url,
-      'provider_id', s.provider_id,
-      'custom_claims', jsonb_build_object('global_name', s.display_name),
-      'email_verified', true,
-      'phone_verified', false
-    )`;
 
   return [
     buildMapping,
@@ -185,25 +166,12 @@ set stream_photo_path = null,
     stream_photo_updated_at = null
 where stream_photo_path is not null;`,
 
-    `update auth.users u
-set email = s.email,
-    raw_user_meta_data = ${metadata},
-    phone = null,
-    confirmation_token = '',
-    recovery_token = '',
-    email_change = '',
-    email_change_token_new = '',
-    email_change_token_current = ''
+    // The account's Discord id is the one identifier the hub keeps on it
+    // (no email since specs/004-google-cloud-migration).
+    `update "public"."users" u
+set discord_id = s.discord_id
 from _scrub_identities s
 where u.id = s.user_id;`,
-
-    // auth.identities.email is a generated column derived from identity_data,
-    // so it follows this update rather than being set directly.
-    `update auth.identities i
-set identity_data = ${metadata},
-    provider_id = s.provider_id
-from _scrub_identities s
-where i.user_id = s.user_id and i.provider = 'discord';`,
 
     // Free-text the players wrote themselves. Null-ness and rough length are
     // preserved so the UI still meets empty, short and overlong values.

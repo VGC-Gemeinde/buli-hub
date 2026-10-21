@@ -37,10 +37,12 @@ immediately signed in as that account. `/dev/ui` shows the maintenance page.
 
 ## 4. Stream photos locally (US4)
 
-As a persona offered a photo: upload on `/profil`, see it from
-`http://localhost:4443/buli-hub-stream-photos/<userId>/<uuid>.webp`, replace, remove. The stream
-API (`curl -H "Authorization: Bearer $STREAM_API_SECRET" localhost:3000/api/stream/matches`)
-returns the same URLs.
+As a persona offered a photo: upload on `/profil`, see it at `/stream-photos/<userId>/<uuid>.webp`
+(signed in as that persona or as staff), replace, remove. Signed out, or as another player, the
+same address answers 404. The stream API
+(`curl -H "Authorization: Bearer $STREAM_API_SECRET" localhost:3000/api/stream/matches`) returns
+`<APP_BASE_URL>/stream-photos/<path>?sig=…`, which loads without a session; with one character of
+the signature changed it answers 404. The emulator bucket itself is never linked.
 
 ## 5. Maintenance (FR-018)
 

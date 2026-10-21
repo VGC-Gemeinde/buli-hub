@@ -1,0 +1,33 @@
+# Local stack for development and the integration tests (specs/004-google-cloud-migration,
+# research.md R8): the same Postgres major version as Cloud SQL, and a Cloud Storage emulator
+# for stream photos. `npm run db:start` / `db:stop`.
+services:
+  postgres:
+    image: postgres:17
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Speaks the same JSON API as Cloud Storage, without auth, and serves objects publicly at
+  # http://localhost:4443/<bucket>/<path> because -public-host matches. Every folder under
+  # compose/gcs-data becomes a bucket at start; memory backend, so uploads vanish on restart.
+  storage:
+    image: fsouza/fake-gcs-server:1.56.1
+    command: ["-scheme", "http", "-port", "4443", "-public-host", "localhost:4443", "-backend", "memory"]
+    ports:
+      - "4443:4443"
+    volumes:
+      - ./compose/gcs-data:/data:ro
+
+volumes:
+  postgres-data:

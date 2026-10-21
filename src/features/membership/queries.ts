@@ -1,10 +1,6 @@
-import type { User } from "@supabase/supabase-js";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { placements, profiles, registrations } from "@/db/schema";
-import {
-  type DiscordIdentity,
-  discordIdentityFromUser,
-} from "@/features/auth/identity";
+import type { DiscordIdentity } from "@/features/auth/identity";
 import { db } from "@/lib/db";
 import type { RosterMembership } from "./membership";
 
@@ -39,25 +35,31 @@ export async function registeredMembership(
     );
 }
 
-// Registered players' auth identities for the membership sweep. Raw SQL
-// because Drizzle does not manage the auth schema; the metadata goes through
-// the same mapper as a real session (the pinPersonaProfile trick).
+// Registered players' Discord identities for the membership sweep: the
+// Discord id from `users`, the names and avatar as the last sync stored them.
 export async function listRegisteredIdentities(
   windowId: string,
 ): Promise<{ userId: string; identity: DiscordIdentity }[]> {
   const rows = await db.execute<{
     id: string;
-    meta: Record<string, unknown> | null;
+    discord_id: string;
+    display_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
   }>(
-    sql`select u.id, u.raw_user_meta_data as meta
+    sql`select u.id, u.discord_id, p.display_name, p.username, p.avatar_url
         from registrations r
-        join auth.users u on u.id = r.user_id
+        join users u on u.id = r.user_id
+        left join profiles p on p.user_id = u.id
         where r.window_id = ${windowId}`,
   );
   return rows.map((row) => ({
     userId: row.id,
-    identity: discordIdentityFromUser({
-      user_metadata: row.meta ?? {},
-    } as User),
+    identity: {
+      discordId: row.discord_id,
+      displayName: row.display_name,
+      username: row.username,
+      avatarUrl: row.avatar_url,
+    },
   }));
 }

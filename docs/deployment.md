@@ -447,6 +447,13 @@ the app owns. Staging's values are in §7.
   gcloud storage buckets add-iam-policy-binding gs://buli-hub-stream-photos \
     --member="serviceAccount:github-deployer@buli-hub.iam.gserviceaccount.com" \
     --role=roles/storage.objectViewer
+  # `gcloud storage rsync` also reads both buckets themselves (storage.buckets.get),
+  # which objectViewer does not cover; legacyBucketReader adds that, read-only:
+  for b in buli-hub-stream-photos buli-hub-backups; do
+    gcloud storage buckets add-iam-policy-binding gs://$b \
+      --member="serviceAccount:github-deployer@buli-hub.iam.gserviceaccount.com" \
+      --role=roles/storage.legacyBucketReader
+  done
   ```
 
   Take a manual backup before anything risky — a migration that rewrites data,

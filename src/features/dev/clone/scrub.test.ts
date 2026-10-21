@@ -92,6 +92,14 @@ describe("buildScrubSql", () => {
     expect(sql).toContain(`"public"."disputes"`);
   });
 
+  it("drops every stream photo path, staff included", () => {
+    const photos = buildScrubSql().find((statement) =>
+      statement.includes("stream_photo_path = null"),
+    );
+    expect(photos).toBeDefined();
+    expect(photos).not.toContain("_scrub_identities");
+  });
+
   it("escapes quotes in the fixture names", () => {
     const [mapping] = buildScrubSql();
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FeedbackFooterLink } from "@/features/feedback/components/feedback-footer-link";
+import { maintenanceMode } from "@/features/maintenance/mode";
 import { RegelwerkFooterLink } from "@/features/regelwerk/components/footer-link";
 import { currentUser } from "@/features/roles/guard";
 import { roleAtLeast } from "@/features/roles/roles";
@@ -11,7 +12,11 @@ import { roleAtLeast } from "@/features/roles/roles";
 //
 // The Regelwerk sits here rather than in HeaderNav: the nav is signed-in only,
 // and the rules have to be readable *before* registering.
+//
+// During maintenance only the legal links remain: every other page answers
+// with the maintenance page (contracts/maintenance.md).
 export async function SiteFooter() {
+  const maintenance = maintenanceMode();
   const current = await currentUser();
 
   return (
@@ -25,7 +30,7 @@ export async function SiteFooter() {
         <Link href="/datenschutz" className="hover:text-foreground">
           Datenschutz
         </Link>
-        <RegelwerkFooterLink />
+        {maintenance ? null : <RegelwerkFooterLink />}
         {current ? (
           <FeedbackFooterLink
             canSubmitIdea={roleAtLeast(current.role, "staff")}

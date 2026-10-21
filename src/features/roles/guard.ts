@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { profiles } from "@/db/schema";
 import { discordIdentityFromUser } from "@/features/auth/identity";
+import { maintenanceMode } from "@/features/maintenance/mode";
 import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { type Role, roleAtLeast } from "./roles";
@@ -32,6 +33,12 @@ export type CurrentUser = {
 // effect on the next one.
 export const currentUser = cache(
   async function currentUser(): Promise<CurrentUser | null> {
+    // During maintenance the database is being moved: nobody is signed in,
+    // and the legal pages render without a single query
+    // (specs/004-google-cloud-migration, contracts/maintenance.md).
+    if (maintenanceMode()) {
+      return null;
+    }
     const supabase = await createClient();
     const {
       data: { user },

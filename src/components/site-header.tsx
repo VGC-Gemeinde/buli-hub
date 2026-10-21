@@ -4,6 +4,7 @@ import { HeaderNav } from "@/components/header-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignInButton } from "@/features/auth/components/sign-in-button";
 import { UserMenu } from "@/features/auth/components/user-menu";
+import { maintenanceMode } from "@/features/maintenance/mode";
 import { SectionNav } from "@/features/navigation/components/section-nav";
 import { type Section, sectionRow } from "@/features/navigation/sections";
 import { getRegistration } from "@/features/registration/queries";
@@ -100,7 +101,7 @@ export async function SiteHeader({
               avatarUrl={current.avatarUrl}
               isStaff={isStaff}
             />
-          ) : (
+          ) : maintenanceMode() ? null : (
             <SignInButton variant="outline" />
           )}
         </div>

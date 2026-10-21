@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { NavigationMemory } from "@/components/back-link";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeProvider } from "@/components/theme-provider";
+import { maintenanceMode } from "@/features/maintenance/mode";
 import { CountPageLoad } from "@/features/usage/count-page-load";
 
 // Self-hosted, so `next build` never fetches from Google Fonts: a failed
@@ -52,10 +53,13 @@ export default function RootLayout({
           <SiteFooter />
         </ThemeProvider>
         {/* Usage counting, off the critical path: the shell streams while
-            the count is written (docs/plans/usage-stats.md). */}
-        <Suspense fallback={null}>
-          <CountPageLoad />
-        </Suspense>
+            the count is written (docs/plans/usage-stats.md). Not during
+            maintenance, which keeps the database untouched. */}
+        {maintenanceMode() ? null : (
+          <Suspense fallback={null}>
+            <CountPageLoad />
+          </Suspense>
+        )}
       </body>
     </html>
   );

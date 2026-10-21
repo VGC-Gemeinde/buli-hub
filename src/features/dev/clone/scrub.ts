@@ -177,6 +177,14 @@ set display_name = s.display_name,
 from _scrub_identities s
 where p.user_id = s.user_id;`,
 
+    // Stream photos show real faces, and the files stay in production's
+    // bucket anyway, so a clone keeps no path to them: every profile, staff
+    // included, starts without one (specs/004-google-cloud-migration).
+    `update "public"."profiles"
+set stream_photo_path = null,
+    stream_photo_updated_at = null
+where stream_photo_path is not null;`,
+
     `update auth.users u
 set email = s.email,
     raw_user_meta_data = ${metadata},

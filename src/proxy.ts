@@ -1,5 +1,11 @@
 import { clearAuthCookiesAtScopes, createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import {
+  MAINTENANCE_PAGE_PATH,
+  MAINTENANCE_RETRY_AFTER_SECONDS,
+  maintenanceMode,
+  maintenanceRoute,
+} from "@/features/maintenance/mode";
 import { PATH_HEADER } from "@/features/usage/path-header";
 import {
   legacySessionKey,
@@ -10,6 +16,37 @@ import { supabaseEnv } from "@/lib/supabase/env";
 // Refreshes expired Supabase auth tokens on navigation and keeps the
 // request + response cookies in sync (Next 16 proxy convention).
 export async function proxy(request: NextRequest) {
+  // Maintenance first: while on, nothing but the legal pages reaches route
+  // code, so no write can land during a database move
+  // (specs/004-google-cloud-migration, contracts/maintenance.md).
+  if (maintenanceMode()) {
+    const route = maintenanceRoute(request.nextUrl.pathname);
+    if (route === "json") {
+      return NextResponse.json(
+        { error: "maintenance" },
+        {
+          status: 503,
+          headers: { "Retry-After": String(MAINTENANCE_RETRY_AFTER_SECONDS) },
+        },
+      );
+    }
+    if (route === "page") {
+      const response = NextResponse.rewrite(
+        new URL(MAINTENANCE_PAGE_PATH, request.url),
+        { status: 503 },
+      );
+      response.headers.set(
+        "Retry-After",
+        String(MAINTENANCE_RETRY_AFTER_SECONDS),
+      );
+      response.headers.set("Cache-Control", "no-store");
+      return response;
+    }
+    // The legal pages render without the session refresh below: it would
+    // reach Supabase Auth, and during maintenance nobody is signed in.
+    return NextResponse.next();
+  }
+
   // Tell the server tree which path it renders: the root layout counts page
   // loads (src/features/usage/count-page-load.tsx) and a Server Component has
   // no other reliable way to learn its pathname. Set on the request before

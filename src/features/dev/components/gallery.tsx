@@ -56,6 +56,7 @@ import {
 } from "@/features/feedback/components/feedback-panel";
 import { canSend, type FeedbackKind } from "@/features/feedback/feedback";
 import { finalTable } from "@/features/final-table/places";
+import { MaintenancePage } from "@/features/maintenance/components/maintenance-page";
 import { MembershipBlockedCard } from "@/features/membership/components/blocked-card";
 import { MembershipGateBody } from "@/features/membership/components/gate-dialog";
 import { MotwBlock } from "@/features/motw/components/motw-block";
@@ -2118,6 +2119,15 @@ export function Gallery() {
             </p>
           </Specimen>
         ))}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-2xl">Wartung</h2>
+        <Specimen label="Jede Route bei MAINTENANCE=on (außer Impressum, Datenschutz); der Footer kommt aus dem Layout">
+          <div className="flex min-h-[560px] flex-col overflow-hidden rounded-md border">
+            <MaintenancePage />
+          </div>
+        </Specimen>
       </section>
 
       <section className="flex flex-col gap-3">

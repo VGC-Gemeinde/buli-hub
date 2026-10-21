@@ -335,14 +335,13 @@ decides the cookie (`src/lib/auth/cookie-options.ts`):
 | unset (local, staging, and production for now) | `buli-hub-auth`, host-only |
 | `.vgcgemein.de` (production only) | `gemeinde-auth` on `Domain=.vgcgemein.de` |
 
-**Leave it unset until another Gemeinde site reads the hub's session.** That
-site joins through a contract of its own, in a later spec. Until then the
-setting shares nothing and only collides: gemeinde-tippspiel still signs in
-through Supabase and keeps its own session in a `gemeinde-auth` cookie on
-`.vgcgemein.de`, and with the variable set the hub would write its token into
-that same cookie. The switch in §10 removes it from production for that reason.
-The two names differ so a host-only cookie can never shadow the domain one
-while the setting is being switched on.
+**Leave it unset until another Gemeinde site reads the hub's session.** The
+next one planned is the tournament site (gemeinde-tours, turniere.vgcgemein.de);
+it joins through a contract of its own, in a later spec, and that spec also
+brings back the privacy page's sentence on the shared cookie. Until then the
+setting shares nothing. gemeinde-tippspiel, the only other site that signed in
+with Discord, is offline since 2026-10-21. The two names differ so a host-only
+cookie can never shadow the domain one while the setting is being switched on.
 
 When the time comes, it is one command, kept by every CI deploy:
 
@@ -447,6 +446,13 @@ the app owns. Staging's values are in §7.
   gcloud storage buckets add-iam-policy-binding gs://buli-hub-stream-photos \
     --member="serviceAccount:github-deployer@buli-hub.iam.gserviceaccount.com" \
     --role=roles/storage.objectViewer
+  # `gcloud storage rsync` also reads both buckets themselves (storage.buckets.get),
+  # which objectViewer does not cover; legacyBucketReader adds that, read-only:
+  for b in buli-hub-stream-photos buli-hub-backups; do
+    gcloud storage buckets add-iam-policy-binding gs://$b \
+      --member="serviceAccount:github-deployer@buli-hub.iam.gserviceaccount.com" \
+      --role=roles/storage.legacyBucketReader
+  done
   ```
 
   Take a manual backup before anything risky — a migration that rewrites data,

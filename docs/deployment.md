@@ -53,12 +53,23 @@ gcloud sql users set-password postgres --instance=buli-hub-db \
   gcloud sql instances patch buli-hub-db --tier=db-g1-small
   ```
 
-  The connection budget is why both services run with `DATABASE_POOL_MAX=4`:
-  production at most 3 instances and staging at most 2, times 4, is 20, which
-  leaves 2 for the Auth Proxy (migrations, backups, clones, your `psql`). A
-  deploy briefly runs old and new instances side by side; `remaining connection
-  slots are reserved` in the logs means the budget is spent, and the answer is
-  the tier above, not a bigger pool.
+  The instance is shared with gemeinde-tours (its own databases
+  `gemeinde_tours` and `gemeinde_tours_staging`, its own roles; gemeinde-tours
+  `docs/deployment.md` and `specs/001-server-foundation/`), and so is the
+  connection budget. Keep this table in step with the one there:
+
+  | Service | Max instances | Pool | Connections |
+  |---|---|---|---|
+  | buli-hub production | 3 | 4 | 12 |
+  | buli-hub staging | 1 | 4 | 4 |
+  | gemeinde-tours production | 3 | 1 | 3 |
+  | gemeinde-tours staging | 1 | 1 | 1 |
+  | Auth Proxy (both repositories' CI, backups, clones, your `psql`) | | | 2 |
+  | **Total** | | | **22** |
+
+  A deploy briefly runs old and new instances side by side; `remaining
+  connection slots are reserved` in the logs means the budget is spent, and the
+  answer is the tier above, not a bigger pool.
 - **Backups**: daily, 7 kept; **point-in-time recovery** is off by default from
   gcloud, hence the explicit flag. Start time in UTC, ahead of the nightly dump
   at 03:17 (§4).
@@ -276,13 +287,14 @@ without a deploy, which is why the switch in §10 adds the Cloud SQL version of
 ```bash
 gcloud run deploy buli-hub --image <first image> --region europe-west1 \
   --no-invoker-iam-check \
-  --min-instances=1 --max-instances=3 --memory=512Mi \
+  --min-instances=0 --max-instances=3 --memory=512Mi \
   --add-cloudsql-instances=buli-hub:europe-west1:buli-hub-db \
   --set-secrets=DATABASE_URL=DATABASE_URL:latest,DISCORD_CLIENT_SECRET=DISCORD_CLIENT_SECRET:latest,DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest,JOBS_SECRET=JOBS_SECRET:latest,STREAM_API_SECRET=STREAM_API_SECRET:latest \
   --set-env-vars=APP_BASE_URL=https://<DOMAIN>,DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=4,DISCORD_CLIENT_ID=1393596376591499365,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos,DISCORD_GUILD_ID=…,DISCORD_ROLE_ID_DEV=…,DISCORD_ROLE_ID_ADMIN=…,DISCORD_ROLE_ID_STAFF=…,DISCORD_ROLE_ID_MOTW=…,DISCORD_RESULTS_TOP_CHANNEL_ID=…,DISCORD_RESULTS_CHANNEL_ID=…,DISCORD_MOTW_CHANNEL_ID=…,DISCORD_FEEDBACK_FORUM_CHANNEL_ID=…,DISCORD_FEEDBACK_TAG_BUG=…,DISCORD_FEEDBACK_TAG_IDEA=…,DISCORD_LEAGUE_CATEGORY_ID=…,DISCORD_ROLE_ID_BULI_PLAYER=…
 ```
 
-`min-instances=1` during the season (no cold starts); drop to 0 off-season.
+`min-instances=0` all year: the service scales to zero, and the first request
+after a quiet spell waits for a cold start.
 Later deploys from CI swap the image and set `APP_BUILD_SHA` to the deployed
 commit (`--update-env-vars`, so everything else sticks to the service).
 `--no-invoker-iam-check` (instead of `--allow-unauthenticated`): the GCP
@@ -798,7 +810,7 @@ differentiate.
 gcloud run deploy buli-hub-staging --image <first image> --region europe-west1 \
   --no-invoker-iam-check \
   --service-account=buli-hub-staging-run@buli-hub.iam.gserviceaccount.com \
-  --min-instances=0 --max-instances=2 --memory=512Mi \
+  --min-instances=0 --max-instances=1 --memory=512Mi \
   --add-cloudsql-instances=buli-hub:europe-west1:buli-hub-db \
   --set-secrets=DATABASE_URL=DATABASE_URL_STAGING:latest,DISCORD_CLIENT_SECRET=DISCORD_CLIENT_SECRET_STAGING:latest,DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN_TEST:latest,JOBS_SECRET=JOBS_SECRET_STAGING:latest,STREAM_API_SECRET=STREAM_API_SECRET_STAGING:latest \
   --set-env-vars=APP_ENV=staging,APP_BASE_URL=https://<staging-url>,DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=4,DISCORD_CLIENT_ID=1532014969787252898,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos-staging,ENABLE_DEV_TOOLS=true,DEV_TOOLS_TOKEN=<long random string>,DISCORD_RESULTS_TOP_CHANNEL_ID=<test server channel>,DISCORD_RESULTS_CHANNEL_ID=<test server channel>,DISCORD_MOTW_CHANNEL_ID=<test server channel>,DISCORD_LEAGUE_CATEGORY_ID=<test server category>,DISCORD_ROLE_ID_BULI_PLAYER=<test server role>
@@ -806,7 +818,8 @@ gcloud run deploy buli-hub-staging --image <first image> --region europe-west1 \
 
 Differences from production, each for a reason:
 
-- `--min-instances=0` — cold starts are fine here, and it costs nothing idle.
+- `--max-instances=1` — one instance is plenty for testing, and it keeps
+  staging's share of the shared connection budget at 4 (§1).
 - **No custom domain.** Staging is reachable only at its generated
   `*.run.app` URL: public, but unguessable and unlisted. `APP_ENV=staging`
   makes the app serve a disallow-all `robots.txt` and an

@@ -54,18 +54,25 @@ gcloud sql users set-password postgres --instance=buli-hub-db \
   ```
 
   The instance is shared with gemeinde-tours (its own databases
-  `gemeinde_tours` and `gemeinde_tours_staging`, its own roles; gemeinde-tours
-  `docs/deployment.md` and `specs/001-server-foundation/`), and so is the
-  connection budget. Keep this table in step with the one there:
+  `gemeinde_tours` and `gemeinde_tours_staging`; gemeinde-tours
+  `docs/deployment.md`) and gemeinde-auth, the Gemeinde sign-in (its own
+  database `gemeinde_auth`, no staging; gemeinde-auth `docs/deployment.md`), each
+  with its own roles, and so is the connection budget. Staging environments get
+  the minimum. Keep this table in step with the ones there:
 
   | Service | Max instances | Pool | Connections |
   |---|---|---|---|
   | buli-hub production | 3 | 4 | 12 |
-  | buli-hub staging | 1 | 4 | 4 |
+  | buli-hub staging | 1 | 2 | 2 |
   | gemeinde-tours production | 3 | 1 | 3 |
   | gemeinde-tours staging | 1 | 1 | 1 |
-  | Auth Proxy (both repositories' CI, backups, clones, your `psql`) | | | 2 |
+  | gemeinde-auth production | 2 | 1 | 2 |
+  | Auth Proxy (every repository's CI, backups, clones, your `psql`) | | | 2 |
   | **Total** | | | **22** |
+
+  Not a pool of 1 for buli-hub staging: code that queries through the shared
+  client while it holds a transaction would wait forever for the one connection
+  its own transaction holds, which production's pool of 4 never shows.
 
   A deploy briefly runs old and new instances side by side; `remaining
   connection slots are reserved` in the logs means the budget is spent, and the
@@ -267,14 +274,15 @@ gcloud iam service-accounts add-iam-policy-binding \
 Secret names are unique across the project, which every Gemeinde service shares: each starts
 with its service (`BULI_HUB_…`, `GEMEINDE_TOURS_…`), staging ones end in `_STAGING` (or `_TEST`
 for the test Discord bot). The variable the code reads keeps its plain name; the mapping is
-`--set-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL:latest`. `CLOUDSQL_PASSWORD_*` belong to the
-instance, not to a service.
+`--set-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL:latest`. A secret two services read has a
+Gemeinde-wide name instead of a copy per service (`GEMEINDE_DISCORD_BOT_TOKEN`, read by buli-hub and
+gemeinde-auth). `CLOUDSQL_PASSWORD_*` belong to the instance, not to a service.
 
 ```bash
 # User, password and database only: on Cloud Run the host is the socket in DATABASE_SOCKET.
 printf '%s' 'postgresql://buli_hub:<password>@localhost/buli_hub' | gcloud secrets create BULI_HUB_DATABASE_URL --data-file=-
 printf '%s' '<client secret>' | gcloud secrets create BULI_HUB_DISCORD_CLIENT_SECRET --data-file=-   # production Discord application
-printf '%s' '<value>' | gcloud secrets create BULI_HUB_DISCORD_BOT_TOKEN --data-file=-
+printf '%s' '<value>' | gcloud secrets create GEMEINDE_DISCORD_BOT_TOKEN --data-file=-   # shared with gemeinde-auth
 openssl rand -hex 32 | tr -d '\n' | gcloud secrets create BULI_HUB_JOBS_SECRET --data-file=-   # scheduled job routes, see §8
 openssl rand -hex 32 | tr -d '\n' | gcloud secrets create BULI_HUB_STREAM_API_SECRET --data-file=-   # stream API, see §9
 # Grant the *runtime* service account access:
@@ -295,7 +303,7 @@ gcloud run deploy buli-hub --image <first image> --region europe-west1 \
   --no-invoker-iam-check \
   --min-instances=0 --max-instances=3 --memory=512Mi \
   --add-cloudsql-instances=buli-hub:europe-west1:buli-hub-db \
-  --set-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL:latest,DISCORD_CLIENT_SECRET=BULI_HUB_DISCORD_CLIENT_SECRET:latest,DISCORD_BOT_TOKEN=BULI_HUB_DISCORD_BOT_TOKEN:latest,JOBS_SECRET=BULI_HUB_JOBS_SECRET:latest,STREAM_API_SECRET=BULI_HUB_STREAM_API_SECRET:latest \
+  --set-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL:latest,DISCORD_CLIENT_SECRET=BULI_HUB_DISCORD_CLIENT_SECRET:latest,DISCORD_BOT_TOKEN=GEMEINDE_DISCORD_BOT_TOKEN:latest,JOBS_SECRET=BULI_HUB_JOBS_SECRET:latest,STREAM_API_SECRET=BULI_HUB_STREAM_API_SECRET:latest \
   --set-env-vars=APP_BASE_URL=https://<DOMAIN>,DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=4,DISCORD_CLIENT_ID=1393596376591499365,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos,DISCORD_GUILD_ID=…,DISCORD_ROLE_ID_DEV=…,DISCORD_ROLE_ID_ADMIN=…,DISCORD_ROLE_ID_STAFF=…,DISCORD_ROLE_ID_MOTW=…,DISCORD_RESULTS_TOP_CHANNEL_ID=…,DISCORD_RESULTS_CHANNEL_ID=…,DISCORD_MOTW_CHANNEL_ID=…,DISCORD_FEEDBACK_FORUM_CHANNEL_ID=…,DISCORD_FEEDBACK_TAG_BUG=…,DISCORD_FEEDBACK_TAG_IDEA=…,DISCORD_LEAGUE_CATEGORY_ID=…,DISCORD_ROLE_ID_BULI_PLAYER=…
 ```
 
@@ -819,7 +827,7 @@ gcloud run deploy buli-hub-staging --image <first image> --region europe-west1 \
   --min-instances=0 --max-instances=1 --memory=512Mi \
   --add-cloudsql-instances=buli-hub:europe-west1:buli-hub-db \
   --set-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL_STAGING:latest,DISCORD_CLIENT_SECRET=BULI_HUB_DISCORD_CLIENT_SECRET_STAGING:latest,DISCORD_BOT_TOKEN=BULI_HUB_DISCORD_BOT_TOKEN_TEST:latest,JOBS_SECRET=BULI_HUB_JOBS_SECRET_STAGING:latest,STREAM_API_SECRET=BULI_HUB_STREAM_API_SECRET_STAGING:latest \
-  --set-env-vars=APP_ENV=staging,APP_BASE_URL=https://<staging-url>,DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=4,DISCORD_CLIENT_ID=1532014969787252898,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos-staging,ENABLE_DEV_TOOLS=true,DEV_TOOLS_TOKEN=<long random string>,DISCORD_RESULTS_TOP_CHANNEL_ID=<test server channel>,DISCORD_RESULTS_CHANNEL_ID=<test server channel>,DISCORD_MOTW_CHANNEL_ID=<test server channel>,DISCORD_LEAGUE_CATEGORY_ID=<test server category>,DISCORD_ROLE_ID_BULI_PLAYER=<test server role>
+  --set-env-vars=APP_ENV=staging,APP_BASE_URL=https://<staging-url>,DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=2,DISCORD_CLIENT_ID=1532014969787252898,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos-staging,ENABLE_DEV_TOOLS=true,DEV_TOOLS_TOKEN=<long random string>,DISCORD_RESULTS_TOP_CHANNEL_ID=<test server channel>,DISCORD_RESULTS_CHANNEL_ID=<test server channel>,DISCORD_MOTW_CHANNEL_ID=<test server channel>,DISCORD_LEAGUE_CATEGORY_ID=<test server category>,DISCORD_ROLE_ID_BULI_PLAYER=<test server role>
 ```
 
 Differences from production, each for a reason:
@@ -833,9 +841,9 @@ Differences from production, each for a reason:
   indexed.
 - `APP_BASE_URL` must be the staging URL, or the "Zum Match" links in Discord
   posts point at production, and Discord would send sign-ins back there.
-- **Its own database role, secret and bucket**; the same instance, socket and
-  `DATABASE_POOL_MAX=4` as production, since both draw on one connection
-  budget (§1).
+- **Its own database role, secret and bucket**; the same instance and socket
+  as production, with `DATABASE_POOL_MAX=2`, staging's minimum share of the
+  connection budget (§1).
 - **No `AUTH_COOKIE_DOMAIN`**: staging keeps its per-host session (see
   "Shared sign-in across the Gemeinde sites" above).
 - **No role variables** — see above.

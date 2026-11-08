@@ -53,12 +53,30 @@ gcloud sql users set-password postgres --instance=buli-hub-db \
   gcloud sql instances patch buli-hub-db --tier=db-g1-small
   ```
 
-  The connection budget is why both services run with `DATABASE_POOL_MAX=4`:
-  production at most 3 instances and staging at most 2, times 4, is 20, which
-  leaves 2 for the Auth Proxy (migrations, backups, clones, your `psql`). A
-  deploy briefly runs old and new instances side by side; `remaining connection
-  slots are reserved` in the logs means the budget is spent, and the answer is
-  the tier above, not a bigger pool.
+  The instance is shared with gemeinde-tours (its own databases
+  `gemeinde_tours` and `gemeinde_tours_staging`; gemeinde-tours
+  `docs/deployment.md`) and gemeinde-auth, the Gemeinde sign-in (its own
+  database `gemeinde_auth`, no staging; gemeinde-auth `docs/deployment.md`), each
+  with its own roles, and so is the connection budget. Staging environments get
+  the minimum. Keep this table in step with the ones there:
+
+  | Service | Max instances | Pool | Connections |
+  |---|---|---|---|
+  | buli-hub production | 3 | 4 | 12 |
+  | buli-hub staging | 1 | 2 | 2 |
+  | gemeinde-tours production | 3 | 1 | 3 |
+  | gemeinde-tours staging | 1 | 1 | 1 |
+  | gemeinde-auth production | 2 | 1 | 2 |
+  | Auth Proxy (every repository's CI, backups, clones, your `psql`) | | | 2 |
+  | **Total** | | | **22** |
+
+  Not a pool of 1 for buli-hub staging: code that queries through the shared
+  client while it holds a transaction would wait forever for the one connection
+  its own transaction holds, which production's pool of 4 never shows.
+
+  A deploy briefly runs old and new instances side by side; `remaining
+  connection slots are reserved` in the logs means the budget is spent, and the
+  answer is the tier above, not a bigger pool.
 - **Backups**: daily, 7 kept; **point-in-time recovery** is off by default from
   gcloud, hence the explicit flag. Start time in UTC, ahead of the nightly dump
   at 03:17 (§4).
@@ -161,8 +179,8 @@ gcloud storage buckets add-iam-policy-binding gs://buli-hub-stream-photos-stagin
   --member="serviceAccount:$STAGING_SA" --role=roles/storage.objectAdmin
 
 # Staging reads its own secrets (the *_STAGING / *_TEST ones of §7):
-for secret in DATABASE_URL_STAGING DISCORD_CLIENT_SECRET_STAGING DISCORD_BOT_TOKEN_TEST \
-              JOBS_SECRET_STAGING STREAM_API_SECRET_STAGING; do
+for secret in BULI_HUB_DATABASE_URL_STAGING BULI_HUB_DISCORD_CLIENT_SECRET_STAGING BULI_HUB_DISCORD_BOT_TOKEN_TEST \
+              BULI_HUB_JOBS_SECRET_STAGING BULI_HUB_STREAM_API_SECRET_STAGING; do
   gcloud secrets add-iam-policy-binding "$secret" \
     --member="serviceAccount:$STAGING_SA" --role=roles/secretmanager.secretAccessor
 done
@@ -253,15 +271,22 @@ gcloud iam service-accounts add-iam-policy-binding \
 
 ### Secrets (runtime, injected into Cloud Run)
 
+Secret names are unique across the project, which every Gemeinde service shares: each starts
+with its service (`BULI_HUB_…`, `GEMEINDE_TOURS_…`), staging ones end in `_STAGING` (or `_TEST`
+for the test Discord bot). The variable the code reads keeps its plain name; the mapping is
+`--set-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL:latest`. A secret two services read has a
+Gemeinde-wide name instead of a copy per service (`GEMEINDE_DISCORD_BOT_TOKEN`, read by buli-hub and
+gemeinde-auth). `CLOUDSQL_PASSWORD_*` belong to the instance, not to a service.
+
 ```bash
 # User, password and database only: on Cloud Run the host is the socket in DATABASE_SOCKET.
-printf '%s' 'postgresql://buli_hub:<password>@localhost/buli_hub' | gcloud secrets create DATABASE_URL --data-file=-
-printf '%s' '<client secret>' | gcloud secrets create DISCORD_CLIENT_SECRET --data-file=-   # production Discord application
-printf '%s' '<value>' | gcloud secrets create DISCORD_BOT_TOKEN --data-file=-
-openssl rand -hex 32 | tr -d '\n' | gcloud secrets create JOBS_SECRET --data-file=-   # scheduled job routes, see §8
-openssl rand -hex 32 | tr -d '\n' | gcloud secrets create STREAM_API_SECRET --data-file=-   # stream API, see §9
+printf '%s' 'postgresql://buli_hub:<password>@localhost/buli_hub' | gcloud secrets create BULI_HUB_DATABASE_URL --data-file=-
+printf '%s' '<client secret>' | gcloud secrets create BULI_HUB_DISCORD_CLIENT_SECRET --data-file=-   # production Discord application
+printf '%s' '<value>' | gcloud secrets create GEMEINDE_DISCORD_BOT_TOKEN --data-file=-   # shared with gemeinde-auth
+openssl rand -hex 32 | tr -d '\n' | gcloud secrets create BULI_HUB_JOBS_SECRET --data-file=-   # scheduled job routes, see §8
+openssl rand -hex 32 | tr -d '\n' | gcloud secrets create BULI_HUB_STREAM_API_SECRET --data-file=-   # stream API, see §9
 # Grant the *runtime* service account access:
-gcloud secrets add-iam-policy-binding DATABASE_URL \
+gcloud secrets add-iam-policy-binding BULI_HUB_DATABASE_URL \
   --member="serviceAccount:<PROJECT_NUMBER>-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"   # repeat per secret
 ```
@@ -276,13 +301,14 @@ without a deploy, which is why the switch in §10 adds the Cloud SQL version of
 ```bash
 gcloud run deploy buli-hub --image <first image> --region europe-west1 \
   --no-invoker-iam-check \
-  --min-instances=1 --max-instances=3 --memory=512Mi \
+  --min-instances=0 --max-instances=3 --memory=512Mi \
   --add-cloudsql-instances=buli-hub:europe-west1:buli-hub-db \
-  --set-secrets=DATABASE_URL=DATABASE_URL:latest,DISCORD_CLIENT_SECRET=DISCORD_CLIENT_SECRET:latest,DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest,JOBS_SECRET=JOBS_SECRET:latest,STREAM_API_SECRET=STREAM_API_SECRET:latest \
+  --set-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL:latest,DISCORD_CLIENT_SECRET=BULI_HUB_DISCORD_CLIENT_SECRET:latest,DISCORD_BOT_TOKEN=GEMEINDE_DISCORD_BOT_TOKEN:latest,JOBS_SECRET=BULI_HUB_JOBS_SECRET:latest,STREAM_API_SECRET=BULI_HUB_STREAM_API_SECRET:latest \
   --set-env-vars=APP_BASE_URL=https://<DOMAIN>,DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=4,DISCORD_CLIENT_ID=1393596376591499365,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos,DISCORD_GUILD_ID=…,DISCORD_ROLE_ID_DEV=…,DISCORD_ROLE_ID_ADMIN=…,DISCORD_ROLE_ID_STAFF=…,DISCORD_ROLE_ID_MOTW=…,DISCORD_RESULTS_TOP_CHANNEL_ID=…,DISCORD_RESULTS_CHANNEL_ID=…,DISCORD_MOTW_CHANNEL_ID=…,DISCORD_FEEDBACK_FORUM_CHANNEL_ID=…,DISCORD_FEEDBACK_TAG_BUG=…,DISCORD_FEEDBACK_TAG_IDEA=…,DISCORD_LEAGUE_CATEGORY_ID=…,DISCORD_ROLE_ID_BULI_PLAYER=…
 ```
 
-`min-instances=1` during the season (no cold starts); drop to 0 off-season.
+`min-instances=0` all year: the service scales to zero, and the first request
+after a quiet spell waits for a cold start.
 Later deploys from CI swap the image and set `APP_BUILD_SHA` to the deployed
 commit (`--update-env-vars`, so everything else sticks to the service).
 `--no-invoker-iam-check` (instead of `--allow-unauthenticated`): the GCP
@@ -771,8 +797,8 @@ Its runtime secrets:
 
 ```bash
 printf '%s' 'postgresql://buli_hub_staging:<password>@localhost/buli_hub_staging' \
-  | gcloud secrets create DATABASE_URL_STAGING --data-file=-
-printf '%s' '<non-production client secret>' | gcloud secrets create DISCORD_CLIENT_SECRET_STAGING --data-file=-
+  | gcloud secrets create BULI_HUB_DATABASE_URL_STAGING --data-file=-
+printf '%s' '<non-production client secret>' | gcloud secrets create BULI_HUB_DISCORD_CLIENT_SECRET_STAGING --data-file=-
 ```
 
 (plus the runtime account's `secretAccessor` on each, as in §2).
@@ -780,7 +806,7 @@ printf '%s' '<non-production client secret>' | gcloud secrets create DISCORD_CLI
 If no non-production Discord application exists yet, create one now (Developer
 Portal → *New Application*). It supplies two separate things staging needs: the
 OAuth client ID/secret above, and — under *Bot* — the token that becomes
-`DISCORD_BOT_TOKEN_TEST`. Never reuse the production application for either;
+`BULI_HUB_DISCORD_BOT_TOKEN_TEST`. Never reuse the production application for either;
 resetting its secret to recover it would break sign-in for the whole league.
 Register `http://localhost:3000/auth/callback` as a redirect on it while you
 are there, so the OAuth round-trip can also be exercised locally.
@@ -798,15 +824,16 @@ differentiate.
 gcloud run deploy buli-hub-staging --image <first image> --region europe-west1 \
   --no-invoker-iam-check \
   --service-account=buli-hub-staging-run@buli-hub.iam.gserviceaccount.com \
-  --min-instances=0 --max-instances=2 --memory=512Mi \
+  --min-instances=0 --max-instances=1 --memory=512Mi \
   --add-cloudsql-instances=buli-hub:europe-west1:buli-hub-db \
-  --set-secrets=DATABASE_URL=DATABASE_URL_STAGING:latest,DISCORD_CLIENT_SECRET=DISCORD_CLIENT_SECRET_STAGING:latest,DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN_TEST:latest,JOBS_SECRET=JOBS_SECRET_STAGING:latest,STREAM_API_SECRET=STREAM_API_SECRET_STAGING:latest \
-  --set-env-vars=APP_ENV=staging,APP_BASE_URL=https://<staging-url>,DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=4,DISCORD_CLIENT_ID=1532014969787252898,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos-staging,ENABLE_DEV_TOOLS=true,DEV_TOOLS_TOKEN=<long random string>,DISCORD_RESULTS_TOP_CHANNEL_ID=<test server channel>,DISCORD_RESULTS_CHANNEL_ID=<test server channel>,DISCORD_MOTW_CHANNEL_ID=<test server channel>,DISCORD_LEAGUE_CATEGORY_ID=<test server category>,DISCORD_ROLE_ID_BULI_PLAYER=<test server role>
+  --set-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL_STAGING:latest,DISCORD_CLIENT_SECRET=BULI_HUB_DISCORD_CLIENT_SECRET_STAGING:latest,DISCORD_BOT_TOKEN=BULI_HUB_DISCORD_BOT_TOKEN_TEST:latest,JOBS_SECRET=BULI_HUB_JOBS_SECRET_STAGING:latest,STREAM_API_SECRET=BULI_HUB_STREAM_API_SECRET_STAGING:latest \
+  --set-env-vars=APP_ENV=staging,APP_BASE_URL=https://<staging-url>,DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=2,DISCORD_CLIENT_ID=1532014969787252898,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos-staging,ENABLE_DEV_TOOLS=true,DEV_TOOLS_TOKEN=<long random string>,DISCORD_RESULTS_TOP_CHANNEL_ID=<test server channel>,DISCORD_RESULTS_CHANNEL_ID=<test server channel>,DISCORD_MOTW_CHANNEL_ID=<test server channel>,DISCORD_LEAGUE_CATEGORY_ID=<test server category>,DISCORD_ROLE_ID_BULI_PLAYER=<test server role>
 ```
 
 Differences from production, each for a reason:
 
-- `--min-instances=0` — cold starts are fine here, and it costs nothing idle.
+- `--max-instances=1` — one instance is plenty for testing, and it keeps
+  staging's share of the shared connection budget at 4 (§1).
 - **No custom domain.** Staging is reachable only at its generated
   `*.run.app` URL: public, but unguessable and unlisted. `APP_ENV=staging`
   makes the app serve a disallow-all `robots.txt` and an
@@ -814,16 +841,16 @@ Differences from production, each for a reason:
   indexed.
 - `APP_BASE_URL` must be the staging URL, or the "Zum Match" links in Discord
   posts point at production, and Discord would send sign-ins back there.
-- **Its own database role, secret and bucket**; the same instance, socket and
-  `DATABASE_POOL_MAX=4` as production, since both draw on one connection
-  budget (§1).
+- **Its own database role, secret and bucket**; the same instance and socket
+  as production, with `DATABASE_POOL_MAX=2`, staging's minimum share of the
+  connection budget (§1).
 - **No `AUTH_COOKIE_DOMAIN`**: staging keeps its per-host session (see
   "Shared sign-in across the Gemeinde sites" above).
 - **No role variables** — see above.
 - `DISCORD_LEAGUE_CATEGORY_ID` / `DISCORD_ROLE_ID_BULI_PLAYER` point at the
   **test server**: the season setup resolves its guild from the category, so
   staging creates its roles and channels there. Its Cloud Scheduler job uses
-  its own `JOBS_SECRET_STAGING` (§8).
+  its own `BULI_HUB_JOBS_SECRET_STAGING` (§8).
 - `ENABLE_DEV_TOOLS=true` + `DEV_TOOLS_TOKEN` turn on `/dev` (see below).
 
 ### Getting into `/dev` on staging
@@ -984,9 +1011,9 @@ channel ids are not secrets):
 Manager — see the deploy commands in §2 / §7):
 
 ```bash
-printf '%s' "$(openssl rand -hex 32)" | gcloud secrets create JOBS_SECRET_STAGING --data-file=-
+printf '%s' "$(openssl rand -hex 32)" | gcloud secrets create BULI_HUB_JOBS_SECRET_STAGING --data-file=-
 gcloud run services update buli-hub-staging --region europe-west1 \
-  --update-secrets=JOBS_SECRET=JOBS_SECRET_STAGING:latest \
+  --update-secrets=JOBS_SECRET=BULI_HUB_JOBS_SECRET_STAGING:latest \
   --update-env-vars=DISCORD_LEAGUE_CATEGORY_ID=<test server category>,DISCORD_ROLE_ID_BULI_PLAYER=<test server role>
 ```
 
@@ -998,10 +1025,10 @@ gcloud scheduler jobs create http discord-season-sync-staging \
   --location europe-west1 --schedule "*/15 * * * *" \
   --uri "https://<staging-url>/api/jobs/discord-season-sync" \
   --http-method POST --attempt-deadline 600s \
-  --headers "Authorization=Bearer $(gcloud secrets versions access latest --secret JOBS_SECRET_STAGING)"
+  --headers "Authorization=Bearer $(gcloud secrets versions access latest --secret BULI_HUB_JOBS_SECRET_STAGING)"
 ```
 
-Production: the same with `buli-hub`, `JOBS_SECRET`, the production ids and
+Production: the same with `buli-hub`, `BULI_HUB_JOBS_SECRET`, the production ids and
 the production URL, named `discord-season-sync`. The header is stored in
 the job, so rotating the secret means updating the job
 (`gcloud scheduler jobs update http … --update-headers …`).
@@ -1043,15 +1070,15 @@ and `BULI_HUB_API_KEY` point at exactly one of them. Development of the
 stream backend runs against staging.
 
 ```bash
-printf '%s' "$(openssl rand -hex 32)" | gcloud secrets create STREAM_API_SECRET_STAGING --data-file=-
+printf '%s' "$(openssl rand -hex 32)" | gcloud secrets create BULI_HUB_STREAM_API_SECRET_STAGING --data-file=-
 gcloud run services update buli-hub-staging --region europe-west1 \
-  --update-secrets=STREAM_API_SECRET=STREAM_API_SECRET_STAGING:latest
+  --update-secrets=STREAM_API_SECRET=BULI_HUB_STREAM_API_SECRET_STAGING:latest
 ```
 
-Production: the same with `buli-hub` and `STREAM_API_SECRET`. Check:
+Production: the same with `buli-hub` and `BULI_HUB_STREAM_API_SECRET`. Check:
 
 ```bash
-curl -sS -H "Authorization: Bearer $(gcloud secrets versions access latest --secret STREAM_API_SECRET_STAGING)" \
+curl -sS -H "Authorization: Bearer $(gcloud secrets versions access latest --secret BULI_HUB_STREAM_API_SECRET_STAGING)" \
   https://<staging-url>/api/stream/matches | head -c 300
 ```
 
@@ -1144,8 +1171,8 @@ the running hub.
 
 ### Staging
 
-1. **Infrastructure for staging**: the secrets `DATABASE_URL_STAGING` and
-   `DISCORD_CLIENT_SECRET_STAGING` (§7) with the runtime account's access.
+1. **Infrastructure for staging**: the secrets `BULI_HUB_DATABASE_URL_STAGING` and
+   `BULI_HUB_DISCORD_CLIENT_SECRET_STAGING` (§7) with the runtime account's access.
    Creating them changes nothing on the running service.
 2. **Fill staging's Supabase with production-shaped data**, with the **old**
    refresh workflow from `main` (staging's GitHub values are still Supabase's
@@ -1194,7 +1221,7 @@ the running hub.
    ```bash
    gcloud run services update buli-hub-staging --region europe-west1 \
      --add-cloudsql-instances=buli-hub:europe-west1:buli-hub-db \
-     --update-secrets=DATABASE_URL=DATABASE_URL_STAGING:latest,DISCORD_CLIENT_SECRET=DISCORD_CLIENT_SECRET_STAGING:latest \
+     --update-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL_STAGING:latest,DISCORD_CLIENT_SECRET=BULI_HUB_DISCORD_CLIENT_SECRET_STAGING:latest \
      --update-env-vars=DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=4,DISCORD_CLIENT_ID=1532014969787252898,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos-staging
    gh variable set CLOUD_SQL_INSTANCE --env STAGING --body buli-hub:europe-west1:buli-hub-db
    gh secret set STAGING_DATABASE_URL --env STAGING   # postgresql://buli_hub_staging:<pw>@127.0.0.1:5432/buli_hub_staging
@@ -1280,7 +1307,7 @@ Supabase session survives the move.
      | gcloud secrets versions add DATABASE_URL --data-file=-
    gcloud run services update buli-hub --region europe-west1 \
      --add-cloudsql-instances=buli-hub:europe-west1:buli-hub-db \
-     --update-secrets=DATABASE_URL=DATABASE_URL:latest,DISCORD_CLIENT_SECRET=DISCORD_CLIENT_SECRET:latest \
+     --update-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL:latest,DISCORD_CLIENT_SECRET=BULI_HUB_DISCORD_CLIENT_SECRET:latest \
      --update-env-vars=DATABASE_SOCKET=/cloudsql/buli-hub:europe-west1:buli-hub-db,DATABASE_POOL_MAX=4,DISCORD_CLIENT_ID=1393596376591499365,STREAM_PHOTOS_BUCKET=buli-hub-stream-photos
    gh variable set CLOUD_SQL_INSTANCE --env PROD --body buli-hub:europe-west1:buli-hub-db
    gh secret set PROD_DATABASE_URL --env PROD      # postgresql://buli_hub:<pw>@127.0.0.1:5432/buli_hub
@@ -1294,7 +1321,7 @@ Supabase session survives the move.
 
    The way back from here, as long as the hub has not reopened: pin
    `DATABASE_URL` to the noted version
-   (`--update-secrets=DATABASE_URL=DATABASE_URL:<version>`), set both GitHub
+   (`--update-secrets=DATABASE_URL=BULI_HUB_DATABASE_URL:<version>`), set both GitHub
    `PROD_DATABASE_URL` secrets back to Supabase's string, then remove
    `MAINTENANCE` and resume the scheduler.
 7. **Promote `dev` → `main`** per CLAUDE.md:

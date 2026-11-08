@@ -647,7 +647,6 @@ describe("findMotw", () => {
     avatarUrl: null,
     wins: 0,
     losses: 0,
-    points: 0,
     gamesWon: 0,
     gamesLost: 0,
     rank,

@@ -426,6 +426,10 @@ export const SAISON_9: RegelwerkDocument = {
           title: "Bewertungssystem",
           body: (
             <>
+              {/* Next season: the table no longer shows points, only Bilanz
+                  (a win is always 3 points, so wins rank the same). Saison 9
+                  keeps this wording so the rules do not change mid-season;
+                  the next rulebook should speak of wins instead of points. */}
               <PunktePullOut />
               <Paragraph>
                 Bei gleicher Punktzahl entscheiden <Key>Tiebreaker</Key>, in

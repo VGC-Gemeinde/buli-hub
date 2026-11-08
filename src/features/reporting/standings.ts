@@ -20,7 +20,6 @@ export type StandingsRow = {
   avatarUrl: string | null;
   wins: number;
   losses: number;
-  points: number;
   gamesWon: number;
   gamesLost: number;
   rank: number;
@@ -202,7 +201,6 @@ export function computeStandings(input: {
       avatarUrl: member.avatarUrl,
       wins: record.wins,
       losses: record.losses,
-      points: record.wins * 3,
       gamesWon: record.gamesWon,
       gamesLost: record.gamesLost,
       rank: 0,

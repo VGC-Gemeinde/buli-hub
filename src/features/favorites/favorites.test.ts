@@ -72,7 +72,6 @@ function row(
     ...who(userId),
     wins,
     losses,
-    points: wins * 3,
     gamesWon: wins * 2,
     gamesLost: losses * 2,
     rank,

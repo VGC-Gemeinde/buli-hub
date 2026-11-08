@@ -48,10 +48,10 @@ describe("computeStandings", () => {
   it("all zero, ordered by name (de) when there are no results", () => {
     const rows = computeStandings({ roster, results: [] });
     expect(rows.map((r) => r.name)).toEqual(["Alice", "Bob", "Charlie"]);
-    expect(rows.every((r) => r.points === 0 && r.wins === 0)).toBe(true);
+    expect(rows.every((r) => r.wins === 0)).toBe(true);
   });
 
-  it("a normal result: winner 3 points + a win, loser a loss, games counted", () => {
+  it("a normal result: winner a win, loser a loss, games counted", () => {
     const rows = computeStandings({
       roster,
       results: [normal("a", "a", "b", 1)], // a wins 2:1
@@ -59,7 +59,6 @@ describe("computeStandings", () => {
     expect(rows.find((r) => r.userId === "a")).toMatchObject({
       wins: 1,
       losses: 0,
-      points: 3,
       gamesWon: 2,
       gamesLost: 1,
       rank: 1,
@@ -84,14 +83,14 @@ describe("computeStandings", () => {
     });
 
     const pending = computeStandings({ roster, results: [freeWin(null)] });
-    expect(pending.every((r) => r.points === 0 && r.gamesWon === 0)).toBe(true);
+    expect(pending.every((r) => r.wins === 0 && r.gamesWon === 0)).toBe(true);
 
     const confirmed = computeStandings({
       roster,
       results: [freeWin(new Date())],
     });
     expect(confirmed.find((r) => r.userId === "a")).toMatchObject({
-      points: 3,
+      wins: 1,
       gamesWon: 2,
       gamesLost: 0,
     });

@@ -313,7 +313,6 @@ describe("saveResult + getMatchResult", () => {
     });
     expect(rows.find((r) => r.userId === alice)).toMatchObject({
       wins: 1,
-      points: 3,
     });
     expect(rows.find((r) => r.userId === bob)?.losses).toBe(1);
     expect(rows.find((r) => r.userId === carol)).toMatchObject({

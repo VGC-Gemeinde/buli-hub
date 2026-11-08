@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SectionHeader } from "@/components/section-header";
 import { FavoriteStar } from "@/features/favorites/components/favorite-star";
 import { PlayerLink } from "@/features/player-profile/components/player-link";
+import { formatWinRate } from "@/features/pokemon-stats/format";
 import type { StandingsRow } from "@/features/reporting/standings";
 import type { Zone } from "@/features/seeding/post-season";
 import { cn } from "@/lib/utils";
@@ -94,9 +95,9 @@ export function StandingsTable({
             // Fixed layout in dense mode: the score columns get their widths
             // from the header, the name column takes the rest and truncates.
             // In the automatic layout the longest name (plus its tags) sets
-            // the column, pushing Punkte out of a half-width column.
+            // the column, pushing Bilanz out of a half-width column.
             dense &&
-              "table-fixed [&_td]:py-2 [&_th]:py-2 [&_th:nth-child(3)]:w-[76px] [&_th:nth-child(4)]:w-[60px] [&_th:nth-child(5)]:w-[72px]",
+              "table-fixed [&_td]:py-2 [&_th]:py-2 [&_th:nth-child(3)]:w-[96px] [&_th:nth-child(4)]:w-[60px] [&_th:nth-child(5)]:w-[76px]",
           )}
         >
           <thead>
@@ -107,14 +108,20 @@ export function StandingsTable({
               <th className="sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2 font-semibold before:absolute before:inset-0 before:bg-muted/50">
                 <span className="relative">Spieler</span>
               </th>
-              <th className="border-b bg-muted/50 py-2.5 pr-3 pl-5 text-right font-semibold">
-                Bilanz
+              {/* The tiebreakers run right to left into Bilanz, the anchor
+                  that ranks the table, as points did before it: wins carry
+                  the whole ranking, since a win is always 3 points. */}
+              <th
+                title="Game Winrate"
+                className="whitespace-nowrap border-b bg-muted/50 py-2.5 pr-3 pl-5 text-right font-semibold"
+              >
+                Game-WR.
               </th>
               <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold">
                 Diff.
               </th>
               <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold">
-                Punkte
+                Bilanz
               </th>
             </tr>
           </thead>
@@ -195,14 +202,14 @@ export function StandingsTable({
                       ) : null}
                     </span>
                   </td>
-                  <td className="border-b py-2.5 pr-3 pl-5 text-right text-muted-foreground text-sm tabular-nums">
-                    {row.wins} : {row.losses}
+                  <td className="whitespace-nowrap border-b py-2.5 pr-3 pl-5 text-right text-muted-foreground text-sm tabular-nums">
+                    {formatWinRate(row.gamesWon, row.gamesWon + row.gamesLost)}
                   </td>
-                  <td className="border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums">
+                  <td className="border-b px-3 py-2.5 text-right text-[14.5px] tabular-nums">
                     {formatDiff(row.gamesWon - row.gamesLost)}
                   </td>
-                  <td className="border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums">
-                    {row.points}
+                  <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums">
+                    {row.wins} : {row.losses}
                   </td>
                 </tr>
               );

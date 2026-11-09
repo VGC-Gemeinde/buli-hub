@@ -38,7 +38,8 @@ export type SeasonGroup = {
 };
 
 // An active placed player (not dropped, in a sub-division), and the stage
-// rooms they belong in: those where they have a match.
+// rooms they belong in: those where they have a match, and in advance those
+// an undecided tiebreaker of theirs decides on (`tiebreakerStages`).
 export type SeasonPlayer = {
   userId: string;
   name: string;

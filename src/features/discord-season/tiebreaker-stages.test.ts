@@ -113,9 +113,26 @@ describe("tiebreakerStages", () => {
     expect(tiebreakerStages([t]).size).toBe(0);
   });
 
-  it("leaves a staff order out: three or more play no tiebreaker", () => {
+  it("counts a staff order (three or more) like a tiebreaker", () => {
     const t = table(["a", "b", "c", "d"], [1, 2, 2, 2], { champion: 2 });
     expect(t.ties[0]?.decision).toBe("staff_order");
+    expect(asObject(tiebreakerStages([t]))).toEqual({
+      b: ["playoff"],
+      c: ["playoff"],
+      d: ["playoff"],
+    });
+  });
+
+  it("gives no room once the staff order is set", () => {
+    const decided = new Map<string, TieDecision>([
+      ["group:g1:1", ["d", "b", "c"]],
+    ]);
+    const t = table(
+      ["a", "b", "c", "d"],
+      [1, 2, 2, 2],
+      { champion: 2 },
+      decided,
+    );
     expect(tiebreakerStages([t]).size).toBe(0);
   });
 

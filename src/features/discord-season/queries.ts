@@ -4,7 +4,12 @@ import {
   discordSeasonSyncState,
   placements,
 } from "@/db/schema";
-import { publishedStages } from "@/features/schedule/queries";
+import { loadFinalTables } from "@/features/final-table/queries";
+import {
+  publishedStages,
+  regularSeasonClosed,
+} from "@/features/schedule/queries";
+import { currentTieDecisions } from "@/features/schedule/relegation-playoffs-setup";
 import { listSubDivisions } from "@/features/seeding/queries";
 import { db } from "@/lib/db";
 import { PLAYER_NAME_FALLBACK, playerName } from "@/lib/player-name";
@@ -20,6 +25,7 @@ import {
   type SeasonDiscordSyncState,
   seasonDiscordReportSchema,
 } from "./report";
+import { tiebreakerStages } from "./tiebreaker-stages";
 
 // The season's sub-divisions, ordered by tier and position.
 export async function listSeasonGroups(
@@ -65,16 +71,38 @@ export async function listPlacedPlayers(
           and p.dropped_at is null
         order by p.user_id`,
   );
+  const tieStages = await undecidedTiebreakerStages(windowId);
   return rows.map((row) => ({
     userId: row.user_id,
     subDivisionId: row.sub_division_id,
-    stages: (row.stages ?? []).filter(
-      (stage): stage is StageRoom =>
-        stage === "playoff" || stage === "relegation",
-    ),
+    stages: [
+      ...new Set([
+        ...(row.stages ?? []).filter(
+          (stage): stage is StageRoom =>
+            stage === "playoff" || stage === "relegation",
+        ),
+        ...(tieStages.get(row.user_id) ?? []),
+      ]),
+    ],
     name: playerName(row.display_name, row.username) || PLAYER_NAME_FALLBACK,
     discordId: row.discord_id,
   }));
+}
+
+// The players of an undecided tiebreaker and the stage rooms they get in
+// advance (`tiebreakerStages`). Nothing before the regular season is closed:
+// until then no stage room exists.
+async function undecidedTiebreakerStages(
+  windowId: string,
+): Promise<Map<string, StageRoom[]>> {
+  if (!(await regularSeasonClosed(windowId))) {
+    return new Map();
+  }
+  const { tablesByTier } = await loadFinalTables(
+    windowId,
+    await currentTieDecisions(windowId),
+  );
+  return tiebreakerStages([...tablesByTier.values()].flat());
 }
 
 export async function trackedResources(

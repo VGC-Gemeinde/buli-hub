@@ -15,21 +15,19 @@ function stageOfZone(zone: Zone): StageRoom | null {
   }
 }
 
-// The stage rooms the players of an undecided tiebreaker get in advance: the
-// rooms of the stages their tie decides on, so the two have a chat to arrange
-// the tiebreaker in, next to the players they may meet afterwards. Only a
-// tiebreaker counts (two players, a match to arrange); a staff order needs no
-// match. Once the tie is decided the room follows the matches again: the
-// winner plays in the stage, the loser leaves the room on the next sync.
+// The stage rooms the players of an undecided tie at a zone boundary get in
+// advance: the rooms of the stages their tie decides on, so they have a chat
+// to sort the tie out in, next to the players they may meet afterwards. Every
+// tie counts, a tiebreaker (two players) and a staff order (three or more)
+// alike. Once the tie is decided the room follows the matches again: whoever
+// takes the seat plays in the stage, the others leave the room on the next
+// sync.
 export function tiebreakerStages(
   tables: readonly FinalTable[],
 ): Map<string, StageRoom[]> {
   const byUser = new Map<string, Set<StageRoom>>();
   for (const table of tables) {
     for (const tie of table.ties) {
-      if (tie.decision !== "tiebreaker") {
-        continue;
-      }
       const undecided = table.places[tie.indexes[0]]?.holder.kind === "tie";
       if (!undecided) {
         continue;

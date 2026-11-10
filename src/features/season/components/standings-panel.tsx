@@ -52,8 +52,10 @@ export type ZoneMap = Map<string, Zone>;
 // The standings table itself — dumb, view-only. Shared by the group and the
 // division view. Rows can be tinted by post-season zone (rail + soft tint); the
 // current player is always marked (orange rail/tint when unzoned, plus bold name,
-// "Du" badge and filled avatar). The Platz + Spieler columns stay frozen (sticky)
-// on the left as the score columns scroll; frozen cells carry an opaque base + a
+// "Du" badge and filled avatar). From sm up, the Platz + Spieler columns stay
+// frozen (sticky) on the left as the score columns scroll; on a phone the table
+// fits the screen instead, with the tags under the name
+// (specs/006-standings-phone-layout); frozen cells carry an opaque base + a
 // `before` tint so scrolled columns don't bleed through, and the rail sits on the
 // rank cell's left edge. `groupLabels` adds a sub-division chip in the division
 // view.
@@ -91,21 +93,26 @@ export function StandingsTable({
       <div className="overflow-x-auto rounded-lg border">
         <table
           className={cn(
-            "w-full min-w-[400px] border-separate border-spacing-0 text-left [&_tr:last-child_td]:border-b-0",
+            "w-full border-separate border-spacing-0 text-left sm:min-w-[400px] [&_tr:last-child_td]:border-b-0",
+            // Phone: a fixed layout that fits the screen, so nothing scrolls
+            // and no number slides half under the frozen name column. The
+            // score columns get fixed widths, the name takes the rest and its
+            // tags move to a second line.
+            "max-sm:table-fixed max-sm:[&_th:nth-child(1)]:w-[38px] max-sm:[&_th:nth-child(3)]:w-[66px] max-sm:[&_th:nth-child(4)]:w-[44px] max-sm:[&_th:nth-child(5)]:w-[60px]",
             // Fixed layout in dense mode: the score columns get their widths
             // from the header, the name column takes the rest and truncates.
             // In the automatic layout the longest name (plus its tags) sets
             // the column, pushing Bilanz out of a half-width column.
             dense &&
-              "table-fixed [&_td]:py-2 [&_th]:py-2 [&_th:nth-child(3)]:w-[96px] [&_th:nth-child(4)]:w-[60px] [&_th:nth-child(5)]:w-[76px]",
+              "[&_td]:py-2 [&_th]:py-2 sm:table-fixed sm:[&_th:nth-child(3)]:w-[96px] sm:[&_th:nth-child(4)]:w-[60px] sm:[&_th:nth-child(5)]:w-[76px]",
           )}
         >
           <thead>
-            <tr className="text-[11px] text-muted-foreground uppercase tracking-[0.1em]">
-              <th className="sticky left-0 z-20 w-[44px] border-b bg-background py-2.5 pr-1 pl-4 font-semibold before:absolute before:inset-0 before:bg-muted/50">
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-[0.1em] max-sm:text-[10.5px] max-sm:tracking-[0.02em]">
+              <th className="sticky left-0 z-20 w-[44px] border-b bg-background py-2.5 pr-1 pl-4 font-semibold before:absolute before:inset-0 before:bg-muted/50 max-sm:relative max-sm:pl-3">
                 <span className="relative">Pl.</span>
               </th>
-              <th className="sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2 font-semibold before:absolute before:inset-0 before:bg-muted/50">
+              <th className="sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2 font-semibold before:absolute before:inset-0 before:bg-muted/50 max-sm:relative max-sm:left-0 max-sm:pr-1">
                 <span className="relative">Spieler</span>
               </th>
               {/* The tiebreakers run right to left into Bilanz, the anchor
@@ -113,14 +120,14 @@ export function StandingsTable({
                   the whole ranking, since a win is always 3 points. */}
               <th
                 title="Game Winrate"
-                className="whitespace-nowrap border-b bg-muted/50 py-2.5 pr-3 pl-5 text-right font-semibold"
+                className="whitespace-nowrap border-b bg-muted/50 py-2.5 pr-3 pl-5 text-right font-semibold max-sm:pr-2 max-sm:pl-1"
               >
                 Game-WR.
               </th>
-              <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold">
+              <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold max-sm:pr-2 max-sm:pl-1">
                 Diff.
               </th>
-              <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold">
+              <th className="border-b bg-muted/50 px-3 py-2.5 text-right font-semibold max-sm:pl-1">
                 Bilanz
               </th>
             </tr>
@@ -138,11 +145,16 @@ export function StandingsTable({
                   ? "bg-brand-orange"
                   : "";
               const groupLabel = groupLabels?.get(row.userId);
+              const hasTags =
+                Boolean(groupLabel) ||
+                Boolean(row.dropped) ||
+                Boolean(row.replacement) ||
+                me;
               return (
                 <tr key={row.userId} className={cn(rowTint)}>
                   <td
                     className={cn(
-                      "sticky left-0 z-20 border-b bg-background py-2.5 pr-1 pl-4 font-semibold text-muted-foreground text-sm tabular-nums",
+                      "sticky left-0 z-20 border-b bg-background py-2.5 pr-1 pl-4 font-semibold text-muted-foreground text-sm tabular-nums max-sm:relative max-sm:pl-3",
                       overlay,
                     )}
                   >
@@ -155,60 +167,74 @@ export function StandingsTable({
                   </td>
                   <td
                     className={cn(
-                      "sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2",
+                      "sticky left-[44px] z-10 border-r border-b bg-background py-2.5 pr-3 pl-2 max-sm:relative max-sm:left-0 max-sm:pr-1",
                       overlay,
                     )}
                   >
-                    <span className="relative flex min-w-0 items-center gap-2">
+                    {/* Desktop: avatar, name and tags on one line. Phone: the
+                        tags drop to a second line under the name, so the name
+                        keeps the cell's width and no tag runs into the
+                        numbers. */}
+                    <span className="relative flex min-w-0 items-center gap-2 max-sm:gap-[7px]">
                       <PlayerAvatar
                         identity={row}
-                        size="size-[26px]"
+                        size="size-[26px] max-sm:size-[22px]"
                         filled={me}
                       />
-                      {favoriteIds?.has(row.userId) ? <FavoriteStar /> : null}
-                      <PlayerLink
-                        userId={row.userId}
-                        name={row.name}
-                        className={cn(
-                          "truncate text-[14.5px]",
-                          me ? "font-semibold" : "font-medium",
-                        )}
-                      />
-                      {groupLabel ? (
-                        <span className="shrink-0 rounded-full bg-muted px-[7px] py-[2px] font-bold text-[10.5px] text-muted-foreground">
-                          {groupLabel}
+                      <span className="flex min-w-0 flex-col gap-[3px] sm:flex-row sm:items-center sm:gap-2">
+                        <span className="flex min-w-0 items-center gap-2">
+                          {favoriteIds?.has(row.userId) ? (
+                            <FavoriteStar />
+                          ) : null}
+                          <PlayerLink
+                            userId={row.userId}
+                            name={row.name}
+                            className={cn(
+                              "truncate text-[14.5px]",
+                              me ? "font-semibold" : "font-medium",
+                            )}
+                          />
                         </span>
-                      ) : null}
-                      {row.dropped ? (
-                        <span
-                          title="Spieler wurde gedroppt, alle Matches zählen als Freewin für die Gegner"
-                          className="shrink-0 rounded-full border border-destructive/40 bg-destructive/8 px-[7px] py-[2px] font-bold text-[10.5px] text-destructive uppercase tracking-[0.06em]"
-                        >
-                          Drop
-                        </span>
-                      ) : null}
-                      {row.replacement ? (
-                        <span
-                          title={`${row.replacement}. Die Spieltage davor zählen für diesen Platz als Niederlage.`}
-                          className="shrink-0 rounded-full border border-brand-blue/30 bg-brand-blue/6 px-[7px] py-[2px] font-bold text-[10.5px] text-brand-blue uppercase tracking-[0.06em] dark:border-white/30 dark:text-white"
-                        >
-                          Ersatz
-                        </span>
-                      ) : null}
-                      {me ? (
-                        <span className="shrink-0 font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
-                          Du
-                        </span>
-                      ) : null}
+                        {hasTags ? (
+                          <span className="flex min-w-0 items-center gap-[5px] overflow-hidden sm:shrink-0 sm:gap-2">
+                            {groupLabel ? (
+                              <span className="shrink-0 rounded-full bg-muted px-[7px] py-[2px] font-bold text-[10.5px] text-muted-foreground max-sm:py-0">
+                                {groupLabel}
+                              </span>
+                            ) : null}
+                            {row.dropped ? (
+                              <span
+                                title="Spieler wurde gedroppt, alle Matches zählen als Freewin für die Gegner"
+                                className="shrink-0 rounded-full border border-destructive/40 bg-destructive/8 px-[7px] py-[2px] font-bold text-[10.5px] text-destructive uppercase tracking-[0.06em] max-sm:py-0"
+                              >
+                                Drop
+                              </span>
+                            ) : null}
+                            {row.replacement ? (
+                              <span
+                                title={`${row.replacement}. Die Spieltage davor zählen für diesen Platz als Niederlage.`}
+                                className="shrink-0 rounded-full border border-brand-blue/30 bg-brand-blue/6 px-[7px] py-[2px] font-bold text-[10.5px] text-brand-blue uppercase tracking-[0.06em] max-sm:py-0 dark:border-white/30 dark:text-white"
+                              >
+                                Ersatz
+                              </span>
+                            ) : null}
+                            {me ? (
+                              <span className="shrink-0 font-bold text-[10px] text-brand-orange uppercase tracking-[0.1em]">
+                                Du
+                              </span>
+                            ) : null}
+                          </span>
+                        ) : null}
+                      </span>
                     </span>
                   </td>
-                  <td className="whitespace-nowrap border-b py-2.5 pr-3 pl-5 text-right text-muted-foreground text-sm tabular-nums">
+                  <td className="whitespace-nowrap border-b py-2.5 pr-3 pl-5 text-right text-muted-foreground text-sm tabular-nums max-sm:pr-2 max-sm:pl-1 max-sm:text-[13px]">
                     {formatWinRate(row.gamesWon, row.gamesWon + row.gamesLost)}
                   </td>
-                  <td className="border-b px-3 py-2.5 text-right text-[14.5px] tabular-nums">
+                  <td className="border-b px-3 py-2.5 text-right text-[14.5px] tabular-nums max-sm:pr-2 max-sm:pl-1 max-sm:text-sm">
                     {formatDiff(row.gamesWon - row.gamesLost)}
                   </td>
-                  <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums">
+                  <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-semibold text-[14.5px] tabular-nums max-sm:pl-1">
                     {row.wins} : {row.losses}
                   </td>
                 </tr>

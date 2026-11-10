@@ -1,0 +1,266 @@
+<!doctype html>
+<!-- Mockup for specs/006-standings-phone-layout. Example data only. Variant B of the iteration
+     (three number columns kept, badges under the name); variant A (values stacked under Bilanz)
+     was shown and not chosen. Desktop frames show the unchanged desktop table for reference. -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tabelle auf dem Handy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: a toolbar over four frames, phone (390px) and desktop (600px), each in light and dark.
+   The shell follows the viewer's theme; each frame pins the hub's own tokens (globals.css, light
+   and .dark). Phone sizes mirror the implementation below sm, desktop sizes the table from sm up. */
+:root {
+  --shell-bg: oklch(0.975 0.006 262);
+  --shell-fg: oklch(0.28 0.06 264);
+  --shell-muted: oklch(0.52 0.035 263);
+  --shell-border: oklch(0.9 0.012 262);
+  --shell-card: #ffffff;
+  --shell-accent: #ff7b00;
+  --font: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shell-bg: oklch(0.13 0.035 265); --shell-fg: oklch(0.96 0.005 260);
+    --shell-muted: oklch(0.72 0.025 262); --shell-border: oklch(1 0 0 / 12%);
+    --shell-card: oklch(0.17 0.045 265); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --shell-bg: oklch(0.13 0.035 265); --shell-fg: oklch(0.96 0.005 260);
+  --shell-muted: oklch(0.72 0.025 262); --shell-border: oklch(1 0 0 / 12%);
+  --shell-card: oklch(0.17 0.045 265); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--shell-bg); color: var(--shell-fg); font-family: var(--font); margin: 0; }
+.shell { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-start; margin-bottom: 18px; }
+.toolbar h1 { font-size: 15px; margin: 0; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.toolbar .sub { font-size: 12.5px; color: var(--shell-muted); margin-top: 4px; max-width: 60ch; line-height: 1.5; }
+.tgroup { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tgroup > span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--shell-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 12.5px/1 var(--font); padding: 7px 11px; border-radius: 999px; border: 1px solid var(--shell-border); background: var(--shell-card); color: var(--shell-fg); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--shell-accent); border-color: var(--shell-accent); color: #fff; font-weight: 600; }
+.chip:focus-visible { outline: 2px solid var(--shell-accent); outline-offset: 2px; }
+.frames { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.fwrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 100%; }
+.fwrap > span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--shell-muted); }
+.fscroll { overflow-x: auto; max-width: 100%; border-radius: 22px; border: 1px solid var(--shell-border); }
+
+/* ---------- the hub inside a frame ---------- */
+.hub {
+  --brand-blue: #021f66; --brand-orange: #ff7b00;
+  --zone-promote: oklch(0.6 0.12 158); --zone-playoff: oklch(0.78 0.13 78);
+  --zone-demote: oklch(0.55 0.19 27); --zone-champion: oklch(0.85 0.16 90);
+  --background: #ffffff; --foreground: oklch(0.28 0.06 264);
+  --muted: oklch(0.965 0.008 262); --muted-foreground: oklch(0.52 0.035 263);
+  --destructive: oklch(0.55 0.22 27); --border: oklch(0.91 0.012 262);
+  --heading: #021f66; --ersatz: #021f66; --ersatz-border: color-mix(in oklch, #021f66 30%, transparent);
+  flex: none; background: var(--background); color: var(--foreground);
+  font-family: var(--font); padding: 22px 24px 26px;
+}
+.hub.phone { width: 390px; }
+.hub.desk { width: 600px; }
+.hub.dark {
+  --background: oklch(0.17 0.045 265); --foreground: oklch(0.96 0.005 260);
+  --muted: oklch(1 0 0 / 8%); --muted-foreground: oklch(0.72 0.025 262);
+  --destructive: oklch(0.7 0.19 22); --border: oklch(1 0 0 / 12%);
+  --heading: #ffffff; --ersatz: #ffffff; --ersatz-border: oklch(1 0 0 / 30%);
+  color-scheme: dark;
+}
+.sh { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; }
+.tick { width: 18px; height: 9px; background: var(--brand-orange); transform: skewX(-18deg); flex: none; }
+.sh h2 { margin: 0; font: 700 22px/1 var(--font); text-transform: uppercase; letter-spacing: .03em; color: var(--heading); }
+.sh .meta { margin-left: auto; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-foreground); }
+
+.tbl { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.thead, .row { display: grid; align-items: center; position: relative; }
+.thead { background: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted-foreground); border-bottom: 1px solid var(--border); }
+.row { border-bottom: 1px solid var(--border); }
+.row:last-child { border-bottom: 0; }
+.th, .td { padding-block: 10px; min-width: 0; }
+.rank { font-weight: 600; font-size: 14px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.rail { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.who-cell { border-right: 1px solid var(--border); align-self: stretch; display: flex; align-items: center; }
+
+.z-champion { background: color-mix(in oklch, var(--zone-champion) 12%, transparent); }
+.z-champion .rail { background: var(--zone-champion); }
+.z-promote { background: color-mix(in oklch, var(--zone-promote) 7%, transparent); }
+.z-promote .rail { background: var(--zone-promote); }
+.z-playoff { background: color-mix(in oklch, var(--zone-playoff) 10%, transparent); }
+.z-playoff .rail { background: var(--zone-playoff); }
+.z-demote { background: color-mix(in oklch, var(--zone-demote) 6%, transparent); }
+.z-demote .rail { background: var(--zone-demote); }
+.me { background: color-mix(in oklch, var(--brand-orange) 6%, transparent); }
+.me .rail { background: var(--brand-orange); }
+
+.who { display: flex; align-items: center; min-width: 0; width: 100%; }
+.av { border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 600; color: #fff; }
+.av.filled { background: var(--brand-blue) !important; box-shadow: 0 0 0 2px var(--brand-orange); }
+.idcol { display: flex; min-width: 0; }
+.namel { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.name { font-size: 14.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.me .name { font-weight: 600; }
+.tags { display: flex; align-items: center; min-width: 0; overflow: hidden; }
+.star { color: var(--brand-orange); font-size: 12px; flex: none; }
+.chipg, .drop, .ersatz { flex: none; border-radius: 999px; font-weight: 700; font-size: 10.5px; padding: 2px 7px; line-height: 14px; }
+.chipg { background: var(--muted); color: var(--muted-foreground); }
+.drop { border: 1px solid color-mix(in oklch, var(--destructive) 40%, transparent); background: color-mix(in oklch, var(--destructive) 8%, transparent); color: var(--destructive); letter-spacing: .06em; text-transform: uppercase; }
+.ersatz { border: 1px solid var(--ersatz-border); color: var(--ersatz); letter-spacing: .06em; text-transform: uppercase; }
+.du { flex: none; color: var(--brand-orange); font-weight: 700; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.c-wr { color: var(--muted-foreground); }
+.c-bil { font-weight: 600; font-size: 14.5px; }
+
+/* Phone (below sm): fixed columns, fits 342px, tags on a second line under the name. */
+.phone .thead, .phone .row { grid-template-columns: 38px minmax(0, 1fr) 66px 44px 60px; }
+.phone .thead { font-size: 10.5px; letter-spacing: .02em; }
+.phone .rank { padding-left: 12px; padding-right: 4px; }
+.phone .who-cell { padding-left: 8px; padding-right: 4px; }
+.phone .who { gap: 7px; }
+.phone .av { width: 22px; height: 22px; font-size: 8.5px; }
+.phone .idcol { flex-direction: column; gap: 3px; }
+.phone .tags { gap: 5px; }
+.phone .chipg, .phone .drop, .phone .ersatz { padding-block: 0; }
+.phone .c-wr { padding-left: 4px; padding-right: 8px; font-size: 13px; }
+.phone .c-diff { padding-left: 4px; padding-right: 8px; font-size: 14px; }
+.phone .c-bil { padding-left: 4px; padding-right: 12px; }
+.phone .thead .num { font-size: 10.5px; font-weight: 600; }
+
+/* Desktop (from sm): as before this feature, tags inline after the name. */
+.desk .thead, .desk .row { grid-template-columns: 44px minmax(0, 1fr) 96px 60px 76px; }
+.desk .rank { padding-left: 16px; padding-right: 4px; }
+.desk .who-cell { padding-left: 8px; padding-right: 12px; }
+.desk .who { gap: 8px; }
+.desk .av { width: 26px; height: 26px; font-size: 10px; }
+.desk .idcol { flex-direction: row; align-items: center; gap: 8px; }
+.desk .tags { gap: 8px; flex: none; }
+.desk .c-wr { padding-left: 20px; padding-right: 12px; font-size: 14px; }
+.desk .c-diff { padding-inline: 12px; font-size: 14.5px; }
+.desk .c-bil { padding-inline: 12px; }
+.desk .th.c-wr, .desk .th.c-diff, .desk .th.c-bil { font-size: 11px; font-weight: 600; }
+
+.foot { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; padding: 0 4px; font-size: 12.5px; color: var(--muted-foreground); }
+.foot i { display: inline-block; width: 14px; height: 5px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="toolbar">
+    <div>
+      <h1>Tabelle auf dem Handy</h1>
+      <div class="sub">Unter sm passt die Tabelle in die Breite: drei Zahlenspalten wie auf Desktop, enger, kleinerer Avatar, Badges unter dem Namen. Ab sm bleibt die Tabelle wie bisher. Beispieldaten.</div>
+    </div>
+    <div class="tgroup"><span>Tabelle</span>
+      <div class="chips" id="scope">
+        <button class="chip" id="s-div" aria-pressed="true" data-s="div">Division (mit Gruppe)</button>
+        <button class="chip" id="s-grp" aria-pressed="false" data-s="grp">Gruppe</button>
+      </div>
+    </div>
+  </div>
+  <div class="frames">
+    <div class="fwrap"><span>Handy · hell</span><div class="fscroll"><div class="hub phone" id="p-light"></div></div></div>
+    <div class="fwrap"><span>Handy · dunkel</span><div class="fscroll"><div class="hub phone dark" id="p-dark"></div></div></div>
+    <div class="fwrap"><span>Desktop · hell (unverändert)</span><div class="fscroll"><div class="hub desk" id="d-light"></div></div></div>
+    <div class="fwrap"><span>Desktop · dunkel (unverändert)</span><div class="fscroll"><div class="hub desk dark" id="d-dark"></div></div></div>
+  </div>
+</div>
+
+<script>
+const DIV = [
+  { r: 20, n: "Skarmory_Enjoyer", g: "4c", w: 4, l: 3, gw: 11, gl: 10 },
+  { r: 21, n: "Sira", g: "4b", w: 4, l: 3, gw: 10, gl: 10 },
+  { r: 21, n: "수진 ✨", g: "4e", w: 4, l: 3, gw: 10, gl: 10, fav: true },
+  { r: 23, n: "Vivienne von Wolkenstein", g: "4e", w: 3, l: 3, gw: 9, gl: 7 },
+  { r: 24, n: "Kuro", g: "4a", w: 3, l: 3, gw: 7, gl: 8, me: true },
+  { r: 25, n: "Eisblume ❄️", g: "4e", w: 3, l: 4, gw: 8, gl: 10 },
+  { r: 26, n: "ccc_Gengar", g: "4b", w: 3, l: 4, gw: 7, gl: 10 },
+  { r: 26, n: "Sinnoh-Sin", g: "4e", w: 3, l: 4, gw: 7, gl: 10 },
+  { r: 28, n: "Mareanie Mama", g: "4c", w: 3, l: 4, gw: 6, gl: 9 },
+  { r: 29, n: "Volcarona4Life", g: "4b", w: 2, l: 5, gw: 8, gl: 10, z: "playoff" },
+  { r: 30, n: "BigRelaxo", g: "4a", w: 2, l: 5, gw: 6, gl: 11, z: "playoff" },
+  { r: 30, n: "Sirfetch'd Simp", g: "4b", w: 2, l: 5, gw: 6, gl: 11, z: "playoff" },
+  { r: 32, n: "Lapras_Lena", g: "4e", w: 2, l: 4, gw: 5, gl: 10, z: "playoff", ersatz: true },
+  { r: 33, n: "Bonsly ⚡ Bandit", g: "4e", w: 1, l: 6, gw: 5, gl: 12, z: "playoff" },
+  { r: 35, n: "Kirlia", g: "4b", w: 1, l: 6, gw: 4, gl: 13, z: "demote" },
+  { r: 37, n: "Mewtwo Main", g: "4d", w: 0, l: 7, gw: 0, gl: 14, z: "demote", drop: true },
+  { r: 37, n: "Pikachu-Fan-1999", g: "4c", w: 0, l: 7, gw: 0, gl: 14, z: "demote", drop: true },
+];
+const GRP = [
+  { r: 1, n: "Vivienne von Wolkenstein", w: 6, l: 1, gw: 12, gl: 4, z: "promote" },
+  { r: 2, n: "수진 ✨", w: 5, l: 2, gw: 11, gl: 6, fav: true, z: "playoff" },
+  { r: 3, n: "Eisblume ❄️", w: 5, l: 2, gw: 11, gl: 7 },
+  { r: 4, n: "Kuro", w: 4, l: 3, gw: 9, gl: 8, me: true },
+  { r: 5, n: "Sinnoh-Sin", w: 3, l: 4, gw: 8, gl: 9 },
+  { r: 6, n: "Lapras_Lena", w: 2, l: 4, gw: 5, gl: 9, ersatz: true },
+  { r: 7, n: "Bonsly ⚡ Bandit", w: 1, l: 6, gw: 4, gl: 12, z: "playoff" },
+  { r: 8, n: "Neuling", w: 0, l: 0, gw: 0, gl: 0, z: "demote" },
+];
+const HUES = [264, 30, 150, 300, 200, 60, 340, 110];
+const NNBSP = " ";
+const pct = (gw, gl) => gw + gl === 0 ? "—" : (gw / (gw + gl) * 100).toFixed(1).replace(".", ",") + NNBSP + "%";
+const diff = (d) => d > 0 ? "+" + d : d < 0 ? "−" + -d : "0";
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let scope = "div";
+
+function avatar(p, i) {
+  const h = HUES[i % HUES.length];
+  const initials = [...p.n].slice(0, 2).join("").toUpperCase();
+  return `<span class="av${p.me ? " filled" : ""}" style="background:oklch(0.55 0.12 ${h})">${esc(initials)}</span>`;
+}
+function tags(p, withGroup) {
+  const t = [];
+  if (withGroup && p.g) t.push(`<span class="chipg">${p.g}</span>`);
+  if (p.drop) t.push(`<span class="drop" title="Spieler wurde gedroppt, alle Matches zählen als Freewin für die Gegner">Drop</span>`);
+  if (p.ersatz) t.push(`<span class="ersatz" title="Ersatz für Altes Mitglied ab Spieltag 3. Die Spieltage davor zählen für diesen Platz als Niederlage.">Ersatz</span>`);
+  if (p.me) t.push(`<span class="du">Du</span>`);
+  return t.join("");
+}
+function row(p, i, withGroup) {
+  const cls = p.z ? "z-" + p.z : p.me ? "me" : "";
+  const tg = tags(p, withGroup);
+  return `<div class="row ${cls}">${p.z || p.me ? '<span class="rail"></span>' : ""}
+    <div class="td rank">${p.r}</div>
+    <div class="td who-cell"><div class="who">${avatar(p, i)}<div class="idcol">
+      <span class="namel">${p.fav ? '<span class="star" aria-label="Favorit">★</span>' : ""}<span class="name">${esc(p.n)}</span></span>
+      ${tg ? `<span class="tags">${tg}</span>` : ""}</div></div></div>
+    <div class="td num c-wr">${pct(p.gw, p.gl)}</div>
+    <div class="td num c-diff">${diff(p.gw - p.gl)}</div>
+    <div class="td num c-bil">${p.w} : ${p.l}</div></div>`;
+}
+function table(rows, withGroup) {
+  const head = `<div class="thead"><div class="th rank">Pl.</div><div class="th who-cell">Spieler</div>
+    <div class="th num c-wr" title="Game Winrate">Game-WR.</div><div class="th num c-diff">Diff.</div><div class="th num c-bil">Bilanz</div></div>`;
+  return `<div class="tbl">${head}${rows.map((p, i) => row(p, i, withGroup)).join("")}</div>`;
+}
+function legend(rows) {
+  const z = new Set(rows.map((r) => r.z).filter(Boolean));
+  const items = [["champion", "Playoffs"], ["promote", "Direkter Aufstieg"], ["playoff", "Auf-/Abstiegs-Playoff"], ["demote", "Direkter Abstieg"]]
+    .filter(([k]) => z.has(k))
+    .map(([k, l]) => `<span><i style="background:var(--zone-${k})"></i>${l}</span>`);
+  return `<div class="foot">${items.join("")}</div>`;
+}
+function render() {
+  const rows = scope === "div" ? DIV : GRP;
+  const withGroup = scope === "div";
+  const meta = scope === "div" ? "Division 4" : "Gruppe 4a";
+  const html = `<div class="sh"><span class="tick"></span><h2>Tabelle</h2><span class="meta">${meta}</span></div>${table(rows, withGroup)}${legend(rows)}`;
+  for (const id of ["p-light", "p-dark", "d-light", "d-dark"]) document.getElementById(id).innerHTML = html;
+}
+document.getElementById("scope").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  scope = b.dataset.s;
+  for (const x of document.querySelectorAll("#scope button")) x.setAttribute("aria-pressed", String(x === b));
+  render();
+});
+render();
+</script>
+</body>
+</html>

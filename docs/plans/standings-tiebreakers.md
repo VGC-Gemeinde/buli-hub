@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/006-standings-phone-layout (Tabellenspalten ohne Punkte, Handy-Layout ohne horizontales Scrollen).
+
 # Standings tiebreakers
 
 **Status: done** (2026-07-03)

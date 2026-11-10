@@ -255,6 +255,17 @@ Row treatment: 6px left rail + row tint at /7–/10 alpha; legend below the tabl
 (14×5px swatches, 12.5px labels). Zone information is never color-only — legend
 text + rail position carry it too.
 
+Columns (`StandingsTable`, `src/features/season/components/standings-panel.tsx`):
+Pl. · Spieler · Game-WR. · Diff. · Bilanz. The tiebreakers run right to left
+into Bilanz, the anchor: Bilanz `font-semibold` foreground, Diff. regular
+foreground, Game-WR. muted with one decimal ("56,3 %"). No points column: a win
+is always 3 points, so Bilanz ranks the same. From `sm` up, Platz and Spieler
+are sticky and the score columns scroll; tags (group, Drop, Ersatz, Du) sit
+inline after the name. On a phone (below `sm`) the table fits the screen in a
+fixed layout with no sticky columns and no scrolling, the avatar shrinks to
+22px and the tags move to a second line under the name, so the name keeps the
+cell's width and no tag runs into the numbers (`specs/006-standings-phone-layout/`).
+
 ### 8.10 Name fallback — `playerName()` (`src/lib/player-name.ts`)
 
 Every player-name render uses the chain `displayName → username →

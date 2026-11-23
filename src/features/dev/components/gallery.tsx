@@ -1747,11 +1747,9 @@ const PIXEL =
 // reports, so no server action is attached. Attachments are live too: paste or
 // drop an image here and the thumbnail row behaves as it does in the dialog.
 function FeedbackSpecimen({
-  canSubmitIdea,
   error = null,
   attachments = [],
 }: {
-  canSubmitIdea: boolean;
   error?: string | null;
   attachments?: { id: string; name: string; previewUrl: string }[];
 }) {
@@ -1762,7 +1760,6 @@ function FeedbackSpecimen({
   return (
     <DialogWidth>
       <FeedbackPanel
-        canSubmitIdea={canSubmitIdea}
         kind={kind}
         onKindChange={setKind}
         title={title}
@@ -3897,21 +3894,14 @@ export function Gallery() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl">Feedback</h2>
-        <Specimen label="Spieler: nur Fehlermeldung (kein Typ-Umschalter)">
-          <FeedbackSpecimen canSubmitIdea={false} />
-        </Specimen>
-        <Specimen label="Staff: Fehler oder Idee">
-          <FeedbackSpecimen canSubmitIdea />
+        <Specimen label="Fehler oder Idee (alle Angemeldeten)">
+          <FeedbackSpecimen />
         </Specimen>
         <Specimen label="Validierungsfehler / Rate Limit">
-          <FeedbackSpecimen
-            canSubmitIdea
-            error="Du hast gerade sehr viele Meldungen abgeschickt. Bitte versuche es in einer Stunde erneut."
-          />
+          <FeedbackSpecimen error="Du hast gerade sehr viele Meldungen abgeschickt. Bitte versuche es in einer Stunde erneut." />
         </Specimen>
         <Specimen label='Screenshots — Anhänge voll (3/3, kein "Bild"-Button mehr)'>
           <FeedbackSpecimen
-            canSubmitIdea={false}
             attachments={[
               { id: "s1", name: "screenshot-1.webp", previewUrl: PIXEL },
               { id: "s2", name: "screenshot-2.webp", previewUrl: PIXEL },
@@ -3922,7 +3912,6 @@ export function Gallery() {
         <Specimen label="Gesendet — Screenshots konnten nicht angehängt werden">
           <DialogWidth>
             <FeedbackPanel
-              canSubmitIdea
               kind="bug"
               onKindChange={() => {}}
               title=""
@@ -3941,7 +3930,6 @@ export function Gallery() {
         <Specimen label="Gesendet — mit Thread-Link (Forum auf dem Hauptserver)">
           <DialogWidth>
             <FeedbackPanel
-              canSubmitIdea
               kind="bug"
               onKindChange={() => {}}
               title=""
@@ -3960,7 +3948,6 @@ export function Gallery() {
         <Specimen label="Gesendet — ohne Link (Forum auf dem Staff-Server)">
           <DialogWidth>
             <FeedbackPanel
-              canSubmitIdea
               kind="bug"
               onKindChange={() => {}}
               title=""

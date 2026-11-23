@@ -6,11 +6,7 @@ import { FeedbackDialog } from "./feedback-dialog";
 // The footer's entry point into the intake dialog. Styled as a footer link
 // rather than a button: it sits between Impressum and Datenschutz and should
 // read as one of them, not as a call to action.
-export function FeedbackFooterLink({
-  canSubmitIdea,
-}: {
-  canSubmitIdea: boolean;
-}) {
+export function FeedbackFooterLink() {
   const [open, setOpen] = useState(false);
 
   return (
@@ -22,11 +18,7 @@ export function FeedbackFooterLink({
       >
         Feedback
       </button>
-      <FeedbackDialog
-        open={open}
-        onOpenChange={setOpen}
-        canSubmitIdea={canSubmitIdea}
-      />
+      <FeedbackDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }

@@ -70,7 +70,6 @@ function imagesFrom(items: FileList | null | undefined): File[] {
 }
 
 export function FeedbackPanel({
-  canSubmitIdea,
   kind,
   onKindChange,
   title,
@@ -84,7 +83,6 @@ export function FeedbackPanel({
   error = null,
   sent = null,
 }: {
-  canSubmitIdea: boolean;
   kind: FeedbackKind;
   onKindChange: (kind: FeedbackKind) => void;
   title: string;
@@ -188,35 +186,31 @@ export function FeedbackPanel({
         }
       }}
     >
-      {canSubmitIdea ? (
-        <RadioGroup
-          className="grid grid-cols-1 gap-2.5 sm:grid-cols-2"
-          value={kind}
-          onValueChange={(value) => onKindChange(value as FeedbackKind)}
-        >
-          {KINDS.map((option) => (
-            // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control
-            <label
-              key={option.value}
-              className={cn(
-                "flex cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition-colors",
-                hoverRow,
-                "has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/6 has-data-[state=checked]:hover:bg-brand-orange/6",
-              )}
-            >
-              <RadioGroupItem value={option.value} className="mt-0.5" />
-              <span className="flex flex-col gap-1">
-                <span className="font-semibold text-[14px]">
-                  {option.title}
-                </span>
-                <span className="text-[12.5px] text-muted-foreground leading-snug">
-                  {option.body}
-                </span>
+      <RadioGroup
+        className="grid grid-cols-1 gap-2.5 sm:grid-cols-2"
+        value={kind}
+        onValueChange={(value) => onKindChange(value as FeedbackKind)}
+      >
+        {KINDS.map((option) => (
+          // biome-ignore lint/a11y/noLabelWithoutControl: the RadioGroupItem is the control
+          <label
+            key={option.value}
+            className={cn(
+              "flex cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition-colors",
+              hoverRow,
+              "has-data-[state=checked]:border-brand-orange has-data-[state=checked]:bg-brand-orange/6 has-data-[state=checked]:hover:bg-brand-orange/6",
+            )}
+          >
+            <RadioGroupItem value={option.value} className="mt-0.5" />
+            <span className="flex flex-col gap-1">
+              <span className="font-semibold text-[14px]">{option.title}</span>
+              <span className="text-[12.5px] text-muted-foreground leading-snug">
+                {option.body}
               </span>
-            </label>
-          ))}
-        </RadioGroup>
-      ) : null}
+            </span>
+          </label>
+        ))}
+      </RadioGroup>
 
       <div className="grid gap-2">
         <FieldLabel htmlFor="feedback-title">Worum geht es?</FieldLabel>

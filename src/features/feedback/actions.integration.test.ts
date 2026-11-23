@@ -173,14 +173,24 @@ describe("submitFeedback", () => {
     expect(await storedFor(player)).toBeDefined();
   });
 
-  it("refuses an idea from a player, and stores nothing", async () => {
+  it("accepts an idea from a player", async () => {
     signedInAs(player, "player");
+    createForumThreadMock.mockResolvedValue({
+      ok: true,
+      threadId: "thread-idea",
+      guildId: "staff-guild",
+    });
 
     const result = await submitFeedback({ ...input, kind: "idea" });
 
-    expect(result).toEqual({ ok: false, error: "Keine Berechtigung" });
-    expect(createForumThreadMock).not.toHaveBeenCalled();
-    expect(await storedFor(player)).toBeUndefined();
+    expect(result.ok).toBe(true);
+    expect(createForumThreadMock).toHaveBeenCalledTimes(1);
+    expect(createForumThreadMock.mock.calls[0]?.[1]?.name).toMatch(
+      /^\[Idee\] /,
+    );
+    const stored = await storedFor(player);
+    expect(stored?.kind).toBe("idea");
+    expect(stored?.reporterRole).toBe("player");
   });
 
   it("accepts an idea from staff", async () => {

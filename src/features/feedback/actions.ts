@@ -9,7 +9,6 @@ import { germanToday } from "@/lib/german-time";
 import { sniffImageType } from "@/lib/image";
 import { attachmentFileName, validateAttachments } from "./attachments";
 import {
-  canSubmit,
   feedbackInputSchema,
   RATE_LIMIT_WINDOW_MS,
   reporterThreadUrl,
@@ -110,8 +109,9 @@ async function seasonContext(): Promise<{
 }
 
 /**
- * Files a bug report or (staff+) a feature idea: one row, then one Discord
- * forum thread. The row is written first and is the durable record — a failed
+ * Files a bug report or a feature idea, both open to every signed-in user
+ * (specs/007-feedback-ideas-for-players): one row, then one Discord forum
+ * thread. The row is written first and is the durable record — a failed
  * Discord call costs the reporter the thread link, never the report.
  */
 export async function submitFeedback(
@@ -131,10 +131,6 @@ export async function submitFeedback(
     };
   }
   const report = parsed.data;
-
-  if (!canSubmit(current.role, report.kind)) {
-    return { ok: false, error: "Keine Berechtigung" };
-  }
 
   const recentCount = await recentFeedbackCount(
     current.userId,

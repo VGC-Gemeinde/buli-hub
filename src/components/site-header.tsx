@@ -99,7 +99,6 @@ export async function SiteHeader({
             <UserMenu
               displayName={current.displayName}
               avatarUrl={current.avatarUrl}
-              isStaff={isStaff}
             />
           ) : maintenanceMode() ? null : (
             <SignInButton variant="outline" />

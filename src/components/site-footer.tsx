@@ -3,7 +3,6 @@ import { FeedbackFooterLink } from "@/features/feedback/components/feedback-foot
 import { maintenanceMode } from "@/features/maintenance/mode";
 import { RegelwerkFooterLink } from "@/features/regelwerk/components/footer-link";
 import { currentUser } from "@/features/roles/guard";
-import { roleAtLeast } from "@/features/roles/roles";
 
 // Minimal global footer: keeps the legally required Impressum + Datenschutz
 // links reachable from every page, plus the feedback entry point for signed-in
@@ -31,11 +30,7 @@ export async function SiteFooter() {
           Datenschutz
         </Link>
         {maintenance ? null : <RegelwerkFooterLink />}
-        {current ? (
-          <FeedbackFooterLink
-            canSubmitIdea={roleAtLeast(current.role, "staff")}
-          />
-        ) : null}
+        {current ? <FeedbackFooterLink /> : null}
       </div>
     </footer>
   );

@@ -1,3 +1,5 @@
+> Abgelöst in Teilen durch specs/007-feedback-ideas-for-players (Ideen für alle Angemeldeten).
+
 # Feedback: Fehlermeldungen & Ideen
 
 **Status: done** (2026-07-29) — schema + `src/features/feedback/` + the user-menu

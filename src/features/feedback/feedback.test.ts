@@ -3,7 +3,6 @@ import type { Role } from "@/features/roles/roles";
 import {
   BODY_MAX,
   canSend,
-  canSubmit,
   feedbackInputSchema,
   RATE_LIMIT_PER_HOUR,
   reporterThreadUrl,
@@ -12,23 +11,6 @@ import {
   threadBody,
   threadTitle,
 } from "./feedback";
-
-const ROLES: Role[] = ["dev", "admin", "staff", "player"];
-
-describe("canSubmit", () => {
-  it("lets every role report a bug", () => {
-    for (const role of ROLES) {
-      expect(canSubmit(role, "bug")).toBe(true);
-    }
-  });
-
-  it("restricts ideas to staff and above", () => {
-    expect(canSubmit("dev", "idea")).toBe(true);
-    expect(canSubmit("admin", "idea")).toBe(true);
-    expect(canSubmit("staff", "idea")).toBe(true);
-    expect(canSubmit("player", "idea")).toBe(false);
-  });
-});
 
 describe("feedbackInputSchema", () => {
   const valid = {

@@ -1,0 +1,277 @@
+<!doctype html>
+<!-- Mockup for specs/007-feedback-ideas-for-players. Example data only. The dialog a player sees
+     once ideas are open to every signed-in user: the variant staff already have. The state
+     "Bisher für Spieler" shows the dialog before this feature, for comparison. -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Feedback-Dialog für Spieler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a toolbar with a state switcher over four frames, phone (390px) and desktop (720px),
+   each in light and dark. The shell follows the viewer's theme; each frame pins the hub's own
+   tokens (globals.css, light and .dark). Sizes mirror feedback-dialog.tsx and feedback-panel.tsx. */
+:root {
+  --shell-bg: oklch(0.975 0.006 262);
+  --shell-fg: oklch(0.28 0.06 264);
+  --shell-muted: oklch(0.52 0.035 263);
+  --shell-border: oklch(0.9 0.012 262);
+  --shell-card: #ffffff;
+  --shell-accent: #ff7b00;
+  --font: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shell-bg: oklch(0.13 0.035 265); --shell-fg: oklch(0.96 0.005 260);
+    --shell-muted: oklch(0.72 0.025 262); --shell-border: oklch(1 0 0 / 12%);
+    --shell-card: oklch(0.17 0.045 265); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --shell-bg: oklch(0.13 0.035 265); --shell-fg: oklch(0.96 0.005 260);
+  --shell-muted: oklch(0.72 0.025 262); --shell-border: oklch(1 0 0 / 12%);
+  --shell-card: oklch(0.17 0.045 265); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--shell-bg); color: var(--shell-fg); font-family: var(--font); margin: 0; font-size: 14px; }
+.shell { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-start; margin-bottom: 18px; }
+.toolbar h1 { font-size: 15px; margin: 0; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.toolbar .sub { font-size: 12.5px; color: var(--shell-muted); margin-top: 4px; max-width: 62ch; line-height: 1.5; }
+.tgroup { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tgroup > span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--shell-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 12.5px/1 var(--font); padding: 7px 11px; border-radius: 999px; border: 1px solid var(--shell-border); background: var(--shell-card); color: var(--shell-fg); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--shell-accent); border-color: var(--shell-accent); color: #fff; font-weight: 600; }
+.chip:focus-visible { outline: 2px solid var(--shell-accent); outline-offset: 2px; }
+.frames { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.fwrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 100%; }
+.fwrap > span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--shell-muted); }
+.fscroll { overflow-x: auto; max-width: 100%; border-radius: 22px; border: 1px solid var(--shell-border); }
+
+/* ---------- the hub inside a frame ---------- */
+.hub {
+  --brand-blue: #021f66; --brand-orange: #ff7b00;
+  --background: #ffffff; --foreground: oklch(0.28 0.06 264);
+  --popover: #ffffff;
+  --muted: oklch(0.965 0.008 262); --muted-foreground: oklch(0.52 0.035 263);
+  --destructive: oklch(0.55 0.22 27); --border: oklch(0.91 0.012 262); --input: oklch(0.91 0.012 262);
+  --input-bg: transparent; --tick-neutral: oklch(0.52 0.035 263);
+  --ring-line: color-mix(in oklch, var(--foreground) 10%, transparent);
+  flex: none; position: relative; overflow: hidden;
+  background: var(--background); color: var(--foreground); font-family: var(--font);
+}
+.hub.phone { width: 390px; height: 760px; }
+.hub.desk { width: 720px; height: 760px; }
+.hub.dark {
+  --background: oklch(0.17 0.045 265); --foreground: oklch(0.96 0.005 260);
+  --popover: oklch(0.21 0.05 265);
+  --muted: oklch(1 0 0 / 8%); --muted-foreground: oklch(0.72 0.025 262);
+  --destructive: oklch(0.7 0.19 22); --border: oklch(1 0 0 / 12%); --input: oklch(1 0 0 / 15%);
+  --input-bg: oklch(1 0 0 / 4.5%); --tick-neutral: oklch(0.72 0.025 262);
+  color-scheme: dark;
+}
+
+/* The page behind the dialog: only enough to say "this opens over wherever you are". */
+.page { position: absolute; inset: 0; padding: 0 20px; filter: blur(1.5px); }
+.page .bar { height: 52px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .04em; font-size: 15px; margin: 0 -20px; padding: 0 20px; }
+.page .bar i { width: 16px; height: 8px; background: var(--brand-orange); transform: skewX(-18deg); }
+.page .bar b { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; background: var(--muted); }
+.page .ln { height: 14px; border-radius: 6px; background: var(--muted); margin-top: 16px; }
+.page .blk { height: 120px; border-radius: 10px; border: 1px solid var(--border); margin-top: 20px; }
+.overlay { position: absolute; inset: 0; background: rgb(0 0 0 / 10%); }
+
+.dialog {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: calc(100% - 32px); max-width: 640px; max-height: calc(100% - 32px);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--popover); border-radius: 14px; box-shadow: 0 0 0 1px var(--ring-line);
+  font-size: 14px;
+}
+.dhead { flex: none; padding: 16px 48px 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.dhead h2 { margin: 0; font: 700 22px/1.15 var(--font); text-transform: uppercase; letter-spacing: .02em; }
+.dhead p { margin: 0; font-size: 13.5px; line-height: 1.625; color: var(--muted-foreground); }
+.x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; border: 0; background: none; color: var(--foreground); border-radius: 8px; cursor: pointer; }
+.x:hover { background: var(--muted); }
+.dbody { min-height: 0; flex: 1; overflow-y: auto; padding: 0 16px 16px; }
+.panel { display: flex; flex-direction: column; gap: 20px; }
+
+.kinds { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.phone .kinds { grid-template-columns: 1fr; }
+.kind { display: flex; align-items: flex-start; gap: 12px; text-align: left; font: inherit; color: inherit; background: none; border: 1px solid var(--border); border-radius: 10px; padding: 14px; cursor: pointer; transition: background-color .15s, border-color .15s; }
+.kind:hover { background: var(--muted); }
+.kind[aria-checked="true"], .kind[aria-checked="true"]:hover { border-color: var(--brand-orange); background: color-mix(in oklch, var(--brand-orange) 6%, transparent); }
+.kind:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+.radio { flex: none; width: 16px; height: 16px; margin-top: 2px; border-radius: 50%; border: 1px solid var(--input); background: var(--input-bg); display: grid; place-items: center; }
+.kind[aria-checked="true"] .radio { background: var(--brand-orange); border-color: var(--brand-orange); }
+.kind[aria-checked="true"] .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+.kind span.t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kind b { font-weight: 600; font-size: 14px; }
+.kind small { font-size: 12.5px; line-height: 1.375; color: var(--muted-foreground); }
+
+.field { display: grid; gap: 8px; }
+.micro { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted-foreground); }
+.frow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.frow .n { font-size: 12px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.inp, .ta { width: 100%; border: 1px solid var(--input); background: var(--input-bg); border-radius: 10px; font: 400 14px/1.45 var(--font); color: var(--foreground); }
+.phone .inp, .phone .ta { font-size: 16px; }
+.inp { height: 32px; padding: 4px 10px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+.inp span, .ta span { overflow: hidden; text-overflow: ellipsis; }
+.ta { min-height: 124px; padding: 8px 10px; }
+.ph { color: var(--muted-foreground); }
+.shots { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.add { width: 68px; height: 68px; border: 1px solid var(--border); background: var(--input-bg); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: 500 11px/1 var(--font); color: var(--muted-foreground); }
+.hint { margin: 0; font-size: 12px; color: var(--muted-foreground); }
+.hint kbd { font: 600 12px var(--font); }
+.ctx { display: flex; flex-direction: column; gap: 8px; border-radius: 10px; background: var(--muted); padding: 12px 16px; }
+.ctx .h { display: flex; align-items: center; gap: 8px; }
+.tick { display: inline-block; flex: none; transform: skewX(-18deg); background: var(--brand-orange); }
+.tick.s { width: 10px; height: 5px; background: var(--tick-neutral); }
+.tick.m { width: 18px; height: 9px; margin-top: 6px; }
+.ctx .l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12.5px; color: var(--muted-foreground); }
+.ctx .l code { font: 400 12px var(--mono); color: var(--foreground); }
+.ctx .l i { font-style: normal; color: var(--border); }
+.err { margin: 0; border-radius: 10px; border: 1px solid color-mix(in oklch, var(--destructive) 35%, transparent); background: color-mix(in oklch, var(--destructive) 6%, transparent); padding: 12px 16px; font-size: 13.5px; line-height: 1.45; color: var(--destructive); }
+
+.done { display: flex; align-items: flex-start; gap: 12px; }
+.done div { display: flex; flex-direction: column; gap: 6px; }
+.done p { margin: 0; font-size: 15px; line-height: 1.375; }
+.done p.s { font-size: 13px; color: var(--muted-foreground); }
+
+.dfoot { flex: none; display: flex; justify-content: flex-end; gap: 8px; padding: 16px; border-top: 1px solid var(--border); background: color-mix(in oklch, var(--muted) 50%, transparent); }
+.phone .dfoot { flex-direction: column-reverse; }
+.btn { height: 32px; padding: 0 10px; border-radius: 10px; font: 500 14px/1 var(--font); border: 1px solid transparent; cursor: default; }
+.phone .btn { width: 100%; }
+.btn.out { border-color: var(--border); background: var(--popover); color: var(--foreground); }
+.dark .btn.out { background: var(--input-bg); border-color: var(--input); }
+.btn.pri { background: var(--brand-orange); color: #fff; }
+.btn.pri[disabled] { opacity: .5; }
+@media (prefers-reduced-motion: reduce) { .kind { transition: none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="toolbar">
+    <div class="tgroup">
+      <h1>Feedback-Dialog für Spieler</h1>
+      <div class="sub">Spieler sehen künftig denselben Dialog wie Staff: mit der Wahl zwischen Fehler und Idee. Texte, Felder und Abschluss bleiben, wie sie sind. Die Auswahl im Dialog ist klickbar.</div>
+    </div>
+    <div class="tgroup">
+      <span>Zustand</span>
+      <div class="chips" id="states"></div>
+    </div>
+  </div>
+  <div class="frames" id="frames"></div>
+</div>
+
+<script>
+// Example data only. One render function draws the same state into all four frames.
+var STATES = [
+  { id: "bug", label: "Geöffnet (Fehler vorgewählt)" },
+  { id: "idea", label: "Idee gewählt" },
+  { id: "filled", label: "Idee ausgefüllt" },
+  { id: "sent", label: "Gesendet" },
+  { id: "limit", label: "Limit erreicht" },
+  { id: "before", label: "Bisher für Spieler" }
+];
+var FRAMES = [
+  { cls: "phone", label: "Handy · hell" },
+  { cls: "phone dark", label: "Handy · dunkel" },
+  { cls: "desk", label: "Desktop · hell" },
+  { cls: "desk dark", label: "Desktop · dunkel" }
+];
+var KINDS = [
+  { value: "bug", title: "Fehler", body: "Etwas funktioniert nicht oder sieht falsch aus." },
+  { value: "idea", title: "Idee", body: "Ein Vorschlag, was der Hub zusätzlich können sollte." }
+];
+var IDEA = {
+  title: "Kalender-Export für meine Spiele",
+  body: "Ich würde meine Fristen gern in meinen Kalender übernehmen. Ein Link zum Abonnieren im Spieler-Dashboard würde reichen, dann verpasse ich keinen Spieltag mehr."
+};
+var state = "bug";
+var kind = "bug";
+
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+
+function form() {
+  var withSwitch = state !== "before";
+  var filled = state === "filled" || state === "limit";
+  var k = withSwitch ? kind : "bug";
+  var h = '<div class="panel">';
+  if (withSwitch) {
+    h += '<div class="kinds" role="radiogroup" aria-label="Art der Meldung">';
+    KINDS.forEach(function (o) {
+      h += '<button type="button" class="kind" role="radio" data-kind="' + o.value + '" aria-checked="' + (o.value === k) + '">' +
+        '<span class="radio"></span><span class="t"><b>' + o.title + '</b><small>' + o.body + '</small></span></button>';
+    });
+    h += '</div>';
+  }
+  var tPh = k === "bug" ? 'Kurz in einem Satz, z. B. "Spieltag lädt nicht"' : 'Kurz in einem Satz, z. B. "Kalender-Export"';
+  var bPh = k === "bug" ? "Was hast du gemacht, was ist passiert, was hättest du erwartet?" : "Was soll der Hub können, und was wird dadurch einfacher?";
+  h += '<div class="field"><span class="micro">Worum geht es?</span><div class="inp">' +
+    (filled ? '<span>' + esc(IDEA.title) + '</span>' : '<span class="ph">' + esc(tPh) + '</span>') + '</div></div>';
+  h += '<div class="field"><span class="micro">Beschreibung</span><div class="ta">' +
+    (filled ? '<span>' + esc(IDEA.body) + '</span>' : '<span class="ph">' + esc(bPh) + '</span>') + '</div></div>';
+  h += '<div class="field"><div class="frow"><span class="micro">Screenshots</span><span class="n">0/3</span></div>' +
+    '<div class="shots"><div class="add"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5h6M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/><circle cx="9" cy="9" r="2"/></svg>Bild</div></div>' +
+    '<p class="hint">Bild auswählen, hierher ziehen oder mit <kbd>Strg</kbd>+<kbd>V</kbd> einfügen.</p></div>';
+  h += '<div class="ctx"><div class="h"><span class="tick s"></span><span class="micro">Automatisch dabei</span></div>' +
+    '<div class="l"><code>/spieler</code><i>·</i><span>Name &amp; Rolle</span><i>·</i><span>Spieltag</span><i>·</i><span>Browser &amp; Build</span></div></div>';
+  if (state === "limit") {
+    h += '<p class="err">Du hast gerade sehr viele Meldungen abgeschickt. Bitte versuche es in einer Stunde erneut.</p>';
+  }
+  return h + '</div>';
+}
+
+function dialog() {
+  var x = '<button type="button" class="x" aria-label="Schließen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>';
+  if (state === "sent") {
+    return '<div class="dialog"><div class="dhead"><h2>Danke!</h2></div>' + x +
+      '<div class="dbody"><div class="done"><span class="tick m"></span><div>' +
+      '<p>Deine Meldung ist angekommen und liegt bei den Organisatoren.</p>' +
+      '<p class="s">Rückfragen kommen bei Bedarf über Discord auf dich zu.</p></div></div></div>' +
+      '<div class="dfoot"><button type="button" class="btn pri">Schließen</button></div></div>';
+  }
+  var desc = state === "before"
+    ? "Etwas funktioniert nicht? Beschreibe kurz, was passiert ist. Die Meldung landet direkt bei den Organisatoren."
+    : "Melde einen Fehler oder schlage eine Idee vor. Beides landet direkt bei den Organisatoren.";
+  var ready = state === "filled" || state === "limit";
+  return '<div class="dialog"><div class="dhead"><h2>Feedback geben</h2><p>' + desc + '</p></div>' + x +
+    '<div class="dbody">' + form() + '</div>' +
+    '<div class="dfoot"><button type="button" class="btn out">Abbrechen</button>' +
+    '<button type="button" class="btn pri"' + (ready ? '' : ' disabled') + '>Absenden</button></div></div>';
+}
+
+function render() {
+  var page = '<div class="page" aria-hidden="true"><div class="bar"><i></i>BULI HUB<b></b></div>' +
+    '<div class="ln" style="width:46%"></div><div class="blk"></div><div class="ln" style="width:70%"></div>' +
+    '<div class="ln" style="width:58%"></div><div class="blk"></div><div class="blk"></div></div><div class="overlay"></div>';
+  document.getElementById("frames").innerHTML = FRAMES.map(function (f) {
+    return '<div class="fwrap"><span>' + f.label + '</span><div class="fscroll"><div class="hub ' + f.cls + '">' + page + dialog() + '</div></div></div>';
+  }).join("");
+  document.getElementById("states").innerHTML = STATES.map(function (s) {
+    return '<button type="button" class="chip" data-state="' + s.id + '" aria-pressed="' + (s.id === state) + '">' + s.label + '</button>';
+  }).join("");
+}
+
+document.addEventListener("click", function (e) {
+  var chip = e.target.closest("[data-state]");
+  if (chip) {
+    state = chip.dataset.state;
+    kind = state === "bug" || state === "before" ? "bug" : "idea";
+    render();
+    return;
+  }
+  var k = e.target.closest("[data-kind]");
+  if (k) { kind = k.dataset.kind; render(); }
+});
+render();
+</script>
+</body>
+</html>

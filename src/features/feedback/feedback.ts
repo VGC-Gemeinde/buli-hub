@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Role } from "@/features/roles/roles";
-import { roleAtLeast, roleLabel } from "@/features/roles/roles";
+import { roleLabel } from "@/features/roles/roles";
 
 // Pure logic for the feedback intake: what may be submitted, how often, and
 // what the Discord forum thread looks like. No database, no fetch — the
@@ -47,12 +47,6 @@ export function canSend({
   const t = title.trim().length;
   const b = body.trim().length;
   return t >= 3 && t <= TITLE_MAX && b >= 10 && b <= BODY_MAX;
-}
-
-// Bugs from anyone signed in; ideas are staff+. Used by the action's gate and
-// by the dialog to decide whether the type switch appears at all.
-export function canSubmit(role: Role, kind: FeedbackKind): boolean {
-  return kind === "bug" || roleAtLeast(role, "staff");
 }
 
 export function kindLabel(kind: FeedbackKind): string {

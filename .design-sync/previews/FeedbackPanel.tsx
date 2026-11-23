@@ -2,9 +2,8 @@ import { FeedbackActions, FeedbackPanel } from "buli-hub";
 import { useState } from "react";
 import type { FeedbackKind } from "@/features/feedback/feedback";
 
-/* The body of the "Feedback geben" dialog: kind (Fehler / Idee, only for
- * those who may file ideas), title, description, screenshots and the
- * automatically captured context. Shown with its action bar, at the dialog's
+/* The body of the "Feedback geben" dialog: kind (Fehler / Idee), title,
+ * description, screenshots and the automatically captured context. Shown with its action bar, at the dialog's
  * width, as the dialog pins it below the scrolling body. */
 
 // A 1x1 transparent GIF, as in the app's gallery: no network request.
@@ -14,14 +13,12 @@ const PIXEL =
 type Attachment = { id: string; name: string; previewUrl: string };
 
 function Form({
-  canSubmitIdea = true,
   initialKind = "bug",
   initialTitle = "",
   initialBody = "",
   attachments = [],
   error = null,
 }: {
-  canSubmitIdea?: boolean;
   initialKind?: FeedbackKind;
   initialTitle?: string;
   initialBody?: string;
@@ -36,7 +33,6 @@ function Form({
     <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-xl border bg-background">
       <div className="p-6">
         <FeedbackPanel
-          canSubmitIdea={canSubmitIdea}
           kind={kind}
           onKindChange={setKind}
           title={title}
@@ -77,7 +73,6 @@ export function Gesendet() {
     <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-xl border bg-background">
       <div className="p-6">
         <FeedbackPanel
-          canSubmitIdea
           kind="bug"
           onKindChange={() => {}}
           title=""
@@ -106,10 +101,9 @@ export function IdeeOhneScreenshots() {
   );
 }
 
-export function NurFehlerMitFehlermeldung() {
+export function VolleAnhaengeMitFehlermeldung() {
   return (
     <Form
-      canSubmitIdea={false}
       initialTitle="Spieltag lädt nicht"
       initialBody="Die Seite bleibt weiß."
       attachments={[

@@ -30,11 +30,9 @@ type Held = Attachment & { file: File };
 export function FeedbackDialog({
   open,
   onOpenChange,
-  canSubmitIdea,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  canSubmitIdea: boolean;
 }) {
   const pathname = usePathname();
   const [kind, setKind] = useState<FeedbackKind>("bug");
@@ -161,16 +159,14 @@ export function FeedbackDialog({
           </DialogTitle>
           {sent ? null : (
             <DialogDescription className="text-[13.5px] leading-relaxed">
-              {canSubmitIdea
-                ? "Melde einen Fehler oder schlage eine Idee vor. Beides landet direkt bei den Organisatoren."
-                : "Etwas funktioniert nicht? Beschreibe kurz, was passiert ist. Die Meldung landet direkt bei den Organisatoren."}
+              Melde einen Fehler oder schlage eine Idee vor. Beides landet
+              direkt bei den Organisatoren.
             </DialogDescription>
           )}
         </DialogHeader>
         {/* min-h-0 is what lets a flex child actually shrink and scroll. */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
           <FeedbackPanel
-            canSubmitIdea={canSubmitIdea}
             kind={kind}
             onKindChange={setKind}
             title={title}

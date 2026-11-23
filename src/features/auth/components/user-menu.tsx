@@ -31,11 +31,9 @@ const ITEM = "font-medium max-sm:h-11";
 export function UserMenu({
   displayName,
   avatarUrl,
-  isStaff = false,
 }: {
   displayName: string | null;
   avatarUrl: string | null;
-  isStaff?: boolean;
 }) {
   const name = displayName ?? "Discord-Nutzer";
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -105,11 +103,7 @@ export function UserMenu({
           </DropdownMenuItem>
         </form>
       </DropdownMenuContent>
-      <FeedbackDialog
-        open={feedbackOpen}
-        onOpenChange={setFeedbackOpen}
-        canSubmitIdea={isStaff}
-      />
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </DropdownMenu>
   );
 }
